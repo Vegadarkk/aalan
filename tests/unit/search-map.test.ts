@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ar from "../../messages/ar.json";
 import fr from "../../messages/fr.json";
 import { approximatePosition, cityBySlug, MOROCCO_BBOX } from "@/config/regions";
 import { buildMapListings, pinAmount, type MapListingLabels } from "@/components/search/map/map-listings";
 import { mapPadding, DETAIL_PX, PANEL_PX } from "@/components/search/map/map-layout";
 import { dragHeight, settleSnap, sheetHeights, SHEET_PEEK_PX, stepSnap } from "@/components/search/map/sheet";
-import { initialView, mapPossible, slowConnection } from "@/components/search/map/view-mode";
+import { defaultView, initialView, mapPossible, rememberView, slowConnection, storedView, viewKey } from "@/components/search/map/view-mode";
 import { CLUSTER_RADIUS_PX, HALO_LAYER, PINS_SOURCE, SEARCH_ZOOM, buildSearchStyle, pinsCollection } from "@/lib/map/search-style";
 import { HOUSE_LAYERS, REGIONS_SOURCE, buildHouseStyle } from "@/lib/map/style";
 import { boundsOf, coreBounds, distanceKm, isPublishedToday, pinPosition, pinSources, zoneFromView } from "@/lib/search/map-pins";
@@ -251,24 +251,68 @@ describe("phone sheet", () => {
 });
 
 describe("starting view", () => {
-  it("is the map when a basemap is configured and WebGL2 works", () => {
-    expect(initialView({ hasMap: true, webgl2: true })).toBe("map");
-    expect(initialView({ hasMap: false, webgl2: true, stored: "map" })).toBe("list");
-    expect(initialView({ hasMap: true, webgl2: false, stored: "map" })).toBe("list");
+  const search = { variant: "search" } as const;
+  const home = { variant: "home" } as const;
+
+  it("is the map for a search when a basemap is configured and WebGL2 works", () => {
+    expect(initialView({ ...search, hasMap: true, webgl2: true })).toBe("map");
+    expect(initialView({ ...search, hasMap: false, webgl2: true, stored: "map" })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: false, stored: "map" })).toBe("list");
     expect(mapPossible({ hasMap: true, webgl2: true })).toBe(true);
   });
 
+  it("is the list on the home page, unless the visitor chose the map there (owner, 2026-11-02)", () => {
+    expect(initialView({ ...home, hasMap: true, webgl2: true })).toBe("list");
+    expect(initialView({ ...home, hasMap: true, webgl2: true, stored: "map" })).toBe("map");
+    expect(initialView({ ...home, hasMap: false, webgl2: true, stored: "map" })).toBe("list");
+    expect(defaultView("home", true)).toBe("list");
+    expect(defaultView("search", true)).toBe("map");
+    expect(defaultView("search", false)).toBe("list");
+  });
+
   it("is the list on Save-Data or a 2G link, unless the visitor chose", () => {
-    expect(initialView({ hasMap: true, webgl2: true, saveData: true })).toBe("list");
-    expect(initialView({ hasMap: true, webgl2: true, effectiveType: "slow-2g" })).toBe("list");
-    expect(initialView({ hasMap: true, webgl2: true, effectiveType: "2g" })).toBe("list");
-    expect(initialView({ hasMap: true, webgl2: true, effectiveType: "3g" })).toBe("map");
-    expect(initialView({ hasMap: true, webgl2: true, saveData: true, stored: "map" })).toBe("map");
-    expect(initialView({ hasMap: true, webgl2: true, stored: "list" })).toBe("list");
-    expect(initialView({ hasMap: true, webgl2: true, stored: "grid" })).toBe("map");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, saveData: true })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, effectiveType: "slow-2g" })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, effectiveType: "2g" })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, effectiveType: "3g" })).toBe("map");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, saveData: true, stored: "map" })).toBe("map");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, stored: "list" })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, stored: "grid" })).toBe("map");
     expect(slowConnection({})).toBe(false);
   });
+
+  it("keys a toggle choice to the search itself: a new search starts on the map again", () => {
+    const base = viewKey("search", { q: "vélo", city: "rabat" });
+    expect(viewKey("search", { q: "vélo", city: "rabat", page: 3, sort: "price_asc", includeSoldOut: true })).toBe(base);
+    expect(viewKey("search", { city: "rabat", q: "vélo" })).toBe(base);
+    expect(viewKey("search", { q: "vélo", city: "fes" })).not.toBe(base);
+    expect(viewKey("search", { q: "voiture", city: "rabat" })).not.toBe(base);
+    expect(viewKey("search", { q: "vélo", city: "rabat", priceMax: 500 })).not.toBe(base);
+    expect(viewKey("home", { q: "vélo" })).toBe("home");
+  });
+
+  it("reads back only the choice made for these results", () => {
+    const memory = (store: Map<string, string>) => ({ getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) });
+    const store = new Map<string, string>();
+    // The old device-wide choice (localStorage, before 2026-11-02) is dropped on the next toggle.
+    const device = new Map([["search-view", "map"]]);
+    vi.stubGlobal("window", { sessionStorage: memory(store), localStorage: memory(device) });
+    try {
+      expect(storedView("search?q=velo")).toBeNull();
+      rememberView("search?q=velo", "list");
+      expect(storedView("search?q=velo")).toBe("list");
+      expect(storedView("search?q=voiture")).toBeNull();
+      expect(device.size).toBe(0);
+      store.set("search-view", "{not json");
+      expect(storedView("search?q=velo")).toBeNull();
+      store.set("search-view", JSON.stringify({ key: "home", view: "grid" }));
+      expect(storedView("home")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
+
 
 describe("map padding", () => {
   const base = { desktop: true, rtl: false, collapsed: false, detail: false, snap: "peek" as const, viewportHeight: 800 };

@@ -1,13 +1,21 @@
-// Map or list on the search page (Carte vivante, lot 2): pure rules, read by the client root.
-// The map is the default when the runtime config has a basemap and the browser can draw it
-// (WebGL2); a visitor who saves data or sits on a 2G link starts on the list (the map costs
-// ~430 KB of script plus tiles). A choice made with the toggle is remembered on the device.
+// Map or list (Carte vivante, lot 2): pure rules, read by the client root.
+// The home page opens on the list; a search opens on the map (owner, 2026-11-02), when the runtime
+// config has a basemap and the browser can draw it (WebGL2). A visitor who saves data or sits on a
+// 2G link stays on the list (the map costs ~430 KB of script plus tiles). A choice made with the
+// toggle holds for those results only (later pages, back from a listing): the next search opens on
+// the map again. It lives in the tab (sessionStorage), never across visits.
+
+import { canonicalSearchParams, searchParamsToQuery, type SearchParams } from "@/lib/search/params";
 
 export type SearchView = "map" | "list";
+
+/** Which page the toggle serves: the search results, or the home page's recent listings. */
+export type SearchMapVariant = "search" | "home";
 
 export const VIEW_STORAGE_KEY = "search-view";
 
 export interface ViewContext {
+  variant: SearchMapVariant;
   /** publicConfig.map is set (a PMTiles archive is configured). */
   hasMap: boolean;
   webgl2: boolean;
@@ -15,7 +23,7 @@ export interface ViewContext {
   saveData?: boolean;
   /** navigator.connection.effectiveType ("slow-2g", "2g", "3g", "4g"). */
   effectiveType?: string;
-  /** The visitor's last choice on this device, if any. */
+  /** The visitor's choice for these very results, if any. */
   stored?: string | null;
 }
 
@@ -28,29 +36,69 @@ export function slowConnection(context: Pick<ViewContext, "saveData" | "effectiv
   return context.saveData === true || context.effectiveType === "2g" || context.effectiveType === "slow-2g";
 }
 
+/** The view a page starts in before the browser is known (server render, hydration). */
+export function defaultView(variant: SearchMapVariant, hasMap: boolean): SearchView {
+  return variant === "search" && hasMap ? "map" : "list";
+}
+
 /** The view the page starts in once hydrated. */
 export function initialView(context: ViewContext): SearchView {
   if (!mapPossible(context)) return "list";
   if (context.stored === "map" || context.stored === "list") return context.stored;
+  if (context.variant === "home") return "list";
   return slowConnection(context) ? "list" : "map";
 }
 
-/** The browser's side of the context (client only; every read is guarded). */
-export function browserViewContext(hasMap: boolean, webgl2: boolean): ViewContext {
-  let stored: string | null = null;
-  try {
-    stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-  } catch {
-    stored = null;
-  }
-  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-  return { hasMap, webgl2, saveData: connection?.saveData, effectiveType: connection?.effectiveType, stored };
+/**
+ * The results a toggle choice belongs to: the search itself, not its page or order, nor the
+ * sold-out switch (changing those shows the same search). Any other change is a new search.
+ */
+export function viewKey(variant: SearchMapVariant, params: SearchParams): string {
+  if (variant === "home") return "home";
+  const { page: _page, sort: _sort, includeSoldOut: _soldOut, raw: _raw, ...search } = canonicalSearchParams(params);
+  return `search?${searchParamsToQuery(search).toString()}`;
 }
 
-export function rememberView(view: SearchView): void {
+interface StoredView {
+  key: string;
+  view: SearchView;
+}
+
+function readStored(): StoredView | null {
   try {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+    const raw = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const { key, view } = parsed as Record<string, unknown>;
+    return typeof key === "string" && (view === "map" || view === "list") ? { key, view } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The choice stored for these results (null: none, or it was made for other results). */
+export function storedView(key: string): SearchView | null {
+  const stored = readStored();
+  return stored && stored.key === key ? stored.view : null;
+}
+
+/** The browser's side of the context (client only; every read is guarded). */
+export function browserViewContext(variant: SearchMapVariant, key: string, hasMap: boolean, webgl2: boolean): ViewContext {
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  return { variant, hasMap, webgl2, saveData: connection?.saveData, effectiveType: connection?.effectiveType, stored: storedView(key) };
+}
+
+export function rememberView(key: string, view: SearchView): void {
+  try {
+    window.sessionStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ key, view } satisfies StoredView));
   } catch {
     // Private window or blocked storage: the choice lasts for this page only.
+  }
+  try {
+    // Before 2026-11-02 the choice was kept on the device, for every page: no longer read.
+    window.localStorage.removeItem(VIEW_STORAGE_KEY);
+  } catch {
+    // Blocked storage: nothing was kept there either.
   }
 }

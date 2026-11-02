@@ -19,6 +19,7 @@ import { MapFailedNotice, MapStage } from "@/components/search/map/map-stage";
 import { PanelLegal } from "@/components/search/map/panel-legal";
 import { ResultRows } from "@/components/search/map/result-rows";
 import { ListViewOnly, SearchMapRoot } from "@/components/search/map/search-map-root";
+import { defaultView } from "@/components/search/map/view-mode";
 import { Pagination } from "@/components/search/pagination";
 import { RefineChips } from "@/components/search/refine-chips";
 import { ResultsGrid } from "@/components/search/results-grid";
@@ -118,7 +119,7 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
   const organic = withoutFeatured(hits, featured);
   const adsEligible = resultsAdsEligible(response, organic);
   const seed = `${searchPath(params)}:${response.page}`;
-  const serverView = map ? "map" : "list";
+  const serverView = defaultView("search", map !== null);
   const listings = buildMapListings({ featured, hits: organic, locale, media: mediaBaseUrl(), now: new Date(), labels });
   const cards = new Map([...hits, ...featured].map((each) => [each.id, each]));
   const featuredRows = listings.filter((listing) => listing.featured);

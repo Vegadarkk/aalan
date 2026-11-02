@@ -148,20 +148,20 @@ describe("home page", () => {
     expect(html).not.toContain('data-testid="view-toggle"');
   });
 
-  it("with a basemap: the map's panel first, the list sections and the ad waiting for the list view", async () => {
+  it("with a basemap: the list first (owner, 2026-11-02), the map's panel rendered beside it for the switch", async () => {
     // "rece001" is also drawn for À la Une: it shows once, as an À la Une row.
     mocks.featuredListings.mockResolvedValue([card("feat000", { featured: true }), card("rece001", { featured: true })]);
     mocks.latestListings.mockResolvedValue(cards("rece", 24));
     const html = await withMap(() => renderPage());
-    expect(html).toContain('data-search-view="map"');
+    expect(html).toContain('data-search-view="list"');
     expect(html).toContain('data-search-variant="home"');
     // Phones open the sheet half way (the CSS reads it before hydration).
     expect(html).toContain('data-search-start="half"');
     expect(html).toContain(heading(fr.Home.title));
     expect(html).toContain(fr.Home.subtitle);
-    // The thirteen categories as a rail of arches (the header's chip row is left out on this page).
+    // The categories as a rail of arches in the map's panel, and as the list's grid (the header's chip row is left out on this page).
     expect(html).toContain('data-testid="home-category-rail"');
-    for (const category of CATEGORIES) expect(count(html, `href="/fr/c/${category.id}"`)).toBe(1);
+    for (const category of CATEGORIES) expect(count(html, `href="/fr/c/${category.id}"`)).toBe(2);
     // À la Une first, with its §8 heading, then the newest listings.
     expect(html.match(/data-testid="result-rows"/g)).toHaveLength(2);
     expect(html).toContain('data-testid="home-featured-rows"');
@@ -178,12 +178,12 @@ describe("home page", () => {
     expect(html).toContain(fr.Rental.home.open);
     expect(html).toContain('data-testid="home-pillars-compact"');
     expect(html).toContain('data-testid="panel-legal"');
-    // No list section, no ad, no form: the header's pill is the only search field.
-    expect(html).not.toContain('data-testid="home-categories"');
-    expect(html).not.toContain('data-testid="home-featured"');
-    expect(html).not.toContain('data-testid="home-recent"');
-    expect(html).not.toContain("data-ad-slot");
-    expect(html).not.toMatch(/<form[^>]*>/);
+    // The list view's sections, shown first; the map's rows wait for the switch (hidden by the CSS).
+    expect(html).toContain('data-testid="home-categories"');
+    expect(html).toContain('data-testid="home-featured"');
+    expect(html).toContain('data-testid="home-recent"');
+    // One search field per page: the header's pill. The only form left is the car rental module's.
+    expect(html.match(/<form[^>]*>/g)).toHaveLength(1);
   });
 
   it("renders in Arabic with Arabic links and labels, in both views", async () => {

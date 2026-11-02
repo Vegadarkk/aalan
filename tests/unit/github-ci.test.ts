@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readEdgeFile, type AccessApp } from "../../scripts/cloudflare";
 import { AGE_RECIPIENT, BUNDLE_FORMAT, bypassSecret, parseBundle, SCAN_HEADER, SECRET_NAMES, VARIABLE_NAMES } from "../../scripts/github-ci";
 
-const REPOSITORY = "Vegadarkk/joutiya";
+const REPOSITORY = "Vegadarkk/aalan";
 const RECIPIENT = `age1${"q".repeat(58)}`;
 const bundle = (secrets: Record<string, string>, variables: Record<string, string>): string =>
   JSON.stringify({ format: BUNDLE_FORMAT, repository: REPOSITORY, keyId: "123", secrets, variables });

@@ -1068,7 +1068,7 @@ async function sealedEnv(oci: Oci, compartmentId: string, env: DeployedEnv, path
 // (step 8). The PC2 staging builds the same way (scripts/wsl-staging.ts deploy). Such images carry no
 // CI record, so `promote` refuses them: production stays on CI-built releases.
 
-export const REPOSITORY = "https://github.com/Vegadarkk/joutiya.git";
+export const REPOSITORY = "https://github.com/Vegadarkk/aalan.git";
 export const SOURCE_DIR = "/opt/joutiya/src";
 /** Secret files the start needs besides app.env (Compose's env_file entries and §9's credentials). */
 export const SECRET_FILES = ["tunnel.env", "valkey-queue.env", "valkey-ratelimit.env", "meilisearch.env", "gcp/web/credentials.json", "gcp/worker/credentials.json"] as const;
@@ -1083,6 +1083,8 @@ export function stagingReleaseLines(commit?: string): string[] {
   const src = SOURCE_DIR;
   const etc = "/etc/joutiya/staging";
   return [
+    // Follows the repository rename (Vegadarkk/joutiya -> Vegadarkk/aalan, 2 Nov 2026) in existing clones.
+    `git -C ${src} remote set-url origin ${REPOSITORY}`,
     `git -C ${src} fetch --quiet origin main`,
     `commit="$(git -C ${src} rev-parse --verify --quiet '${commit ?? "origin/main"}^{commit}')" || { echo "unknown commit" >&2; exit 1; }`,
     `git -C ${src} merge-base --is-ancestor "$commit" origin/main || { echo "$commit is not on origin/main" >&2; exit 1; }`,

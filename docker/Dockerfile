@@ -39,7 +39,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 ARG RELEASE=dev
 ENV RELEASE=${RELEASE}
-LABEL org.opencontainers.image.source="https://github.com/Vegadarkk/joutiya" \
+LABEL org.opencontainers.image.source="https://github.com/Vegadarkk/aalan" \
       org.opencontainers.image.revision="${RELEASE}"
 
 FROM runtime AS web

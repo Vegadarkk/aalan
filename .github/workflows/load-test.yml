@@ -65,7 +65,7 @@ jobs:
       - name: Run
         timeout-minutes: 10
         env:
-          TARGET: https://staging.joutiya.ma
+          TARGET: https://staging.aalan.ma
           ACCESS_HEADER: ${{ vars.ACCESS_TOKEN_HEADER }}
           ACCESS_TOKEN: ${{ secrets.STAGING_SCAN_ACCESS_TOKEN }}
           LOADTEST_SECRET: ${{ secrets.LOADTEST_BYPASS_SECRET }}

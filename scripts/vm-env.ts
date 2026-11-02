@@ -85,10 +85,10 @@ export const REQUIRED = [
   "CF_ACCESS_AUD",
 ] as const;
 
-/** Names app.env may hold: those of .env.example, less NOT_IN_APP_ENV and the JOUTIYA_* tooling names. */
+/** Names app.env may hold: those of .env.example, less NOT_IN_APP_ENV and the AALAN_* and JOUTIYA_* tooling names. */
 export function appEnvNames(example: string): string[] {
   const names = [...example.matchAll(/^([A-Z][A-Z0-9_]*)=/gm)].map((match) => match[1] ?? "");
-  return [...new Set(names)].filter((name) => name !== "" && !name.startsWith("JOUTIYA_") && !NOT_IN_APP_ENV.has(name));
+  return [...new Set(names)].filter((name) => name !== "" && !name.startsWith("AALAN_") && !name.startsWith("JOUTIYA_") && !NOT_IN_APP_ENV.has(name));
 }
 
 /** The S3 endpoint of the account's R2 buckets (EU jurisdiction). */

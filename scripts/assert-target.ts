@@ -5,6 +5,7 @@
 
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { ownerVar } from "./owner-env.ts";
 
 export const APP_ENVS = ["dev", "staging", "prod"] as const;
 export type AppEnv = (typeof APP_ENVS)[number];
@@ -66,7 +67,7 @@ const SHARED_SHAPE = {
     // OCIDs of the tenancy and of the `joutiya` compartment Claude's user is limited to (§9).
     tenancyId: /^ocid1\.tenancy\.oc1\.\.[a-z0-9]{20,}$/,
     compartmentId: /^ocid1\.compartment\.oc1\.\.[a-z0-9]{20,}$/,
-    // OCID of the IAM user `joutiya-claude` (API keys only), checked against JOUTIYA_OCI_USER.
+    // OCID of the IAM user `joutiya-claude` (API keys only), checked against AALAN_OCI_USER (former JOUTIYA_OCI_USER).
     userId: /^ocid1\.user\.oc1\.\.[a-z0-9]{20,}$/,
     // OCI Run Command, Claude's admin channel to the VM: dynamic group `joutiya-vm` (the
     // compartment's instances) and policy `joutiya-run-command-policy`.
@@ -409,10 +410,10 @@ export function tunnelTokenErrors(variable: string, token: string, targets: Targ
 
 // Tunnel tokens kept in the owner's .env.local (docs/phase-1.md step 2), checked whatever APP_ENV.
 const OWNER_TUNNEL_TOKENS: readonly { variable: string; target: string; tunnel: (targets: Targets) => Id }[] = [
-  { variable: "JOUTIYA_SSH_TUNNEL_TOKEN", target: "shared.cloudflare.sshTunnelId", tunnel: (t) => t.shared.cloudflare.sshTunnelId },
-  { variable: "JOUTIYA_PROD_TUNNEL_TOKEN", target: "environments.prod.cloudflare.tunnelId", tunnel: (t) => t.environments.prod.cloudflare.tunnelId },
+  { variable: "AALAN_SSH_TUNNEL_TOKEN", target: "shared.cloudflare.sshTunnelId", tunnel: (t) => t.shared.cloudflare.sshTunnelId },
+  { variable: "AALAN_PROD_TUNNEL_TOKEN", target: "environments.prod.cloudflare.tunnelId", tunnel: (t) => t.environments.prod.cloudflare.tunnelId },
   {
-    variable: "JOUTIYA_STAGING_TUNNEL_TOKEN",
+    variable: "AALAN_STAGING_TUNNEL_TOKEN",
     target: "environments.staging.cloudflare.tunnelId",
     tunnel: (t) => t.environments.staging.cloudflare.tunnelId,
   },
@@ -420,10 +421,10 @@ const OWNER_TUNNEL_TOKENS: readonly { variable: string; target: string; tunnel: 
 
 // Claude's Oracle access (cloud environment, docs/phase-0.md step 4), checked whatever APP_ENV.
 const SHARED_BINDINGS: readonly { variable: string; target: string; expected: (targets: Targets) => Id }[] = [
-  { variable: "JOUTIYA_OCI_TENANCY", target: "shared.oracle.tenancyId", expected: (t) => t.shared.oracle.tenancyId },
-  { variable: "JOUTIYA_OCI_USER", target: "shared.oracle.userId", expected: (t) => t.shared.oracle.userId },
-  { variable: "JOUTIYA_OCI_COMPARTMENT", target: "shared.oracle.compartmentId", expected: (t) => t.shared.oracle.compartmentId },
-  { variable: "JOUTIYA_OCI_REGION", target: "shared.oracle.homeRegion", expected: (t) => t.shared.oracle.homeRegion },
+  { variable: "AALAN_OCI_TENANCY", target: "shared.oracle.tenancyId", expected: (t) => t.shared.oracle.tenancyId },
+  { variable: "AALAN_OCI_USER", target: "shared.oracle.userId", expected: (t) => t.shared.oracle.userId },
+  { variable: "AALAN_OCI_COMPARTMENT", target: "shared.oracle.compartmentId", expected: (t) => t.shared.oracle.compartmentId },
+  { variable: "AALAN_OCI_REGION", target: "shared.oracle.homeRegion", expected: (t) => t.shared.oracle.homeRegion },
 ];
 
 function sharedBindingErrors(targets: Targets, value: (name: string) => string): string[] {
@@ -469,7 +470,8 @@ function projectFileErrors(variable: string, path: string, expected: Id, appEnv:
  * Configured values are never printed: a secret pasted into the wrong variable stays out of logs.
  */
 export function assertTargets(targets: Targets, env: Env, options: AssertOptions = {}): string[] {
-  const value = (name: string): string => (env[name] ?? "").trim();
+  // Owner tooling names: AALAN_* first, then the former JOUTIYA_* (scripts/owner-env.ts).
+  const value = (name: string): string => (name.startsWith("AALAN_") ? ownerVar(name.slice("AALAN_".length), env) : (env[name] ?? "").trim());
   const configured = BINDINGS.filter((binding) => value(binding.variable) !== "");
   const stripeKey = value("STRIPE_SECRET_KEY");
   const appEnv = value("APP_ENV");

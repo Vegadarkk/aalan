@@ -12,7 +12,7 @@
 // Each URL is used once per run (exec.scenario.iterationInTest). urls.json comes from
 // scripts/load-urls.ts.
 //
-// Environment: TARGET (https://staging.joutiya.ma), ACCESS_HEADER and ACCESS_TOKEN (the Access
+// Environment: TARGET (https://staging.aalan.ma), ACCESS_HEADER and ACCESS_TOKEN (the Access
 // service token in single-header mode), LOADTEST_SECRET (x-joutiya-loadtest: skips the edge rate
 // limit rule and the app limiters, staging only), SUMMARY (path of the JSON summary).
 
@@ -25,7 +25,7 @@ import exec from "k6/execution";
 const PAGES = new SharedArray("pages", () => JSON.parse(open("./urls.json")).pages);
 const SEARCHES = new SharedArray("searches", () => JSON.parse(open("./urls.json")).searches);
 
-const TARGET = __ENV.TARGET || "https://staging.joutiya.ma";
+const TARGET = __ENV.TARGET || "https://staging.aalan.ma";
 const headers = { "x-joutiya-loadtest": __ENV.LOADTEST_SECRET || "", "user-agent": "joutiya-loadtest/k6" };
 if (__ENV.ACCESS_HEADER) headers[__ENV.ACCESS_HEADER] = __ENV.ACCESS_TOKEN || "";
 

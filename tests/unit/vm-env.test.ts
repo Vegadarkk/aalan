@@ -58,7 +58,7 @@ describe("app.env names", () => {
   const names = appEnvNames(example);
 
   it("keeps .env.example's names, less Compose's, development's and the owner's tooling", () => {
-    for (const name of ["APP_ENV", "NODE_ENV", "RELEASE", "GOOGLE_APPLICATION_CREDENTIALS", "DEV_MAILBOX", "FIRESTORE_EMULATOR_HOST", "ACCESS_CI_TOKEN_ID", "JOUTIYA_CLOUDFLARE_API_TOKEN", "MEILI_MASTER_KEY"]) {
+    for (const name of ["APP_ENV", "NODE_ENV", "RELEASE", "GOOGLE_APPLICATION_CREDENTIALS", "DEV_MAILBOX", "FIRESTORE_EMULATOR_HOST", "ACCESS_CI_TOKEN_ID", "JOUTIYA_CLOUDFLARE_API_TOKEN", "AALAN_CLOUDFLARE_API_TOKEN", "MEILI_MASTER_KEY"]) {
       expect(names).not.toContain(name);
     }
     for (const name of [...REQUIRED, ...VM_GENERATED, ...PAIRED, ...Object.keys(derivedValues("staging", targets))]) expect(names).toContain(name);
@@ -72,8 +72,8 @@ describe("app.env names", () => {
   it("derives each environment's hosts and identifiers from the registry", () => {
     const staging = derivedValues("staging", targets);
     expect(staging).toMatchObject({
-      SITE_URL: "https://staging.joutiya.ma",
-      ADMIN_HOST: "admin-staging.joutiya.ma",
+      SITE_URL: "https://staging.aalan.ma",
+      ADMIN_HOST: "admin-staging.aalan.ma",
       CSP_REPORT_ONLY: "true",
       FIREBASE_SERVICE_ACCOUNT: "joutiya-web@joutiya-staging.iam.gserviceaccount.com",
       GOOGLE_CLOUD_PROJECT: "joutiya-staging",

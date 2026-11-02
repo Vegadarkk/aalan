@@ -70,9 +70,9 @@ jobs:
         env:
           ZAP_AUTH_HEADER: ${{ vars.ACCESS_TOKEN_HEADER }}
           ZAP_AUTH_HEADER_VALUE: ${{ secrets.STAGING_SCAN_ACCESS_TOKEN }}
-          ZAP_AUTH_HEADER_SITE: staging.joutiya.ma
+          ZAP_AUTH_HEADER_SITE: staging.aalan.ma
         run: |
-          if [[ "$TARGET" == "staging" ]]; then url="https://staging.joutiya.ma/fr"; else url="https://joutiya.ma/fr"; unset ZAP_AUTH_HEADER ZAP_AUTH_HEADER_VALUE ZAP_AUTH_HEADER_SITE; fi
+          if [[ "$TARGET" == "staging" ]]; then url="https://staging.aalan.ma/fr"; else url="https://joutiya.ma/fr"; unset ZAP_AUTH_HEADER ZAP_AUTH_HEADER_VALUE ZAP_AUTH_HEADER_SITE; fi
           # The active scan has no time limit of its own (-m caps the spider, -T the start and passive
           # wait): ZAP's scanner.* keys stop it within the job's 90 minutes, so the reports still get
           # written (the run of 30 Oct 2026 was still scanning after 75 minutes).

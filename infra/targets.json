@@ -104,9 +104,9 @@
         "accessAud": "294202afc611b88c2126921f60dcccbddab1d14def1f7b69289cc4bd8bade31e"
       },
       "hosts": {
-        "site": "staging.joutiya.ma",
+        "site": "staging.aalan.ma",
         "www": null,
-        "admin": "admin-staging.joutiya.ma",
+        "admin": "admin-staging.aalan.ma",
         "media": "media-staging.joutiya.ma"
       }
     },

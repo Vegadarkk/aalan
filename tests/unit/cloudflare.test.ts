@@ -56,7 +56,7 @@ describe("infra/cloudflare", () => {
     expect(errors).toContain("tunnel.staging.json: preview.staging.joutiya.ma is not covered by Universal SSL");
     expect(errors).toContain("tunnel.staging.json: beta.joutiya.ma has no Access application");
     expect(errors).toContain("tunnel.staging.json: ssh.joutiya.ma: SSH goes through tunnel.ssh.json only");
-    expect(errors).toContain("tunnel.staging.json: environments.staging.hosts.site staging.joutiya.ma has no ingress rule");
+    expect(errors).toContain("tunnel.staging.json: environments.staging.hosts.site staging.aalan.ma has no ingress rule");
   });
 
   it("accepts tunnel hostnames in every project zone and refuses others", () => {
@@ -103,15 +103,15 @@ describe("infra/cloudflare", () => {
     const bypass = { name: "Open", decision: "bypass", include: [{ everyone: {} }] };
     const changed = {
       apps: [
-        ...apps.map((app) => (app.domain === WEBHOOK_BYPASS || app.domain === "admin-staging.joutiya.ma" ? { ...app, policies: [...app.policies, bypass] } : app)),
+        ...apps.map((app) => (appUris(app).includes(WEBHOOK_BYPASS) || app.domain === "admin-staging.joutiya.ma" ? { ...app, policies: [...app.policies, bypass] } : app)),
         { name: "Open API", domain: "staging.joutiya.ma/api", type: "self_hosted", session_duration: "24h", policies: [bypass] },
       ],
     };
     const read = <T,>(name: string): T => (name === "access-apps.json" ? changed : readEdgeFile(name)) as T;
     expect(validateEdge(read, targets)).toEqual([
-      `access-apps.json: ${WEBHOOK_BYPASS} must have a single bypass policy`,
-      `access-apps.json: admin-staging.joutiya.ma: only ${WEBHOOK_BYPASS} may bypass Access`,
-      `access-apps.json: staging.joutiya.ma/api: only ${WEBHOOK_BYPASS} may bypass Access`,
+      "access-apps.json: staging.joutiya.ma/api/webhooks/* must have a single bypass policy",
+      "access-apps.json: admin-staging.joutiya.ma: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
+      "access-apps.json: staging.joutiya.ma/api: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
     ]);
   });
 
@@ -120,7 +120,7 @@ describe("infra/cloudflare", () => {
     expect(appUris(apps.find((app) => app.domain === "admin.joutiya.ma")!)).toEqual(["admin.joutiya.ma", "admin.aalan.ma"]);
     const widened = {
       apps: apps.map((app) => {
-        if (app.domain === WEBHOOK_BYPASS) return { ...app, destinations: [...(app.destinations ?? []), { type: "public" as const, uri: "aalan.ma/api/webhooks/*" }] };
+        if (appUris(app).includes(WEBHOOK_BYPASS)) return { ...app, destinations: [...(app.destinations ?? []), { type: "public" as const, uri: "aalan.ma/api/webhooks/*" }] };
         if (app.domain === "admin-staging.joutiya.ma") return { ...app, destinations: [{ type: "public" as const, uri: "admin-staging.aalan.ma" }] };
         return app;
       }),

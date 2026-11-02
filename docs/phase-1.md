@@ -282,7 +282,7 @@ Toutes les échéances du projet sont dans `joutiya/echeances.md`, dans les fich
 
   Un rappel part 30 jours avant l'échéance : Claude le pose avec les certificats.
 - **Autorité des certificats** (PC2, `~/.joutiya/wif-ca`) : 10 ans, jusqu'au 13 octobre 2036. Gardez le dossier `~/.joutiya` du PC2 (autorité et connexion gcloud). S'il est perdu ou si l'autorité expire, Nav en crée une nouvelle (`ca --new`) et refait `setup staging --apply` et `setup prod --apply`, puis Claude refait les certificats de la VM comme ci-dessus.
-- **Jeton Cloudflare `joutiya-edge`** : jusqu'au 15 novembre 2026. Oublié, Claude ne peut plus régler Cloudflare par API (DNS, tunnels, cache) ; le site continue de tourner. Nav prépare un jeton aux mêmes droits, vous le rangez sous `JOUTIYA_CLOUDFLARE_API_TOKEN`.
+- **Jeton Cloudflare `joutiya-edge`** : jusqu'au 15 novembre 2026. Oublié, Claude ne peut plus régler Cloudflare par API (DNS, tunnels, cache) ; le site continue de tourner. Nav prépare un jeton aux mêmes droits, vous le rangez sous `AALAN_CLOUDFLARE_API_TOKEN` (ancien nom `JOUTIYA_CLOUDFLARE_API_TOKEN`, encore lu en secours).
 - **Jeton GitHub `joutiya-claude-actions`** (étape 8) : jusqu'au 25 janvier 2027. Oublié, plus aucun changement des secrets et variables de la CI ; les déploiements continuent. Nav prépare un jeton aux mêmes droits ; vous le rangez sous le même nom, dans l'environnement cloud et dans le fichier du PC2.
 
 ## Fin de la phase 1

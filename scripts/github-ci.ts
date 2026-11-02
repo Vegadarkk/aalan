@@ -5,21 +5,21 @@
 // channel, chat included, and only GitHub opens it. Nothing here prints a value: names only.
 //
 //   node scripts/github-ci.ts public-key
-//       (Nav, PC2, JOUTIYA_GITHUB_ACTIONS_TOKEN) prints the repository's Actions public key, which
+//       (Nav, PC2, AALAN_GITHUB_ACTIONS_TOKEN) prints the repository's Actions public key, which
 //       is public, and the names of its secrets and variables.
 //   node scripts/github-ci.ts seal --public-key=<file> --host-key=<ssh-ed25519 AAAA...> --out=<file> [--enable] [--apply]
-//       (Claude, cloud, JOUTIYA_CLOUDFLARE_API_TOKEN) a new deploy-staging key pair, whose public
+//       (Claude, cloud, AALAN_CLOUDFLARE_API_TOKEN) a new deploy-staging key pair, whose public
 //       half goes to <out>.pub for `oracle-vm.ts sync --deploy-staging-key=<out>.pub`, and a new
 //       secret for the Access service token joutiya-ci (rotated: the previous one stops at once),
 //       sealed into <out> with VM_SSH_KNOWN_HOSTS and, with --enable, STAGING_DEPLOY_ENABLED=true.
 //       <file> is the JSON that public-key printed. Install the public half on the VM before the
 //       bundle goes out with --enable: the next push on main deploys.
 //   node scripts/github-ci.ts seal-scan --public-key=<file> --age-recipient=<age1...> --out=<file> [--apply]
-//       (Claude, cloud, JOUTIYA_CLOUDFLARE_API_TOKEN) the Access service token joutiya-scan (created,
+//       (Claude, cloud, AALAN_CLOUDFLARE_API_TOKEN) the Access service token joutiya-scan (created,
 //       or rotated if it exists) and a new load-test bypass secret, sealed into <out> with the scan
 //       and load-test variables (both workflows enabled). The bypass secret also goes, unsealed and
 //       mode 0600, to <out>.staging.env (LOADTEST_BYPASS_SECRET_STAGING, for seal-env.ts app staging) and
-//       <out>.cloudflare.env (JOUTIYA_LOADTEST_BYPASS_SECRET, for cloudflare.ts loadtest). Prints
+//       <out>.cloudflare.env (AALAN_LOADTEST_BYPASS_SECRET, for cloudflare.ts loadtest). Prints
 //       the token's id, ACCESS_SCAN_TOKEN_ID of cloudflare.ts access.
 //   node scripts/github-ci.ts apply <bundle> [--apply]
 //       (Nav, PC2) checks the bundle against the repository and its current key, then writes its
@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 import sodium from "libsodium-wrappers";
 import { validateTargets, type Targets } from "./assert-target.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
+import { requireOwnerVar } from "./owner-env.ts";
 
 export const BUNDLE_FORMAT = "joutiya-github-ci v1";
 export const SSH_HOST = "ssh.joutiya.ma";
@@ -135,8 +136,7 @@ export function parseBundle(text: string, repository: string): Bundle {
 // GitHub (PC2 only: the cloud proxy refuses /actions/ paths).
 
 async function github<T>(repository: string, method: string, path: string, body?: unknown): Promise<{ status: number; data: T | undefined }> {
-  const token = process.env.JOUTIYA_GITHUB_ACTIONS_TOKEN?.trim();
-  if (!token) throw new Error("JOUTIYA_GITHUB_ACTIONS_TOKEN is not set");
+  const token = requireOwnerVar("GITHUB_ACTIONS_TOKEN");
   const response = await fetch(`https://api.github.com/repos/${repository}/actions${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "joutiya-github-ci", ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
@@ -193,8 +193,7 @@ async function applyAction(repository: string, file: string, apply: boolean): Pr
 // Cloudflare (cloud): the Access service token joutiya-ci, rotated, its secret kept in memory.
 
 async function cloudflare<T>(method: string, path: string, body: unknown = {}): Promise<T> {
-  const token = process.env.JOUTIYA_CLOUDFLARE_API_TOKEN?.trim();
-  if (!token) throw new Error("JOUTIYA_CLOUDFLARE_API_TOKEN is not set");
+  const token = requireOwnerVar("CLOUDFLARE_API_TOKEN");
   const response = await fetch(`https://api.cloudflare.com/client/v4${path}`, { method, headers: { Authorization: `Bearer ${token}`, ...(method === "POST" ? { "Content-Type": "application/json" } : {}) }, ...(method === "POST" ? { body: JSON.stringify(body) } : {}) });
   const payload = (await response.json().catch(() => null)) as { success?: boolean; errors?: { message: string }[]; result?: T } | null;
   if (!response.ok || !payload?.success) throw new Error(`Cloudflare ${method} ${path}: HTTP ${response.status} (${payload?.errors?.map((error) => error.message).join("; ") ?? "no JSON body"})`);
@@ -275,7 +274,7 @@ async function sealScanAction(targets: Targets, repository: string, args: string
     variables: { ACCESS_TOKEN_HEADER: SCAN_HEADER, SCAN_REPORT_AGE_RECIPIENT: recipient, SECURITY_SCAN_ENABLED: "true", LOAD_TEST_ENABLED: "true" },
   };
   writeFileSync(`${out}.staging.env`, `LOADTEST_BYPASS_SECRET_STAGING=${bypass}\n`, { mode: 0o600 });
-  writeFileSync(`${out}.cloudflare.env`, `JOUTIYA_LOADTEST_BYPASS_SECRET=${bypass}\n`, { mode: 0o600 });
+  writeFileSync(`${out}.cloudflare.env`, `AALAN_LOADTEST_BYPASS_SECRET=${bypass}\n`, { mode: 0o600 });
   writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`);
   console.log(`ACCESS_SCAN_TOKEN_ID=${token.id ?? scan[0]?.id ?? "(see the dashboard)"}`);
 }

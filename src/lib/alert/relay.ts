@@ -3,11 +3,12 @@ import { logger } from "@/lib/logging/logger";
 import type { Alert, AlertChannel } from "./types";
 
 /**
- * E-mail through the uptime Worker (workers/uptime-probe): it relays signed alerts to the
- * owner's address through the Resend API, with a Resend key of its own that never sits on the
- * VM. The Worker answers within 6 s, inside the 8 s timeout below, and caps relayed e-mails per
- * day (429) so a flood cannot spend the site's shared Resend quota. Telegram, called directly by
- * alert(), stays the guaranteed channel: a relay failure is logged and never blocks it.
+ * The uptime Worker (workers/uptime-probe) as alert channel: it records each signed alert as an
+ * incident for the agents (scripts/incidents.ts), archives it by e-mail through the Resend API
+ * with a key of its own that never sits on the VM, and pages the owner on Telegram only when a
+ * P0/P1 stays unacknowledged for 2 hours. It answers within 6 s, inside the 8 s timeout below:
+ * 204 once recorded; without a record, the e-mail outcome (429 daily cap, 503 e-mail off).
+ * TELEGRAM_BOT_TOKEN on the VM (optional since 2 Nov 2026) would add a direct Telegram channel.
  */
 export class RelayEmailChannel implements AlertChannel {
   readonly name = "email";
@@ -28,8 +29,8 @@ export class RelayEmailChannel implements AlertChannel {
       body,
       signal: AbortSignal.timeout(8_000),
     });
-    // 503: the Worker has no e-mail configured (ALERT_EMAIL_TO / RESEND_API_KEY unset). Telegram
-    // already carried the alert, so this is a warning, not a channel failure to retry.
+    // 503: not recorded and the Worker has no e-mail configured (ALERT_EMAIL_TO / RESEND_API_KEY
+    // unset): a warning, not a channel failure to retry.
     if (response.status === 503) {
       logger.warn("alert relay: e-mail channel off on the Worker");
       return "off";

@@ -2,7 +2,8 @@
 
 interface KVNamespace {
   get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  put(key: string, value: string, options?: { expirationTtl?: number; expiration?: number; metadata?: unknown }): Promise<void>;
+  list(options: { prefix: string; limit?: number }): Promise<{ keys: { name: string; expiration?: number; metadata?: unknown }[] }>;
 }
 
 interface ScheduledController {

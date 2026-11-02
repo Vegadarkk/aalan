@@ -89,7 +89,7 @@ describe("wsl-staging env", () => {
     expect(merged).toMatch(/^QUEUE_REDIS_URL='redis:\/\/:[0-9a-f]{64}@valkey-queue:6379'$/m);
     expect(readFileSync(join(dir, "tunnel.env"), "utf8")).toBe(token);
     expect(first.stdout).toContain("tunnel.env written");
-    expect(first.stdout).toMatch(/^missing: .*TELEGRAM_BOT_TOKEN/m);
+    expect(first.stdout).toMatch(/^missing: .*ALERT_RELAY_URL/m);
     expect(first.stdout).not.toMatch(/secret|ppp|eyJhIjoi/);
     expect(readdirSync(dir).filter((name) => name.startsWith("."))).toEqual([]);
     const csrf = /^CSRF_SECRET=.*$/m.exec(merged)?.[0];

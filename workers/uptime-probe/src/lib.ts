@@ -1,5 +1,5 @@
 // Pure logic of the uptime probe (tested in Node): probe verdicts, state transitions, the signed
-// alert relay and the Resend e-mail call. No Workers runtime import or type here: the root
+// alert relay, the Resend e-mail call and the incident log read by the agents. No Workers runtime import or type here: the root
 // tsconfig excludes workers/, so this file must also compile with the app's types (tests/unit).
 
 export type Severity = "P0" | "P1" | "P2" | "info";
@@ -28,10 +28,29 @@ export interface ProbeState {
   since: number;
 }
 
+export interface PutOptions {
+  /** Seconds from now. */
+  expirationTtl?: number;
+  /** Seconds since the epoch. */
+  expiration?: number;
+  metadata?: unknown;
+}
+
 /** The KV subset used here (structurally matches the Workers KVNamespace binding). */
 export interface KeyValue {
   get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  put(key: string, value: string, options?: PutOptions): Promise<void>;
+}
+
+export interface ListedKey {
+  name: string;
+  expiration?: number;
+  metadata?: unknown;
+}
+
+/** KeyValue with list() (one page: up to 1,000 keys). */
+export interface ListableKeyValue extends KeyValue {
+  list(options: { prefix: string; limit?: number }): Promise<{ keys: ListedKey[] }>;
 }
 
 /** Probes that must agree before a change is announced (5-minute cron: about 10 minutes). */
@@ -47,6 +66,13 @@ export const PROBE_DAILY_CAP = 10;
 /** Relay e-mails of the day kept for P0 alerts: a flood of lesser alerts never drops a P0. */
 export const RELAY_P0_RESERVE = 5;
 export const RESEND_URL = "https://api.resend.com/emails";
+/** Incidents recorded per UTC day (each costs two KV writes; the free plan allows 1,000 a day). */
+export const INCIDENT_DAILY_CAP = 100;
+/** Incidents are kept two weeks, acknowledged or not. */
+export const INCIDENT_TTL_SECONDS = 14 * 86_400;
+/** A P0 or P1 incident no agent acknowledged after this long is escalated to the owner, once. */
+export const ESCALATE_AFTER_MS = 2 * 3_600_000;
+export const INCIDENT_PREFIX = "incident:";
 /** Resend refuses requests without a User-Agent (403, Cloudflare error 1010); workerd sets none. */
 const RESEND_USER_AGENT = "joutiya-uptime-probe";
 /** Daily KV markers outlive their day by one, then expire. */
@@ -295,9 +321,9 @@ export async function markOncePerDay(kv: KeyValue, name: string, nowMs: number):
   return true;
 }
 
-/** The two e-mail counters, one KV key each per UTC day. */
-export type DailyCounter = "relay" | "probe";
-const DAILY_CAPS: Record<DailyCounter, number> = { relay: RELAY_DAILY_CAP, probe: PROBE_DAILY_CAP };
+/** The daily counters (the two e-mail caps and the incident cap), one KV key each per UTC day. */
+export type DailyCounter = "relay" | "probe" | "incident";
+const DAILY_CAPS: Record<DailyCounter, number> = { relay: RELAY_DAILY_CAP, probe: PROBE_DAILY_CAP, incident: INCIDENT_DAILY_CAP };
 
 /** The relay cap an alert may use: below P0, it stops RELAY_P0_RESERVE short of RELAY_DAILY_CAP. */
 export function relayCap(severity: Severity): number {
@@ -339,9 +365,15 @@ export interface RelayDeps {
   maxBytes: number;
   /** E-mails the alert, or says why not (see RelayOutcome). Throws when sending fails. */
   send(alert: Alert, idempotencyKey: string): Promise<RelayOutcome>;
+  /** Records the alert as an incident for the agents; true when recorded. Throws on KV errors. */
+  record?(alert: Alert): Promise<boolean>;
 }
 
-/** POST /alert, signed by the app (src/lib/alert/relay.ts): 204 sent, 429 capped, 502 send failed, 503 e-mail off. */
+/**
+ * POST /alert, signed by the app (src/lib/alert/relay.ts). 204 once the alert is recorded as an
+ * incident (the e-mail is only an archive then); otherwise the e-mail outcome: 204 sent, 429
+ * capped, 502 send failed, 503 e-mail off.
+ */
 export async function relay(request: Request, deps: RelayDeps): Promise<Response> {
   if (Number(request.headers.get("content-length") ?? "0") > deps.maxBytes) return new Response(null, { status: 413 });
   // Chunked bodies carry no Content-Length: the read itself is capped, before any signature work.
@@ -352,12 +384,20 @@ export async function relay(request: Request, deps: RelayDeps): Promise<Response
   if (!valid || !signature) return new Response(null, { status: 401 });
   const alert = parseAlert(body);
   if (!alert) return new Response(null, { status: 400 });
+  let recorded = false;
+  if (deps.record) {
+    try {
+      recorded = await deps.record(alert);
+    } catch (error) {
+      console.error(`incident: ${(error as Error).message}`);
+    }
+  }
   try {
     const outcome = await deps.send(alert, await relayIdempotencyKey(alert, deps.nowMs));
-    return new Response(null, { status: OUTCOME_STATUS[outcome] });
+    return new Response(null, { status: recorded ? 204 : OUTCOME_STATUS[outcome] });
   } catch (error) {
     console.error(`email: ${(error as Error).message}`);
-    return new Response(null, { status: 502 });
+    return new Response(null, { status: recorded ? 204 : 502 });
   }
 }
 
@@ -378,4 +418,138 @@ export async function readCapped(body: ReadableStream<Uint8Array> | null, max: n
     }
     text += decoder.decode(value, { stream: true });
   }
+}
+
+// Incidents (owner, 2 Nov 2026: alerts go to the agents, not to him). Every probe alert and every
+// relayed app alert is recorded in KV; the agents' hourly check lists and acknowledges them
+// (scripts/incidents.ts). The owner is paged on Telegram only when a P0 or P1 incident is still
+// unacknowledged after ESCALATE_AFTER_MS (dead man's switch). E-mail stays as an archive.
+
+export type IncidentSource = "probe" | "relay" | "worker";
+
+export interface Incident {
+  id: string;
+  at: number;
+  source: IncidentSource;
+  severity: Severity;
+  title: string;
+  body: string;
+  env?: string;
+  /** Set by an agent (scripts/incidents.ts ack). */
+  ack?: { at: number; note: string };
+  /** When the owner was paged about it. */
+  escalatedAt?: number;
+}
+
+/** Listing metadata (under KV's 1,024-byte cap): the dead-man pass needs no read per key. */
+export interface IncidentMeta {
+  s: Severity;
+  t: string;
+  at: number;
+  /** Acknowledged. */
+  a?: 1;
+  /** Escalated to the owner. */
+  x?: 1;
+}
+
+export function incidentMeta(incident: Incident): IncidentMeta {
+  return {
+    s: incident.severity,
+    t: incident.title.slice(0, 120),
+    at: incident.at,
+    ...(incident.ack ? { a: 1 as const } : {}),
+    ...(incident.escalatedAt ? { x: 1 as const } : {}),
+  };
+}
+
+/** 2026-11-02T17:48:00Z -> 20261102T1748 (ids sort by time). */
+function compactMinute(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 16).replace(/[-:]/g, "");
+}
+
+/**
+ * Stable incident id: the same `dedupe` string at the same `at` gives the same id, so a re-run
+ * (cron retry, the app repeating an alert within the hour) never records twice.
+ */
+export async function incidentId(at: number, dedupe: string): Promise<string> {
+  return `${compactMinute(at)}-${(await sha256Hex(dedupe)).slice(0, 10)}`;
+}
+
+export interface IncidentInput {
+  alert: Alert;
+  source: IncidentSource;
+  /** Bucket time of the event: the transition time of a probe, the UTC hour of a relayed alert. */
+  at: number;
+  dedupe: string;
+}
+
+async function putIncident(kv: KeyValue, incident: Incident, expiration: number): Promise<void> {
+  await kv.put(`${INCIDENT_PREFIX}${incident.id}`, JSON.stringify(incident), { expiration, metadata: incidentMeta(incident) });
+}
+
+/**
+ * Records an incident. Returns its id (also when it already existed), or null when today's
+ * incident cap is reached: then a single "cap reached" incident is recorded for the day.
+ */
+export async function recordIncident(kv: KeyValue, input: IncidentInput, nowMs: number): Promise<string | null> {
+  const id = await incidentId(input.at, input.dedupe);
+  if (await kv.get(`${INCIDENT_PREFIX}${id}`)) return id;
+  const expiration = Math.floor(nowMs / 1000) + INCIDENT_TTL_SECONDS;
+  if (!(await takeDailySlot(kv, "incident", nowMs))) {
+    if (await markOncePerDay(kv, "incident-cap-notice", nowMs)) {
+      const day = utcDay(nowMs);
+      await putIncident(
+        kv,
+        {
+          id: await incidentId(Date.parse(`${day}T00:00:00Z`), `incident-cap/${day}`),
+          at: nowMs,
+          source: "worker",
+          severity: "P1",
+          title: "plafond d'incidents atteint",
+          body: `Plus de ${INCIDENT_DAILY_CAP} incidents aujourd'hui (UTC) : les suivants ne sont plus enregistrés, seulement archivés par e-mail. Lire les journaux du Worker.`,
+        },
+        expiration,
+      );
+    }
+    return null;
+  }
+  const { alert } = input;
+  await putIncident(kv, { id, at: nowMs, source: input.source, severity: alert.severity, title: alert.title, body: alert.body, env: alert.env }, expiration);
+  return id;
+}
+
+function isIncidentMeta(value: unknown): value is IncidentMeta {
+  if (typeof value !== "object" || value === null) return false;
+  const meta = value as Partial<IncidentMeta>;
+  return typeof meta.s === "string" && typeof meta.t === "string" && typeof meta.at === "number";
+}
+
+/** P0 and P1 incidents neither acknowledged nor escalated, older than ESCALATE_AFTER_MS. */
+export function dueForEscalation(keys: ListedKey[], nowMs: number): { name: string; meta: IncidentMeta }[] {
+  return keys.flatMap((key) => {
+    const meta = key.metadata;
+    if (!key.name.startsWith(INCIDENT_PREFIX) || !isIncidentMeta(meta)) return [];
+    if ((meta.s !== "P0" && meta.s !== "P1") || meta.a || meta.x || nowMs - meta.at < ESCALATE_AFTER_MS) return [];
+    return [{ name: key.name, meta }];
+  });
+}
+
+/** The one Telegram message that pages the owner about overdue incidents. */
+export function escalationAlert(due: { meta: IncidentMeta }[]): Alert {
+  const lines = due.slice(0, 10).map(({ meta }) => `- ${meta.s} · ${meta.t} (${new Date(meta.at).toISOString().slice(0, 16).replace("T", " ")} UTC)`);
+  if (due.length > 10) lines.push(`- et ${due.length - 10} autre(s)`);
+  return {
+    severity: "P0",
+    title: `${due.length} incident(s) sans prise en charge depuis 2 h`,
+    body: `Aucun agent n'a accusé réception de :\n${lines.join("\n")}\n\nLe contrôle horaire des agents ne tourne peut-être plus. Détail : e-mails d'alerte et node scripts/incidents.ts list.`,
+  };
+}
+
+/** Rewrites an incident with `change` applied, keeping its expiry. False when it is gone (expired). */
+export async function updateIncident(kv: KeyValue, name: string, expiration: number | undefined, change: (incident: Incident) => Incident): Promise<boolean> {
+  const stored = await kv.get(name);
+  if (!stored) return false;
+  const incident = change(JSON.parse(stored) as Incident);
+  await putIncident(kv, incident, expiration ?? Math.floor(incident.at / 1000) + INCIDENT_TTL_SECONDS);
+  return true;
 }

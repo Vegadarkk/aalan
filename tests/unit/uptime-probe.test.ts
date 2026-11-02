@@ -2,6 +2,9 @@ import { createHash, createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import {
   CONFIRMATIONS,
+  ESCALATE_AFTER_MS,
+  INCIDENT_DAILY_CAP,
+  INCIDENT_TTL_SECONDS,
   PROBE_DAILY_CAP,
   RECOVERY_CONFIRMATIONS,
   RELAY_DAILY_CAP,
@@ -9,11 +12,15 @@ import {
   RESEND_URL,
   emailPayload,
   emailSettings,
+  dueForEscalation,
+  escalationAlert,
+  incidentId,
   isIdempotentDuplicate,
   markOncePerDay,
   parseAlert,
   parseTargets,
   readCapped,
+  recordIncident,
   relay,
   relayCap,
   relayIdempotencyKey,
@@ -21,11 +28,14 @@ import {
   sign,
   takeDailySlot,
   transition,
+  updateIncident,
   utcHour,
   verdict,
   verifySignature,
   type Alert,
+  type Incident,
   type KeyValue,
+  type ListedKey,
   type ProbeState,
   type RelayOutcome,
 } from "../../workers/uptime-probe/src/lib";
@@ -52,13 +62,16 @@ function fetchStub(...answers: (Response | Error)[]) {
   return { calls, fetchImpl: impl as unknown as typeof fetch };
 }
 
-function memoryKv(): KeyValue & { store: Map<string, string> } {
+function memoryKv(): KeyValue & { store: Map<string, string>; listed: () => ListedKey[] } {
   const store = new Map<string, string>();
+  const extra = new Map<string, { expiration?: number; metadata?: unknown }>();
   return {
     store,
+    listed: () => [...store.keys()].sort().map((name) => ({ name, ...extra.get(name) })),
     get: async (key) => store.get(key) ?? null,
-    put: async (key, value) => {
+    put: async (key, value, options) => {
       store.set(key, value);
+      extra.set(key, { expiration: options?.expiration, metadata: options?.metadata });
     },
   };
 }
@@ -346,6 +359,106 @@ describe("relay", () => {
     const unsigned = new Request("https://probe.example/alert", { method: "POST", body });
     expect((await relay(unsigned, deps)).status).toBe(401);
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe("relay with incidents", () => {
+  const nowMs = 1760000000_000;
+  const body = JSON.stringify({ severity: "P1", title: "Quota", body: "Firestore à 70 %", env: "prod" });
+
+  async function request() {
+    const timestamp = String(Math.floor(nowMs / 1000));
+    const signature = await sign("s3cret", timestamp, body);
+    return new Request("https://probe.example/alert", {
+      method: "POST",
+      headers: { "X-Joutiya-Timestamp": timestamp, "X-Joutiya-Signature": signature },
+      body,
+    });
+  }
+
+  it("answers 204 once recorded, whatever the e-mail does, and still archives it by e-mail", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const record = vi.fn(async () => true);
+    const send = vi.fn(async (): Promise<RelayOutcome> => "off");
+    expect((await relay(await request(), { secret: "s3cret", nowMs, maxBytes: 16_384, record, send })).status).toBe(204);
+    expect(record).toHaveBeenCalledOnce();
+    expect(send).toHaveBeenCalledOnce();
+    const failing = async (): Promise<RelayOutcome> => {
+      throw new Error("resend: HTTP 500");
+    };
+    expect((await relay(await request(), { secret: "s3cret", nowMs, maxBytes: 16_384, record, send: failing })).status).toBe(204);
+    errorSpy.mockRestore();
+  });
+
+  it("falls back to the e-mail outcome when the incident is not recorded", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const broken = async (): Promise<boolean> => {
+      throw new Error("KV PUT failed: 429");
+    };
+    expect((await relay(await request(), { secret: "s3cret", nowMs, maxBytes: 16_384, record: broken, send: async () => "off" })).status).toBe(503);
+    expect(errorSpy).toHaveBeenCalledWith("incident: KV PUT failed: 429");
+    expect((await relay(await request(), { secret: "s3cret", nowMs, maxBytes: 16_384, record: async () => false, send: async () => "capped" })).status).toBe(429);
+    errorSpy.mockRestore();
+  });
+});
+
+describe("incidents", () => {
+  const now = Date.UTC(2026, 10, 2, 17, 48, 30);
+  const input = { alert: ALERT, source: "probe" as const, at: Date.UTC(2026, 10, 2, 17, 40), dedupe: "probe/production/1" };
+
+  it("derives a stable, time-sorted id", async () => {
+    const id = await incidentId(input.at, input.dedupe);
+    expect(id).toMatch(/^20261102T1740-[0-9a-f]{10}$/);
+    expect(await incidentId(input.at, input.dedupe)).toBe(id);
+    expect(await incidentId(input.at, "probe/production/2")).not.toBe(id);
+  });
+
+  it("records once, with listing metadata and a two-week expiry", async () => {
+    const kv = memoryKv();
+    const id = await recordIncident(kv, input, now);
+    expect(id).not.toBeNull();
+    expect(await recordIncident(kv, input, now + 60_000)).toBe(id);
+    const key = `incident:${id}`;
+    const stored = JSON.parse(kv.store.get(key) ?? "{}") as Incident;
+    expect(stored).toMatchObject({ id, at: now, source: "probe", severity: "P0", title: ALERT.title, body: ALERT.body, env: "prod" });
+    const listed = kv.listed().find((entry) => entry.name === key);
+    expect(listed).toEqual({ name: key, expiration: Math.floor(now / 1000) + INCIDENT_TTL_SECONDS, metadata: { s: "P0", t: ALERT.title, at: now } });
+    expect(kv.store.get("incident-count:2026-11-02")).toBe("1");
+  });
+
+  it("stops at the daily cap and records one cap incident instead", async () => {
+    const kv = memoryKv();
+    kv.store.set("incident-count:2026-11-02", String(INCIDENT_DAILY_CAP));
+    expect(await recordIncident(kv, input, now)).toBeNull();
+    expect(await recordIncident(kv, { ...input, dedupe: "other" }, now)).toBeNull();
+    const incidents = kv.listed().filter((entry) => entry.name.startsWith("incident:"));
+    expect(incidents).toHaveLength(1);
+    expect(incidents[0]?.metadata).toMatchObject({ s: "P1", t: "plafond d'incidents atteint" });
+  });
+
+  it("escalates only overdue P0/P1 incidents nobody acknowledged, once", async () => {
+    const kv = memoryKv();
+    const p0 = await recordIncident(kv, input, now);
+    const p2 = await recordIncident(kv, { ...input, alert: { ...ALERT, severity: "P2" }, dedupe: "p2" }, now);
+    const acked = await recordIncident(kv, { ...input, dedupe: "acked" }, now);
+    await updateIncident(kv, `incident:${acked}`, undefined, (incident) => ({ ...incident, ack: { at: now, note: "vu" } }));
+    expect(dueForEscalation(kv.listed(), now + ESCALATE_AFTER_MS - 1)).toEqual([]);
+    const due = dueForEscalation(kv.listed(), now + ESCALATE_AFTER_MS);
+    expect(due.map((entry) => entry.name)).toEqual([`incident:${p0}`]);
+    expect(p2).not.toBeNull();
+    const page = escalationAlert(due);
+    expect(page.severity).toBe("P0");
+    expect(page.title).toBe("1 incident(s) sans prise en charge depuis 2 h");
+    expect(page.body).toContain(`P0 · ${ALERT.title} (2026-11-02 17:48 UTC)`);
+    const expiration = kv.listed().find((entry) => entry.name === `incident:${p0}`)?.expiration;
+    expect(await updateIncident(kv, `incident:${p0}`, expiration, (incident) => ({ ...incident, escalatedAt: now + ESCALATE_AFTER_MS }))).toBe(true);
+    expect(dueForEscalation(kv.listed(), now + 2 * ESCALATE_AFTER_MS)).toEqual([]);
+    expect(kv.listed().find((entry) => entry.name === `incident:${p0}`)?.expiration).toBe(expiration);
+    expect(await updateIncident(kv, "incident:gone", undefined, (incident) => incident)).toBe(false);
+  });
+
+  it("ignores foreign keys and malformed metadata", () => {
+    expect(dueForEscalation([{ name: "probe:production", metadata: { s: "P0", t: "x", at: 0 } }, { name: "incident:x", metadata: "P0" }, { name: "incident:y" }], ESCALATE_AFTER_MS * 10)).toEqual([]);
   });
 });
 

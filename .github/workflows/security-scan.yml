@@ -101,8 +101,15 @@ jobs:
           if [[ -s "$work/report.json" ]]; then
             jq -r '[.site[]?.alerts[]? | .riskcode] | "Alerts: high \(map(select(. == "3")) | length), medium \(map(select(. == "2")) | length), low \(map(select(. == "1")) | length), info \(map(select(. == "0")) | length)"' "$work/report.json"
           fi
-          # Which FAIL rules matched (name, id, count; their URLs stay in the encrypted report).
+          # Which FAIL rules matched, with the paths they hit (no host, no query: the site is public;
+          # evidence and full URLs stay in the encrypted report).
           grep -E '^FAIL-(NEW|INPROG):' "$work/console.txt" || true
+          if [[ -s "$work/report.json" ]]; then
+            fail_ids=$(awk -F'\t' '$2 == "FAIL" { print $1 }' "$work/rules.tsv" | jq -R . | jq -sc .)
+            jq -r --argjson ids "$fail_ids" '.site[]?.alerts[]? | select(.pluginid as $p | $ids | index($p))
+              | .pluginid as $p | .instances[]? | "FAIL path \($p): \(.method // "GET") \(.uri | sub("^https?://[^/]+"; "") | sub("[?#].*$"; ""))"' \
+              "$work/report.json" | sort -u | head -n 50 || true
+          fi
           echo "ZAP exit code $code"
       - name: Encrypt the reports
         if: always() && steps.scan.outcome != 'skipped'

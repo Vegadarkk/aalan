@@ -11,6 +11,8 @@ import { showsSellButton } from "./shell-paths";
 // field of the page has the focus (the rental module's dates, a filter): UX audit, finding 13. The
 // footer keeps a lane for it at the end of the page; `data-sell-fab` is the tests' hook. It says
 // "Vendre" beside the plus (journey review 2026-10-29: the sign alone did not read as the way in).
+// The accessible name starts with that visible word (WCAG 2.5.3, axe label-content-name-mismatch):
+// the full label follows it in a sr-only span, as on the desktop button.
 
 export function SellFab({ label, text }: { label: string; text: string }) {
   const pathname = usePathname();
@@ -18,7 +20,6 @@ export function SellFab({ label, text }: { label: string; text: string }) {
   return (
     <Link
       href="/deposer"
-      aria-label={label}
       data-sell-fab=""
       className={cn(
         "sell-arch fixed end-4 bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))] z-30 flex h-15 min-w-13 items-end justify-center gap-1 px-4 pb-3.5 text-sm font-semibold md:hidden",
@@ -30,6 +31,7 @@ export function SellFab({ label, text }: { label: string; text: string }) {
     >
       <Plus className="size-5" strokeWidth={2.25} aria-hidden="true" />
       {text}
+      <span className="sr-only">, {label}</span>
     </Link>
   );
 }

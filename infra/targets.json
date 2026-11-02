@@ -112,13 +112,13 @@
     },
     "prod": {
       "firebase": {
-        "projectId": "joutiya-prod",
-        "projectNumber": "652258095167",
+        "projectId": "aalan-prod",
+        "projectNumber": "779435329445",
         "firestoreLocation": "europe-west9",
-        "appId": "1:652258095167:web:df6b5fe75a7358a647088a"
+        "appId": "1:779435329445:web:e4d545587d1d7a17408a4c"
       },
       "google": {
-        "oauthClientId": "652258095167-rvncaj13bcrnqrtjfha587jihll5us4f.apps.googleusercontent.com"
+        "oauthClientId": "779435329445-d8iq6pj073hobkpj03laj4tmbr1bqq4r.apps.googleusercontent.com"
       },
       "turnstile": {
         "siteKey": "0x4AAAAAAFYY2RkrwQRAswcZ"

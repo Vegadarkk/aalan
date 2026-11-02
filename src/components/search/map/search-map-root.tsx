@@ -8,7 +8,9 @@ import { useExamplesHidden } from "@/components/examples/use-examples";
 import { useSearchNavigation } from "../search-navigation";
 import { JOB_SEEKER_SUBCATEGORY, type MapListing } from "./map-listings";
 import { SHEET_SNAPS, type SheetSnap } from "./sheet";
-import { browserViewContext, initialView, mapPossible, rememberView, type SearchView } from "./view-mode";
+import { browserViewContext, initialView, mapPossible, rememberView, viewKey, type SearchMapVariant, type SearchView } from "./view-mode";
+
+export type { SearchMapVariant } from "./view-mode";
 
 // Client root of the map-first search (Carte vivante, lot 2) and of the home page's living map (lot
 // 3). The server renders the whole panel (rows, grid, filters) inside it; this island only holds the
@@ -55,17 +57,6 @@ export function useSearchMap(): SearchMapState | null {
 
 const subscribeNever = () => () => {};
 
-// Read once per page load (a stable snapshot): storage, connection and WebGL2 do not change under us.
-const startViews = new Map<boolean, SearchView>();
-function startView(hasMap: boolean): SearchView {
-  let view = startViews.get(hasMap);
-  if (!view) {
-    view = initialView(browserViewContext(hasMap, supportsWebGL2()));
-    startViews.set(hasMap, view);
-  }
-  return view;
-}
-
 function useDesktop(): boolean {
   return useSyncExternalStore(
     (listener) => {
@@ -90,11 +81,8 @@ function useRowMarks(highlighted: string | null, selected: string | null) {
   }, [highlighted, selected]);
 }
 
-/** Which page the map serves: the search results, or the home page's recent listings (lot 3). */
-export type SearchMapVariant = "search" | "home";
-
 export interface SearchMapRootProps {
-  /** Server's guess: "map" when a basemap is configured (the client checks WebGL2 and the link). */
+  /** Server's guess (`defaultView`): the map for a search with a basemap, else the list (the client checks WebGL2 and the link). */
   serverView: SearchView;
   variant?: SearchMapVariant;
   /** Height of the phone sheet on arrival (the home page opens it half way). */
@@ -122,23 +110,29 @@ export function SearchMapRoot({ serverView, variant = "search", startSnap = "pee
   const desktop = useDesktop();
   const [failed, setFailed] = useState(false);
   const canMap = mapPossible({ hasMap: map !== null, webgl2 }) && !failed;
-  // The view this browser starts in (hydrated: null on the server and during hydration).
-  const autoView = useSyncExternalStore(subscribeNever, () => startView(map !== null), () => null);
+  // A toggle choice belongs to these results: a new search starts over (list at home, map for a search).
+  const key = viewKey(variant, params);
+  // The view this browser starts in (hydrated: null on the server and during hydration). A string,
+  // so React compares the snapshot by value.
+  const autoView = useSyncExternalStore(subscribeNever, () => initialView(browserViewContext(variant, key, map !== null, supportsWebGL2())), () => null);
   const enhanced = autoView !== null;
-  const [chosen, setChosen] = useState<SearchView | null>(null);
+  const [chosen, setChosen] = useState<{ key: string; view: SearchView } | null>(null);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ id: string; opener: HTMLElement | null } | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [snap, setSnap] = useState<SheetSnap>(startSnap);
 
-  const wanted = chosen ?? autoView ?? serverView;
+  const wanted = (chosen?.key === key ? chosen.view : null) ?? autoView ?? serverView;
   const view: SearchView = enhanced && !canMap ? "list" : wanted;
 
-  const setView = useCallback((next: SearchView) => {
-    rememberView(next);
-    setChosen(next);
-    setSelected(null);
-  }, []);
+  const setView = useCallback(
+    (next: SearchView) => {
+      rememberView(key, next);
+      setChosen({ key, view: next });
+      setSelected(null);
+    },
+    [key],
+  );
 
   // A new page of results: nothing stays highlighted or open.
   const ids = listings.map((listing) => listing.id).join(",");

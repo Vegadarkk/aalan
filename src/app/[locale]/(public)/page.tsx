@@ -20,6 +20,7 @@ import { MapFailedNotice, MapStage } from "@/components/search/map/map-stage";
 import { PanelLegal } from "@/components/search/map/panel-legal";
 import { ResultRows } from "@/components/search/map/result-rows";
 import { ListViewOnly, SearchMapRoot } from "@/components/search/map/search-map-root";
+import { defaultView } from "@/components/search/map/view-mode";
 import { ResultsGrid } from "@/components/search/results-grid";
 import { SearchNavigationProvider } from "@/components/search/search-navigation";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     getLegalConfig(),
     getMessages({ locale }),
   ]);
-  const serverView = map ? "map" : "list";
+  const serverView = defaultView("home", map !== null);
   // A listing drawn for À la Une shows once on the map, as its gold arch.
   const listings = map ? buildMapListings({ featured: featured ?? [], hits: withoutFeatured(recent ?? [], featured ?? []), locale, media: mediaBaseUrl(), now: new Date(), labels }) : [];
   const cards = new Map([...(recent ?? []), ...(featured ?? [])].map((card) => [card.id, card]));

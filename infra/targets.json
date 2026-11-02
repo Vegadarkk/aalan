@@ -127,9 +127,9 @@
         "dsn": "https://93599af390a36c21f05e1894ad9c754b@o4512265655746560.ingest.de.sentry.io/4512265661972560"
       },
       "r2": {
-        "quarantine": "joutiya-prod-quarantine",
-        "media": "joutiya-prod-media",
-        "private": "joutiya-prod-private"
+        "quarantine": "aalan-prod-quarantine",
+        "media": "aalan-prod-media",
+        "private": "aalan-prod-private"
       },
       "whatsapp": {
         "wabaId": null,

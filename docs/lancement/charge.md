@@ -64,6 +64,36 @@ CPU pendant le n° 2 (moyenne par minute, `load/sampler-read.sh`) :
 **Verdict : échec**, et moins bon que le 30 octobre : environ **8,5 pages réussies par seconde**
 (1 522 en 3 minutes) contre 13.
 
+## 2 novembre 2026 (n° 4, après l'allègement du pied de page)
+
+- Staging au commit `3e4b9cd`, sur sa nouvelle adresse `staging.aalan.ma` : deux serveurs Next.js
+  par conteneur, mêmes limites que la production, 5 001 documents Firestore et 50 192 dans l'index.
+  Depuis le n° 3 : pied de page en liens simples (#250), corrections de sécurité (#251), mises à
+  jour de dépendances (#258), changement de marque (#269).
+- Un passage à 18:55 UTC (run 41505079884), CPU mesuré pendant. Un premier passage à 18:19 UTC
+  (run 41499381769) ne compte pas : la nouvelle adresse du staging ne répondait pas encore (zone
+  `aalan.ma` en attente), toutes les requêtes ont échoué à la connexion. Règle Cloudflare, limites
+  et jeu de données défaits après chaque passage.
+
+| Scénario | Demandé | Envoyé | Réussi | Médiane | p95 | Seuil |
+| --- | --- | --- | --- | --- | --- | --- |
+| Pages hors cache | 40/s pendant 3 min | 2 817 | 63,5 % | 17,2 s | 37,6 s | p95 < 500 ms, échecs < 1 % |
+| Recherches | 50/s pendant 3 min | 8 783 | 95,8 % | 133 ms | 2,82 s | p95 < 300 ms, échecs < 1 % |
+| Accueil en cache (chauffe) | 5/s pendant 1 min | environ 300 | non vérifié | 174 ms | 433 ms | aucun |
+
+4 603 itérations ne sont pas parties.
+
+| Minute | Phase | VM (2 cœurs) | web | Meilisearch | cloudflared |
+| --- | --- | --- | --- | --- | --- |
+| 2 | chauffe puis pages | 22 % | 0,29 | 0,01 | 0,05 |
+| 3-5 | pages | 88-89 % | 1,41-1,45 | 0,13-0,15 | 0,06-0,08 |
+| 6-8 | recherches | 39-52 % | 0,32-0,55 | 0,28-0,31 | 0,07-0,08 |
+| pic | | | 1,57 | 0,50 | 0,14 |
+
+**Verdict : échec.** Environ **9,9 pages réussies par seconde** (1 789 en 3 minutes), contre 8,5
+au n° 3 (+17 %) et 13 le 30 octobre. Le web utilise toute sa limite (1,4 cœur sur 1,5) ; chaque page
+réussie coûte environ 145 ms de CPU sous charge, contre 170 au n° 3.
+
 ## Lecture
 
 - Le 30 octobre, le rendu des pages hors cache sature à environ **13 pages réussies par seconde** (2 400 en
@@ -101,6 +131,11 @@ CPU pendant le n° 2 (moyenne par minute, `load/sampler-read.sh`) :
 - Après ce changement (#250, même mesure, 2 novembre) : **66 ms par page** (78 avant, 55 le
   30 octobre), 15,8 pages/s ; page d'annonce de 326 à 264 Ko de HTML, pied de page de 49 à 27 Ko.
   La moitié de la hausse est reprise ; le reste vient des autres ajouts au rendu (non détaillé).
+- N° 4 : le gain du profil se retrouve sous charge (145 ms de CPU par page réussie au lieu de 170),
+  mais la capacité reste loin de l'objectif. Tenir 40 pages/s hors cache sur 1,5 cœur demanderait
+  environ 37 ms de CPU par page sous charge, soit quatre fois moins qu'aujourd'hui et moins que le
+  rendu du 30 octobre (55 ms hors charge) : déduction, l'objectif de la spec n'est pas atteignable sur
+  la VM gratuite sans changer la façon de rendre les pages.
 
 ## Seuil de bascule
 
@@ -108,8 +143,8 @@ La production met les pages publiques anonymes en cache chez Cloudflare (`infra/
 TTL de l'origine) et en ISR : seuls les premiers passages et les revalidations arrivent au rendu.
 Seuil retenu, en attendant un nouveau test : préparer la bascule (ou les améliorations ci-dessous)
 quand les pages rendues par l'origine (HTML en `MISS` ou `EXPIRED` dans Cloudflare) dépassent
-**5 par seconde** en pointe, environ 60 % de la saturation mesurée le 31 octobre (8 le 30 octobre,
-avant les changements du rendu). Estimation, à refaire après chaque changement du rendu.
+**6 par seconde** en pointe, environ 60 % de la saturation mesurée le 2 novembre (n° 4 : 9,9 pages/s ;
+le seuil était de 5 après le n° 3 et de 8 après le 30 octobre). Estimation, à refaire après chaque changement du rendu.
 
 ## Pistes avant un nouveau test
 

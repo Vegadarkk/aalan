@@ -98,6 +98,9 @@ CPU pendant le n° 2 (moyenne par minute, `load/sampler-read.sh`) :
   130 Ko de balisage d'une page d'annonce. Il passe en liens `<a>` simples, style posé sur la `<nav>`.
   Le reste de l'écart entre ce profil (+42 %) et le n° 3 (environ deux fois) est une déduction non
   mesurée : moins de mémoire par processus avec deux processus (ramasse-miettes plus fréquent).
+- Après ce changement (#250, même mesure, 2 novembre) : **66 ms par page** (78 avant, 55 le
+  30 octobre), 15,8 pages/s ; page d'annonce de 326 à 264 Ko de HTML, pied de page de 49 à 27 Ko.
+  La moitié de la hausse est reprise ; le reste vient des autres ajouts au rendu (non détaillé).
 
 ## Seuil de bascule
 
@@ -115,5 +118,4 @@ avant les changements du rendu). Estimation, à refaire après chaque changement
 2. Guide des prix en cache par comparables et zone, plus seulement par annonce ; pages catégorie et
    ville en cache entre langues.
 3. Profiler un rendu (`--cpu-prof` sur le staging) : environ 170 ms de CPU par page au 31 octobre,
-   80 ms au 30. Comparer d'abord le poids HTML et le temps de rendu d'une page entre `b087a23` et
-   `c0f8b10` pour trouver ce qui a doublé.
+   80 ms au 30. Fait le 2 novembre (voir « Lecture ») : le pied de page, allégé (#250).

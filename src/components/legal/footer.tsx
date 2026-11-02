@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 import { ConsentLink } from "@/components/consent/consent-link";
-import { Link } from "@/i18n/navigation";
+import { getPathname, Link } from "@/i18n/navigation";
 import { LEGAL_PAGES } from "@/config/legal-pages";
 import { Container } from "@/components/layout/container";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
@@ -29,8 +29,9 @@ const linkClass = cn(
   quietLinkClassName,
 );
 // The directory band sits on the structure green: lighter links, underlined like a plan of the site.
-const directoryLinkClass =
-  "text-structure-foreground/80 underline decoration-structure-foreground/30 underline-offset-2 hover:text-structure-foreground hover:decoration-current";
+// Set once on each directory <nav> for the links inside, not on each of its ~150 links.
+const directoryNavClass =
+  "[&_a]:text-structure-foreground/80 [&_a]:underline [&_a]:decoration-structure-foreground/30 [&_a]:underline-offset-2 [&_a:hover]:text-structure-foreground [&_a:hover]:decoration-current";
 
 /** Cities listed under each region of the directory: its largest ones. */
 const CITIES_PER_REGION = 4;
@@ -39,7 +40,9 @@ const CITIES_PER_REGION = 4;
  * Footer in Leboncoin's layout (owner, 2026-10-31): a short presentation, the plan of every category
  * and subcategory, the regions with their main cities, then four columns (about, legal information,
  * Pro solutions, questions). Directory links go to the search (a subcategory landing page answers
- * 404 while empty) and never prefetch: there are about a hundred of them on every page.
+ * 404 while empty). They are plain <a> elements with their style on the <nav>: about 150 of them on
+ * every page, and a <Link> each (a client component with its own props in the RSC payload) made
+ * every server render about 40 % costlier (profile of 2 Nov 2026, docs/lancement/charge.md).
  */
 export function Footer({ publisher }: { publisher: string }) {
   const t = useTranslations("Footer");
@@ -47,6 +50,7 @@ export function Footer({ publisher }: { publisher: string }) {
   type CategoryKey = Parameters<typeof names>[0];
   const locale = useLocale() as Locale;
   const year = new Date().getFullYear();
+  const localized = (href: string) => getPathname({ href, locale });
   const column = (name: "legal" | "trust") =>
     LEGAL_PAGES.filter((page) => page.column === name);
   const columnTitle = "mb-4 font-semibold";
@@ -62,32 +66,31 @@ export function Footer({ publisher }: { publisher: string }) {
           </p>
           <nav
             aria-label={t("categoriesLabel")}
-            className="columns-2 gap-8 sm:columns-3 lg:columns-4"
+            className={cn(
+              "columns-2 gap-8 sm:columns-3 lg:columns-4",
+              directoryNavClass,
+            )}
           >
             {CATEGORIES.map((category) => (
               <div key={category.id} className="mb-7 break-inside-avoid">
                 <p className={directoryTitle}>
-                  <Link
-                    href={`/c/${category.id}`}
-                    prefetch={false}
-                    className={directoryLinkClass}
-                  >
+                  <a href={localized(`/c/${category.id}`)}>
                     {names(`${category.id}.name` as CategoryKey)}
-                  </Link>
+                  </a>
                 </p>
                 <ul className="flex flex-col gap-1.5 text-sm">
                   {category.subcategories.map((sub) => (
                     <li key={sub.id}>
-                      <Link
-                        href={searchPath({
-                          category: category.id,
-                          subcategory: sub.id,
-                        })}
-                        prefetch={false}
-                        className={directoryLinkClass}
+                      <a
+                        href={localized(
+                          searchPath({
+                            category: category.id,
+                            subcategory: sub.id,
+                          }),
+                        )}
                       >
                         {names(`${category.id}.sub.${sub.id}` as CategoryKey)}
-                      </Link>
+                      </a>
                     </li>
                   ))}
                 </ul>
@@ -96,18 +99,17 @@ export function Footer({ publisher }: { publisher: string }) {
           </nav>
           <nav
             aria-label={t("regionsLabel")}
-            className="columns-2 gap-8 border-t border-structure-foreground/15 pt-8 sm:columns-3 lg:columns-4"
+            className={cn(
+              "columns-2 gap-8 border-t border-structure-foreground/15 pt-8 sm:columns-3 lg:columns-4",
+              directoryNavClass,
+            )}
           >
             {REGIONS.map((region) => (
               <div key={region.code} className="mb-7 break-inside-avoid">
                 <p className={directoryTitle}>
-                  <Link
-                    href={searchPath({ region: region.code })}
-                    prefetch={false}
-                    className={directoryLinkClass}
-                  >
+                  <a href={localized(searchPath({ region: region.code }))}>
                     {regionName(region, locale)}
-                  </Link>
+                  </a>
                 </p>
                 <ul className="flex flex-col gap-1.5 text-sm">
                   {[...citiesOfRegion(region.code)]
@@ -115,13 +117,9 @@ export function Footer({ publisher }: { publisher: string }) {
                     .slice(0, CITIES_PER_REGION)
                     .map((city) => (
                       <li key={city.slug}>
-                        <Link
-                          href={searchPath({ city: city.slug })}
-                          prefetch={false}
-                          className={directoryLinkClass}
-                        >
+                        <a href={localized(searchPath({ city: city.slug }))}>
                           {cityName(city, locale)}
-                        </Link>
+                        </a>
                       </li>
                     ))}
                 </ul>

@@ -123,6 +123,14 @@ describe("vm-launcher run", () => {
     expect((await run([vm("joutiya-vm", A1)], 0, full)).line).toBe("no launch (spare-micro-1): HTTP 400 QuotaExceeded standard-e2-micro-core-count");
   });
 
+  it("names the next spare from the count when the list hides display names (inspect-only user)", async () => {
+    const hidden = (shape: string) => ({ displayName: null, shape, lifecycleState: "RUNNING" });
+    const second = await run([hidden(A1), hidden(MICRO), { ...hidden(MICRO), lifecycleState: "TERMINATED" }], 0);
+    expect(second.posts).toEqual([micro("spare-micro-2")]);
+    expect((await run([hidden(A1), hidden(MICRO), hidden(MICRO)], 0)).line).toBe(`instances present (${A1} RUNNING, ${MICRO} RUNNING, ${MICRO} RUNNING): nothing launched`);
+    expect((await run([hidden(A1)], 0)).posts).toEqual([micro("spare-micro-1")]);
+  });
+
   it("logs Oracle's answer when the launch fails", async () => {
     const full = Response.json({ code: "InternalError", message: "Out of host capacity." }, { status: 500 });
     expect((await run([vm("spare-micro-1", MICRO), vm("spare-micro-2", MICRO)], 0, full)).line).toBe("no launch (2 OCPU, 12 GB): HTTP 500 InternalError Out of host capacity.");

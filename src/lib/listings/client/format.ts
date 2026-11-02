@@ -1,4 +1,5 @@
 import { LOCALE_TAGS, type Locale } from "@/config/site";
+import { sharedFormat } from "@/lib/i18n/intl-cache";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 
 // Number and date formatting of the listing UI. Prices are integer MAD shown as "1 500 DH"
@@ -44,11 +45,14 @@ export function daysUntil(date: Date, now: Date = new Date()): number {
 
 /** "dans 12 jours" / "il y a 3 jours" (fr) or the Arabic forms. */
 export function formatRelativeDays(days: number, locale: Locale): string {
-  const formatter = new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: "auto" });
+  const tag = intlLocale(locale);
+  const formatter = sharedFormat(`relative-days|${tag}`, () => new Intl.RelativeTimeFormat(tag, { numeric: "auto" }));
   if (Math.abs(days) >= 60) return formatter.format(Math.round(days / 30), "month");
   return formatter.format(days, "day");
 }
 
 export function formatDate(date: Date, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "long", year: "numeric", timeZone: moroccoTimeZone(date.getTime()) }).format(date);
+  const tag = intlLocale(locale);
+  const timeZone = moroccoTimeZone(date.getTime());
+  return sharedFormat(`long-date|${tag}|${timeZone}`, () => new Intl.DateTimeFormat(tag, { day: "numeric", month: "long", year: "numeric", timeZone })).format(date);
 }

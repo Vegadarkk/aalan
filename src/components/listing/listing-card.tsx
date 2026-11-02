@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { PriceTag } from "./price-tag";
 import { PromoBadge } from "./promo-badge";
 import { blurhashPlaceholder, photoSources } from "./photo";
+import { sharedFormat } from "@/lib/i18n/intl-cache";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 
 // A listing in a grid (profile page, search results, home, category pages): the footprint of
@@ -51,7 +52,10 @@ export interface ListingCardProps {
 }
 
 export function formatCardDate(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", timeZone: moroccoTimeZone(new Date(iso).getTime()) }).format(new Date(iso));
+  const date = new Date(iso);
+  const tag = intlLocale(locale);
+  const timeZone = moroccoTimeZone(date.getTime());
+  return sharedFormat(`card-date|${tag}|${timeZone}`, () => new Intl.DateTimeFormat(tag, { day: "numeric", month: "short", timeZone })).format(date);
 }
 
 export function ListingCard({ listing, mediaBaseUrl, locale, headingLevel = "h3", badge, action, priority = false, wide = false, className }: ListingCardProps) {

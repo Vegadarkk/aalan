@@ -18,8 +18,7 @@ import { Link } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
 import { alternates } from "@/lib/i18n/metadata";
 import { SEARCH_PATH, searchQueryObject } from "@/lib/search/params";
-import { cityLinks, resolveSeoSegments, SEO_PAGE_SIZE, seoCounts, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
-import { runSearch } from "@/lib/search/service";
+import { cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import type { SearchCard } from "@/lib/search/types";
 
@@ -40,14 +39,11 @@ export function generateStaticParams(): { category: string; rest?: string[] }[] 
 
 type Params = Promise<{ locale: string; category: string; rest?: string[] }>;
 
-/** One engine round trip pair per render, shared by generateMetadata and the page. */
+/** One engine round trip pair per render, shared by generateMetadata and the page (and by the locales: landingData). */
 const load = cache(async (category: string, restKey: string) => {
   const target = resolveSeoSegments(category, restKey ? restKey.split("/") : []);
   if (!target) return null;
-  const [response, counts] = await Promise.all([
-    runSearch(seoSearchParams(target), { featured: true, facets: false, hitsPerPage: SEO_PAGE_SIZE }),
-    seoCounts(target),
-  ]);
+  const { response, counts } = await landingData(target);
   const total = Math.max(counts.total, response.total);
   return { target, response, counts, total, verdict: seoVerdict(target, total, counts.indexable) };
 });

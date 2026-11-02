@@ -18,6 +18,10 @@ updates:
   - package-ecosystem: docker
     directory: /docker
     schedule: { interval: weekly, day: monday }
+    ignore:
+      # Runtime is Node 24 (package.json engines >=24 <25): no Node major bump until engines change.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker-compose
     directory: /docker
     schedule: { interval: weekly, day: monday }

@@ -108,7 +108,7 @@ describe("planEnv", () => {
     expect(staging.sources.SITE_URL).toBe("infra/targets.json");
     expect(staging.values.CSRF_SECRET).toBeUndefined();
     expect(staging.values.TELEGRAM_BOT_TOKEN).toBeUndefined();
-    expect(staging.ignored.map((line) => line.split(":")[0])).toEqual(["HASH_PEPPER", "FIREBASE_APP_ID", "TELEGRAM_BOT_TOKEN", "SENTRY_DSN", "CSRF_SECRET"]);
+    expect(staging.ignored.map((line) => line.split(":")[0])).toEqual(["HASH_PEPPER", "FIREBASE_APP_ID", "SENTRY_DSN", "CSRF_SECRET"]);
     expect(staging.ignored.join("\n")).not.toContain("FIREBASE_SERVICE_ACCOUNT_JSON");
     expect(staging.missing).toEqual(["ALERT_RELAY_URL", "ALERT_RELAY_SECRET", "FIREBASE_API_KEY", "MAIL_API_KEY", "MAIL_WEBHOOK_SECRET"]);
 

@@ -10,6 +10,8 @@ test-results
 tests
 docs
 workers
+# Imports the uptime Worker's library (excluded above): an ops script, not part of the image.
+scripts/incidents.ts
 .claude
 .env
 .env.*

@@ -199,7 +199,7 @@ export function validateEdge(read: <T>(name: string) => T = readEdgeFile, target
       if (app.policies.length !== 1 || !bypass) errors.push(`access-apps.json: ${app.domain} must have a single bypass policy`);
       for (const uri of uris) if (!bypassPaths.includes(uri)) errors.push(`access-apps.json: ${uri}: only ${bypassPaths.join(" and ")} may bypass Access`);
     } else if (bypass || uris.some((uri) => uri.includes("/"))) {
-      errors.push(`access-apps.json: ${app.domain}: only ${bypassPath} may bypass Access`);
+      errors.push(`access-apps.json: ${app.domain}: only ${bypassPaths.join(" and ")} may bypass Access`);
     } else if (app.allowed_idps?.length !== 1 || app.allowed_idps[0] !== GOOGLE_IDP || app.auto_redirect_to_identity !== true) {
       errors.push(`access-apps.json: ${app.domain} must allow the Google login method only (§6)`);
     }

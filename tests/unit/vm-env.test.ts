@@ -72,8 +72,8 @@ describe("app.env names", () => {
   it("derives each environment's hosts and identifiers from the registry", () => {
     const staging = derivedValues("staging", targets);
     expect(staging).toMatchObject({
-      SITE_URL: "https://staging.joutiya.ma",
-      ADMIN_HOST: "admin-staging.joutiya.ma",
+      SITE_URL: "https://staging.aalan.ma",
+      ADMIN_HOST: "admin-staging.aalan.ma",
       CSP_REPORT_ONLY: "true",
       FIREBASE_SERVICE_ACCOUNT: "joutiya-web@joutiya-staging.iam.gserviceaccount.com",
       GOOGLE_CLOUD_PROJECT: "joutiya-staging",

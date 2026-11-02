@@ -90,7 +90,7 @@ describe("stripe-setup run", () => {
           return json(200, { data });
         }
         if (path === "/v1/billing_portal/configurations") return json(200, { data: state.existing ? [{ id: "bpc_old", metadata: { joutiya: "pro-plans" } }] : [] });
-        if (path === "/v1/webhook_endpoints") return json(200, { data: state.existing ? [{ id: "we_old", url: "https://staging.joutiya.ma/api/webhooks/stripe", enabled_events: [...WEBHOOK_EVENTS].reverse(), api_version: STRIPE_API_VERSION }] : [] });
+        if (path === "/v1/webhook_endpoints") return json(200, { data: state.existing ? [{ id: "we_old", url: "https://staging.aalan.ma/api/webhooks/stripe", enabled_events: [...WEBHOOK_EVENTS].reverse(), api_version: STRIPE_API_VERSION }] : [] });
         return json(404, { error: { code: "resource_missing" } });
       }),
     );

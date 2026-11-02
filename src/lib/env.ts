@@ -43,7 +43,7 @@ const optionalUrl = z
 const schema = z.object({
   APP_ENV: z.enum(["dev", "staging", "prod"]).default("dev"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  /** Public origin of this environment: https://joutiya.ma, https://staging.joutiya.ma. */
+  /** Public origin of this environment: https://joutiya.ma, https://staging.aalan.ma. */
   SITE_URL: z.url().default("http://localhost:3000"),
   ADMIN_HOST: optional,
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),

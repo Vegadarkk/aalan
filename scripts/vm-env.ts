@@ -47,6 +47,10 @@ const NOT_IN_APP_ENV = new Set([
   "ACCESS_SCAN_TOKEN_ID",
   // Meilisearch's own key, in meilisearch.env only: the app holds two scoped keys made from it.
   "MEILI_MASTER_KEY",
+  // The app no longer pages the owner directly (owner, 2 Nov 2026): alerts become incidents in the
+  // uptime Worker, which alone holds the Telegram bot for the 2-hour escalation.
+  "TELEGRAM_BOT_TOKEN",
+  "TELEGRAM_CHAT_ID",
 ]);
 
 /** Generated on the VM (by the merge script, the Meilisearch keys by search-setup.sh), never taken from a file. */

@@ -6,7 +6,7 @@
 //
 //   node --env-file=<owner env file> scripts/stripe-setup.ts <staging|prod> [--apply] [--secret-file <new file>]
 //
-// Environment (never printed): JOUTIYA_STRIPE_SETUP_KEY, a short-lived restricted key (rk_test_ for
+// Environment (never printed): AALAN_STRIPE_SETUP_KEY (former JOUTIYA_STRIPE_SETUP_KEY), a short-lived restricted key (rk_test_ for
 // staging, rk_live_ for prod) with write on Products, Prices, Customer portal and Webhook endpoints
 // and read on the account, revoked after the run. Without it the dry run prints the plan offline.
 //
@@ -31,10 +31,11 @@ import type { PaidPlanId, PassConfig, PlanInterval, PlansConfig } from "../src/c
 import { validateTargets, type Targets } from "./assert-target.ts";
 import { registerSrcResolver } from "./search-setup.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
+import { ownerVar } from "./owner-env.ts";
 
 export type SetupEnv = "staging" | "prod";
 type StripeParam = string | number | boolean | null | undefined | readonly StripeParam[] | { readonly [key: string]: StripeParam };
-export const KEY_VARIABLE = "JOUTIYA_STRIPE_SETUP_KEY";
+export const KEY_VARIABLE = "AALAN_STRIPE_SETUP_KEY";
 const REGISTRY = JSON.parse(readFileSync(new URL("../infra/targets.json", import.meta.url), "utf8")) as Targets;
 /** SITE_URL of each environment, from environments.<env>.hosts.site of infra/targets.json. */
 export const SITES: Record<SetupEnv, string> = { staging: `https://${REGISTRY.environments.staging.hosts.site}`, prod: `https://${REGISTRY.environments.prod.hosts.site}` };
@@ -368,7 +369,7 @@ async function main(): Promise<void> {
   if (!accountId) throw new Error("shared.stripe.accountId must be recorded in infra/targets.json first");
   registerSrcResolver();
   const { DEFAULT_PRICING } = await import("../src/config/pricing.ts");
-  await runSetup({ ...cli, key: process.env[KEY_VARIABLE] ?? "", accountId, plans: DEFAULT_PRICING.plans, passes: DEFAULT_PRICING.passes });
+  await runSetup({ ...cli, key: ownerVar("STRIPE_SETUP_KEY"), accountId, plans: DEFAULT_PRICING.plans, passes: DEFAULT_PRICING.passes });
 }
 
 const self = fileURLToPath(import.meta.url);

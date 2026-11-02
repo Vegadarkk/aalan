@@ -427,8 +427,8 @@ describe("strict mode", () => {
       JOUTIYA_SSH_TUNNEL_TOKEN: tunnelToken(ACCOUNT, TUNNELS.dev),
     };
     const expected = [
-      `JOUTIYA_SSH_TUNNEL_TOKEN is set but shared.cloudflare.sshTunnelId is not recorded in infra/targets.json`,
-      `JOUTIYA_STAGING_TUNNEL_TOKEN is for another tunnel than environments.staging.cloudflare.tunnelId (${TUNNELS.staging})`,
+      `AALAN_SSH_TUNNEL_TOKEN is set but shared.cloudflare.sshTunnelId is not recorded in infra/targets.json`,
+      `AALAN_STAGING_TUNNEL_TOKEN is for another tunnel than environments.staging.cloudflare.tunnelId (${TUNNELS.staging})`,
     ];
     assert.deepEqual(assertTargets(recorded(), owner), expected);
     assert.deepEqual(assertTargets(recorded(), { ...deployed, ...owner }, { readFile }), expected);
@@ -443,15 +443,25 @@ describe("strict mode", () => {
       JOUTIYA_OCI_REGION: "eu-paris-1",
     };
     assert.deepEqual(assertTargets(targets, claude), [
-      `JOUTIYA_OCI_USER does not match shared.oracle.userId (${targets.shared.oracle.userId})`,
-      `JOUTIYA_OCI_COMPARTMENT does not match shared.oracle.compartmentId (${targets.shared.oracle.compartmentId})`,
+      `AALAN_OCI_USER does not match shared.oracle.userId (${targets.shared.oracle.userId})`,
+      `AALAN_OCI_COMPARTMENT does not match shared.oracle.compartmentId (${targets.shared.oracle.compartmentId})`,
     ]);
     const matching = { ...claude, JOUTIYA_OCI_USER: targets.shared.oracle.userId ?? "", JOUTIYA_OCI_COMPARTMENT: targets.shared.oracle.compartmentId ?? "" };
     assert.deepEqual(assertTargets(targets, { ...deployed, ...matching }, { readFile }), []);
     targets.shared.oracle.compartmentId = null;
     const errors = assertTargets(targets, { ...matching, JOUTIYA_OCI_COMPARTMENT: claude.JOUTIYA_OCI_COMPARTMENT });
-    assert.deepEqual(errors, ["JOUTIYA_OCI_COMPARTMENT is set but shared.oracle.compartmentId is not recorded in infra/targets.json"]);
+    assert.deepEqual(errors, ["AALAN_OCI_COMPARTMENT is set but shared.oracle.compartmentId is not recorded in infra/targets.json"]);
     assert.doesNotMatch(errors.join("\n"), /c{60}/);
+  });
+
+  it("reads the AALAN_* name before the former JOUTIYA_* one", () => {
+    const targets = recorded();
+    const wrongUser = `ocid1.user.oc1..${"e".repeat(60)}`;
+    const env = { AALAN_OCI_USER: targets.shared.oracle.userId ?? "", JOUTIYA_OCI_USER: wrongUser };
+    assert.deepEqual(assertTargets(targets, env), []);
+    assert.deepEqual(assertTargets(targets, { ...env, AALAN_OCI_USER: wrongUser }), [
+      `AALAN_OCI_USER does not match shared.oracle.userId (${targets.shared.oracle.userId})`,
+    ]);
   });
 });
 

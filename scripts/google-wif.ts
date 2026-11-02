@@ -35,6 +35,7 @@ import { fileURLToPath } from "node:url";
 import { validateTargets, type Targets } from "./assert-target.ts";
 import { DEPLOYED_ENVS, type DeployedEnv } from "./vm-env.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
+import { ownerVar } from "./owner-env.ts";
 
 export const WIF_SERVICES = ["web", "worker"] as const;
 export type WifService = (typeof WIF_SERVICES)[number];
@@ -81,9 +82,9 @@ export function githubProviderName(projectNumber: string): string {
   return `${poolPath(projectNumber, GITHUB_POOL)}/providers/${GITHUB_PROVIDER}`;
 }
 
-/** The CA and the gcloud configuration live there on the CA machine (JOUTIYA_WIF_HOME: tests only). */
+/** The CA and the gcloud configuration live there on the CA machine (AALAN_WIF_HOME, former JOUTIYA_WIF_HOME: tests only). */
 export function wifHome(): string {
-  return process.env.JOUTIYA_WIF_HOME?.trim() || join(homedir(), ".joutiya");
+  return ownerVar("WIF_HOME") || join(homedir(), ".joutiya");
 }
 
 export interface CaFiles {

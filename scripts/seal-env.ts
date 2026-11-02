@@ -11,7 +11,7 @@
 //       owner's .env.local, on his PC. --only keeps these names, for values piped in by Claude.
 //   node scripts/seal-env.ts tunnel <env> --to=<certificate> --fingerprint=<sha256> --out=<file>
 //       tunnel.env: the token of joutiya-<env>-tunnel, read from the Cloudflare API with
-//       JOUTIYA_CLOUDFLARE_API_TOKEN (Claude's cloud session), never shown.
+//       AALAN_CLOUDFLARE_API_TOKEN (Claude's cloud session), never shown.
 //
 // <certificate>: a PEM file, or the base64 DER the host printed (`transfer-certificate ...`).
 // The file: `joutiya-sealed v1 <env> <target>` in clear (the file it fills), then the CMS block. The

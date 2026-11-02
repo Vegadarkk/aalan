@@ -1,6 +1,6 @@
 // Creates the Joutiya VM and its network on Oracle Cloud (§2), by API, in the `joutiya` compartment
 // recorded in infra/targets.json and nowhere else. Run from Claude's cloud environment (or any
-// shell holding the JOUTIYA_OCI_* and JOUTIYA_CLOUDFLARE_API_TOKEN variables). Dry run by default.
+// shell holding the AALAN_OCI_* and AALAN_CLOUDFLARE_API_TOKEN variables, or their former JOUTIYA_* names). Dry run by default.
 //
 //   node scripts/oracle-vm.ts create [--apply] [--retry-minutes=<n>] [--small-fallback]
 //       joutiya-vcn (no ingress rule anywhere), joutiya-igw, joutiya-public, then joutiya-vm
@@ -65,8 +65,8 @@
 //       samples the VM's CPU every 5 s for n minutes (1 to 15; read only, also without --apply) and
 //       prints the average and peak busy share of each CPU and of the whole host (load test, D17).
 //
-// Environment (never printed): JOUTIYA_OCI_TENANCY, _USER, _FINGERPRINT, _REGION, _COMPARTMENT,
-// _KEY_B64 (base64 of the PEM key of joutiya-claude), JOUTIYA_CLOUDFLARE_API_TOKEN.
+// Environment (never printed; AALAN_* first, former JOUTIYA_* as fallback): AALAN_OCI_TENANCY, _USER, _FINGERPRINT, _REGION, _COMPARTMENT,
+// _KEY_B64 (base64 of the PEM key of joutiya-claude), AALAN_CLOUDFLARE_API_TOKEN (former JOUTIYA_CLOUDFLARE_API_TOKEN).
 
 import { X509Certificate, createHash, createSign } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -80,6 +80,7 @@ import { LEAF_DAYS, WIF_SERVICES, certificateConfig, credentialConfig, csrFromOu
 import { type Sealed, openSealedLines, parseSealed } from "./seal-env.ts";
 import { DEPLOYED_ENVS, REQUIRED, VM_DIRS, envPayload, envScripts, mergeLines, namesScript, parseMissing, parseNames, planEnv, type DeployedEnv, type EnvDirs, type Source } from "./vm-env.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
+import { ownerVar, requireOwnerVar } from "./owner-env.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -284,8 +285,7 @@ function vmFilesTarball(stagingKey?: string): string {
 const CF_API = "https://api.cloudflare.com/client/v4";
 
 async function cloudflare<T>(path: string, post?: unknown): Promise<T> {
-  const token = process.env.JOUTIYA_CLOUDFLARE_API_TOKEN?.trim();
-  if (!token) throw new Error("JOUTIYA_CLOUDFLARE_API_TOKEN is not set");
+  const token = requireOwnerVar("CLOUDFLARE_API_TOKEN");
   const init = post === undefined ? {} : { method: "POST", body: JSON.stringify(post), headers: { "Content-Type": "application/json" } };
   const response = await fetch(`${CF_API}${path}`, { ...init, headers: { ...init.headers, Authorization: `Bearer ${token}` } });
   const payload = (await response.json().catch(() => null)) as { success?: boolean; errors?: { code: number; message: string }[]; result?: T } | null;
@@ -1416,17 +1416,12 @@ async function reboot(oci: Oci, compartmentId: string): Promise<void> {
 }
 
 function credentialsFromEnv(): OciCredentials {
-  const read = (name: string): string => {
-    const value = process.env[name]?.trim();
-    if (!value) throw new Error(`${name} is not set`);
-    return value;
-  };
   return {
-    tenancy: read("JOUTIYA_OCI_TENANCY"),
-    user: read("JOUTIYA_OCI_USER"),
-    fingerprint: read("JOUTIYA_OCI_FINGERPRINT"),
-    region: read("JOUTIYA_OCI_REGION"),
-    privateKey: Buffer.from(read("JOUTIYA_OCI_KEY_B64"), "base64").toString("utf8"),
+    tenancy: requireOwnerVar("OCI_TENANCY"),
+    user: requireOwnerVar("OCI_USER"),
+    fingerprint: requireOwnerVar("OCI_FINGERPRINT"),
+    region: requireOwnerVar("OCI_REGION"),
+    privateKey: Buffer.from(requireOwnerVar("OCI_KEY_B64"), "base64").toString("utf8"),
   };
 }
 
@@ -1452,8 +1447,8 @@ async function main(): Promise<void> {
   const credentials = credentialsFromEnv();
   const { tenancyId, userId, compartmentId, homeRegion } = targets.shared.oracle;
   // The variables must name exactly the recorded tenancy, user, region and compartment (§9).
-  if (credentials.tenancy !== tenancyId || credentials.user !== userId || credentials.region !== homeRegion || process.env.JOUTIYA_OCI_COMPARTMENT?.trim() !== compartmentId) {
-    throw new Error("JOUTIYA_OCI_* do not match shared.oracle in infra/targets.json: nothing done");
+  if (credentials.tenancy !== tenancyId || credentials.user !== userId || credentials.region !== homeRegion || ownerVar("OCI_COMPARTMENT") !== compartmentId) {
+    throw new Error("AALAN_OCI_* (or former JOUTIYA_OCI_*) do not match shared.oracle in infra/targets.json: nothing done");
   }
   const oci = new Oci(credentials, args.includes("--apply"));
   const compartment = compartmentId as string;

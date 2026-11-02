@@ -14,14 +14,14 @@
 // proxied AAAA 100:: record in their zone, so the redirect rules see their requests; a wildcard
 // address record is only deleted with --replace-dns.
 //
-// Environment (never printed): JOUTIYA_CLOUDFLARE_API_TOKEN, a custom token limited to the Joutiya
+// Environment (never printed): AALAN_CLOUDFLARE_API_TOKEN (former name JOUTIYA_CLOUDFLARE_API_TOKEN), a custom token limited to the Joutiya
 // account and its zones (a prefixed name: a shared shell may hold other projects' tokens);
 // for access: ACCESS_OWNER_EMAIL, ACCESS_CI_TOKEN_ID, ACCESS_PROBE_TOKEN_ID, ACCESS_SCAN_TOKEN_ID.
 // r2 only checks: Nav applies r2-buckets.json in the dashboard (bucket settings need account-wide
 // R2 rights), and this part sends its CORS preflights, which need no token.
 // loadtest --on puts a temporary skip rule first in the WAF custom rules (load test of staging,
 // D17: no edge rate limit, managed rules, Browser Integrity Check or Security Level for requests
-// to staging carrying x-joutiya-loadtest = JOUTIYA_LOADTEST_BYPASS_SECRET, never printed);
+// to staging carrying x-joutiya-loadtest = AALAN_LOADTEST_BYPASS_SECRET, never printed);
 // loadtest --off puts waf-rules.json back. zone --check reports the rule as drift while it is on.
 // An existing A, AAAA or CNAME record on a tunnel hostname is only replaced with --replace-dns, and
 // a hostname guarded by Access gets its DNS record only once its Access application exists.
@@ -30,6 +30,7 @@ import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CLOUDFLARE_ZONES, recordedZoneId, validateTargets, zoneOf, type AppEnv, type EnvTargets, type Targets, type ZoneName } from "./assert-target.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
+import { ownerVar } from "./owner-env.ts";
 
 const API = "https://api.cloudflare.com/client/v4";
 const DIR = new URL("../infra/cloudflare/", import.meta.url);
@@ -112,7 +113,7 @@ export const LOADTEST_HEADER = "x-joutiya-loadtest";
 
 /** The temporary skip rule of the load test of `host` (staging). The secret is checked first: it goes into an expression. */
 export function loadtestRule(secret: string, host: string): Rule {
-  if (!/^[A-Za-z0-9]{32,128}$/.test(secret)) throw new Error("JOUTIYA_LOADTEST_BYPASS_SECRET must be 32 to 128 letters and digits");
+  if (!/^[A-Za-z0-9]{32,128}$/.test(secret)) throw new Error("AALAN_LOADTEST_BYPASS_SECRET must be 32 to 128 letters and digits");
   return {
     ref: LOADTEST_RULE_REF,
     description: "Load test of staging (temporary, D17): no edge rate limit, managed rules, Browser Integrity Check or Security Level",
@@ -458,8 +459,8 @@ async function applyLoadtest(api: CloudflareApi, targets: Targets, on: boolean):
   const zone = hostZone(targets, host);
   if (zone === null) throw new Error(`the zone of ${host} is not recorded in infra/targets.json`);
   const { zoneId } = await checkZone(api, targets, zone);
-  const secret = on ? (process.env.JOUTIYA_LOADTEST_BYPASS_SECRET?.trim() ?? "") : null;
-  if (secret === "") throw new Error("JOUTIYA_LOADTEST_BYPASS_SECRET is not set");
+  const secret = on ? ownerVar("LOADTEST_BYPASS_SECRET") : null;
+  if (secret === "") throw new Error("AALAN_LOADTEST_BYPASS_SECRET is not set (nor its former name JOUTIYA_LOADTEST_BYPASS_SECRET)");
   const { phase, description, rules } = loadtestRuleset(readEdgeFile<Ruleset>("waf-rules.json"), secret, host);
   const request: ApiRequest = { method: "PUT", path: `/zones/${zoneId}/rulesets/phases/${phase}/entrypoint`, body: { description, rules } };
   await api.write(request, secret === null ? request.body : redact(request.body, secret));
@@ -702,8 +703,8 @@ async function main(): Promise<void> {
   const edgeErrors = validateEdge(readEdgeFile, targets);
   if (edgeErrors.length > 0) throw new Error(edgeErrors.join("\n"));
 
-  const token = process.env.JOUTIYA_CLOUDFLARE_API_TOKEN?.trim() ?? "";
-  if (!token && parts.some((part) => part !== "r2")) throw new Error("JOUTIYA_CLOUDFLARE_API_TOKEN is not set");
+  const token = ownerVar("CLOUDFLARE_API_TOKEN");
+  if (!token && parts.some((part) => part !== "r2")) throw new Error("AALAN_CLOUDFLARE_API_TOKEN is not set (nor its former name JOUTIYA_CLOUDFLARE_API_TOKEN)");
   const api = new CloudflareApi(token, apply);
   for (const part of parts) {
     console.log(`\n== ${part}`);

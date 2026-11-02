@@ -74,7 +74,7 @@ function rcEvent(type: string, appUserId: string, transactionId: string, extra: 
       environment: "SANDBOX",
       app_user_id: appUserId,
       original_app_user_id: appUserId,
-      product_id: "joutiya_credits_100_mad",
+      product_id: "aalan_credits_100_mad",
       transaction_id: transactionId,
       store: "RC_BILLING",
       currency: "MAD",
@@ -228,7 +228,7 @@ describe("RevenueCat webhook", () => {
 
     const buyer = await member();
     const appUserId = await checkoutOf(buyer);
-    const unknown = rcEvent("NON_RENEWING_PURCHASE", appUserId, `txn_${randomUUID()}`, { product_id: "joutiya_credits_999_mad" });
+    const unknown = rcEvent("NON_RENEWING_PURCHASE", appUserId, `txn_${randomUUID()}`, { product_id: "aalan_credits_999_mad" });
     expect((await deliver(unknown)).status).toBe(200);
     expect((await billingEventRef(unknown.event.id).get()).data()).toMatchObject({ status: "ignored", outcome: "unknown_product" });
     const transactionId = `txn_${randomUUID()}`;
@@ -299,7 +299,7 @@ describe("billing reconciliation", () => {
   /** RevenueCat lists each customer's own purchases; its product ids are its own (`prod...`). */
   const deps = (appUserId: string) => ({
     listPurchases: vi.fn(async (customer: string) => (customer === appUserId ? store.purchases : [])),
-    storeIdentifier: vi.fn(async (productId: string) => (productId === "prod_credits_100" ? "joutiya_credits_100_mad" : "unknown")),
+    storeIdentifier: vi.fn(async (productId: string) => (productId === "prod_credits_100" ? "aalan_credits_100_mad" : "unknown")),
   });
   const listed = (transactionId: string, status = "owned"): RevenueCatPurchase => ({ ...owned(transactionId, status), productId: "prod_credits_100", store: "rc_billing", country: "MA", purchasedAt: new Date(Date.now() - HOUR_MS) });
 
@@ -331,7 +331,7 @@ describe("billing reconciliation", () => {
     const transactionId = `txn_${randomUUID()}`;
     const eventId = randomUUID();
     const receivedAt = new Date(Date.now() - 4 * HOUR_MS);
-    await createBillingEvent({ source: "revenuecat", eventId, type: "NON_RENEWING_PURCHASE", environment: "SANDBOX", appUserId, productId: "joutiya_credits_100_mad", transactionId, store: "RC_BILLING", currency: "MAD", amountMinor: 10_000, countryCode: "MA", kind: "pack", status: "failed", attempts: 8, lastError: "purchase not visible in RevenueCat yet", receivedAt });
+    await createBillingEvent({ source: "revenuecat", eventId, type: "NON_RENEWING_PURCHASE", environment: "SANDBOX", appUserId, productId: "aalan_credits_100_mad", transactionId, store: "RC_BILLING", currency: "MAD", amountMinor: 10_000, countryCode: "MA", kind: "pack", status: "failed", attempts: 8, lastError: "purchase not visible in RevenueCat yet", receivedAt });
     store.purchases = [listed(transactionId)];
 
     expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ swept: 1, packs: 0, failed: 0 });

@@ -80,6 +80,10 @@ subscriptions, Google Ads slots, moderation).
   Actions minutes a month and branch protection no longer enforced. Going private erases
   nothing already published (forks, archives): never commit personal data, internal ids
   that should stay private, or anything you would not publish.
+- **No GitHub mail to the owner** (owner, 2026-11-02): never @mention, assign or request a
+  review from `Vegadarkk`, and add no CODEOWNERS or Dependabot `reviewers`/`assignees`; PR
+  owners follow their PRs by subscription. Failed runs outside PRs (main, schedule, manual)
+  are checked hourly by the "Surveiller les alertes du site" thread, never left to e-mail.
 - **Legal**: publisher Adark Prime; the only address to display is 6 rue
   d'Armaillé, 75017 Paris. Never use or ask for a personal address. Legal form,
   capital and VAT are config variables, never hardcoded. The platform is a neutral

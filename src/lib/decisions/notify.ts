@@ -86,7 +86,9 @@ async function reporterAddress(report: OpenReport): Promise<ReporterAddress | nu
     const account = await accountRecipient(report.reporter.uid);
     return account ? { email: account.email, locale: account.locale, displayName: account.displayName } : null;
   }
-  return report.reporter.email ? { email: report.reporter.email, locale: report.reporter.locale, displayName: report.reporter.name ?? null } : null;
+  // A visitor's typed name is never echoed: anyone can file a notice with any address, and a free-text
+  // greeting would carry their text in a mail sent under our domain (security review, 2 Nov 2026).
+  return report.reporter.email ? { email: report.reporter.email, locale: report.reporter.locale, displayName: null } : null;
 }
 
 export interface OutcomeInput {

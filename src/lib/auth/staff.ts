@@ -272,6 +272,8 @@ export async function setPassword(request: Request): Promise<Response> {
     throw translateCodeError(error);
   }
   await revokeSessions(record.uid);
+  // Traced like a member's reset: who set a staff password, when, from where.
+  await logConnection({ uid: record.uid, event: "password_reset", ip: identity.ip });
   return json<StaffPasswordResponse>({ status: "password_set" });
 }
 

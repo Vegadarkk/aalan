@@ -43,6 +43,10 @@ export async function handleKybcSign(request: Request): Promise<Response> {
 /** POST /api/pro/kybc/uploads/{id}/complete: checks the piece and stores it in the private bucket. */
 export async function handleKybcComplete(request: Request, rawId: unknown): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
+  // Limited before the first read, like a photo's complete: a loop of random ids would otherwise
+  // spend one Firestore read each.
+  await enforceLimit("upload.status.uid", auth.user.uid);
+  await assertQuotas(DEPOSIT_QUOTAS);
   const id = uploadIdSchema.safeParse(rawId);
   if (!id.success) throw notFound();
   return json(await completeKybcUpload({ auth, ip: requestIdentity(request.headers).ip }, id.data));

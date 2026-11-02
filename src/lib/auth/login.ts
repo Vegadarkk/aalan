@@ -5,7 +5,7 @@ import { auth } from "@/lib/firebase/admin";
 import { isStaff, readClaims } from "@/lib/firebase/claims";
 import { signInWithPassword } from "@/lib/firebase/rest";
 import { createSessionForUid, createSessionFromServerSignIn, type MintedSession } from "@/lib/firebase/session";
-import { HttpError, forbidden, unavailable } from "@/lib/http/errors";
+import { HttpError, unavailable } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { assertLimit, blockLimit, consumeLimit, consumedPoints, limitState, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
@@ -127,8 +127,12 @@ async function login(request: Request): Promise<Response> {
   const record = await auth().getUser(result.localId);
   if (record.disabled) throw new HttpError(403, "account_disabled");
   const claims = readClaims(record.customClaims ?? {});
-  // Staff accounts only exist on the back office (§6 "Personnel"): no public session for them.
-  if (isStaff(claims)) throw forbidden("staff accounts sign in on the back office");
+  // Staff accounts only exist on the back office (§6 "Personnel"): no public session for them, and
+  // the same answer as a wrong password, so the public host never confirms a staff password.
+  if (isStaff(claims)) {
+    await recordFailure(keys, attempt);
+    throw new HttpError(401, "invalid_credentials");
+  }
   if (!record.emailVerified) return respond<LoginResponse>(flow, { status: "verification_required" });
 
   let minted: MintedSession;

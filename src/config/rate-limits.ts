@@ -289,6 +289,9 @@ export const RATE_LIMITS = {
   "assistant.device.hour": { points: 20, duration: HOUR, policy: "closed", key: "device" },
   "assistant.device.day": { points: 50, duration: DAY, policy: "closed", key: "device" },
   "assistant.ip": { points: 200, duration: DAY, policy: "closed", key: "ip" },
+  // Five times the /64 allowance per IPv6 /48 (security review, 2 Nov 2026): rotating /64s of one
+  // network would otherwise give fresh device and IP allowances with no Turnstile.
+  "assistant.ip48": { points: 1000, duration: DAY, policy: "closed", key: "ip48" },
   // Back-office reads (queues, target views, stats) and the staff conversation view (D18).
   "admin.read.uid": { points: 3000, duration: HOUR, policy: "open", key: "uid" },
   "admin.conversation.uid": { points: 60, duration: HOUR, policy: "closed", key: "uid" },

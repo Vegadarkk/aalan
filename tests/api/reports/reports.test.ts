@@ -107,7 +107,7 @@ describe("visitor notices", () => {
 
     const mails = capturedMails(sendMailMock).filter((mail) => mail.template === "reportReceived");
     expect(mails).toHaveLength(1);
-    expect(mails[0]).toMatchObject({ to: VISITOR.email, locale: "ar", priority: "bulk", data: { displayName: VISITOR.name, reportId: result.body.reportId, targetType: "listing", reasonId: "scam", slaHours: 24, urgent: false } });
+    expect(mails[0]).toMatchObject({ to: VISITOR.email, locale: "ar", priority: "bulk", data: { displayName: null, reportId: result.body.reportId, targetType: "listing", reasonId: "scam", slaHours: 24, urgent: false } });
     expect(alertMock).not.toHaveBeenCalled();
     // The visitor keeps a device cookie; the Turnstile pass is set for 30 minutes.
     expect(result.response.headers.getSetCookie().some((line) => line.startsWith("__Host-tsv="))).toBe(true);

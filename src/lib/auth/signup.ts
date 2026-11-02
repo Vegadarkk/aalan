@@ -108,9 +108,10 @@ async function signup(request: Request): Promise<Response> {
 async function verifyResend(request: Request): Promise<Response> {
   const flow = beginAnonymous(request);
   const input = await readJson(request, verifyResendSchema);
-  await enforceLimit("verify.resend.uid", emailNormHash(input.email));
   await enforceLimit("reset.ip", flow.identity.ipBucket);
+  // Turnstile before the per-e-mail counter (same reason as the password reset).
   await checkTurnstile(flow, input.turnstileToken, "verify-resend");
+  await enforceLimit("verify.resend.uid", emailNormHash(input.email));
   const record = await userByEmail(input.email);
   if (record?.email && !record.emailVerified && !record.disabled) {
     const profile = await getUser(record.uid);

@@ -14,7 +14,8 @@ import { assertQuotas, DEPOSIT_QUOTAS } from "@/lib/quota/gate";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { isStorageNotConfigured, objectStore, type ObjectStore } from "@/lib/storage";
 import { isStorageFull } from "@/lib/uploads/storage-gauge";
-import { KYBC_SNIFF_BYTES, KYBC_UPLOADS_PER_ACCOUNT, kybcObjectKey, pdfHasActiveContent, sniffKybcType } from "./kybc";
+import { KYBC_SNIFF_BYTES, KYBC_UPLOADS_PER_ACCOUNT, kybcObjectKey, sniffKybcType } from "./kybc";
+import { pdfHasActiveContentDeep } from "./kybc-pdf";
 import { ownedRentalAgency } from "./rental-check";
 import { assertCanApply, type ProActor } from "./service";
 
@@ -95,7 +96,7 @@ async function reject(objects: ObjectStore, upload: UploadRecord, reason: Exclud
  * pipeline). Null when the piece is refused, with the reason.
  */
 export async function sanitizeKybcPiece(body: Buffer, declaredType: UploadRecord["declaredType"]): Promise<{ bytes: Buffer } | { reason: Exclude<KybcRejectReason, "expired" | "too_large"> }> {
-  if (declaredType === "application/pdf") return pdfHasActiveContent(body) ? { reason: "active_content" } : { bytes: body };
+  if (declaredType === "application/pdf") return pdfHasActiveContentDeep(body) ? { reason: "active_content" } : { bytes: body };
   try {
     const image = openImage(body).rotate();
     return { bytes: await (declaredType === "image/png" ? image.png({ compressionLevel: 6 }) : image.jpeg({ quality: 88 })).toBuffer() };

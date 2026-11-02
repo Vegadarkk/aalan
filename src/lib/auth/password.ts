@@ -28,8 +28,10 @@ async function resetRequest(request: Request): Promise<Response> {
   const flow = beginAnonymous(request);
   const input = await readJson(request, resetRequestSchema);
   await enforceLimit("reset.ip", flow.identity.ipBucket);
-  await enforceLimit("reset.email", emailNormHash(input.email));
+  // Turnstile before the per-e-mail counter: otherwise anyone could use up a victim's allowance
+  // with bogus tokens and keep them out of account recovery.
   await checkTurnstile(flow, input.turnstileToken, "reset");
+  await enforceLimit("reset.email", emailNormHash(input.email));
   const record = await accountByEmail(input.email);
   // Staff accounts reset their password on the back office only, behind Cloudflare Access (§6
   // "Personnel"): the public flow never mails them, and answers the same 202. Any other account

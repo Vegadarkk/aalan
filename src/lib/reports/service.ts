@@ -326,7 +326,8 @@ export async function createReport(input: CreateReportRequest, requester: Report
     ...(signal ? { signal } : {}),
     change,
     now,
-    ...(reporter.email ? { ack: { to: reporter.email, locale: reporter.locale, displayName: reporter.displayName } } : {}),
+    // A visitor's typed name is never echoed in the mail (see decisions/notify.ts reporterAddress).
+    ...(reporter.email ? { ack: { to: reporter.email, locale: reporter.locale, displayName: reporter.uid ? reporter.displayName : null } } : {}),
     triage: true,
   });
   return { response: responseOf(id, priority, false), created: true, hidden, ...(signal ? { strongSignal: signal } : {}) };

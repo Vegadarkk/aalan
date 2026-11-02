@@ -190,7 +190,7 @@ describe("POST /api/auth/login", () => {
     expect(refused.body.error.code).toBe("turnstile_failed");
   });
 
-  it("refuses a disabled account and keeps staff accounts off the public host", async () => {
+  it("refuses a disabled account and keeps staff accounts off the public host (same answer as a wrong password)", async () => {
     const { email, uid } = await createAccount(true);
     await auth().updateUser(uid!, { disabled: true });
     const disabled = await call<ErrorBody>(login, LOGIN, { jar: new Jar(), body: { email, password: PASSWORD } });
@@ -200,7 +200,7 @@ describe("POST /api/auth/login", () => {
     const staff = await createAccount(true, "Staff Member");
     await setClaims(staff.uid!, { role: "moderator" });
     const refused = await call<ErrorBody>(login, LOGIN, { jar: new Jar(), body: { email: staff.email, password: PASSWORD } });
-    expect(refused.status).toBe(403);
-    expect(refused.body.error.code).toBe("forbidden");
+    expect(refused.status).toBe(401);
+    expect(refused.body.error.code).toBe("invalid_credentials");
   });
 });

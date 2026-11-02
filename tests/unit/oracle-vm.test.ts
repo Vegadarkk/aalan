@@ -345,7 +345,7 @@ describe("build-staging", () => {
   it("clones once, builds a commit of origin/main and starts it only once every secret is there", () => {
     const script = buildStagingScript("e84c7209f7bd");
     expect(Buffer.byteLength(rootCommand(script))).toBeLessThanOrEqual(RUN_COMMAND_MAX_BYTES);
-    expect(script).toContain("[[ -d /opt/joutiya/src/.git ]] || git clone --quiet https://github.com/Vegadarkk/joutiya.git /opt/joutiya/src");
+    expect(script).toContain("[[ -d /opt/joutiya/src/.git ]] || git clone --quiet https://github.com/Vegadarkk/aalan.git /opt/joutiya/src");
     expect(script).toContain("merge-base --is-ancestor");
     expect(script).toContain("/etc/joutiya/staging/app.env");
     expect(script.indexOf("the start waits for")).toBeLessThan(script.indexOf("joutiya-deploy staging"));

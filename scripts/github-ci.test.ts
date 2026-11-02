@@ -25,11 +25,11 @@ test("public key and known_hosts are checked", () => {
 });
 
 test("a bundle writes only deploy-staging's names", () => {
-  const bundle = { format: BUNDLE_FORMAT, repository: "Vegadarkk/joutiya", keyId: "1234", secrets: { STAGING_DEPLOY_SSH_KEY: "c2VhbGVk" }, variables: { VM_SSH_KNOWN_HOSTS: `ssh.joutiya.ma ${HOST_KEY}`, STAGING_DEPLOY_ENABLED: "true" } };
-  assert.equal(parseBundle(JSON.stringify(bundle), "Vegadarkk/joutiya").keyId, "1234");
+  const bundle = { format: BUNDLE_FORMAT, repository: "Vegadarkk/aalan", keyId: "1234", secrets: { STAGING_DEPLOY_SSH_KEY: "c2VhbGVk" }, variables: { VM_SSH_KNOWN_HOSTS: `ssh.joutiya.ma ${HOST_KEY}`, STAGING_DEPLOY_ENABLED: "true" } };
+  assert.equal(parseBundle(JSON.stringify(bundle), "Vegadarkk/aalan").keyId, "1234");
   assert.throws(() => parseBundle(JSON.stringify(bundle), "someone/else"));
-  assert.throws(() => parseBundle(JSON.stringify({ ...bundle, secrets: { NPM_TOKEN: "c2VhbGVk" } }), "Vegadarkk/joutiya"));
-  assert.throws(() => parseBundle(JSON.stringify({ ...bundle, variables: { STAGING_DEPLOY_ENABLED: "false" } }), "Vegadarkk/joutiya"));
+  assert.throws(() => parseBundle(JSON.stringify({ ...bundle, secrets: { NPM_TOKEN: "c2VhbGVk" } }), "Vegadarkk/aalan"));
+  assert.throws(() => parseBundle(JSON.stringify({ ...bundle, variables: { STAGING_DEPLOY_ENABLED: "false" } }), "Vegadarkk/aalan"));
 });
 
 test("the deploy key is an OpenSSH ed25519 key", (t) => {

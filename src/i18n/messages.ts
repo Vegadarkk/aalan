@@ -19,8 +19,23 @@ export function mergeMessages(base: Tree, override: Tree): Tree {
   return result;
 }
 
+/**
+ * The catalogs are static: merged once per locale and process, not on every request (the merge of
+ * ~1 300 keys cost about 1 ms of CPU per page). Callers never write to the messages.
+ */
+const merged = new Map<Locale, Promise<Messages>>();
+
 /** Messages of a locale over the French base, so a missing key always falls back to French. */
-export async function loadMessages(locale: Locale): Promise<Messages> {
+export function loadMessages(locale: Locale): Promise<Messages> {
+  let messages = merged.get(locale);
+  if (!messages) {
+    messages = buildMessages(locale);
+    merged.set(locale, messages);
+  }
+  return messages;
+}
+
+async function buildMessages(locale: Locale): Promise<Messages> {
   const base = (await import("../../messages/fr.json")).default as Tree;
   if (locale === "fr") return base as Messages;
   const own =

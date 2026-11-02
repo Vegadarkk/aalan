@@ -2,9 +2,9 @@ import "server-only";
 import { categoryById, subcategoryById } from "@/config/categories";
 import { CITIES, cityBySlug, type City } from "@/config/regions";
 import { searchEngine } from "@/lib/search/engine";
-import { buildFilter, NOT_EXAMPLE } from "@/lib/search/service";
+import { buildFilter, NOT_EXAMPLE, runSearch } from "@/lib/search/service";
 import type { SearchParams } from "./params";
-import { SearchUnavailableError, type EngineQuery } from "./types";
+import { SearchUnavailableError, type EngineQuery, type SearchEngine, type SearchResponse } from "./types";
 
 // Category landing pages (design D15): /c/{category}, /c/{category}/{subcategory|city},
 // /c/{category}/{subcategory}/{city}. Segments are resolved from config only, before any engine
@@ -130,4 +130,57 @@ export async function seoCounts(target: SeoTarget, now = new Date()): Promise<Se
     ? (subcategories[target.subcategory] ?? 0)
     : Object.values(subcategories).reduce((sum, count) => sum + count, 0);
   return { subcategories, cities: cityCounts, total, indexable: real.totalHits };
+}
+
+// ---- Landing page data ----------------------------------------------------------------------------
+
+export interface LandingData {
+  response: SearchResponse;
+  counts: SeoCounts;
+}
+
+/** How long a process shares the data of a landing page between its locales. */
+export const LANDING_DATA_TTL_MS = 60_000;
+/** Entries kept per engine at most (a page's data weighs 20 to 30 KB). */
+const LANDING_DATA_MAX_ENTRIES = 300;
+
+interface LandingEntry {
+  expires: number;
+  data: Promise<LandingData>;
+}
+
+/** Per engine: tests swap engines, and the entries follow. */
+const landingCaches = new WeakMap<SearchEngine, Map<string, LandingEntry>>();
+
+/**
+ * The engine data of a landing page: its first page of listings (À la Une included) and its
+ * counts, one round trip pair. The engine speaks no language, so /fr, /ar and /rif render from the
+ * same data: a process keeps it LANDING_DATA_TTL_MS (ISR then keeps each page 10 minutes), and
+ * concurrent renders of one page share one call. A failed call is not kept: the render throws (D2)
+ * and the next one asks again.
+ */
+export function landingData(target: SeoTarget, now = new Date()): Promise<LandingData> {
+  const engine = searchEngine();
+  let entries = landingCaches.get(engine);
+  if (!entries) {
+    entries = new Map();
+    landingCaches.set(engine, entries);
+  }
+  const key = seoPath(target);
+  const at = now.getTime();
+  const kept = entries.get(key);
+  if (kept && kept.expires > at) return kept.data;
+  if (entries.size >= LANDING_DATA_MAX_ENTRIES) {
+    for (const [path, entry] of entries) if (entry.expires <= at) entries.delete(path);
+    const oldest = entries.keys().next();
+    if (entries.size >= LANDING_DATA_MAX_ENTRIES && !oldest.done) entries.delete(oldest.value);
+  }
+  const params = seoSearchParams(target);
+  const data = Promise.all([runSearch(params, { featured: true, facets: false, hitsPerPage: SEO_PAGE_SIZE, now }), seoCounts(target, now)]).then(([response, counts]) => ({ response, counts }));
+  const entry: LandingEntry = { expires: at + LANDING_DATA_TTL_MS, data };
+  entries.set(key, entry);
+  data.catch(() => {
+    if (entries.get(key) === entry) entries.delete(key);
+  });
+  return data;
 }

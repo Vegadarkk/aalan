@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CATEGORY_IDS, SUBCATEGORY_IDS, subcategoryById } from "@/config/categories";
 import { CITY_SLUGS, cityBySlug } from "@/config/regions";
 import { resetServerEnv } from "@/lib/env";
 import { resetSearchEngine, setSearchEngineForTests } from "@/lib/search/engine";
 import { MemoryEngine } from "@/lib/search/memory";
-import { cityLinks, distanceKm, resolveSeoSegments, SEO_MIN_LISTINGS, seoCounts, seoPath, seoSearchParams, seoVerdict } from "@/lib/search/seo";
+import { cityLinks, distanceKm, LANDING_DATA_TTL_MS, landingData, resolveSeoSegments, SEO_MIN_LISTINGS, seoCounts, seoPath, seoSearchParams, seoVerdict } from "@/lib/search/seo";
 import { sitemapShardOf, type SearchDocument } from "@/lib/search/types";
 
 // Category landing pages (design D15): segment resolution from config, thresholds, facet counts.
@@ -164,5 +164,48 @@ describe("seoCounts", () => {
     expect(seoVerdict(target, counts.total, counts.indexable)).toBe("noindex");
     // Examples alone: still a page (noindex), never a 404 while it shows cards.
     expect(seoVerdict(target, 2, 0)).toBe("noindex");
+  });
+});
+
+describe("landingData", () => {
+  it("reads a page's listings and counts once for its three locales, for a minute, per engine", async () => {
+    const engine = new MemoryEngine({ synonyms: {} });
+    await engine.upsert([doc("a2345678", "voitures", "casablanca"), doc("b2345678", "voitures", "casablanca"), doc("c2345678", "velos", "rabat")]);
+    setSearchEngineForTests(engine);
+    const search = vi.spyOn(engine, "search");
+    const target = { category: "vehicules", city: "casablanca" };
+    const at = new Date("2026-11-02T10:00:00Z");
+    const first = await landingData(target, at);
+    expect(first.response.hits.map((hit) => hit.id)).toEqual(["a2345678", "b2345678"]);
+    expect(first.counts).toMatchObject({ total: 2, indexable: 2 });
+    // One multi-search for the listings (with the À la Une draw), one for the counts.
+    expect(search).toHaveBeenCalledTimes(2);
+    // The same page, in another locale, a few seconds later: the same data, no call.
+    expect(await landingData(target, new Date(at.getTime() + 5_000))).toBe(first);
+    expect(search).toHaveBeenCalledTimes(2);
+    // Another page: its own calls.
+    await landingData({ category: "vehicules", subcategory: "velos" }, at);
+    expect(search).toHaveBeenCalledTimes(4);
+    // Past the minute: read again.
+    const later = await landingData(target, new Date(at.getTime() + LANDING_DATA_TTL_MS));
+    expect(later).not.toBe(first);
+    expect(later.counts.total).toBe(2);
+    expect(search).toHaveBeenCalledTimes(6);
+    // Another engine (tests): its own entries.
+    const other = new MemoryEngine({ synonyms: {} });
+    setSearchEngineForTests(other);
+    expect((await landingData(target, at)).counts.total).toBe(0);
+    expect(search).toHaveBeenCalledTimes(6);
+  });
+
+  it("keeps no failed call: the next render asks the engine again", async () => {
+    const engine = new MemoryEngine({ synonyms: {} });
+    setSearchEngineForTests(engine);
+    const search = vi.spyOn(engine, "search").mockRejectedValueOnce(new Error("down"));
+    const target = { category: "immobilier" };
+    await expect(landingData(target)).rejects.toThrow("down");
+    // Both calls of the pair again (the listings failed, the counts had succeeded).
+    expect((await landingData(target)).counts.total).toBe(0);
+    expect(search).toHaveBeenCalledTimes(4);
   });
 });

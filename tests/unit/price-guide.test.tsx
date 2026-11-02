@@ -14,7 +14,7 @@ import {
   specKey,
   type PriceGuide,
 } from "@/lib/price-guide/rules";
-import { comparablesQuery, computePriceGuide, priceGuideCacheKey, priceGuideFor, setPriceGuideCacheForTests, subjectKey, type GuideCache, type GuideSubject } from "@/lib/price-guide/service";
+import { comparablesQuery, computePriceGuide, guideFromHits, priceGuideCacheKey, priceGuideFor, setPriceGuideCacheForTests, subjectKey, type ComparableHit, type GuideCache, type GuideSubject } from "@/lib/price-guide/service";
 import { MemoryEngine } from "@/lib/search/memory";
 import type { EngineQuery, SearchEngine } from "@/lib/search/types";
 
@@ -167,11 +167,12 @@ describe("which listings get a guide", () => {
     if (car) expect(specKey(car)).toBe(specKey({ ...car, equals: { ...car.equals } }));
   });
 
-  it("asks the engine for published comparables only, the listing itself out, 200 prices at most", () => {
+  it("asks the engine for published comparables only, 200 prices at most plus the listing's own place", () => {
     const spec = comparableSpec(subject());
     if (!spec) throw new Error("spec expected");
     const query: EngineQuery = comparablesQuery(spec, subject(), "city");
-    expect(query.hitsPerPage).toBe(200);
+    // The listing itself is left out in code (the entry is shared by its comparables): one more hit.
+    expect(query.hitsPerPage).toBe(201);
     expect(query.fields).toEqual(["id", "price", "isExample", "sellerPublicId"]);
     expect(query.filter).toEqual({
       and: [
@@ -180,12 +181,26 @@ describe("which listings get a guide", () => {
         { field: "price", op: "gt", value: 0 },
         { field: "isDonation", op: "eq", value: false },
         { not: { field: "soldOut", op: "eq", value: true } },
-        { not: { field: "id", op: "eq", value: "subject1" } },
         { field: "a_bike_type", op: "eq", value: "enfant" },
       ],
     });
+    expect(JSON.stringify(query.filter)).not.toContain("subject1");
     expect(JSON.stringify(comparablesQuery(spec, subject(), "region").filter)).toContain('"regionCode"');
     expect(JSON.stringify(comparablesQuery(spec, subject(), "country").filter)).not.toContain("citySlug");
+  });
+
+  it("reads the same 200 hits the engine would return without the listing: its place, then the next one", () => {
+    // 201 hits, the listing the 100th: without it, the 201st hit takes the last place.
+    const hits = Array.from({ length: 201 }, (_, index): ComparableHit => [index === 99 ? "subject1" : `h${index}`, 300 + index, `s${index}`]);
+    const guide = guideFromHits({ city: hits, region: [], country: [] }, subject());
+    expect(guide).toMatchObject({ scope: "city", count: 200 });
+    // Without the listing among the hits, the 201st is beyond the 200 read.
+    const others = hits.map((hit, index): ComparableHit => (index === 99 ? ["other99", hit[1], hit[2]] : hit));
+    expect(guideFromHits({ city: others, region: [], country: [] }, subject())?.count).toBe(200);
+    expect(guideFromHits({ city: others.slice(0, 200), region: [], country: [] }, subject())?.count).toBe(200);
+    // An example or priceless hit keeps its place among the 200 and counts for nothing.
+    const marked = hits.map((hit, index): ComparableHit => (index < 5 ? [hit[0], hit[1], hit[2], 1] : index < 8 ? [hit[0], null, hit[2]] : hit));
+    expect(guideFromHits({ city: marked, region: [], country: [] }, subject())?.count).toBe(192);
   });
 });
 
@@ -244,7 +259,7 @@ describe("cache", () => {
     };
   }
 
-  it("serves the cached guide while the comparables stay the same, and recomputes once they change", async () => {
+  it("serves the cached hits while the comparables stay the same, and fetches again once they change", async () => {
     const cache = memoryCache();
     setPriceGuideCacheForTests(cache);
     const engine = new MemoryEngine();
@@ -252,16 +267,38 @@ describe("cache", () => {
     const search = vi.spyOn(engine, "search");
     const first = await priceGuideFor(subject(), engine);
     expect(first?.count).toBe(9);
-    expect(cache.entries.has(priceGuideCacheKey("subject1"))).toBe(true);
+    expect(cache.entries.has(priceGuideCacheKey(subject()))).toBe(true);
     expect(await priceGuideFor(subject(), engine)).toEqual(first);
     expect(search).toHaveBeenCalledTimes(1);
     // Another bike type: other comparables, a fresh computation (none here).
     expect(await priceGuideFor(subject({ attributes: { "bike-type": "vtt" } }), engine)).toBeNull();
     expect(search).toHaveBeenCalledTimes(2);
-    // A listing without a guide never reaches the engine, and its absence is cached too.
+    // A listing without a guide never reaches the engine nor the cache.
     expect(await priceGuideFor(subject({ id: "don1", isDonation: true }), engine)).toBeNull();
     expect(search).toHaveBeenCalledTimes(2);
     expect(subjectKey(subject({ isDonation: true }))).toBe("-");
+    expect(cache.entries.size).toBe(2);
+  });
+
+  it("shares one entry between the listings of one description in one city, each without itself", async () => {
+    const cache = memoryCache();
+    setPriceGuideCacheForTests(cache);
+    const engine = new MemoryEngine();
+    await engine.upsert([300, 320, 350, 380, 400, 420, 450, 480, 500].map((price, index) => bike(`c${index}`, "casablanca", price)));
+    const search = vi.spyOn(engine, "search");
+    expect((await priceGuideFor(subject(), engine))?.count).toBe(9);
+    // c0 is one of the comparables: the same entry, read without itself.
+    expect(priceGuideCacheKey(subject({ id: "c0" }))).toBe(priceGuideCacheKey(subject()));
+    expect((await priceGuideFor(subject({ id: "c0", price: 300 }), engine))?.count).toBe(8);
+    expect(search).toHaveBeenCalledTimes(1);
+    // Another city or another description: another entry.
+    expect(priceGuideCacheKey(subject({ citySlug: "rabat", regionCode: "04" }))).not.toBe(priceGuideCacheKey(subject()));
+    expect(priceGuideCacheKey(subject({ attributes: { "bike-type": "vtt" } }))).not.toBe(priceGuideCacheKey(subject()));
+    expect(priceGuideCacheKey(subject())).toMatch(/^pg:v3:[A-Za-z0-9_-]{32}$/);
+    // A malformed entry is ignored and fetched again.
+    cache.entries.set(priceGuideCacheKey(subject()), JSON.stringify({ v: 1, hits: { city: [["x", "not a price", "s"]] } }));
+    expect((await priceGuideFor(subject(), engine))?.count).toBe(9);
+    expect(search).toHaveBeenCalledTimes(2);
   });
 
   it("shows no guide, uncached, when the engine fails", async () => {

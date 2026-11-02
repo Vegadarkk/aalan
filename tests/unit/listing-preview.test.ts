@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { searchDoc } from "../search/fixtures";
-import { priceGuideCacheKey, setPriceGuideCacheForTests, type GuideCache } from "@/lib/price-guide/service";
+import { setPriceGuideCacheForTests, type GuideCache } from "@/lib/price-guide/service";
 import { MemoryEngine } from "@/lib/search/memory";
 import { listingPreview, PREVIEW_DESCRIPTION_MAX } from "@/lib/search/preview";
 
@@ -93,7 +93,7 @@ describe("listing preview", () => {
     const preview = await listingPreview("old1", "fr", await engineWith(bike("old1", 450, { raw: true })));
     expect(preview?.guide).toBeNull();
     expect(preview?.criteria.map((row) => row.id)).toEqual(["condition"]);
-    expect(cache.entries.has(priceGuideCacheKey("old1"))).toBe(false);
+    expect(cache.entries.size).toBe(0);
   });
 
   it("is null for a listing the index does not hold", async () => {

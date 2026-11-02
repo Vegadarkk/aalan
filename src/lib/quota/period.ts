@@ -1,15 +1,19 @@
 import type { QuotaDefinition } from "@/config/quotas";
+import { sharedFormat } from "@/lib/i18n/intl-cache";
 
 export type QuotaLevel = "ok" | "warning" | "degraded";
 
 /** Period bucket in the provider's reset time zone: "2026-10-13" (day) or "2026-10" (month). */
 export function periodKey(definition: Pick<QuotaDefinition, "period" | "resetTimeZone">, at: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: definition.resetTimeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(at);
+  // Called on every counted read: one formatter per time zone, not per call.
+  const parts = sharedFormat(`quota-period|${definition.resetTimeZone}`, () =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: definition.resetTimeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
+  ).formatToParts(at);
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
   return definition.period === "day" ? `${get("year")}-${get("month")}-${get("day")}` : `${get("year")}-${get("month")}`;
 }

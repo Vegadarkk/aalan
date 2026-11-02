@@ -1,19 +1,11 @@
 import { useLocale, useTranslations } from "next-intl";
 import { ConsentLink } from "@/components/consent/consent-link";
-import { getPathname, Link } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { LEGAL_PAGES } from "@/config/legal-pages";
 import { Container } from "@/components/layout/container";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { CATEGORIES } from "@/config/categories";
-import {
-  REGIONS,
-  cityName,
-  citiesOfRegion,
-  regionName,
-} from "@/config/regions";
-import { searchPath } from "@/lib/search/params";
 import {
   DIRECTORY_PATH,
   PRICING_PATH,
@@ -23,6 +15,7 @@ import {
 import { SITE_NAME, type Locale } from "@/config/site";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { cn } from "@/lib/utils";
+import { footerDirectory } from "./footer-directory";
 
 const linkClass = cn(
   "text-foreground-muted hover:text-foreground",
@@ -33,16 +26,15 @@ const linkClass = cn(
 const directoryNavClass =
   "[&_a]:text-structure-foreground/80 [&_a]:underline [&_a]:decoration-structure-foreground/30 [&_a]:underline-offset-2 [&_a:hover]:text-structure-foreground [&_a:hover]:decoration-current";
 
-/** Cities listed under each region of the directory: its largest ones. */
-const CITIES_PER_REGION = 4;
-
 /**
  * Footer in Leboncoin's layout (owner, 2026-10-31): a short presentation, the plan of every category
  * and subcategory, the regions with their main cities, then four columns (about, legal information,
  * Pro solutions, questions). Directory links go to the search (a subcategory landing page answers
  * 404 while empty). They are plain <a> elements with their style on the <nav>: about 150 of them on
  * every page, and a <Link> each (a client component with its own props in the RSC payload) made
- * every server render about 40 % costlier (profile of 2 Nov 2026, docs/lancement/charge.md).
+ * every server render about 40 % costlier (profile of 2 Nov 2026, docs/lancement/charge.md). The
+ * two directories are HTML strings built once per locale (footer-directory.ts): as elements, their
+ * ~450 nodes went through the RSC payload and the HTML renderer on every uncached page.
  */
 export function Footer({ publisher }: { publisher: string }) {
   const t = useTranslations("Footer");
@@ -50,11 +42,10 @@ export function Footer({ publisher }: { publisher: string }) {
   type CategoryKey = Parameters<typeof names>[0];
   const locale = useLocale() as Locale;
   const year = new Date().getFullYear();
-  const localized = (href: string) => getPathname({ href, locale });
+  const directory = footerDirectory(locale, (key) => names(key as CategoryKey));
   const column = (name: "legal" | "trust") =>
     LEGAL_PAGES.filter((page) => page.column === name);
   const columnTitle = "mb-4 font-semibold";
-  const directoryTitle = "mb-2 text-sm font-semibold tracking-wide uppercase";
   // Thin green line on top: the logo's door outline (bab-700); bab-600 in dark, where structure equals this background.
   return (
     // Steps aside under an application screen on phones and tablets (the messaging shell, data-shell="app").
@@ -64,68 +55,25 @@ export function Footer({ publisher }: { publisher: string }) {
           <p className="max-w-4xl text-sm text-pretty text-structure-foreground/85">
             {t("intro", { site: SITE_NAME })}
           </p>
+          {/* Config and message catalogs only, escaped as JSX would be (footer-directory.ts, compared to its JSX twin in tests/unit/footer.test.tsx). */}
           <nav
             aria-label={t("categoriesLabel")}
             className={cn(
               "columns-2 gap-8 sm:columns-3 lg:columns-4",
               directoryNavClass,
             )}
-          >
-            {CATEGORIES.map((category) => (
-              <div key={category.id} className="mb-7 break-inside-avoid">
-                <p className={directoryTitle}>
-                  <a href={localized(`/c/${category.id}`)}>
-                    {names(`${category.id}.name` as CategoryKey)}
-                  </a>
-                </p>
-                <ul className="flex flex-col gap-1.5 text-sm">
-                  {category.subcategories.map((sub) => (
-                    <li key={sub.id}>
-                      <a
-                        href={localized(
-                          searchPath({
-                            category: category.id,
-                            subcategory: sub.id,
-                          }),
-                        )}
-                      >
-                        {names(`${category.id}.sub.${sub.id}` as CategoryKey)}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
+            // eslint-disable-next-line no-restricted-syntax, react/no-danger -- static directory of the config, escaped like JSX (footer-directory.ts)
+            dangerouslySetInnerHTML={{ __html: directory.categories }}
+          />
           <nav
             aria-label={t("regionsLabel")}
             className={cn(
               "columns-2 gap-8 border-t border-structure-foreground/15 pt-8 sm:columns-3 lg:columns-4",
               directoryNavClass,
             )}
-          >
-            {REGIONS.map((region) => (
-              <div key={region.code} className="mb-7 break-inside-avoid">
-                <p className={directoryTitle}>
-                  <a href={localized(searchPath({ region: region.code }))}>
-                    {regionName(region, locale)}
-                  </a>
-                </p>
-                <ul className="flex flex-col gap-1.5 text-sm">
-                  {[...citiesOfRegion(region.code)]
-                    .sort((a, b) => b.population - a.population)
-                    .slice(0, CITIES_PER_REGION)
-                    .map((city) => (
-                      <li key={city.slug}>
-                        <a href={localized(searchPath({ city: city.slug }))}>
-                          {cityName(city, locale)}
-                        </a>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
+            // eslint-disable-next-line no-restricted-syntax, react/no-danger -- static directory of the config, escaped like JSX (footer-directory.ts)
+            dangerouslySetInnerHTML={{ __html: directory.regions }}
+          />
         </Container>
       </div>
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">

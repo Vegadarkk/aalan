@@ -89,6 +89,15 @@ CPU pendant le n° 2 (moyenne par minute, `load/sampler-read.sh`) :
   rendus abandonnés par k6 comptent aussi). Le rendu est donc devenu environ deux fois plus cher
   entre `b087a23` et `c0f8b10` ; la cause exacte n'est pas mesurée (déduction : contenu ajouté à
   chaque page). La VM passe aussi au-dessus de 70 % (89 %).
+- Profil du 2 novembre (même mesure que le 30 octobre : un serveur web profilé dans le conteneur
+  du staging aux limites de la production, 900 pages hors cache, 6 à la fois) : **78 ms de CPU par
+  page contre 55 ms** (+42 %), 13,3 pages/s contre 19,1. La hausse vient du rendu React (Next
+  compilé : 25,8 s contre 15,2 s ; ramasse-miettes : 7,9 s contre 3,8 s) ; le code de l'application
+  reste stable (11,2 s contre 11,8 s). L'index ne compte plus que 192 annonces (50 166 le 30 octobre), ce qui allège plutôt les recherches. Cause principale probable : le nouveau pied de page : environ 150 liens
+  `<Link>` (chacun un composant client avec ses props dans la charge RSC), 49 Ko de HTML sur les
+  130 Ko de balisage d'une page d'annonce. Il passe en liens `<a>` simples, style posé sur la `<nav>`.
+  Le reste de l'écart entre ce profil (+42 %) et le n° 3 (environ deux fois) est une déduction non
+  mesurée : moins de mémoire par processus avec deux processus (ramasse-miettes plus fréquent).
 
 ## Seuil de bascule
 

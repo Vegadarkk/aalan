@@ -27,6 +27,7 @@ import { appendFileSync, existsSync, readFileSync, realpathSync } from "node:fs"
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 import { assertTargets, type Targets } from "./assert-target.ts";
+import { accountName, serviceAccountEmail } from "./identity-names.ts";
 
 export const DEPLOYED_ENVS = ["staging", "prod"] as const;
 export type DeployedEnv = (typeof DEPLOYED_ENVS)[number];
@@ -115,7 +116,7 @@ export function derivedValues(env: DeployedEnv, targets: Targets): Record<string
     // metadata server, then Resource Manager with a permission the service accounts lack).
     GOOGLE_CLOUD_PROJECT: project,
     FIREBASE_APP_ID: recorded.firebase.appId,
-    FIREBASE_SERVICE_ACCOUNT: project === null ? null : `joutiya-web@${project}.iam.gserviceaccount.com`,
+    FIREBASE_SERVICE_ACCOUNT: project === null ? null : serviceAccountEmail(accountName(project, "web"), project),
     GOOGLE_OAUTH_CLIENT_ID: recorded.google.oauthClientId,
     TURNSTILE_SITE_KEY: recorded.turnstile.siteKey,
     SENTRY_DSN: recorded.sentry.dsn,

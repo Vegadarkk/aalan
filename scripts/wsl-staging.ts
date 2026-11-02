@@ -305,8 +305,8 @@ async function wif(host: Host, targets: Targets): Promise<void> {
   const ca = caFiles();
   readCa(ca);
   for (const service of WIF_SERVICES) {
-    const subject = subjectName(ENV, service);
-    const output = await host.exec(`wif ${service}: new key and request in the distro`, wifKeyScript(ENV, service));
+    const subject = subjectName(ENV, service, project);
+    const output = await host.exec(`wif ${service}: new key and request in the distro`, wifKeyScript(ENV, service, project));
     if (!host.apply) {
       console.log(`would sign  ${subject} here for ${PC_LEAF_DAYS} days, then install it in ${wifDir(ENV, service)}`);
       continue;

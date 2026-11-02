@@ -13,6 +13,9 @@
 //       12 GB (one reboot) before launch.
 //   node scripts/oracle-vm.ts status
 //       instance state, SSH tunnel connections, bootstrap progress from the serial console.
+//   node scripts/oracle-vm.ts rename [--apply]
+//       the VM (joutiya-vm before the Aalan rebrand) and its primary VNIC take the display name
+//       aalan-vm, in place; the hostname and everything else stay.
 //   node scripts/oracle-vm.ts reboot [--apply]
 //       soft reboot (ACPI) of joutiya-vm: a bootstrap that failed runs again (it stays as a per-boot
 //       script until it succeeds).
@@ -84,7 +87,9 @@ import { ownerVar, requireOwnerVar } from "./owner-env.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-export const NAMES = { vcn: "joutiya-vcn", gateway: "joutiya-igw", securityList: "joutiya-vcn-security-list", subnet: "joutiya-public", instance: "joutiya-vm" } as const;
+export const NAMES = { vcn: "joutiya-vcn", gateway: "joutiya-igw", securityList: "joutiya-vcn-security-list", subnet: "joutiya-public", instance: "aalan-vm" } as const;
+/** The instance's name before the Aalan rebrand: still found, until `rename --apply` has run. */
+export const LEGACY_INSTANCE_NAME = "joutiya-vm";
 export const VCN_CIDR = "10.0.0.0/16";
 export const SUBNET_CIDR = "10.0.0.0/24";
 /** Always Free: Ampere A1, 2 OCPU and 12 GB per tenancy (paid accounts included; more is billed), the joutiya-free-tier quota. */
@@ -377,6 +382,28 @@ async function findOne<T extends Resource>(oci: Oci, path: string, params: Recor
   return found[0];
 }
 
+/** The VM, under its name or its pre-rebrand name. */
+async function findInstance<T extends Resource>(oci: Oci, compartmentId: string): Promise<T | undefined> {
+  return (
+    (await findOne<T>(oci, "/20160918/instances", { compartmentId }, NAMES.instance)) ??
+    (await findOne<T>(oci, "/20160918/instances", { compartmentId }, LEGACY_INSTANCE_NAME))
+  );
+}
+
+/** `rename`: the VM and its primary VNIC take the display name NAMES.instance (in place, reversible; the hostname stays). */
+async function rename(oci: Oci, compartmentId: string): Promise<void> {
+  const instance = await findInstance<Instance>(oci, compartmentId);
+  if (!instance) throw new Error(`instance ${NAMES.instance} (or ${LEGACY_INSTANCE_NAME}): none`);
+  console.log(`instance ${instance.displayName} ${instance.lifecycleState} (${instance.id})`);
+  if (instance.displayName !== NAMES.instance) await oci.write("PUT", `/20160918/instances/${instance.id}`, { displayName: NAMES.instance });
+  const attachments = await oci.call<{ vnicId: string; lifecycleState: string }[]>("GET", "iaas", `/20160918/vnicAttachments${query({ compartmentId, instanceId: instance.id })}`);
+  for (const attachment of attachments.filter((item) => item.lifecycleState === "ATTACHED")) {
+    const vnic = await oci.call<{ id: string; isPrimary?: boolean; displayName?: string }>("GET", "iaas", `/20160918/vnics/${attachment.vnicId}`);
+    if (vnic.isPrimary && vnic.displayName !== NAMES.instance) await oci.write("PUT", `/20160918/vnics/${vnic.id}`, { displayName: NAMES.instance });
+  }
+  if (instance.displayName === NAMES.instance) console.log("instance already named: nothing to rename");
+}
+
 async function waitFor<T extends Resource>(oci: Oci, path: string, state: string, minutes = 10): Promise<T> {
   const deadline = Date.now() + minutes * 60_000;
   for (;;) {
@@ -515,7 +542,7 @@ async function launchPlan(
 }
 
 async function create(oci: Oci, targets: Targets, compartmentId: string, retryMinutes: number, smallFallback: boolean): Promise<void> {
-  const existing = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+  const existing = await findInstance<Instance>(oci, compartmentId);
   if (existing) {
     console.log(`instance ${NAMES.instance} already exists (${existing.lifecycleState}): nothing to create`);
     return;
@@ -537,7 +564,7 @@ async function create(oci: Oci, targets: Targets, compartmentId: string, retryMi
     // while the lookup fails: wait and look again.
     if (attempt > 0) {
       try {
-        launched = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+        launched = await findInstance<Instance>(oci, compartmentId);
       } catch (error) {
         if ((!isTransientError(error) && !isCapacityError(error)) || Date.now() > deadline) throw error;
         console.log(`instance lookup failed (${(error as Error).message}): looking again in 60 s`);
@@ -694,7 +721,7 @@ export function bootstrapLines(text: string): string[] {
 }
 
 async function status(oci: Oci, targets: Targets, compartmentId: string): Promise<void> {
-  const instance = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+  const instance = await findInstance<Instance>(oci, compartmentId);
   if (!instance) {
     console.log(`instance ${NAMES.instance}: none`);
     return;
@@ -860,7 +887,7 @@ async function runCommand(oci: Oci, compartmentId: string, instanceId: string, d
 }
 
 async function runningInstance(oci: Oci, compartmentId: string): Promise<Instance> {
-  const instance = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+  const instance = await findInstance<Instance>(oci, compartmentId);
   if (!instance) throw new Error(`instance ${NAMES.instance}: none`);
   if (instance.lifecycleState !== "RUNNING") throw new Error(`instance ${NAMES.instance} is ${instance.lifecycleState}, not RUNNING`);
   return instance;
@@ -875,7 +902,7 @@ async function agent(oci: Oci, compartmentId: string): Promise<void> {
   );
   console.log(`commands ${commands.length} recent`);
   for (const command of commands) console.log(`command  ${command.timeCreated} ${command.displayName ?? ""}${command.isCanceled ? " (cancelled)" : ""}`);
-  const instance = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+  const instance = await findInstance<Instance>(oci, compartmentId);
   if (instance?.lifecycleState !== "RUNNING") {
     console.log(`instance ${NAMES.instance}: ${instance?.lifecycleState ?? "none"}`);
     return;
@@ -911,7 +938,7 @@ async function sync(oci: Oci, compartmentId: string, stagingKeyFile?: string): P
 async function envFiles(oci: Oci, targets: Targets, compartmentId: string, env: DeployedEnv, froms: string[]): Promise<void> {
   if (froms.length === 0) throw new Error("env needs at least one --from=<file> (- reads stdin)");
   const sources: Source[] = froms.map((from) => ({ label: from === "-" ? "stdin" : basename(from), text: readFileSync(from === "-" ? 0 : from, "utf8") }));
-  const instance = await findOne<Instance>(oci, "/20160918/instances", { compartmentId }, NAMES.instance);
+  const instance = await findInstance<Instance>(oci, compartmentId);
   const running = instance?.lifecycleState === "RUNNING" ? instance : undefined;
   let existing = new Set<string>();
   if (running) existing = parseNames(await runCommand(oci, compartmentId, running.id, `joutiya-env ${env} names`, rootCommand(namesScript(env)), 300, true));
@@ -1433,12 +1460,12 @@ async function main(): Promise<void> {
   const [action, file] = args.filter((arg) => !arg.startsWith("--"));
   const retry = Number(/^--retry-minutes=(\d+)$/.exec(args.find((arg) => arg.startsWith("--retry-minutes=")) ?? "")?.[1] ?? 0);
   const smallFallback = args.includes("--small-fallback");
-  const actions = ["create", "launcher", "tunnels", "transfer", "build-staging", "rebuild", "status", "reboot", "agent", "run", "sync", "env", "search-setup", "wif", "deploy-status", "promote", "rollback", "cpu"];
+  const actions = ["create", "launcher", "tunnels", "transfer", "build-staging", "rebuild", "status", "reboot", "agent", "run", "sync", "env", "search-setup", "wif", "deploy-status", "promote", "rollback", "cpu", "rename"];
   const perEnv = action === "env" || action === "search-setup" || action === "wif";
   const argument = action === "run" || perEnv;
   if (!action || !actions.includes(action) || argument !== (file !== undefined) || (perEnv && !(DEPLOYED_ENVS as readonly string[]).includes(file ?? ""))) {
     throw new Error(
-      "usage: scripts/oracle-vm.ts <create|launcher|tunnels|transfer|build-staging [--commit=<sha>]|rebuild [--keep-disk]|status|reboot|agent|sync|run <script>|env <staging|prod> --from=<file>|--sealed=<file>[,...]|search-setup <staging|prod> [--reindex=<n>]|wif <staging|prod> [--certificates=<file>]|deploy-status|promote --tag=vX.Y.Z|rollback|cpu --minutes=<n>> [--apply] [--retry-minutes=<n>] [--small-fallback]",
+      "usage: scripts/oracle-vm.ts <create|launcher|tunnels|transfer|build-staging [--commit=<sha>]|rebuild [--keep-disk]|status|rename|reboot|agent|sync|run <script>|env <staging|prod> --from=<file>|--sealed=<file>[,...]|search-setup <staging|prod> [--reindex=<n>]|wif <staging|prod> [--certificates=<file>]|deploy-status|promote --tag=vX.Y.Z|rollback|cpu --minutes=<n>> [--apply] [--retry-minutes=<n>] [--small-fallback]",
     );
   }
 
@@ -1459,6 +1486,7 @@ async function main(): Promise<void> {
   else if (action === "tunnels") await tunnels(oci, targets, compartment);
   else if (action === "rebuild") await rebuild(oci, targets, compartment, args.includes("--keep-disk"));
   else if (action === "reboot") await reboot(oci, compartment);
+  else if (action === "rename") await rename(oci, compartment);
   else if (action === "agent") await agent(oci, compartment);
   else if (action === "run") await run(oci, compartment, file as string);
   else if (action === "sync") await sync(oci, compartment, args.find((arg) => arg.startsWith("--deploy-staging-key="))?.split("=").slice(1).join("="));

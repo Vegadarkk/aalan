@@ -120,7 +120,8 @@ async function failure(response: Response): Promise<string> {
 const GONE = ["TERMINATING", "TERMINATED"];
 
 interface Instance {
-  displayName: string;
+  /** Absent for a user that may only inspect instances, like joutiya-launcher: only shape and state come back. */
+  displayName?: string | null;
   lifecycleState: string;
   shape?: string;
 }
@@ -146,12 +147,18 @@ export async function launchOnce(launch: Launch, env: Env, scheduledTime: number
   if (!list.ok) return `instance list failed: ${await failure(list)}`;
   if (list.headers.has("opc-next-page")) return "instance list has more than one page: nothing launched";
   const alive = ((await list.json()) as Instance[]).filter((instance) => !GONE.includes(instance.lifecycleState));
-  const present = `instances present (${alive.map((instance) => `${instance.displayName} ${instance.lifecycleState}`).join(", ")})`;
+  const present = `instances present (${alive.map((instance) => `${instance.displayName ?? instance.shape ?? "?"} ${instance.lifecycleState}`).join(", ")})`;
 
   const needsMain = !alive.some((instance) => instance.displayName === launch.displayName || instance.shape === launch.request.shape);
   const { spare } = launch;
-  const isSpare = (instance: Instance): boolean => !!spare && (spare.names.includes(instance.displayName) || instance.shape === spare.request.shape);
-  const spareName = spare && alive.filter(isSpare).length < spare.names.length ? spare.names.find((name) => !alive.some((instance) => instance.displayName === name)) : undefined;
+  const isSpare = (instance: Instance): boolean => !!spare && (spare.names.includes(instance.displayName ?? "") || instance.shape === spare.request.shape);
+  const spares = alive.filter(isSpare);
+  // Without displayName, a live spare could not block its own name: the launch reused spare-micro-1, whose
+  // hostname the subnet already holds, and Oracle terminated each such VM before its VNIC (2 Nov 2026).
+  // Spares are launched in name order, so the unnamed ones are taken to hold the first free names.
+  const unnamed = spares.filter((instance) => !instance.displayName).length;
+  const freeNames = spare ? spare.names.filter((name) => !alive.some((instance) => instance.displayName === name)) : [];
+  const spareName = spare && spares.length < spare.names.length ? freeNames[unnamed] : undefined;
   const minute = Math.floor(scheduledTime / 60_000);
   if (!needsMain && !spareName) return `${present}: nothing launched`;
 

@@ -166,15 +166,16 @@ describe("SiteHeader", () => {
 
   it("floats 'Vendre' on phones, out of the cookie banner's way", () => {
     const html = render(<SiteHeader locale="fr" />);
-    const fab = /<a aria-label="([^"]+)" data-sell-fab="" class="(sell-arch fixed [^"]*)" href="\/fr\/deposer"[^>]*>(.*?)<\/a>/.exec(html);
-    expect(fab?.[1]).toBe(fr.Nav.post);
-    // The word beside the plus (journey review, 10).
-    expect(fab?.[3]).toContain(fr.Nav.sell);
-    expect(fab?.[2]).toContain("md:hidden");
-    expect(fab?.[2]).toContain("env(safe-area-inset-bottom)");
-    expect(fab?.[2]).toContain("[:root:has([data-testid=consent-banner])_&amp;]:hidden");
+    const fab = /<a data-sell-fab="" class="(sell-arch fixed [^"]*)" href="\/fr\/deposer"[^>]*>(.*?)<\/a>/.exec(html);
+    // The word beside the plus (journey review, 10), first in the accessible name (WCAG 2.5.3), then the full label.
+    expect(fab?.[2]).toContain(fr.Nav.sell);
+    expect(fab?.[2]).toContain(`<span class="sr-only">, ${fr.Nav.post}</span>`);
+    expect(fab?.[2]?.replace(/<[^>]+>/g, "").startsWith(fr.Nav.sell)).toBe(true);
+    expect(fab?.[1]).toContain("md:hidden");
+    expect(fab?.[1]).toContain("env(safe-area-inset-bottom)");
+    expect(fab?.[1]).toContain("[:root:has([data-testid=consent-banner])_&amp;]:hidden");
     // Out of the way of a field being filled, too (UX audit, 13); the footer keeps a lane for it.
-    expect(fab?.[2]).toContain("[:root:has(main_:is(input,select,textarea):focus)_&amp;]:hidden");
+    expect(fab?.[1]).toContain("[:root:has(main_:is(input,select,textarea):focus)_&amp;]:hidden");
   });
 });
 

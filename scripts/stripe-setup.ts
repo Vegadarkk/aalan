@@ -10,7 +10,8 @@
 // staging, rk_live_ for prod) with write on Products, Prices, Customer portal and Webhook endpoints
 // and read on the account, revoked after the run. Without it the dry run prints the plan offline.
 //
-// 1. the key's account must be targets.shared.stripe.accountId (GET /v1/account);
+// 1. the key's account must be targets.shared.stripe.accountId for prod, its general sandbox
+//    (shared.stripe.sandboxAccountId, own account id) for staging (GET /v1/account);
 // 2. products aalan_essentiel and aalan_business;
 // 3. one MAD price per plan and interval (lookup key aalan_{plan}_{interval}_mad, amount excluding
 //    tax from DEFAULT_PRICING): a changed amount gets a new price that takes the lookup key over;
@@ -265,7 +266,7 @@ export async function runSetup(options: SetupOptions): Promise<void> {
   // 1. The account behind the key.
   const account = await stripe<{ id?: string }>("GET", "/v1/account");
   if (account.status !== 200) throw failure("GET /v1/account (the key needs read access to the account)", account);
-  if (account.body.id !== accountId) throw new Error(`${KEY_VARIABLE} belongs to another Stripe account than shared.stripe.accountId: nothing done`);
+  if (account.body.id !== accountId) throw new Error(`${KEY_VARIABLE} belongs to another Stripe account than ${accountId} (infra/targets.json shared.stripe): nothing done`);
   write(`Account ${accountId} (${env}, ${apply ? "apply" : "dry run"}).`);
 
   // Before any write: a new webhook endpoint shows its signing secret once, so its file must be new.
@@ -365,8 +366,9 @@ async function main(): Promise<void> {
   const raw: unknown = JSON.parse(readFileSync(new URL("../infra/targets.json", import.meta.url), "utf8"));
   const targetErrors = validateTargets(raw);
   if (targetErrors.length > 0) throw new Error(targetErrors.join("\n"));
-  const accountId = (raw as Targets).shared.stripe.accountId;
-  if (!accountId) throw new Error("shared.stripe.accountId must be recorded in infra/targets.json first");
+  const field = cli.env === "prod" ? "accountId" : "sandboxAccountId";
+  const accountId = (raw as Targets).shared.stripe[field];
+  if (!accountId) throw new Error(`shared.stripe.${field} must be recorded in infra/targets.json first`);
   registerSrcResolver();
   const { DEFAULT_PRICING } = await import("../src/config/pricing.ts");
   await runSetup({ ...cli, key: ownerVar("STRIPE_SETUP_KEY"), accountId, plans: DEFAULT_PRICING.plans, passes: DEFAULT_PRICING.passes });

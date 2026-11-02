@@ -91,6 +91,12 @@ export type ErrorCode =
   // Credits and paid options (phase 7, design §5). Messages: Options.errors.<code>.
   /** config/flags.salesEnabled is off: nothing can be bought (403). */
   | "sales_closed"
+  /** Withdrawal from a credit pack (CGV §6): a shop's wallet has none (403); already asked, refunded, past 14 days, or no unspent credit left (409). */
+  | "withdrawal_not_consumer"
+  | "withdrawal_exists"
+  | "withdrawal_refunded"
+  | "withdrawal_expired"
+  | "withdrawal_nothing_left"
   /** A shop's credits are spent by its owner only (403). */
   | "billing_owner_only"
   /** The listing is not published or is hidden by moderation (409). */

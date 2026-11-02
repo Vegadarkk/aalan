@@ -248,3 +248,43 @@ export async function updateBillingEvent(
   await billingEventRef(eventId, source).update(datesToTimestamps(patch));
   void consume("firestore.writes", 1);
 }
+
+/** Most orders one account may have for a withdrawal's computation (a pack bought more often is an anomaly). */
+export const ACCOUNT_ORDERS_MAX = 300;
+
+function accountOrdersQuery(accountId: string): Query {
+  return db().collection(COLLECTIONS.orders).where("accountId", "==", accountId).limit(ACCOUNT_ORDERS_MAX + 1);
+}
+
+function ordersOf(docs: DocumentSnapshot[]): OrderRecord[] {
+  if (docs.length > ACCOUNT_ORDERS_MAX) throw new TooManyOrdersError(`more than ${ACCOUNT_ORDERS_MAX} orders`);
+  return docs.flatMap((doc) => {
+    const order = parse(doc, orderSchema, COLLECTIONS.orders);
+    return order ? [{ id: doc.id, ...order }] : [];
+  });
+}
+
+/** Every order of one billing account (single-field index on accountId), read in a transaction. */
+export async function listAccountOrdersTx(tx: Transaction, accountId: string): Promise<OrderRecord[]> {
+  const snapshot = await tx.get(accountOrdersQuery(accountId));
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return ordersOf(snapshot.docs);
+}
+
+export async function listAccountOrders(accountId: string): Promise<OrderRecord[]> {
+  const snapshot = await accountOrdersQuery(accountId).get();
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return ordersOf(snapshot.docs);
+}
+
+/** Withdrawals waiting for their refund, oldest first (single-field index on withdrawal.status, sorted here). */
+export async function listPendingWithdrawals(limit = 200): Promise<OrderRecord[]> {
+  const snapshot = await db().collection(COLLECTIONS.orders).where("withdrawal.status", "==", "requested").limit(limit).get();
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return snapshot.docs
+    .flatMap((doc) => {
+      const order = parse(doc, orderSchema, COLLECTIONS.orders);
+      return order ? [{ id: doc.id, ...order }] : [];
+    })
+    .sort((a, b) => (a.withdrawal?.requestedAt.getTime() ?? 0) - (b.withdrawal?.requestedAt.getTime() ?? 0));
+}

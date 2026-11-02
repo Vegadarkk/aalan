@@ -8,6 +8,7 @@ import { useApiErrorMessage } from "@/components/auth/form-message";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { textLinkClassName } from "@/components/ui/text-link";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { useNumbersTranslations } from "@/i18n/numbers";
@@ -163,6 +164,11 @@ export function WalletView() {
           </div>
         </dl>
         <p className="text-sm text-foreground-muted text-pretty">{t("spendOrder")}</p>
+        {data.account === "personal" ? (
+          <Link href="/porte-monnaie/retractation" className={cn("w-fit rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+            {t("withdrawLink")}
+          </Link>
+        ) : null}
       </section>
 
       <section aria-labelledby="wallet-history" className="flex flex-col gap-4">

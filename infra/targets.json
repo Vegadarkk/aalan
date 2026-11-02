@@ -27,7 +27,8 @@
       "repositoryId": "1406007525"
     },
     "stripe": {
-      "accountId": "acct_1UQxR07tCjk226ma"
+      "accountId": "acct_1UQxR07tCjk226ma",
+      "sandboxAccountId": "acct_1UQxRH6McdFHcG9K"
     },
     "revenuecat": {
       "projectId": null

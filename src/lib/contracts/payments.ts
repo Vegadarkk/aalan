@@ -79,7 +79,7 @@ export const LEDGER_PAGE_SIZE = 20;
 
 export interface LedgerEntryView {
   id: string;
-  reason: "purchase" | "option" | "plan_grant" | "refund" | "refund_reversed" | "admin_adjust";
+  reason: "purchase" | "option" | "plan_grant" | "refund" | "refund_reversed" | "withdrawal" | "admin_adjust";
   /** Change of the purchased balance. */
   delta: number;
   planCreditsDelta: number;
@@ -270,4 +270,85 @@ export const PAYMENTS_API = {
   portal: "/api/billing/portal",
   invoices: "/api/billing/invoices",
   options: (listingId: string) => `/api/listings/${listingId}/options`,
+  withdrawals: "/api/wallet/withdrawals",
+  adminWithdrawals: "/api/admin/withdrawals",
 } as const;
+
+// ---- Withdrawal of a credit pack (CGV §6, online form, phase 7 design §5) ------------------------
+
+/** Version of the withdrawal statement (Withdrawal.statement in messages/*.json). */
+export const WITHDRAWAL_STATEMENT_VERSION = "2026-11";
+/** Days after the purchase during which a consumer may withdraw (CGV §6). */
+export const WITHDRAWAL_DAYS = 14;
+/** Days after the request within which the paid share is refunded (CGV §6). */
+export const WITHDRAWAL_REFUND_DAYS = 14;
+
+/** Order ids are store transaction ids with "/" replaced (src/lib/db/repositories/billing.ts orderId). */
+export const orderIdSchema = z.string().regex(/^(?!\.\.?$)(?!__.*__$)[^/\s]{1,255}$/);
+
+export const requestWithdrawalSchema = z
+  .object({
+    orderId: orderIdSchema,
+    /** The statement box: "Je vous notifie par la présente ma rétractation ...". */
+    confirm: z.literal(true),
+    /** Language of the acknowledgement e-mail. */
+    locale: z.enum(LOCALES).optional(),
+  })
+  .strict();
+export type RequestWithdrawalInput = z.infer<typeof requestWithdrawalSchema>;
+
+export interface WithdrawalReceiptView {
+  receipt: string;
+  orderId: string;
+  status: "requested" | "refunded";
+  requestedAt: string;
+  /** Credits of the pack bought, and the unspent ones removed. */
+  packCredits: number;
+  removedCredits: number;
+  currency: string;
+  refundMinor: number;
+  /** Latest refund date (requestedAt + WITHDRAWAL_REFUND_DAYS). */
+  refundBy: string;
+  refundedAt: string | null;
+}
+
+export interface WithdrawablePackView {
+  orderId: string;
+  purchasedAt: string;
+  /** Last moment to withdraw. */
+  until: string;
+  packCredits: number;
+  /** Unspent credits that would be removed now, and the amount refunded for them. */
+  removableCredits: number;
+  currency: string;
+  refundMinor: number;
+}
+
+export interface WithdrawalsResponse {
+  /** false for a shop's wallet: Pros buy for their business and have no right of withdrawal. */
+  eligible: boolean;
+  packs: WithdrawablePackView[];
+  receipts: WithdrawalReceiptView[];
+}
+
+export const markWithdrawalRefundedSchema = z
+  .object({
+    orderId: orderIdSchema,
+    /** Stripe refund id, when the refund was made in Stripe. */
+    stripeRefundId: z.string().regex(/^(re|pyr)_[A-Za-z0-9]{1,100}$/).optional(),
+  })
+  .strict();
+export type MarkWithdrawalRefundedInput = z.infer<typeof markWithdrawalRefundedSchema>;
+
+export interface AdminWithdrawalView {
+  orderId: string;
+  receipt: string;
+  accountId: string;
+  requestedAt: string;
+  refundBy: string;
+  currency: string;
+  refundMinor: number;
+  removedCredits: number;
+  packId: string;
+  environment: "SANDBOX" | "PRODUCTION";
+}

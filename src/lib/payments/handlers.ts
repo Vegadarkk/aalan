@@ -1,6 +1,6 @@
 import "server-only";
 import { requireUser } from "@/lib/auth/guards";
-import { billingPortalSchema, buyOptionSchema, checkoutPackSchema, checkoutPassSchema, checkoutPlanSchema, LEDGER_PAGE_SIZE, type LedgerEntryView, type WalletResponse } from "@/lib/contracts/payments";
+import { billingPortalSchema, buyOptionSchema, requestWithdrawalSchema, checkoutPackSchema, checkoutPassSchema, checkoutPlanSchema, LEDGER_PAGE_SIZE, type LedgerEntryView, type WalletResponse } from "@/lib/contracts/payments";
 import { OPTION_IDS, type OptionId } from "@/config/pricing";
 import { getWallet, listLedger, type LedgerRecord } from "@/lib/db/repositories/wallets";
 import { getFlags } from "@/lib/config/runtime";
@@ -20,6 +20,7 @@ import { shopInvoices } from "./invoices";
 import { startPassCheckout } from "./pass";
 import { openBillingPortal, startPlanCheckout, subscriptionPage } from "./plans";
 import { StripeApiError } from "./stripe-api";
+import { requestWithdrawal, withdrawalsView } from "./withdrawals";
 
 // Route handlers of the credits wallet and the paid options (phase 7 design §5, §9): requireUser
 // (Origin + CSRF on the purchase), the per-account limiter before the first Firestore read, the
@@ -166,4 +167,24 @@ export async function handleBillingPortal(request: Request): Promise<Response> {
   const input = await readJson(request, billingPortalSchema);
   await enforceLimit("billing.checkout.uid", auth.user.uid);
   return json(await viaStripe(() => openBillingPortal(auth, input.locale)));
+}
+
+/** GET /api/wallet/withdrawals: the member's packs that can be withdrawn now and their past withdrawals. */
+export async function handleWithdrawals(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { allowSuspended: true });
+  await enforceLimit("wallet.read.uid", auth.user.uid);
+  const body = await withdrawalsView(auth);
+  await consumeLimit("wallet.read.uid", auth.user.uid, body.packs.length + body.receipts.length + 1);
+  return json(body);
+}
+
+/**
+ * POST /api/wallet/withdrawals: withdraws from one pack (CGV §6). Open while sales are closed and
+ * to a suspended account: a legal right, not a purchase.
+ */
+export async function handleRequestWithdrawal(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true, allowSuspended: true });
+  const input = await readJson(request, requestWithdrawalSchema);
+  await enforceLimit("billing.withdrawal.uid", auth.user.uid);
+  return json(await requestWithdrawal(auth, input));
 }

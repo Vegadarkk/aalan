@@ -20,6 +20,8 @@ import { POST as reveal } from "@/app/api/listings/[id]/phone/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
 import type { CreateListingResponse, ListingPatch, PhoneRevealResponse } from "@/lib/contracts/listings";
 import { getListingStats } from "@/lib/db/repositories/listing-stats";
+import { COLLECTIONS } from "@/lib/db/schemas";
+import { db } from "@/lib/firebase/admin";
 import { updateListing } from "@/lib/db/repositories/listings";
 import { listRevealLogs } from "@/lib/db/repositories/reveal-logs";
 import { resetServerEnv } from "@/lib/env";
@@ -134,6 +136,27 @@ describe("POST /api/listings/{id}/phone", () => {
     const example = await ask(viewer, live);
     expect([example.status, example.body.error.code]).toEqual([409, "listing_unavailable"]);
     expect(await listRevealLogs(live)).toEqual([]);
+
+    // Hidden by a report's strong signal while a moderator decides: no number either, like a new
+    // conversation (security review, 2 Nov 2026).
+    const hidden = await listingOf(await member({ phone: freshPhone() }));
+    await updateListing(hidden, { moderation: { state: "auto_ok", score: 0, flags: [], openReports: 1, hiddenBy: { reportId: "r1", signal: "trusted", at: new Date() } } });
+    const masked = await ask(viewer, hidden);
+    expect([masked.status, masked.body.error.code]).toEqual([409, "listing_unavailable"]);
+    expect(await listRevealLogs(hidden)).toEqual([]);
+  });
+
+  it("refuses the number of a suspended, banned or closed seller (409)", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const viewer = await member();
+    const id = await listingOf(owner);
+    for (const status of ["suspended", "banned", "closed"] as const) {
+      await db().collection(COLLECTIONS.users).doc(owner.uid).update({ status });
+      const refused = await ask(viewer, id);
+      expect([refused.status, refused.body.error.code], status).toEqual([409, "listing_unavailable"]);
+    }
+    await db().collection(COLLECTIONS.users).doc(owner.uid).update({ status: "active" });
+    expect((await ask(viewer, id)).status).toBe(200);
   });
 
   it("counts every call per account, repeats included (reveal.call.uid), before any read", async () => {

@@ -6,7 +6,7 @@ import { cardPromo, isSoldOut, priceRange, type CardPromo, type ListingVariants,
 import type { ListingAttributes, ListingStatus, RentalAvailability } from "@/lib/contracts/listings";
 import type { PhotoVariant } from "@/lib/contracts/photo-variants";
 import type { RatingSummary, ReviewPage } from "@/lib/contracts/reviews";
-import { COLLECTIONS } from "@/lib/db/schemas";
+import { COLLECTIONS, type UserDoc } from "@/lib/db/schemas";
 import { getListing, listPublishedByOwner, type ListingRecord } from "@/lib/db/repositories/listings";
 import { findUserByPublicId, getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { getSellerPayments } from "@/lib/config/runtime";
@@ -56,6 +56,9 @@ function isPublicState(status: ListingStatus): status is PublicState {
 export function isPubliclyVisible(listing: Pick<ListingRecord, "status" | "moderation">): boolean {
   return isPublicState(listing.status) && !listing.moderation.hiddenBy;
 }
+
+/** Seller account states nobody may reach from a listing (message, phone reveal). */
+export const SELLER_UNREACHABLE: readonly UserDoc["status"][] = ["banned", "suspended", "closed"];
 
 /**
  * Whether a buyer may reach the seller from this listing (message, phone, appointment, payment):

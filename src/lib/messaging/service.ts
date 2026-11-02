@@ -5,10 +5,10 @@ import { getAbuseRules } from "@/lib/config/runtime";
 import { MESSAGE_TEXT_MAX, type MessageRiskFlag, type SendMessageResponse, type StartConversationResponse } from "@/lib/contracts/messaging";
 import { getListing } from "@/lib/db/repositories/listings";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
-import type { ConversationDoc, UserDoc } from "@/lib/db/schemas";
+import type { ConversationDoc } from "@/lib/db/schemas";
 import type { Claims } from "@/lib/firebase/claims";
 import { HttpError, notFound, unavailable } from "@/lib/http/errors";
-import { PUBLIC_STATES, acceptsContact } from "@/lib/listings/public";
+import { PUBLIC_STATES, SELLER_UNREACHABLE, acceptsContact } from "@/lib/listings/public";
 import { logger } from "@/lib/logging/logger";
 import { listingOfferPrice } from "@/lib/offers/listing";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
@@ -50,7 +50,6 @@ export const MESSAGING_QUOTAS = ["firestore.writes"] as const satisfies readonly
 /** Accounts younger than this start at most 10 conversations a day (AF §6). */
 export const YOUNG_ACCOUNT_MS = 7 * 24 * 60 * 60 * 1000;
 /** A seller in one of these states cannot be contacted (D8). */
-const SELLER_UNREACHABLE: readonly UserDoc["status"][] = ["banned", "suspended", "closed"];
 /** Masking may lengthen a text a little (a 4-character domain becomes a 5-character marker). */
 const STORED_TEXT_MAX = MESSAGE_TEXT_MAX + 200;
 

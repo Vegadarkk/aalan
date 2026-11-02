@@ -18,11 +18,13 @@ const fakeValkey = {
   }),
 };
 const degraded = new Set<string>();
+let assistantHeadroom: number | null = 1_000_000;
 
 vi.mock("@/lib/valkey/clients", () => ({ isValkeyConfigured: () => true, valkey: () => fakeValkey }));
 vi.mock("@/lib/quota", () => ({
   consume: vi.fn(async () => ({ level: "ok" })),
   isDegraded: vi.fn(async (id: string) => degraded.has(id)),
+  headroom: vi.fn(async () => assistantHeadroom),
 }));
 vi.mock("@/lib/alert", () => ({ alert: vi.fn(async () => true) }));
 
@@ -61,6 +63,7 @@ type Params = { model: string; system: { text: string; cache_control: unknown }[
 beforeEach(() => {
   store.clear();
   degraded.clear();
+  assistantHeadroom = 1_000_000;
   resetSpendLimitLatch();
   setAiConfigForTests(DEFAULT_AI);
   vi.mocked(consume).mockClear();
@@ -136,6 +139,17 @@ describe("askAssistant", () => {
     const parse = stub(async () => reply({ answer: "x", articles: [] }));
     expect(await askAssistant(input)).toEqual({ mode: "search", reason: "budget" });
     expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("falls back to search once the assistant used its share of the month, not when the counter is unreadable", async () => {
+    const { headroom } = await import("@/lib/quota");
+    const parse = stub(async () => reply({ answer: "Réponse", articles: [] }));
+    assistantHeadroom = 0;
+    expect(await askAssistant(input)).toEqual({ mode: "search", reason: "budget" });
+    expect(parse).not.toHaveBeenCalled();
+    expect(headroom).toHaveBeenCalledWith("claude.budget", 0.4);
+    assistantHeadroom = null;
+    expect((await askAssistant(input)).mode).toBe("ai");
   });
 
   it("latches a spend-limit error and stops calling Claude", async () => {

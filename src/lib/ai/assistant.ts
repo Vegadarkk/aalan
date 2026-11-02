@@ -6,6 +6,7 @@ import type { Locale } from "@/config/site";
 import type { AssistantTurn } from "@/lib/contracts/assistant";
 import { serverEnv } from "@/lib/env";
 import { logger } from "@/lib/logging/logger";
+import { headroom } from "@/lib/quota";
 import { z } from "@/lib/zod";
 import { claudeBlocked, latchSpendLimit, recordClaudeCost } from "./budget";
 import { aiConfig } from "./config";
@@ -77,11 +78,19 @@ export interface AssistantInput {
   articles: readonly HelpArticle[];
 }
 
+/** Share of the monthly `claude.budget` limit the assistant may use (moderation keeps the rest up to the 80 % switch). */
+export const ASSISTANT_BUDGET_SHARE = 0.4;
+
 export async function askAssistant(input: AssistantInput): Promise<AssistantOutcome> {
   const client = assistantClient();
   if (!client) return { mode: "search", reason: "not_configured" };
   const blocked = await claudeBlocked();
   if (blocked) return { mode: "search", reason: blocked };
+  // The assistant's own share of the month: past it, help search only, so a flood of questions
+  // (anonymous, spread over many addresses) cannot reach the 80 % switch and take Claude away
+  // from moderation for the rest of the month (security review, 2 Nov 2026). Unreadable: go on,
+  // like claudeBlocked.
+  if ((await headroom("claude.budget", ASSISTANT_BUDGET_SHARE)) === 0) return { mode: "search", reason: "budget" };
 
   const config = await aiConfig();
   const model = config.models.assistant;

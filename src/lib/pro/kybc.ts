@@ -92,8 +92,9 @@ export const KYBC_NOTICE_VERSION = "2026-10-19";
 /**
  * PDF name tokens that run code, open files or embed payloads (`/OpenAction` + `/JavaScript`,
  * `/Launch`, `/EmbeddedFile`, XFA forms...). A piece carrying one is refused at `complete`: staff
- * download the PDFs to a desktop reader. Defence in depth, not a sanitiser: compressed object
- * streams hide names from this scan, so PDFs still open in the sandboxed browser viewer first.
+ * download the PDFs to a desktop reader. Raw bytes only: the server check also inflates the
+ * compressed object streams (`pdfHasActiveContentDeep`, src/lib/pro/kybc-pdf.ts). Defence in
+ * depth, not a sanitiser.
  */
 const PDF_ACTIVE_TOKENS = /\/(?:JavaScript|JS|Launch|OpenAction|AA|EmbeddedFiles?|RichMedia|XFA|GoToR|SubmitForm|ImportData)(?![A-Za-z0-9_])/;
 

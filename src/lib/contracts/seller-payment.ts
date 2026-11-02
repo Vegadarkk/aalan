@@ -1,5 +1,6 @@
 import { PAYMENT_HOSTS_MAX, PAYMENT_URL_MAX, SELLER_INFO_LIMITS, type PaymentLinkProblem } from "@/config/seller-payments";
 import { z } from "@/lib/zod";
+import { listingIdSchema } from "@/lib/contracts/listings";
 
 // « Payer chez le vendeur » API contracts (design phase-7/boutique-temporaire.md §2): the owner's
 // settings (/pro/paiement), the public button and the back office. Client-safe.
@@ -70,7 +71,7 @@ export interface PublicShopPayment {
 export const listingPaymentLinkInputSchema = z.object({ url: z.string().max(PAYMENT_URL_MAX).nullable() }).strict();
 export type ListingPaymentLinkInput = z.infer<typeof listingPaymentLinkInputSchema>;
 
-export const openPaymentSchema = z.object({ listingId: z.string().min(1).max(64).optional() }).strict();
+export const openPaymentSchema = z.object({ listingId: listingIdSchema.optional() }).strict();
 
 /** POST /api/shops/{proId}/payment: the link to open now. */
 export interface OpenPaymentResponse {

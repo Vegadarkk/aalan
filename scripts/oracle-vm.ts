@@ -1326,7 +1326,7 @@ export function wifDir(env: DeployedEnv, service: WifService): string {
 }
 
 /** Root script: a new EC P-256 key beside the current one, and its request as `csr <base64 DER>`. */
-export function wifKeyScript(env: DeployedEnv, service: WifService): string {
+export function wifKeyScript(env: DeployedEnv, service: WifService, project: string): string {
   return [
     `dir=${wifDir(env, service)}`,
     `[[ -d /etc/joutiya/${env} ]] || { echo "/etc/joutiya/${env} is missing: the bootstrap has not run" >&2; exit 1; }`,
@@ -1335,7 +1335,7 @@ export function wifKeyScript(env: DeployedEnv, service: WifService): string {
     'openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$dir/key.next.pem"',
     `chgrp joutiya-${env} "$dir/key.next.pem"`,
     'chmod 0640 "$dir/key.next.pem"',
-    `csr="$(openssl req -new -key "$dir/key.next.pem" -subj /CN=${subjectName(env, service)} -outform DER | base64 -w0)"`,
+    `csr="$(openssl req -new -key "$dir/key.next.pem" -subj /CN=${subjectName(env, service, project)} -outform DER | base64 -w0)"`,
     `printf 'csr %s\\n' "$csr"`,
   ].join("\n");
 }
@@ -1367,7 +1367,7 @@ export function wifInstallScript(env: DeployedEnv, service: WifService, certific
     'mv -f "$dir/cert.next.pem" "$dir/cert.pem"',
     'mv -f "$dir/certificate_config.json.next" "$dir/certificate_config.json"',
     'mv -f "$dir/credentials.json.next" "$dir/credentials.json"',
-    `echo "${service}: ${subjectName(env, service)} installed, valid until $(openssl x509 -in "$dir/cert.pem" -noout -enddate | cut -d= -f2)"`,
+    `echo "${service}: $(openssl x509 -in "$dir/cert.pem" -noout -subject -nameopt sep_multiline | sed -n 's/^ *CN=//p') installed, valid until $(openssl x509 -in "$dir/cert.pem" -noout -enddate | cut -d= -f2)"`,
   ].join("\n");
 }
 
@@ -1383,12 +1383,12 @@ export function wifRecreateScript(env: DeployedEnv): string {
 }
 
 /** The certificate lines of `text` for `env`, one per service, as PEM; checked before they travel. */
-export function wifCertificates(text: string, env: DeployedEnv, now = new Date()): Map<WifService, string> {
+export function wifCertificates(text: string, env: DeployedEnv, project: string, now = new Date()): Map<WifService, string> {
   const lines = wifLines(text, "certificate").filter((line) => line.env === env);
   const certificates = new Map<WifService, string>();
   for (const service of WIF_SERVICES) {
-    const subject = subjectName(env, service);
-    const line = lines.find((candidate) => candidate.service === service);
+    const subject = subjectName(env, service, project);
+    const line = lines.find((candidate) => candidate.subject === subject);
     if (!line) throw new Error(`no \`certificate ${subject} ...\` line`);
     const pem = pemBlock("CERTIFICATE", line.der);
     let certificate: X509Certificate;
@@ -1407,14 +1407,14 @@ export function wifCertificates(text: string, env: DeployedEnv, now = new Date()
 async function wif(oci: Oci, targets: Targets, compartmentId: string, env: DeployedEnv, certificatesFile: string | undefined): Promise<void> {
   const { projectId: project, projectNumber } = targets.environments[env].firebase;
   if (project === null || projectNumber === null) throw new Error(`environments.${env}.firebase is not recorded in infra/targets.json`);
-  const certificates = certificatesFile === undefined ? undefined : wifCertificates(readFileSync(certificatesFile, "utf8"), env);
+  const certificates = certificatesFile === undefined ? undefined : wifCertificates(readFileSync(certificatesFile, "utf8"), env, project);
   const instance = await runningInstance(oci, compartmentId);
 
   if (certificates === undefined) {
     const requests: string[] = [];
     for (const service of WIF_SERVICES) {
-      const output = await runCommand(oci, compartmentId, instance.id, `joutiya-wif ${env} ${service} key`, rootCommand(wifKeyScript(env, service)), 300);
-      if (oci.apply) requests.push(`request ${subjectName(env, service)} ${derBase64(csrFromOutput(output))}`);
+      const output = await runCommand(oci, compartmentId, instance.id, `joutiya-wif ${env} ${service} key`, rootCommand(wifKeyScript(env, service, project)), 300);
+      if (oci.apply) requests.push(`request ${subjectName(env, service, project)} ${derBase64(csrFromOutput(output))}`);
     }
     if (!oci.apply) return;
     console.log(requests.join("\n"));

@@ -85,12 +85,12 @@ describe("credential files", () => {
 
 describe("what setup wants", () => {
   it("lets each environment's provider accept its own two containers only", () => {
-    const prod = vmProviderBody("prod", `${caPem}\n\n`);
+    const prod = vmProviderBody("prod", `${caPem}\n\n`, "joutiya-prod");
     expect(prod.attributeMapping).toEqual({ "google.subject": "assertion.subject.dn.cn" });
     expect(prod.attributeCondition).toBe('assertion.subject.dn.cn in ["joutiya-prod-web", "joutiya-prod-worker"]');
     expect(prod.x509?.trustStore?.trustAnchors).toEqual([{ pemCertificate: caPem.trim() }]);
     // A CA written by openssl on Windows (CRLF) reaches Google with LF line endings.
-    expect(vmProviderBody("prod", caPem.replace(/\n/g, "\r\n")).x509).toEqual(prod.x509);
+    expect(vmProviderBody("prod", caPem.replace(/\n/g, "\r\n"), "joutiya-prod").x509).toEqual(prod.x509);
     expect(prod.displayName?.length).toBeLessThanOrEqual(32);
   });
 
@@ -100,7 +100,7 @@ describe("what setup wants", () => {
     expect(github.attributeCondition).toBe(
       'assertion.repository_id == "1406007525" && assertion.ref == "refs/heads/main" && assertion.workflow_ref.endsWith("/.github/workflows/deploy-staging.yml@refs/heads/main")',
     );
-    expect(githubProviderName("365736224142")).toBe("projects/365736224142/locations/global/workloadIdentityPools/github/providers/joutiya");
+    expect(githubProviderName("365736224142", "joutiya-staging")).toBe("projects/365736224142/locations/global/workloadIdentityPools/github/providers/joutiya");
   });
 
   it("gives the accounts the roles of §9, and the deployer to staging only", () => {
@@ -119,6 +119,23 @@ describe("what setup wants", () => {
     ]);
     expect(accountPlans("prod", "joutiya-prod", "652258095167", null).map((plan) => plan.name)).toEqual(["joutiya-web", "joutiya-worker"]);
     expect(() => accountPlans("staging", "joutiya-staging", "365736224142", null)).toThrow(/repositoryId is not recorded/);
+  });
+
+  it("names the identities of an aalan-* project aalan-*, and keeps joutiya-* names in a former project", () => {
+    const staging = accountPlans("staging", "aalan-staging", "410714423718", "1406007525");
+    expect(staging.map((plan) => plan.name)).toEqual(["aalan-web", "aalan-worker", "aalan-deployer"]);
+    expect(staging[0]?.bindings).toEqual([
+      { role: "roles/iam.workloadIdentityUser", member: "principal://iam.googleapis.com/projects/410714423718/locations/global/workloadIdentityPools/aalan-vm/subject/aalan-staging-web" },
+      { role: "roles/iam.serviceAccountTokenCreator", member: "serviceAccount:aalan-web@aalan-staging.iam.gserviceaccount.com" },
+    ]);
+    expect(vmProviderBody("prod", caPem, "aalan-prod").attributeCondition).toBe('assertion.subject.dn.cn in ["aalan-prod-web", "aalan-prod-worker"]');
+    expect(githubProviderName("410714423718", "aalan-staging")).toBe("projects/410714423718/locations/global/workloadIdentityPools/github/providers/aalan");
+    expect(credentialConfig({ projectNumber: "779435329445", project: "aalan-prod", service: "worker", certificateConfigPath: "/c.json" })).toMatchObject({
+      audience: "//iam.googleapis.com/projects/779435329445/locations/global/workloadIdentityPools/aalan-vm/providers/x509",
+      service_account_impersonation_url: expect.stringContaining("aalan-worker@aalan-prod.iam.gserviceaccount.com") as unknown,
+    });
+    expect(wifKeyScript("staging", "web", "aalan-staging")).toContain("-subj /CN=aalan-staging-web");
+    expect(accountPlans("prod", "joutiya-prod", "652258095167", null).map((plan) => plan.name)).toEqual(["joutiya-web", "joutiya-worker"]);
   });
 
   it("adds grants to a policy without touching the rest", () => {
@@ -152,13 +169,13 @@ describe("what setup wants", () => {
   });
 
   it("updates a provider only where it differs", () => {
-    const wanted = vmProviderBody("staging", caPem);
+    const wanted = vmProviderBody("staging", caPem, "joutiya-staging");
     expect(providerChanges({ ...wanted, state: "ACTIVE", name: "x" }, wanted)).toEqual([]);
     const other = caFiles(join(work, "other"));
     quiet();
     createCa(other);
-    expect(providerChanges(vmProviderBody("staging", readFileSync(other.cert, "utf8")), wanted)).toEqual(["x509"]);
-    expect(providerChanges(vmProviderBody("prod", caPem), wanted)).toEqual(["attributeCondition"]);
+    expect(providerChanges(vmProviderBody("staging", readFileSync(other.cert, "utf8"), "joutiya-staging"), wanted)).toEqual(["x509"]);
+    expect(providerChanges(vmProviderBody("prod", caPem, "joutiya-prod"), wanted)).toEqual(["attributeCondition"]);
     expect(providerChanges({ ...githubProviderBody("1"), oidc: { issuerUri: "https://example.com" } }, githubProviderBody("1"))).toEqual(["oidc"]);
   });
 });
@@ -256,14 +273,14 @@ describe("the CA and the certificates", () => {
     expect(wifLines(text, "request").map((line) => line.subject)).toEqual(["joutiya-staging-web", "joutiya-staging-worker"]);
     const certificates = signRequests(text, ca);
     expect(certificates.map((line) => line.split(" ").slice(0, 2).join(" "))).toEqual(["certificate joutiya-staging-web", "certificate joutiya-staging-worker"]);
-    expect(wifCertificates(certificates.join("\n"), "staging").size).toBe(2);
+    expect(wifCertificates(certificates.join("\n"), "staging", "joutiya-staging").size).toBe(2);
 
     // A CA written by openssl on Windows (CRLF files) signs CRLF text the same way.
     const windows = caFiles(join(work, "windows"));
     mkdirSync(windows.dir, { recursive: true });
     for (const file of [ca.key, ca.cert]) writeFileSync(join(windows.dir, basename(file)), readFileSync(file, "utf8").replace(/\n/g, "\r\n"));
     const signed = signRequests(text.replace(/\r?\n/g, "\r\n"), windows);
-    expect(wifCertificates(signed.join("\r\n"), "staging").size).toBe(2);
+    expect(wifCertificates(signed.join("\r\n"), "staging", "joutiya-staging").size).toBe(2);
 
     expect(() => signRequests("no request here", ca)).toThrow(/no `request/);
     const twice = `request joutiya-prod-web ${der("joutiya-prod-web")}\nrequest joutiya-prod-web ${der("joutiya-prod-web")}`;
@@ -276,13 +293,13 @@ describe("the CA and the certificates", () => {
     const sign = (cn: string, days = LEAF_DAYS) => derBase64(signCsr({ csr: request(join(work, "certs", cn), cn).csr, subject: cn, days, ca }));
     const web = sign("joutiya-prod-web");
     const worker = sign("joutiya-prod-worker");
-    expect([...wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${worker}`, "prod").keys()]).toEqual(["web", "worker"]);
-    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}`, "prod")).toThrow(/no `certificate joutiya-prod-worker/);
-    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${worker}`, "staging")).toThrow(/no `certificate joutiya-staging-web/);
-    expect(() => wifCertificates(`certificate joutiya-prod-web ${worker}\ncertificate joutiya-prod-worker ${worker}`, "prod")).toThrow(/joutiya-prod-web: the certificate is for CN=joutiya-prod-worker/);
+    expect([...wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${worker}`, "prod", "joutiya-prod").keys()]).toEqual(["web", "worker"]);
+    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}`, "prod", "joutiya-prod")).toThrow(/no `certificate joutiya-prod-worker/);
+    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${worker}`, "staging", "joutiya-staging")).toThrow(/no `certificate joutiya-staging-web/);
+    expect(() => wifCertificates(`certificate joutiya-prod-web ${worker}\ncertificate joutiya-prod-worker ${worker}`, "prod", "joutiya-prod")).toThrow(/joutiya-prod-web: the certificate is for CN=joutiya-prod-worker/);
     const later = new Date(Date.now() + 2 * 86_400_000);
     const shortLived = sign("joutiya-prod-worker", 1);
-    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${shortLived}`, "prod", later)).toThrow(/joutiya-prod-worker: the certificate has expired/);
+    expect(() => wifCertificates(`certificate joutiya-prod-web ${web}\ncertificate joutiya-prod-worker ${shortLived}`, "prod", "joutiya-prod", later)).toThrow(/joutiya-prod-worker: the certificate has expired/);
   });
 });
 
@@ -314,12 +331,12 @@ describe("the VM side (oracle-vm.ts wif)", () => {
   };
 
   it("makes the key on the VM, installs the signed certificate, and google-auth-library reads the result", async () => {
-    const key = run(wifKeyScript("staging", "web"));
+    const key = run(wifKeyScript("staging", "web", "joutiya-staging"));
     expect(key.status, key.stderr).toBe(0);
     // The text hand-off: request line from the VM, certificate line from the CA machine.
     const signed = signRequests(`request joutiya-staging-web ${derBase64(csrFromOutput(key.stdout))}`, ca).join("\n");
     const worker = signRequests(`request joutiya-staging-worker ${derBase64(request(join(work, "e2e-worker"), "joutiya-staging-worker").csr)}`, ca).join("\n");
-    const certificate = wifCertificates(`${signed}\n${worker}`, "staging").get("web") ?? "";
+    const certificate = wifCertificates(`${signed}\n${worker}`, "staging", "joutiya-staging").get("web") ?? "";
     const install = run(wifInstallScript("staging", "web", certificate, files));
     expect(install.status, install.stderr).toBe(0);
     expect(install.stdout).toMatch(/^web: joutiya-staging-web installed, valid until /);
@@ -334,7 +351,7 @@ describe("the VM side (oracle-vm.ts wif)", () => {
 
   it("refuses a certificate of another key and keeps the installed pair", () => {
     const before = readFileSync(join(dir, "cert.pem"), "utf8");
-    expect(run(wifKeyScript("staging", "web")).status).toBe(0);
+    expect(run(wifKeyScript("staging", "web", "joutiya-staging")).status).toBe(0);
     const install = run(wifInstallScript("staging", "web", before, files));
     expect(install.status).toBe(1);
     expect(install.stderr).toContain("does not match key.next.pem");
@@ -360,10 +377,10 @@ describe("the VM side (oracle-vm.ts wif)", () => {
       credentials: JSON.stringify(credentialConfig({ projectNumber: "652258095167", project: "joutiya-prod", service: "worker", certificateConfigPath: `${wifDir("prod", "worker")}/certificate_config.json` })),
       certificateConfig: JSON.stringify(certificateConfig(`${wifDir("prod", "worker")}/cert.pem`, `${wifDir("prod", "worker")}/key.pem`)),
     };
-    for (const script of [wifKeyScript("prod", "worker"), wifInstallScript("prod", "worker", certificate, real), wifRecreateScript("prod")]) {
+    for (const script of [wifKeyScript("prod", "worker", "joutiya-prod"), wifInstallScript("prod", "worker", certificate, real), wifRecreateScript("prod")]) {
       expect(Buffer.byteLength(rootCommand(script))).toBeLessThan(RUN_COMMAND_MAX_BYTES);
     }
-    expect(wifKeyScript("prod", "worker")).toContain("-subj /CN=joutiya-prod-worker");
+    expect(wifKeyScript("prod", "worker", "joutiya-prod")).toContain("-subj /CN=joutiya-prod-worker");
     expect(() => wifInstallScript("prod", "worker", "not a certificate", real)).toThrow(/not a PEM certificate/);
     expect(() => wifInstallScript("prod", "worker", certificate, { ...real, credentials: "{\"a\":\"it's\"}" })).toThrow(/quote/);
   });
@@ -476,7 +493,7 @@ describe("setup", () => {
     expect(plan).toContain("plan  create service account joutiya-deployer");
     expect(plan).toContain("plan  create pool joutiya-vm");
     expect(plan).toContain("plan  create provider github/joutiya");
-    expect(plan.some((line) => line.includes(`roles/iam.workloadIdentityUser to ${vmPrincipal(NUMBER, "joutiya-staging-worker")}`))).toBe(true);
+    expect(plan.some((line) => line.includes(`roles/iam.workloadIdentityUser to ${vmPrincipal(NUMBER, "joutiya-staging", "joutiya-staging-worker")}`))).toBe(true);
   });
 
   it("creates what is missing, then finds nothing left to do", async () => {
@@ -495,7 +512,7 @@ describe("setup", () => {
     expect(world.providers.get("joutiya-vm/x509")?.attributeCondition).toBe('assertion.subject.dn.cn in ["joutiya-staging-web", "joutiya-staging-worker"]');
     expect(world.providers.get("github/joutiya")?.oidc?.issuerUri).toBe("https://token.actions.githubusercontent.com");
     expect(world.accountPolicies.get(`joutiya-web@${PROJECT}.iam.gserviceaccount.com`)?.bindings).toEqual([
-      { role: "roles/iam.workloadIdentityUser", members: [vmPrincipal(NUMBER, "joutiya-staging-web")] },
+      { role: "roles/iam.workloadIdentityUser", members: [vmPrincipal(NUMBER, "joutiya-staging", "joutiya-staging-web")] },
       { role: "roles/iam.serviceAccountTokenCreator", members: [`serviceAccount:joutiya-web@${PROJECT}.iam.gserviceaccount.com`] },
     ]);
 

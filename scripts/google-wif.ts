@@ -12,16 +12,17 @@
 //       gcloud sign-in (browser) in that configuration, with the Google account of the Firebase projects.
 //   node scripts/google-wif.ts setup <staging|prod> [--apply]
 //       in the environment's Firebase project recorded in infra/targets.json: the IAM, IAM Credentials,
-//       STS and Resource Manager APIs; the service accounts joutiya-web and joutiya-worker with their
-//       roles (§9); pool joutiya-vm, whose provider x509 trusts the CA and accepts the subjects
-//       joutiya-<env>-web and joutiya-<env>-worker only. Staging also gets joutiya-deployer and pool
+//       STS and Resource Manager APIs; the service accounts aalan-web and aalan-worker with their
+//       roles (§9); pool aalan-vm, whose provider x509 trusts the CA and accepts the subjects
+//       aalan-<env>-web and aalan-<env>-worker only. Staging also gets aalan-deployer and pool
 //       github, for deploy-staging.yml on main. Adds what is missing, never removes anything.
+//       A former joutiya-* project keeps its joutiya-* names (identityPrefix).
 //   node scripts/google-wif.ts test <staging|prod>
 //       one-day certificates signed here prove the chain end to end: a Firestore read and a custom
 //       token (web), a Firestore read and a Firebase Auth admin call (worker). Their keys are deleted.
 //       scripts/restore-firestore.ts writes the same way, as the worker (mintCredentials).
 //   node scripts/google-wif.ts sign <file>
-//       signs the VM's requests, the `request joutiya-<env>-<service> <base64>` lines printed by
+//       signs the VM's requests, the `request aalan-<env>-<service> <base64>` lines printed by
 //       `oracle-vm.ts wif <env> --apply` (keys made on the VM), for 365 days; prints one
 //       `certificate ...` line each, for `oracle-vm.ts wif <env> --certificates=<file> --apply`.
 //       Requests and certificates are public: they travel as text, the keys never do.
@@ -34,15 +35,14 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateTargets, type Targets } from "./assert-target.ts";
 import { DEPLOYED_ENVS, type DeployedEnv } from "./vm-env.ts";
+import { accountName, identityPrefix, serviceAccountEmail } from "./identity-names.ts";
 import { requireEnvProxy } from "./env-proxy.ts";
 import { ownerVar } from "./owner-env.ts";
 
 export const WIF_SERVICES = ["web", "worker"] as const;
 export type WifService = (typeof WIF_SERVICES)[number];
-export const VM_POOL = "joutiya-vm";
 export const VM_PROVIDER = "x509";
 export const GITHUB_POOL = "github";
-export const GITHUB_PROVIDER = "joutiya";
 /** Google refuses leaf certificates valid more than 390 days. */
 export const LEAF_DAYS = 365;
 const CA_DAYS = 3650;
@@ -56,12 +56,21 @@ const IAM = "https://iam.googleapis.com/v1";
 // ---------------------------------------------------------------------------------------------
 // Names and files.
 
-export function subjectName(env: DeployedEnv, service: WifService): string {
-  return `joutiya-${env}-${service}`;
+export { accountName, identityPrefix, serviceAccountEmail };
+
+/** Workload Identity pool of the VM's containers. */
+export function vmPool(project: string): string {
+  return `${identityPrefix(project)}-vm`;
 }
 
-export function serviceAccountEmail(name: string, project: string): string {
-  return `${name}@${project}.iam.gserviceaccount.com`;
+/** OIDC provider of the GitHub pool (staging deploys). */
+export function githubProvider(project: string): string {
+  return identityPrefix(project);
+}
+
+/** CN of a container's certificate, e.g. aalan-staging-web. */
+export function subjectName(env: DeployedEnv, service: WifService, project: string): string {
+  return `${identityPrefix(project)}-${env}-${service}`;
 }
 
 function poolPath(projectNumber: string, pool: string): string {
@@ -69,8 +78,8 @@ function poolPath(projectNumber: string, pool: string): string {
 }
 
 /** IAM member of one container: the CN of its certificate, mapped to google.subject. */
-export function vmPrincipal(projectNumber: string, subject: string): string {
-  return `principal://iam.googleapis.com/${poolPath(projectNumber, VM_POOL)}/subject/${subject}`;
+export function vmPrincipal(projectNumber: string, project: string, subject: string): string {
+  return `principal://iam.googleapis.com/${poolPath(projectNumber, vmPool(project))}/subject/${subject}`;
 }
 
 export function githubPrincipalSet(projectNumber: string, repositoryId: string): string {
@@ -78,8 +87,8 @@ export function githubPrincipalSet(projectNumber: string, repositoryId: string):
 }
 
 /** Value of the GitHub variable FIREBASE_STAGING_WIF_PROVIDER (deploy-staging.yml). */
-export function githubProviderName(projectNumber: string): string {
-  return `${poolPath(projectNumber, GITHUB_POOL)}/providers/${GITHUB_PROVIDER}`;
+export function githubProviderName(projectNumber: string, project: string): string {
+  return `${poolPath(projectNumber, GITHUB_POOL)}/providers/${githubProvider(project)}`;
 }
 
 /** The CA and the gcloud configuration live there on the CA machine (AALAN_WIF_HOME, former JOUTIYA_WIF_HOME: tests only). */
@@ -100,11 +109,11 @@ export function caFiles(home = wifHome()): CaFiles {
 
 /** What gcloud's `iam workload-identity-pools create-cred-config` writes for an X.509 provider. */
 export function credentialConfig(input: { projectNumber: string; project: string; service: WifService; certificateConfigPath: string }): Record<string, unknown> {
-  const account = serviceAccountEmail(`joutiya-${input.service}`, input.project);
+  const account = serviceAccountEmail(accountName(input.project, input.service), input.project);
   return {
     universe_domain: "googleapis.com",
     type: "external_account",
-    audience: `//iam.googleapis.com/${poolPath(input.projectNumber, VM_POOL)}/providers/${VM_PROVIDER}`,
+    audience: `//iam.googleapis.com/${poolPath(input.projectNumber, vmPool(input.project))}/providers/${VM_PROVIDER}`,
     subject_token_type: "urn:ietf:params:oauth:token-type:mtls",
     token_url: "https://sts.mtls.googleapis.com/v1/token",
     credential_source: { certificate: { certificate_config_location: input.certificateConfigPath } },
@@ -152,7 +161,7 @@ function opensslConfig(dn: string[]): string {
 }
 
 function withConfig<T>(dn: string[], run: (config: string) => T): T {
-  const dir = mkdtempSync(join(tmpdir(), "joutiya-openssl-"));
+  const dir = mkdtempSync(join(tmpdir(), "aalan-openssl-"));
   try {
     const config = join(dir, "openssl.cnf");
     writeFileSync(config, opensslConfig(dn));
@@ -262,7 +271,7 @@ export interface WifLine {
   der: string;
 }
 
-const WIF_LINE = /^(request|certificate) joutiya-(staging|prod)-(web|worker) ([A-Za-z0-9+/]{100,4000}={0,2})$/gm;
+const WIF_LINE = /^(request|certificate) (aalan|joutiya)-(staging|prod)-(web|worker) ([A-Za-z0-9+/]{100,4000}={0,2})$/gm;
 
 /**
  * The `request` or `certificate` lines of a text relayed by hand: other lines (and the other kind)
@@ -272,11 +281,11 @@ export function wifLines(text: string, kind: "request" | "certificate"): WifLine
   const lines: WifLine[] = [];
   for (const match of text.replace(/\r\n/g, "\n").matchAll(WIF_LINE)) {
     if (match[1] !== kind) continue;
-    const env = match[2] as DeployedEnv;
-    const service = match[3] as WifService;
-    const subject = subjectName(env, service);
+    const env = match[3] as DeployedEnv;
+    const service = match[4] as WifService;
+    const subject = `${match[2]}-${env}-${service}`;
     if (lines.some((line) => line.subject === subject)) throw new Error(`${subject} is given twice`);
-    lines.push({ env, service, subject, der: match[4] as string });
+    lines.push({ env, service, subject, der: match[5] as string });
   }
   return lines;
 }
@@ -284,7 +293,7 @@ export function wifLines(text: string, kind: "request" | "certificate"): WifLine
 /** Signs every request line of `text` (LEAF_DAYS days) and returns the certificate lines. */
 export function signRequests(text: string, ca: CaFiles): string[] {
   const requests = wifLines(text, "request");
-  if (requests.length === 0) throw new Error("no `request joutiya-<env>-<web|worker> <base64>` line found");
+  if (requests.length === 0) throw new Error("no `request aalan-<env>-<web|worker> <base64>` line found");
   return requests.map(({ subject, der }) => {
     const certificate = signCsr({ csr: pemBlock("CERTIFICATE REQUEST", der), subject, days: LEAF_DAYS, ca });
     return `certificate ${subject} ${derBase64(certificate)}`;
@@ -310,31 +319,32 @@ export interface AccountPlan {
 }
 
 export function accountPlans(env: DeployedEnv, project: string, projectNumber: string, repositoryId: string | null): AccountPlan[] {
+  const brand = identityPrefix(project) === "aalan" ? "Aalan" : "Joutiya";
   const plans: AccountPlan[] = [
     {
-      name: "joutiya-web",
-      displayName: "Joutiya web",
-      description: `web container of joutiya-vm (${env}), through Workload Identity Federation`,
+      name: accountName(project, "web"),
+      displayName: `${brand} web`,
+      description: `web container of ${vmPool(project)} (${env}), through Workload Identity Federation`,
       roles: ["roles/datastore.user", "roles/firebaseauth.admin"],
       bindings: [
-        { role: "roles/iam.workloadIdentityUser", member: vmPrincipal(projectNumber, subjectName(env, "web")) },
+        { role: "roles/iam.workloadIdentityUser", member: vmPrincipal(projectNumber, project, subjectName(env, "web", project)) },
         // Custom tokens are signed by IAM (signBlob) with this very account, never with a key.
-        { role: "roles/iam.serviceAccountTokenCreator", member: `serviceAccount:${serviceAccountEmail("joutiya-web", project)}` },
+        { role: "roles/iam.serviceAccountTokenCreator", member: `serviceAccount:${serviceAccountEmail(accountName(project, "web"), project)}` },
       ],
     },
     {
-      name: "joutiya-worker",
-      displayName: "Joutiya worker",
-      description: `worker container of joutiya-vm (${env}), through Workload Identity Federation`,
+      name: accountName(project, "worker"),
+      displayName: `${brand} worker`,
+      description: `worker container of ${vmPool(project)} (${env}), through Workload Identity Federation`,
       roles: ["roles/datastore.user", "roles/firebaseauth.admin"],
-      bindings: [{ role: "roles/iam.workloadIdentityUser", member: vmPrincipal(projectNumber, subjectName(env, "worker")) }],
+      bindings: [{ role: "roles/iam.workloadIdentityUser", member: vmPrincipal(projectNumber, project, subjectName(env, "worker", project)) }],
     },
   ];
   if (env === "staging") {
     if (repositoryId === null) throw new Error("shared.github.repositoryId is not recorded in infra/targets.json");
     plans.push({
-      name: "joutiya-deployer",
-      displayName: "Joutiya deployer (CI)",
+      name: accountName(project, "deployer"),
+      displayName: `${brand} deployer (CI)`,
       description: `Firestore rules and indexes from ${DEPLOY_WORKFLOW} on main`,
       // `firebase deploy --only firestore:rules,firestore:indexes`; its API check sends
       // x-goog-user-project, which needs serviceusage.services.get and .use.
@@ -357,11 +367,11 @@ export interface Provider {
   oidc?: { issuerUri?: string };
 }
 
-export function vmProviderBody(env: DeployedEnv, caPem: string): Provider {
-  const subjects = WIF_SERVICES.map((service) => JSON.stringify(subjectName(env, service))).join(", ");
+export function vmProviderBody(env: DeployedEnv, caPem: string, project: string): Provider {
+  const subjects = WIF_SERVICES.map((service) => JSON.stringify(subjectName(env, service, project))).join(", ");
   return {
-    displayName: "Joutiya VM",
-    description: `Containers of joutiya-vm (${env}), certificates of the Joutiya VM CA (guide phase 1, step 9)`,
+    displayName: identityPrefix(project) === "aalan" ? "Aalan VM" : "Joutiya VM",
+    description: `Containers of ${vmPool(project)} (${env}), certificates of the VM CA (guide phase 1, step 9)`,
     attributeMapping: { "google.subject": "assertion.subject.dn.cn" },
     attributeCondition: `assertion.subject.dn.cn in [${subjects}]`,
     // openssl on Windows writes ca.pem with CRLF, which Google refuses ("not in PEM format").
@@ -654,11 +664,12 @@ export async function setup(google: Google, input: SetupInput, waits: Waits = WA
   const projectPolicy = `${RESOURCE_MANAGER}/projects/${project}`;
   await grant(google, `project ${project}`, { url: `${projectPolicy}:getIamPolicy`, body: { options: { requestedPolicyVersion: 3 } } }, `${projectPolicy}:setIamPolicy`, roles, waits);
 
-  await ensurePool(google, project, VM_POOL, "Joutiya VM", `Containers of joutiya-vm (${env})`, waits);
-  await ensureProvider(google, project, VM_POOL, VM_PROVIDER, vmProviderBody(env, input.caPem), waits);
+  const pool = vmPool(project);
+  await ensurePool(google, project, pool, identityPrefix(project) === "aalan" ? "Aalan VM" : "Joutiya VM", `Containers of ${pool} (${env})`, waits);
+  await ensureProvider(google, project, pool, VM_PROVIDER, vmProviderBody(env, input.caPem, project), waits);
   if (env === "staging" && input.repositoryId !== null) {
-    await ensurePool(google, project, GITHUB_POOL, "GitHub Actions", "Repository joutiya, staging deploys only", waits);
-    await ensureProvider(google, project, GITHUB_POOL, GITHUB_PROVIDER, githubProviderBody(input.repositoryId), waits);
+    await ensurePool(google, project, GITHUB_POOL, "GitHub Actions", "Staging deploys of the repository only", waits);
+    await ensureProvider(google, project, GITHUB_POOL, githubProvider(project), githubProviderBody(input.repositoryId), waits);
   }
 
   for (const plan of plans) {
@@ -671,7 +682,7 @@ export async function setup(google: Google, input: SetupInput, waits: Waits = WA
     await grant(google, label, { url: `${resource}:getIamPolicy?options.requestedPolicyVersion=3` }, `${resource}:setIamPolicy`, plan.bindings, waits);
   }
   if (env === "staging") {
-    console.log(`GitHub variables of step 8: FIREBASE_STAGING_WIF_PROVIDER=${githubProviderName(projectNumber)} FIREBASE_STAGING_DEPLOYER=${serviceAccountEmail("joutiya-deployer", project)}`);
+    console.log(`GitHub variables of step 8: FIREBASE_STAGING_WIF_PROVIDER=${githubProviderName(projectNumber, project)} FIREBASE_STAGING_DEPLOYER=${serviceAccountEmail(accountName(project, "deployer"), project)}`);
   }
 }
 
@@ -733,10 +744,10 @@ export interface MintedCredentials {
 export function mintCredentials(targets: Targets, env: DeployedEnv, service: WifService, ca = caFiles()): MintedCredentials {
   const { project, projectNumber } = recorded(targets, env);
   readCa(ca);
-  const dir = mkdtempSync(join(tmpdir(), `joutiya-wif-${service}-`));
+  const dir = mkdtempSync(join(tmpdir(), `aalan-wif-${service}-`));
   const remove = () => rmSync(dir, { recursive: true, force: true });
   try {
-    const subject = subjectName(env, service);
+    const subject = subjectName(env, service, project);
     const key = join(dir, "key.pem");
     const cert = join(dir, "cert.pem");
     const certificateConfigPath = join(dir, "certificate_config.json");
@@ -810,13 +821,13 @@ async function probe(service: WifService, project: string): Promise<void> {
   const app = initializeApp({
     projectId: project,
     credential: applicationDefault(),
-    ...(service === "web" ? { serviceAccountId: serviceAccountEmail("joutiya-web", project) } : {}),
+    ...(service === "web" ? { serviceAccountId: serviceAccountEmail(accountName(project, "web"), project) } : {}),
   });
   try {
     const legal = await getFirestore(app).doc("config/legal").get();
     console.log(`${service}: Firestore read ok (config/legal ${legal.exists ? "present" : "not written yet"})`);
     if (service === "web") {
-      await getAuth(app).createCustomToken("joutiya-wif-test");
+      await getAuth(app).createCustomToken("aalan-wif-test");
       console.log("web: custom token signed by IAM ok");
     } else {
       await getAuth(app).listUsers(1);

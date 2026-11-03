@@ -1,8 +1,13 @@
 # Test de charge : résultat (D17)
 
-Procédure : `docs/lancement/charge-procedure.md`. Objectif (spec §10, critère de sortie de la
+Procédure : `docs/lancement/charge-procedure.md`. Objectif initial (spec §10, critère de sortie de la
 phase 6) : 40 pages/s hors cache avec un p95 sous 500 ms, 50 recherches/s avec un p95 sous 300 ms,
 CPU de la VM sous 70 %. Si la VM n'y arrive pas, la marge mesurée fixe la bascule vers un VPS.
+
+Décision du propriétaire, 3 novembre 2026 : l'objectif devient la capacité mesurée au n° 6, 14 pages/s
+hors cache, avec une alerte à 8 pages rendues par seconde (seuil de bascule ci-dessous) ; l'ouverture
+n'attend plus ce critère. La spec §10 est à jour. Les tests suivants mesurent la capacité après chaque
+changement du rendu, sans bloquer le lancement.
 
 ## 30 octobre 2026
 

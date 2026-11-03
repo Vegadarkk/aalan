@@ -24,6 +24,7 @@ import { expireOffers } from "./offer-expiry";
 import { sweepReportSla } from "./report-sla-sweep";
 import { checkGuideLinks } from "./guide-links";
 import { reviewChangedLinks } from "@/lib/guide/review";
+import { statsFlush } from "@/lib/stats/flush";
 
 // Phase 5 (design D19): queue "agent", its own consumer at concurrency 1 (createAgentWorker).
 export { AGENT_CONCURRENCY, AGENT_QUEUE, createAgentWorker, processAgentJob } from "./agent";
@@ -57,6 +58,7 @@ export const JOBS: Record<string, (job: Job) => Promise<unknown>> = {
   "audit-export": () => exportAuditLogs(),
   "guide-links": () => checkGuideLinks(),
   "guide-review": () => reviewChangedLinks(),
+  "stats-flush": () => statsFlush(),
 };
 
 /** Repeatable jobs (UTC cron patterns), upserted at every start. */
@@ -65,6 +67,8 @@ export const SCHEDULES = {
   "quota-report-nightly": { pattern: "15 8 * * *", job: "quota-report" },
   // Every hour at :05 (§6: pending accounts are deleted 24 h after sign-up).
   "purge-unactivated-hourly": { pattern: "5 * * * *", job: "purge-unactivated" },
+  // 02:15 UTC (spec §5 "Compteurs"): the shops' counters of the closed UTC days, Valkey -> shopStats.
+  "stats-flush-nightly": { pattern: "15 2 * * *", job: "stats-flush" },
   // 02:30 UTC (D16): published listings past expiresAt -> expired; 02:40: reminder 3 days before.
   "expire-listings-nightly": { pattern: "30 2 * * *", job: "expire-listings" },
   "listing-expiry-reminders-nightly": { pattern: "40 2 * * *", job: "listing-expiry-reminders" },

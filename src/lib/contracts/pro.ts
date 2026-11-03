@@ -243,6 +243,8 @@ export const PRO_API = {
   social: "/api/pro/me/social",
   /** PUT: the shop card (presentation FR/AR, city, address, hours, contact, website, banner). */
   card: "/api/pro/me",
+  /** GET: the shop's counters of the last 7 and 30 days (written each night). */
+  stats: "/api/pro/me/stats",
   kybcSign: "/api/pro/kybc/uploads",
   kybcComplete: (id: string) => `/api/pro/kybc/uploads/${id}/complete`,
   kybcDelete: (id: string) => `/api/pro/kybc/uploads/${id}`,
@@ -425,3 +427,39 @@ export interface ProShopCard {
   phoneVerified: boolean;
 }
 export type ProShopCardResponse = { card: ProShopCard };
+
+// Shop counters (UX audit of the Pro shops, lot 1; src/lib/stats): the view beacon of the cached
+// listing and storefront pages, and the Pro space's dashboard.
+
+export const statsViewSchema = z.object({ scope: z.enum(["shop", "listing"]), id: z.string().max(64) }).strict();
+export type StatsViewInput = z.infer<typeof statsViewSchema>;
+
+export interface ShopStatsTotals {
+  /** Storefront views (one per visitor and day). */
+  storefrontViews: number;
+  /** Views of the shop's listings. */
+  listingViews: number;
+  /** Conversations started (storefront and listings). */
+  contacts: number;
+  /** Numbers and WhatsApp revealed. */
+  reveals: number;
+}
+
+export interface ShopStatsListing {
+  id: string;
+  /** null: the listing is no longer readable (deleted or purged). */
+  title: string | null;
+  slugId: string | null;
+  views: number;
+  contacts: number;
+}
+
+/** GET /api/pro/me/stats. */
+export interface ShopStatsResponse {
+  last7: ShopStatsTotals;
+  last30: ShopStatsTotals;
+  /** The 30 days' most viewed listings (at most 5). */
+  topListings: ShopStatsListing[];
+  /** Last day counted (UTC, YYYY-MM-DD): the counters are written each night. */
+  through: string;
+}

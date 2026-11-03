@@ -42,6 +42,7 @@ import {
 import { analyzeMessage, type MessageAnalysis } from "./risk";
 import { fileRepeatRiskReport } from "./system-report";
 import { UnreadUnavailableError, clearUnread, markSeen, recordRiskyMessage, recordUnread, scheduleDigest, unreadTotal } from "./unread";
+import { countContact } from "@/lib/stats/counters";
 
 // Messaging rules (design D4-D9, D21): who may write to whom, the risk flags and masking of every
 // message, the per-participant state, and what follows a committed write (unread badge, live
@@ -205,6 +206,7 @@ export async function startConversation(actor: MessagingActor, input: { listingI
     const appended = await append(actor, cid, input.text, analysis, now);
     return { cid, messageId: appended.messageId, existing: true };
   }
+  void countContact({ listingId: listing.id, proId: listing.proId }, now);
   await afterMessage({ cid, messageId, senderUid: actor.uid, senderPublicId: buyer.publicId, recipientUid: seller.uid, flags: analysis.flags, now });
   return { cid, messageId, existing: false };
 }
@@ -271,6 +273,7 @@ export async function startShopConversation(actor: MessagingActor, input: { proI
     const appended = await append(actor, cid, input.text, analysis, now);
     return { cid, messageId: appended.messageId, existing: true };
   }
+  void countContact({ proId: profile.proId }, now);
   await afterMessage({ cid, messageId, senderUid: actor.uid, senderPublicId: buyer.publicId, recipientUid: seller.uid, flags: analysis.flags, now });
   return { cid, messageId, existing: false };
 }

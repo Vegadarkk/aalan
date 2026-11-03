@@ -4173,6 +4173,24 @@
       "saved": "Fiche boutique enregistrée",
       "failed": "La fiche n'a pas été enregistrée",
       "view": "Voir la fiche sur la vitrine"
+    },
+    "stats": {
+      "title": "Statistiques",
+      "period": "Période",
+      "last7": "7 jours",
+      "last30": "30 jours",
+      "tiles": {
+        "storefrontViews": "Visites de la vitrine",
+        "listingViews": "Vues des annonces",
+        "contacts": "Messages reçus",
+        "reveals": "Numéros affichés"
+      },
+      "topTitle": "Annonces les plus vues (30 jours)",
+      "topCounts": "{views, plural, one {# vue} other {# vues}} · {contacts, plural, one {# message} other {# messages}}",
+      "gone": "Annonce retirée",
+      "unavailable": "Les statistiques sont momentanément indisponibles. Réessayez plus tard.",
+      "note": "Mis à jour chaque nuit, jusqu'au {date} inclus. Une visite compte une fois par personne et par jour ; « Messages reçus » compte les nouvelles conversations.",
+      "noteLoading": "Mis à jour chaque nuit."
     }
   },
   "Messaging": {

@@ -4163,6 +4163,24 @@
       "saved": "Tafiche n tḥanut tettwaḥrez",
       "failed": "Tafiche ur tettwaḥrez ca",
       "view": "Ẓer tafiche x tfrent"
+    },
+    "stats": {
+      "title": "Tisisniyin",
+      "period": "Tallit",
+      "last7": "7 n wussan",
+      "last30": "30 n wussan",
+      "tiles": {
+        "storefrontViews": "Tirzaf ɣer tfrent",
+        "listingViews": "Tiẓri n annonces",
+        "contacts": "Tibratin i d-yewḍen",
+        "reveals": "Inemra i yettwaskanen"
+      },
+      "topTitle": "Annonces i yettwaẓren ugar (30 n wussan)",
+      "topCounts": "{views, plural, one {# n tiẓri} other {# n tiẓri}} · {contacts, plural, one {# n tbrat} other {# n tbratin}}",
+      "gone": "Annonce tettwakkes",
+      "unavailable": "Tisisniyin war llint ura. Ɛawed ticki.",
+      "note": "Ttwasnefnint yal tameddit, ar {date}. Tarzeft tettwaḥseb yiwet n tikkelt i yal yiwen deg wass; « Tibratin i d-yewḍen » ḥesbent timeslayin timaynutin.",
+      "noteLoading": "Ttwasnefnint yal tameddit."
     }
   },
   "Messaging": {

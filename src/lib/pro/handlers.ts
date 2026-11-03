@@ -17,6 +17,7 @@ import { submitRentalCheck } from "./rental-check";
 import { proSelf, submitApplication, updateAgency, updateRentalAgency, updateSections, updateShopCard } from "./service";
 import { updateSocialLinks } from "./social-links";
 import { importStock, stockList } from "./stock-import/service";
+import { readShopStats } from "./stats";
 
 // Route handlers of /api/pro/** (phase 7 design §4): requireUser (Origin + CSRF on mutations),
 // strict body, per-account limiter before the first Firestore read, Turnstile on the application.
@@ -68,6 +69,13 @@ export async function handleMe(request: Request): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("pro.read.uid", auth.user.uid);
   return json(await proSelf(auth));
+}
+
+/** GET /api/pro/me/stats: the shop's counters (UX audit of the Pro shops, lot 1). */
+export async function handleStats(request: Request): Promise<Response> {
+  const auth = await requireUser(request);
+  await enforceLimit("pro.read.uid", auth.user.uid);
+  return json(await readShopStats(auth));
 }
 
 /** PUT /api/pro/me: the shop card shown on the storefront (UX audit of the Pro shops, lot 1). */

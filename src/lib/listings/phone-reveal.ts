@@ -4,6 +4,7 @@ import type { Device } from "@/lib/auth/respond";
 import { alert } from "@/lib/alert";
 import type { PhoneRevealResponse } from "@/lib/contracts/listings";
 import { incrementPhoneReveals } from "@/lib/db/repositories/listing-stats";
+import { countReveal } from "@/lib/stats/counters";
 import { getListing } from "@/lib/db/repositories/listings";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { countRevealsSince, hasRevealed, recordReveal } from "@/lib/db/repositories/reveal-logs";
@@ -75,6 +76,7 @@ export async function revealPhone(auth: AuthContext, request: Request, listingId
   if (!repeat) {
     await recordReveal({ viewerUid: viewer.uid, listingId: listing.id, ip: options.device.identity.ip, deviceKey: options.device.identity.deviceKey, now });
     await incrementPhoneReveals(listing.id, now);
+    if (listing.proId) void countReveal(listing.proId, now);
     void watchScraping(listing.id, now);
   }
 

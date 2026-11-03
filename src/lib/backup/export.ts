@@ -79,6 +79,7 @@ const TABLE: Record<BackedUpId, Omit<BackupCollection, "id">> = {
   staff: { scope: "root", timeField: "createdAt" },
   listings: { scope: "root", timeField: "updatedAt" },
   listingStats: { scope: "root", timeField: null },
+  shopStats: { scope: "root", timeField: "updatedAt" },
   uploads: { scope: "root", timeField: "updatedAt" },
   searchOutbox: { scope: "root", timeField: null },
   contentOps: { scope: "root", timeField: null },

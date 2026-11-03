@@ -25,6 +25,7 @@ import { RentalSetup } from "@/components/rental/rental-setup";
 import { AgencySettings } from "./agency-settings";
 import { ShopEmblem } from "./shop-emblem";
 import { ShopCardSettings } from "./shop-card-settings";
+import { ShopStats } from "./shop-stats";
 import { importsStock } from "@/lib/contracts/stock-import";
 import { SectionsSettings } from "./sections-settings";
 import { SocialLinksSettings } from "./social-links-settings";
@@ -349,6 +350,9 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
           <Quotas shop={shop} />
         </div>
       )}
+
+      {/* The shop's counters (UX audit lot 1): what « statistiques » in the offers stands for. */}
+      {canPublish ? <ShopStats /> : null}
 
       {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
 

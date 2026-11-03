@@ -152,3 +152,8 @@ export const SELLER_PAYMENT_API = {
   adminReview: "/api/admin/seller-payments/review",
   adminShop: (proId: string) => `/api/admin/pros/${encodeURIComponent(proId)}/payment`,
 } as const;
+
+/** View beacon of the cached listing and storefront pages (shop counters, src/lib/stats). */
+export const STATS_API = {
+  view: "/api/stats/view",
+} as const;

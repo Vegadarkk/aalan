@@ -14,6 +14,7 @@ import { SELLER_UNREACHABLE } from "@/lib/listings/public";
 import { logger } from "@/lib/logging/logger";
 import { displayPhone } from "@/lib/phone/normalize";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { countReveal } from "@/lib/stats/counters";
 import { storefrontShown } from "./lifecycle";
 
 // A shop's number from its storefront (UX audit of the Pro shops, lot 1): the listing reveal
@@ -54,6 +55,7 @@ export async function revealShopPhone(auth: AuthContext, request: Request, proId
 
   if (!repeat) {
     await recordReveal({ viewerUid: viewer.uid, listingId: profile.proId, kind: "shop", ip: options.device.identity.ip, deviceKey: options.device.identity.deviceKey, now });
+    void countReveal(profile.proId, now);
     void watchScraping(profile.proId, now);
   }
 

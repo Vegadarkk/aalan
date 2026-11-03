@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { BadgeCheck, CalendarDays, Flag, MapPin } from "lucide-react";
 import { ContactBar } from "@/components/listing/contact-bar";
+import { ViewBeacon } from "@/components/stats/view-beacon";
 import { ShareButton } from "@/components/listing/share-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
@@ -229,7 +230,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
           </span>
         </header>
         </div>
-        {store.example ? <ExampleBanner scope="shop" /> : null}
+        {store.example ? <ExampleBanner scope="shop" /> : <ViewBeacon scope="shop" id={store.proId} />}
 
         {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
         {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}

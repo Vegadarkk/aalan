@@ -436,6 +436,37 @@ export const listingStatsSchema = z
   .strict();
 export type ListingStatsDoc = z.infer<typeof listingStatsSchema>;
 
+const statsCount = z.number().int().min(0);
+/** One day of a shop's counters (UTC day), as stats-flush writes it. */
+export const shopStatsDaySchema = z
+  .object({
+    /** Storefront views, one per visitor and day. */
+    v: statsCount,
+    /** Views of the shop's listings, one per visitor, listing and day. */
+    lv: statsCount,
+    /** Conversations started, from the storefront or about one of its listings. */
+    c: statsCount,
+    /** Numbers and WhatsApp revealed (first reveal of each member). */
+    r: statsCount,
+    /** The day's most viewed listings: listingId -> [views, conversations] (at most 50). */
+    l: z.record(z.string().max(64), z.tuple([statsCount, statsCount])).optional(),
+  })
+  .strict();
+export type ShopStatsDay = z.infer<typeof shopStatsDaySchema>;
+
+/**
+ * shopStats/{proId} (UX audit of the Pro shops, lot 1): the shop's counters per UTC day, written
+ * once a night by stats-flush from the Valkey counters (src/lib/stats/counters.ts); the Pro space
+ * reads the last 30 days. Days older than ~35 days are deleted by the same writes.
+ */
+export const shopStatsSchema = z
+  .object({
+    days: z.record(z.string().regex(/^\d{4}-\d{2}-\d{2}$/), shopStatsDaySchema),
+    updatedAt: ts,
+  })
+  .strict();
+export type ShopStatsDoc = z.infer<typeof shopStatsSchema>;
+
 /** Every purpose of §5; phase 3 signs `listing` only (contracts/media.ts). */
 export const UPLOAD_DOC_PURPOSES = ["listing", "kyb", "avatar", "pro_logo"] as const;
 export const UPLOAD_BUCKETS = ["media", "private"] as const;
@@ -1251,6 +1282,8 @@ export const COLLECTIONS = {
   // Phase 3
   listings: "listings",
   listingStats: "listingStats",
+  /** shopStats/{proId}: a shop's daily counters (src/lib/stats/flush.ts). */
+  shopStats: "shopStats",
   uploads: "uploads",
   searchOutbox: "searchOutbox",
   contentOps: "contentOps",

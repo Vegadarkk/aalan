@@ -286,10 +286,10 @@ export const RATE_LIMITS = {
   // Appeals (art. 20): signed-in and signed-link routes.
   "appeal.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
   "appeal.link.ip": { points: 30, duration: HOUR, policy: "closed", key: "ip" },
-  // Assistant Joutiya: 20 messages per hour and 50 per day per device or account; 200 per day per IP
+  // Assistant Aalan: 10 messages per hour and 30 per day per device or account; 200 per day per IP
   // /64, then Turnstile. Closed: it spends the AI budget.
-  "assistant.device.hour": { points: 20, duration: HOUR, policy: "closed", key: "device" },
-  "assistant.device.day": { points: 50, duration: DAY, policy: "closed", key: "device" },
+  "assistant.device.hour": { points: 10, duration: HOUR, policy: "closed", key: "device" },
+  "assistant.device.day": { points: 30, duration: DAY, policy: "closed", key: "device" },
   "assistant.ip": { points: 200, duration: DAY, policy: "closed", key: "ip" },
   // Five times the /64 allowance per IPv6 /48 (security review, 2 Nov 2026): rotating /64s of one
   // network would otherwise give fresh device and IP allowances with no Turnstile.

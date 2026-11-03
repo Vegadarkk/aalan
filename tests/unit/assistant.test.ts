@@ -82,7 +82,7 @@ describe("assistant prompt", () => {
     expect(system).toMatch(/does not arbitrate disputes/);
     expect(system).toMatch(/WhatsApp is not available/);
     expect(assistantSystemPrompt("rif", helpArticles("rif", values))).toMatch(/Tarifit \(Riffian Amazigh\) written in Latin script/);
-    expect(assistantPromptVersion(system)).toMatch(/^assistant\.v1\.[0-9a-f]{8}$/);
+    expect(assistantPromptVersion(system)).toMatch(/^assistant\.v2\.[0-9a-f]{8}$/);
     // No per-request value: nothing that would break the cache.
     expect(system).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
   });
@@ -102,7 +102,7 @@ describe("assistant prompt", () => {
 
   it("bounds the answer and keeps known, distinct citations (3 at most)", () => {
     const { answer, cited } = clampAnswer({ answer: `  ${"a".repeat(2000)}\u0007 `, articles: ["eviter-les-arnaques", "eviter-les-arnaques", "role-d-aalan", "signaler-un-contenu", "creer-un-compte"] as never });
-    expect(answer).toHaveLength(1500);
+    expect(answer).toHaveLength(900);
     expect(answer.endsWith("…")).toBe(true);
     expect(cited).toEqual(["eviter-les-arnaques", "role-d-aalan", "signaler-un-contenu"]);
   });

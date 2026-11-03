@@ -112,8 +112,8 @@ export const APPEAL_API = {
 
 /** Assistant Joutiya (assistant.ts re-exports them): question, earlier turns, how many turns. */
 export const ASSISTANT_QUESTION_MAX = 500;
-export const ASSISTANT_TURN_MAX = 1500;
-export const ASSISTANT_HISTORY_MAX = 6;
+export const ASSISTANT_TURN_MAX = 900;
+export const ASSISTANT_HISTORY_MAX = 4;
 
 export const ASSISTANT_API = {
   /** POST AssistantRequest -> AssistantResponse (`ai`, or `search` when the AI is unavailable). */

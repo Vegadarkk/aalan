@@ -134,6 +134,24 @@ test.describe("account", () => {
     await page.reload();
     await expect(page.getByLabel("Nom affiché")).toHaveValue("Yasmine B.", { timeout: 15_000 });
 
+    // No phone number in a display name: it shows on every listing and conversation (Z1-04, B6).
+    await page.getByLabel("Nom affiché").fill("Yasmine 0661234567");
+    await page.getByRole("button", { name: "Enregistrer", exact: true }).click();
+    await expect(page.getByText("Retirez le numéro de téléphone ou le lien", { exact: false })).toBeVisible();
+    await page.getByLabel("Nom affiché").fill("Yasmine B.");
+
+    // E-mail preferences (B2): the sign-up's marketing opt-in is given, kept, then withdrawn.
+    const marketing = page.getByRole("switch", { name: "Nouveautés et offres d'Aalan" });
+    await expect(marketing).toHaveAttribute("aria-checked", "false", { timeout: 15_000 });
+    await marketing.click();
+    await expect(page.getByText("Vous recevrez nos nouveautés et nos offres")).toBeVisible();
+    await page.reload();
+    await expect(marketing).toHaveAttribute("aria-checked", "true", { timeout: 15_000 });
+    await expect(page.getByRole("switch", { name: "Messages et rendez-vous" })).toHaveAttribute("aria-checked", "true");
+    await page.screenshot({ path: "test-results/settings-notifications.png", fullPage: true });
+    await marketing.click();
+    await expect(page.getByText("Vous ne recevrez plus nos nouveautés ni nos offres")).toBeVisible();
+
     // Sign out, then back in with the password.
     await page.getByRole("button", { name: "Se déconnecter" }).click();
     await expect(page).toHaveURL(/\/fr$/);

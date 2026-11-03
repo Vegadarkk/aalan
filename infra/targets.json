@@ -31,7 +31,8 @@
       "sandboxAccountId": "acct_1UQxRH6McdFHcG9K"
     },
     "revenuecat": {
-      "projectId": null
+      "projectId": null,
+      "sandboxProjectId": "projc8736745"
     },
     "meta": {
       "businessId": null,

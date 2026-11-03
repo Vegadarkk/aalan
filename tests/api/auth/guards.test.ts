@@ -92,6 +92,8 @@ describe("suspended account", () => {
     const write = await call<ErrorBody>(startConversation, "/api/conversations", { jar, body: { listingId: "abcd2345", text: "Salam", turnstileToken: "t" } });
     expect(write.status).toBe(403);
     expect(write.body.error.code).toBe("account_suspended");
+    // Audit zone 7 P2-4: "Mes annonces" still loads (read only) instead of a technical error.
+    expect((await call(myListings, "/api/listings/mine", { jar })).status).toBe(200);
 
     await expect(requireUser(requestWith(jar), { mutation: true })).rejects.toMatchObject({ status: 403, code: "account_suspended" });
     const allowed = await requireUser(requestWith(jar), { mutation: true, allowSuspended: true });

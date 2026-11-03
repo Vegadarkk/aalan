@@ -7,11 +7,13 @@ import { audit } from "@/lib/audit";
 import type { ListingStatus, ModerationFlag, ModerationState, SensitiveDeclarationKind } from "@/lib/contracts/listings";
 import type { ListingPhoto, UploadStatus } from "@/lib/contracts/media";
 import { ACTIVE_STATUSES, ListingVersionError, applyPatch, getListing, getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingRecord } from "@/lib/db/repositories/listings";
-import { getModerationDecision, listDecisionsForUser, listPendingReview, recordModerationDecisionTx, type ModerationDecisionInput } from "@/lib/db/repositories/moderation-decisions";
+import { appealDeadlineAt, getModerationDecision, listDecisionsForUser, listPendingReview, recordModerationDecisionTx, type ModerationDecisionInput } from "@/lib/db/repositories/moderation-decisions";
 import { getProProfile, recordSanitaryNumberTx } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
 import { getUploads } from "@/lib/db/repositories/uploads";
+import { appealToken } from "@/lib/decisions/appeal-token";
+import { getSuspension } from "@/lib/decisions/repository";
 import type { ModerationDecisionDoc } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -114,6 +116,8 @@ export interface ModerationReview {
     publicId: string;
     type: "individual" | "pro";
     status: UserRecord["status"] | "unknown";
+    /** End of the running suspension (ISO), when the account is suspended. */
+    suspendedUntil: string | null;
     accountAgeDays: number | null;
     emailVerified: boolean;
     phoneVerified: boolean;
@@ -166,6 +170,7 @@ export async function moderationReview(id: string, now = new Date()): Promise<Mo
     listing.proId && sanitaryNumber(listing.subcategoryId, listing.attributes) ? getProProfile(listing.proId) : Promise.resolve(null),
   ]);
   const sanitaryNumbers = shop && shop.ownerUid === listing.ownerUid ? (shop.sanitaryNumbers ?? []) : [];
+  const suspension = user?.status === "suspended" ? await getSuspension(listing.ownerUid) : null;
   const uploadById = new Map(uploads.map((upload) => [upload.id, upload]));
   const otherListings = others.filter((other) => other.id !== listing.id);
 
@@ -221,6 +226,7 @@ export async function moderationReview(id: string, now = new Date()): Promise<Mo
       publicId: listing.sellerPublicId,
       type: listing.sellerType,
       status: user?.status ?? "unknown",
+      suspendedUntil: suspension?.until.toISOString() ?? null,
       accountAgeDays: user ? Math.max(0, Math.floor((now.getTime() - user.createdAt.getTime()) / DAY_MS)) : null,
       emailVerified: user?.badges.emailVerified ?? false,
       phoneVerified: user?.badges.phoneVerified ?? false,
@@ -278,6 +284,12 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
   if (listing.version !== input.version) throw new HttpError(409, "conflict", "listing changed since it was reviewed, reload it");
   const legal = await getLegalConfig();
   const approve = input.action === "approve";
+  // A suspended or closed seller's held listing is not published (audit zone 7 P2-5): it would be
+  // invisible anyway and the seller would get a "now visible" mail. Refusing it stays possible.
+  if (approve) {
+    const owner = await getUserRecord(listing.ownerUid);
+    if (!owner || owner.status !== "active") throw new HttpError(409, "account_suspended", "the seller's account is not active");
+  }
 
   const ctx = { now, lifetime: listingLifetime(legal) };
   let result: TransitionResult;
@@ -327,7 +339,7 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
     at: now,
   });
   if (effects.revalidate) revalidateListingPaths({ slugId: updated.slugId, publicId: listing.sellerPublicId });
-  await notifySeller(updated, input, legal.dsaContactEmail);
+  await notifySeller(updated, input, legal.dsaContactEmail, { decisionId, now });
   return { status: approve ? (updated.status as ModerationDecisionResponse["status"]) : "rejected", decisionId };
 }
 
@@ -336,7 +348,7 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
  * approved, nothing is online) or listingRejected (statement of reasons, human decision); a
  * failure is logged, never thrown.
  */
-async function notifySeller(listing: ListingRecord, input: ModerationDecisionRequest, redress: string): Promise<void> {
+async function notifySeller(listing: ListingRecord, input: ModerationDecisionRequest, redress: string, decision: { decisionId: string; now: Date }): Promise<void> {
   const restored = listing.status === "paused" || listing.status === "expired" ? listing.status : null;
   const template = input.action === "reject" ? "listingRejected" : restored ? "listingChangesApproved" : "listingApproved";
   try {
@@ -353,7 +365,8 @@ async function notifySeller(listing: ListingRecord, input: ModerationDecisionReq
       await sendMail({ ...base, template: "listingApproved", data: { displayName: to.displayName, title: listing.title, url, expiresAt: (listing.expiresAt ?? listing.updatedAt).toISOString() } });
     } else {
       const statement = { measure: "reject" as const, facts: rejectStatementFacts(input.reason, input.details), ground: REJECT_REASONS[input.reason].ground.ref, automated: false, redress };
-      await sendMail({ ...base, template: "listingRejected", data: { displayName: to.displayName, title: listing.title, listingId: listing.id, statement } });
+      const token = appealToken({ decisionId: decision.decisionId, by: "affected", expiresAt: appealDeadlineAt(decision.now) });
+      await sendMail({ ...base, template: "listingRejected", data: { displayName: to.displayName, title: listing.title, listingId: listing.id, statement, appealToken: token } });
     }
   } catch (error) {
     logger.error({ listingId: listing.id, template, err: (error as Error).message }, "moderation mail failed");

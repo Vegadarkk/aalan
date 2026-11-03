@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { DEFAULT_AI } from "@/config/ai";
 import { photoSources } from "@/components/listing/photo";
+import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
 import { listingIdSchema } from "@/lib/contracts/listings";
@@ -12,7 +13,7 @@ import { serverEnv } from "@/lib/env";
 import { moderationReview, type ModerationReview, type ModerationReviewPhoto } from "@/lib/listings/moderation-actions";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { staffPhotoSources, usesStaffPhotos } from "../../../_lib/staff-photos";
-import { formatMorocco } from "../../../_lib/moderation-format";
+import { ACCOUNT_STATUS_LABEL, formatMorocco } from "../../../_lib/moderation-format";
 import { ModerationDecisionForm } from "../../../_components/moderation-decision-form";
 import { catalogLabels, formatPrice, waitingFor } from "../../../_components/moderation-labels";
 import { FlagBadges, HOLD_LABEL } from "../../../_components/moderation-queue";
@@ -189,7 +190,17 @@ export default async function ModerationReviewPage({ params }: { params: Promise
           </Panel>
 
           {pending && review.approval ? (
-            <ModerationDecisionForm listingId={listing.id} version={listing.version} approval={review.approval} expiresAt={listing.expiresAt} riskScore={Math.max(moderation.score, screening?.score ?? 0)} />
+            <>
+              {seller.status !== "active" ? (
+                <ErrorBanner
+                  tone="warning"
+                  title={seller.status === "suspended" ? `Vendeur suspendu${seller.suspendedUntil ? ` jusqu'au ${formatMorocco(seller.suspendedUntil)}` : ""}` : `Compte du vendeur : ${(ACCOUNT_STATUS_LABEL[seller.status] ?? "inconnu").toLowerCase()}`}
+                >
+                  La publication est bloquée tant que le compte n&apos;est pas actif ; vous pouvez refuser l&apos;annonce ou la laisser en attente.
+                </ErrorBanner>
+              ) : null}
+              <ModerationDecisionForm listingId={listing.id} version={listing.version} approval={review.approval} expiresAt={listing.expiresAt} riskScore={Math.max(moderation.score, screening?.score ?? 0)} />
+            </>
           ) : (
             <Panel title="Décision">
               <p className="text-sm text-foreground-muted">
@@ -214,7 +225,9 @@ export default async function ModerationReviewPage({ params }: { params: Promise
                 ["Téléphone vérifié", yesNo(seller.phoneVerified)],
                 ["Annonces actives", String(seller.activeListings)],
                 ["Annonces refusées", String(seller.rejectedListings)],
-                ...(seller.status !== "active" ? ([["État du compte", seller.status]] as [string, ReactNode][]) : []),
+                ...(seller.status !== "active"
+                  ? ([["État du compte", `${ACCOUNT_STATUS_LABEL[seller.status] ?? "Inconnu"}${seller.suspendedUntil ? ` jusqu'au ${formatMorocco(seller.suspendedUntil)}` : ""}`]] as [string, ReactNode][])
+                  : []),
               ]}
             />
             {seller.decisions.length > 0 ? (

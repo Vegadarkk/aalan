@@ -6421,5 +6421,12 @@
       "withdrawal_expired": "Le délai de 14 jours de ce pack est dépassé.",
       "withdrawal_nothing_left": "Tous les crédits de ce pack ont déjà été utilisés : il n'y a rien à rembourser."
     }
+  },
+  "Suspension": {
+    "title": "Votre compte est suspendu",
+    "bodyUntil": "La suspension prend fin le {date} (heure du Maroc). D'ici là, vous pouvez lire vos conversations et vos annonces, mais pas déposer ni modifier d'annonce.",
+    "body": "Vous pouvez lire vos conversations et vos annonces, mais pas déposer ni modifier d'annonce.",
+    "deposit": "Le dépôt d'annonces reprendra à la fin de la suspension.",
+    "appeal": "Voir le motif et contester la décision"
   }
 }

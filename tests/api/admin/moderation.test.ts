@@ -29,6 +29,7 @@ import { auth, db } from "@/lib/firebase/admin";
 import { setClaims, type Role } from "@/lib/firebase/claims";
 import { createSessionForUid } from "@/lib/firebase/session";
 import { HttpError } from "@/lib/http/errors";
+import { verifyAppealToken } from "@/lib/decisions/appeal-token";
 import { getLegalConfig } from "@/lib/legal/config";
 import type { ModerationQueueResponse, ModerationReview } from "@/lib/listings/moderation-actions";
 import { sendMail } from "@/lib/mail";
@@ -282,8 +283,31 @@ describe("decisions", () => {
       title: "Réplique de vélo de course vintage",
       listingId: id,
       statement: { measure: "reject", facts: ["reason:counterfeit", details], ground: REJECT_REASONS.counterfeit.ground.ref, automated: false, redress: (await getLegalConfig()).dsaContactEmail },
+      appealToken: expect.any(String),
     });
+    // The signed appeal link names this decision, for its affected seller (audit zone 7 P2-9).
+    const token = verifyAppealToken(String((mail?.data as { appealToken: string }).appealToken));
+    expect(token).toMatchObject({ ok: true, claims: { decisionId: result.body.decisionId, by: "affected" } });
     expect(capturedMails(sendMail).some((sent) => sent.template === "listingApproved")).toBe(false);
+  });
+
+  it("does not publish the held listing of a suspended seller (409), shows the suspension, still lets it be rejected", async () => {
+    const seller = await member({ displayName: "Yassine Suspendu" });
+    const id = await heldListing(seller);
+    const until = new Date(Date.now() + 7 * DAY_MS);
+    await db().collection(COLLECTIONS.users).doc(seller.uid).update({ status: "suspended" });
+    await db().collection(COLLECTIONS.suspensions).doc(seller.uid).set({ until, decisionId: "abcdefghij0123456789", createdAt: new Date() });
+    const review = await admin<{ review: ModerationReview }>(getReview, "GET", `/api/admin/moderation/${id}`, { staff: adminStaff });
+    expect(review.body.review.seller).toMatchObject({ status: "suspended", suspendedUntil: until.toISOString() });
+    const version = (await getListing(id))!.version;
+    sendMailMock.mockClear();
+    const refused = await admin<ErrorBody>(postDecision, "POST", `/api/admin/moderation/${id}`, { staff: adminStaff, body: { action: "approve", version } });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe("account_suspended");
+    expect((await getListing(id))?.status).toBe("pending_review");
+    expect(capturedMails(sendMail).some((sent) => sent.template === "listingApproved")).toBe(false);
+    const rejected = await admin<ModerationDecisionResponse>(postDecision, "POST", `/api/admin/moderation/${id}`, { staff: adminStaff, body: { action: "reject", version, reason: "scam" } });
+    expect(rejected.status).toBe(200);
   });
 
   it("validates the body: other without details, unknown reason, extra field (400)", async () => {

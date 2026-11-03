@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
-import { toast } from "sonner";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { InlineError } from "@/components/feedback/inline-error";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ import {
 import type { ApprovalOutcome } from "@/lib/listings/lifecycle";
 import { cn } from "@/lib/utils";
 import { adminFetch, errorMessage } from "./api-client";
+import { decisionToast } from "./decision-toast";
 import { formatMorocco } from "../_lib/moderation-format";
 
 export const MODERATION_API = "/api/admin/moderation";
@@ -30,6 +30,7 @@ const MESSAGES: Record<string, string> = {
   invalid_body: "Choisissez un motif. « Autre motif » demande une précision d'au moins 10 caractères.",
   forbidden: "Réservé aux modérateurs et aux admins.",
   rate_limited: "Trop de décisions en peu de temps. Réessayez dans quelques minutes.",
+  account_suspended: "Le compte du vendeur n'est pas actif (suspendu ou fermé) : l'annonce ne peut pas être publiée. Refusez-la ou laissez-la en attente.",
 };
 
 type Choice = "approve" | "reject";
@@ -136,7 +137,7 @@ export function ModerationDecisionForm({ listingId, version, approval, expiresAt
     setLoading(true);
     try {
       const result = await adminFetch<ModerationDecisionResponse>(`${MODERATION_API}/${encodeURIComponent(listingId)}`, { method: "POST", csrf: true, body });
-      toast.success(DONE[result?.status ?? (body.action === "approve" ? approval.status : "rejected")], { description: "Le vendeur est prévenu par e-mail." });
+      decisionToast({ title: DONE[result?.status ?? (body.action === "approve" ? approval.status : "rejected")], description: "Le vendeur est prévenu par e-mail", decisionId: result?.decisionId, navigate: router.push });
       router.push("/moderation");
       router.refresh();
     } catch (cause) {

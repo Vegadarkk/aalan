@@ -1,5 +1,6 @@
 import type { TemplateData } from "../types";
 import { GREETING, pageUrl, renderLayout, type BuiltMail, type MailLocale, type TemplateContext } from "./layout";
+import { appealButton, appealUrl } from "./decision-statement";
 import { statementParagraphs } from "./statement";
 
 // Listing rejected (design D8): the art. 17 statement, then how to edit and resubmit.
@@ -29,8 +30,10 @@ export function listingRejected(data: TemplateData["listingRejected"], ctx: Temp
     subject: copy.subject(data.title),
     title: copy.title,
     greeting: GREETING[ctx.lang](data.displayName),
-    paragraphs: [...copy.body(data.title), ...statementParagraphs(data.statement, ctx.lang, data.listingId)],
+    paragraphs: [...copy.body(data.title), ...statementParagraphs(data.statement, ctx.lang, data.listingId, { appealLink: Boolean(data.appealToken) })],
     action: { label: copy.button, url: pageUrl(ctx, "mes-annonces") },
+    // The same signed appeal link as the other decisions (audit zone 7 P2-9).
+    ...(data.appealToken ? { links: [{ label: appealButton(ctx.lang), url: appealUrl(ctx, data.appealToken) }] } : {}),
     replyTo: data.statement.redress,
     closing: [copy.closing],
   });

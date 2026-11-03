@@ -82,8 +82,9 @@ const SHARED_SHAPE = {
   // The repository whose deploy-staging.yml on main alone may deploy staging's Firestore rules
   // (Workload Identity Federation condition on its numeric id, which a rename does not change).
   github: { repository: /^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/[A-Za-z0-9._-]{1,100}$/, repositoryId: /^[0-9]{1,20}$/ },
-  stripe: { accountId: /^acct_[A-Za-z0-9]{8,}$/ },
-  revenuecat: { projectId: /^proj[A-Za-z0-9]{4,251}$/ },
+  // The live account (prod) and its general sandbox (own account id, settings isolated from live): staging.
+  stripe: { accountId: /^acct_[A-Za-z0-9]{8,}$/, sandboxAccountId: /^acct_[A-Za-z0-9]{8,}$/ },
+  revenuecat: { projectId: /^proj[A-Za-z0-9]{4,251}$/, sandboxProjectId: /^proj[A-Za-z0-9]{4,251}$/ },
   meta: { businessId: META_ID, appId: META_ID },
 } satisfies Shape;
 
@@ -238,9 +239,10 @@ const BINDINGS: Binding[] = [
     devPlaceholder: true,
   },
   {
+    // One RevenueCat project per environment: production, and a sandbox one for staging and dev.
     variable: "REVENUECAT_PROJECT_ID",
-    target: "shared.revenuecat.projectId",
-    expected: (t) => t.shared.revenuecat.projectId,
+    target: "shared.revenuecat.<projectId|sandboxProjectId>",
+    expected: (t, env) => (env === "prod" ? t.shared.revenuecat.projectId : t.shared.revenuecat.sandboxProjectId),
   },
 ];
 

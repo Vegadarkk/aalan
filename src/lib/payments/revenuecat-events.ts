@@ -26,7 +26,9 @@ import { enqueueBillingEvent, isBillingQueueEnabled } from "./billing-queue";
 import { findPurchase, listCustomerPurchases, RevenueCatApiError, type RevenueCatPurchase } from "./revenuecat-api";
 import { syncShopSubscription, type SyncDeps, type SyncOutcome } from "./subscriptions";
 import { euPacksOpen, getBillingThresholds } from "./thresholds";
-import { creditPurchase, refundPurchase } from "./wallet";
+import { orderGrossMinor } from "./sales";
+import { closeWithdrawal } from "./withdrawals";
+import { creditPurchase, refundedShare, refundPurchase } from "./wallet";
 
 // RevenueCat events of the credit packs (phase 7 design §6). The webhook records each
 // authenticated event once (billingEvents/revenuecat_{id}) and hands it to the "billing" queue;
@@ -34,8 +36,10 @@ import { creditPurchase, refundPurchase } from "./wallet";
 // - NON_RENEWING_PURCHASE: orders/{transaction id} (natural key: a replay credits once), the
 //   ledger `purchase_*` and the balance;
 // - CANCELLATION (for a consumable, always a refund): once RevenueCat shows the purchase as
-//   refunded, the ledger `refund_*` debits the whole pack even if spent; a negative balance
-//   freezes the wallet and flags the account.
+//   refunded, the ledger `refund_*` debits the pack's credits even if spent (all of them, or the
+//   share of the price refunded when the event carries a smaller negative amount); a negative
+//   balance freezes the wallet and flags the account. A pack withdrawn by its buyer (CGV §6) lost
+//   its unspent credits at the request: its refund debits nothing more (src/lib/payments/withdrawals.ts).
 // - a subscription event (a Pro plan billed by Stripe, design §7): the shop's subscription is
 //   synced from RevenueCat (src/lib/payments/subscriptions.ts). A CANCELLATION is a subscription's
 //   when it carries an expiration or comes from Stripe, a pack refund otherwise.
@@ -271,26 +275,54 @@ async function refundPack(event: BillingEventDoc, deps: ProcessDeps): Promise<Pr
   // The refund may not show in RevenueCat yet: the last failed attempt alerts.
   if (purchase.status !== "refunded") throw new BillingRetryError("refund not visible in RevenueCat yet");
   const now = deps.now?.() ?? new Date();
+  const pricing = await getPricing();
+  // RevenueCat sends a refund's price as a negative amount; a smaller one than the price is a partial refund.
+  const refundedMinor = event.amountMinor !== undefined && event.amountMinor < 0 ? -event.amountMinor : undefined;
 
   const result = await db().runTransaction(async (tx) => {
     const order = await getOrderTx(tx, transactionId);
     if (!order) return { outcome: "missing" as const };
     if (order.status === "refunded") return { outcome: "duplicate" as const };
+    if (order.withdrawal) {
+      // The unspent credits left at the request: the refund only closes the withdrawal.
+      setOrderTx(tx, transactionId, closeWithdrawal(order, { at: now, by: "system", refundEventId: event.eventId, ...(refundedMinor !== undefined ? { refundedMinor } : {}) }));
+      return { outcome: "refunded" as const, negative: false, accountId: order.accountId, balance: null, withdrawal: order.withdrawal, refundedMinor };
+    }
+    const grossMinor = orderGrossMinor(order, pricing);
+    const credits = refundedShare(order.credits, grossMinor, refundedMinor);
+    const partial = refundedMinor !== undefined && refundedMinor < grossMinor;
     const before = await getWalletTx(tx, order.accountId);
     const account = await getBillingAccountTx(tx, order.accountId);
-    const { wallet, ledger } = refundPurchase(walletStateAt(before, now), order.credits);
+    const { wallet, ledger } = refundPurchase(walletStateAt(before, now), credits);
     recordWalletOperationTx(tx, order.accountId, `refund_${ledgerKey(transactionId)}`, {
       before,
       state: wallet,
       ledger,
-      entry: { price: order.credits.paid, refs: { orderId: orderId(transactionId) }, taxJurisdiction: order.taxJurisdiction, actorUid: "system", at: now },
+      entry: { price: credits.paid, refs: { orderId: orderId(transactionId) }, taxJurisdiction: order.taxJurisdiction, actorUid: "system", at: now },
       now,
     });
-    setOrderTx(tx, transactionId, { ...order, status: "refunded", refundEventId: event.eventId, refundedAt: now, updatedAt: now });
+    setOrderTx(tx, transactionId, {
+      ...order,
+      status: "refunded",
+      refundEventId: event.eventId,
+      refundedAt: now,
+      ...(partial ? { refundedMinor } : {}),
+      refundedCredits: credits,
+      updatedAt: now,
+    });
     const negative = wallet.balance < 0;
     if (negative && account) setBillingAccountTx(tx, order.accountId, { ...account, flaggedAt: now, updatedAt: now });
-    return { outcome: "refunded" as const, negative, accountId: order.accountId, balance: wallet.balance };
+    return { outcome: "refunded" as const, negative, accountId: order.accountId, balance: wallet.balance, withdrawal: undefined, refundedMinor };
   });
+
+  if (result.outcome === "refunded" && result.withdrawal && result.refundedMinor !== undefined && result.refundedMinor > result.withdrawal.refundMinor) {
+    // The whole purchase was refunded from RevenueCat instead of the withdrawal's share from Stripe.
+    await alert({
+      severity: "P2",
+      title: `Rétractation remboursée au-delà de sa part (${result.withdrawal.receipt})`,
+      body: `Commande ${orderId(transactionId)} : ${result.refundedMinor / 100} remboursés pour ${result.withdrawal.refundMinor / 100} dus (crédits non utilisés). Les crédits déjà utilisés ne sont pas repris : vérifier dans Stripe.`,
+    });
+  }
 
   if (result.outcome === "missing") {
     // A purchase never credited (alerted, then refunded by an admin) ends here; one still on its

@@ -18,6 +18,7 @@ import { processBillingEvent, type ProcessOutcome } from "./revenuecat-events";
 import { isStripeConfigured, stripeRequest } from "./stripe-api";
 import { processStripeEvent, receiveStripeEvent, STRIPE_EVENT_TYPES, type StripeReceiveOutcome } from "./stripe-events";
 import { syncShopSubscription } from "./subscriptions";
+import { overdueWithdrawals } from "./withdrawals";
 
 // Nightly billing reconciliation (phase 7 design §8), after the pro-plans job: what the webhooks
 // and the billing queue missed is replayed through the same handlers (natural keys keep each
@@ -210,6 +211,13 @@ async function checkRecentPacks(run: ReconcileRun, now: Date, deps: ReconcileDep
   }
 }
 
+/** Withdrawals still unrefunded 10 days after the request: the 14-day legal delay is near (CGV §6). */
+async function checkOverdueWithdrawals(run: ReconcileRun, now: Date): Promise<void> {
+  for (const item of await overdueWithdrawals(now)) {
+    problem(run, `Rétractation ${item.receipt} (commande ${item.orderId}) : ${(item.refundMinor / 100).toFixed(2)} ${item.currency} à rembourser avant le ${item.refundBy.slice(0, 10)}, puis à marquer remboursée dans Ventes.`);
+  }
+}
+
 export async function reconcileBilling(now = new Date(), deps: ReconcileDeps = {}): Promise<ReconcileRun> {
   const run: ReconcileRun = { swept: 0, stripeEvents: 0, subscriptions: 0, packs: 0, failed: 0, problems: [] };
   const steps: [string, boolean, () => Promise<void>][] = [
@@ -217,6 +225,7 @@ export async function reconcileBilling(now = new Date(), deps: ReconcileDeps = {
     ["stripe events", isStripeConfigured(), () => replayStripeEvents(run, now, deps)],
     ["stripe subscriptions", isStripeConfigured() && isRevenueCatApiConfigured(), () => checkStripeSubscriptions(run, now, deps)],
     ["packs", isRevenueCatApiConfigured(), () => checkRecentPacks(run, now, deps)],
+    ["withdrawals", true, () => checkOverdueWithdrawals(run, now)],
   ];
   for (const [name, enabled, step] of steps) {
     if (!enabled) continue;

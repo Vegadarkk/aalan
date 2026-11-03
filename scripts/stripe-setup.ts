@@ -1,4 +1,4 @@
-// Creates the Stripe objects of the Pro plans (phase 7 design §7) in the Joutiya account recorded in
+// Creates the Stripe objects of the Pro plans (phase 7 design §7) in the Aalan account recorded in
 // infra/targets.json, and nowhere else: test mode for staging, live mode for prod. Dry run by
 // default (reads, then prints what --apply would send); --apply sends. Each step finds its object
 // again (product id, price lookup key, portal metadata, webhook URL), so a second run changes
@@ -10,12 +10,13 @@
 // staging, rk_live_ for prod) with write on Products, Prices, Customer portal and Webhook endpoints
 // and read on the account, revoked after the run. Without it the dry run prints the plan offline.
 //
-// 1. the key's account must be targets.shared.stripe.accountId (GET /v1/account);
-// 2. products joutiya_essentiel and joutiya_business;
-// 3. one MAD price per plan and interval (lookup key joutiya_{plan}_{interval}_mad, amount excluding
+// 1. the key's account must be targets.shared.stripe.accountId for prod, its general sandbox
+//    (shared.stripe.sandboxAccountId, own account id) for staging (GET /v1/account);
+// 2. products aalan_essentiel and aalan_business;
+// 3. one MAD price per plan and interval (lookup key aalan_{plan}_{interval}_mad, amount excluding
 //    tax from DEFAULT_PRICING): a changed amount gets a new price that takes the lookup key over;
-//    the Pass Boutique gets its product joutiya_pass_boutique and one one-time MAD price per pass
-//    (lookup key joutiya_pass_{id}_mad, owner decision 2026-10-28);
+//    the Pass Boutique gets its product aalan_pass_boutique and one one-time MAD price per pass
+//    (lookup key aalan_pass_{id}_mad, owner decision 2026-10-28);
 // 4. the Customer Portal configuration: card, invoices, cancellation at period end, plan switch
 //    between the four prices, upgrades invoiced at once and downgrades at period end (a plan's
 //    monthly grant cannot be taken twice by switching back and forth);
@@ -49,11 +50,11 @@ const API = "https://api.stripe.com";
 export const STRIPE_API_VERSION = "2026-09-30.endive";
 
 export const PRODUCTS: Record<PaidPlanId, { id: string; name: string; description: string }> = {
-  essentiel: { id: "joutiya_essentiel", name: "Aalan Pro Essentiel", description: "Offre Pro Essentiel : annonces en ligne, crédits chaque mois, vitrine et badge Pro." },
-  business: { id: "joutiya_business", name: "Aalan Pro Business", description: "Offre Pro Business : annonces en ligne, crédits et « À la Une » chaque mois, vitrine et badge Pro." },
+  essentiel: { id: "aalan_essentiel", name: "Aalan Pro Essentiel", description: "Offre Pro Essentiel : annonces en ligne, crédits chaque mois, vitrine et badge Pro." },
+  business: { id: "aalan_business", name: "Aalan Pro Business", description: "Offre Pro Business : annonces en ligne, crédits et « À la Une » chaque mois, vitrine et badge Pro." },
 };
 
-export const PASS_PRODUCT = { id: "joutiya_pass_boutique", name: "Aalan Pass Boutique", description: "Pass Boutique : annonces en ligne, vitrine et badge Pro pour une durée fixe, en un seul paiement, sans renouvellement." };
+export const PASS_PRODUCT = { id: "aalan_pass_boutique", name: "Aalan Pass Boutique", description: "Pass Boutique : annonces en ligne, vitrine et badge Pro pour une durée fixe, en un seul paiement, sans renouvellement." };
 
 export interface DesiredPassPrice {
   passId: string;
@@ -63,7 +64,7 @@ export interface DesiredPassPrice {
 }
 
 export function desiredPassPrices(passes: readonly Pick<PassConfig, "id" | "days" | "priceMinor">[]): DesiredPassPrice[] {
-  return passes.map((pass) => ({ passId: pass.id, days: pass.days, lookupKey: `joutiya_pass_${pass.id}_mad`, unitAmount: pass.priceMinor }));
+  return passes.map((pass) => ({ passId: pass.id, days: pass.days, lookupKey: `aalan_pass_${pass.id}_mad`, unitAmount: pass.priceMinor }));
 }
 
 export function passPriceMatches(price: StripePrice, wanted: DesiredPassPrice): boolean {
@@ -79,7 +80,7 @@ export function passPriceParams(wanted: DesiredPassPrice): Record<string, Stripe
     lookup_key: wanted.lookupKey,
     transfer_lookup_key: true,
     nickname: `${PASS_PRODUCT.name} (${wanted.days} jours)`,
-    metadata: { joutiya: "pass", passId: wanted.passId },
+    metadata: { aalan: "pass", passId: wanted.passId },
   };
 }
 
@@ -91,7 +92,7 @@ export interface DesiredPrice {
 }
 
 export function desiredPrices(plans: Pick<PlansConfig, PaidPlanId>): DesiredPrice[] {
-  return PLANS.flatMap((plan) => INTERVALS.map((interval) => ({ plan, interval, lookupKey: `joutiya_${plan}_${interval}_mad`, unitAmount: plans[plan].priceMinor[interval] })));
+  return PLANS.flatMap((plan) => INTERVALS.map((interval) => ({ plan, interval, lookupKey: `aalan_${plan}_${interval}_mad`, unitAmount: plans[plan].priceMinor[interval] })));
 }
 
 export interface StripePrice {
@@ -131,7 +132,7 @@ export function portalParams(env: SetupEnv, prices: Readonly<Record<string, stri
   const site = SITES[env];
   return {
     name: "Aalan Pro",
-    metadata: { joutiya: PORTAL_TAG },
+    metadata: { aalan: PORTAL_TAG },
     default_return_url: `${site}/fr/pro/abonnement`,
     business_profile: { headline: "Aalan : l'abonnement de votre boutique", privacy_policy_url: `${site}/fr/legal/confidentialite`, terms_of_service_url: `${site}/fr/legal/cgv` },
     features: {
@@ -143,7 +144,7 @@ export function portalParams(env: SetupEnv, prices: Readonly<Record<string, stri
       subscription_update: {
         enabled: true,
         default_allowed_updates: ["price"],
-        products: PLANS.map((plan) => ({ product: PRODUCTS[plan].id, prices: INTERVALS.map((interval) => prices[`joutiya_${plan}_${interval}_mad`] ?? "") })),
+        products: PLANS.map((plan) => ({ product: PRODUCTS[plan].id, prices: INTERVALS.map((interval) => prices[`aalan_${plan}_${interval}_mad`] ?? "") })),
         proration_behavior: "always_invoice",
         schedule_at_period_end: { conditions: [{ type: "decreasing_item_amount" }, { type: "shortening_interval" }] },
       },
@@ -265,7 +266,7 @@ export async function runSetup(options: SetupOptions): Promise<void> {
   // 1. The account behind the key.
   const account = await stripe<{ id?: string }>("GET", "/v1/account");
   if (account.status !== 200) throw failure("GET /v1/account (the key needs read access to the account)", account);
-  if (account.body.id !== accountId) throw new Error(`${KEY_VARIABLE} belongs to another Stripe account than shared.stripe.accountId: nothing done`);
+  if (account.body.id !== accountId) throw new Error(`${KEY_VARIABLE} belongs to another Stripe account than ${accountId} (infra/targets.json shared.stripe): nothing done`);
   write(`Account ${accountId} (${env}, ${apply ? "apply" : "dry run"}).`);
 
   // Before any write: a new webhook endpoint shows its signing secret once, so its file must be new.
@@ -283,14 +284,14 @@ export async function runSetup(options: SetupOptions): Promise<void> {
     const { id, name, description } = PRODUCTS[plan];
     const found = await stripe<{ id?: string }>("GET", `/v1/products/${id}`);
     if (found.status === 200) write(`= product ${id}`);
-    else if (found.status === 404) await run(`create product ${id}`, "POST", "/v1/products", { id, name, description, metadata: { joutiya: "pro-plan", plan } });
+    else if (found.status === 404) await run(`create product ${id}`, "POST", "/v1/products", { id, name, description, metadata: { aalan: "pro-plan", plan } });
     else throw failure(`GET product ${id}`, found);
   }
   if (desiredPasses.length > 0) {
     const { id, name, description } = PASS_PRODUCT;
     const found = await stripe<{ id?: string }>("GET", `/v1/products/${id}`);
     if (found.status === 200) write(`= product ${id}`);
-    else if (found.status === 404) await run(`create product ${id}`, "POST", "/v1/products", { id, name, description, metadata: { joutiya: "pass" } });
+    else if (found.status === 404) await run(`create product ${id}`, "POST", "/v1/products", { id, name, description, metadata: { aalan: "pass" } });
     else throw failure(`GET product ${id}`, found);
   }
 
@@ -319,10 +320,10 @@ export async function runSetup(options: SetupOptions): Promise<void> {
     if (created) ids[wanted.lookupKey] = created.id;
   }
 
-  // 4. Customer Portal configuration (ours carries metadata.joutiya).
+  // 4. Customer Portal configuration (ours carries metadata.aalan).
   const configurations = await stripe<{ data?: { id: string; metadata?: Record<string, string> }[] }>("GET", "/v1/billing_portal/configurations", { active: true, limit: 100 });
   if (configurations.status !== 200) throw failure("GET portal configurations", configurations);
-  const ours = configurations.body.data?.find((configuration) => configuration.metadata?.joutiya === PORTAL_TAG);
+  const ours = configurations.body.data?.find((configuration) => configuration.metadata?.aalan === PORTAL_TAG);
   let portalId = ours?.id ?? null;
   if (apply && desired.some((price) => !ids[price.lookupKey])) throw new Error("a price is missing: the portal configuration needs the four prices");
   if (ours) await run(`update portal configuration ${ours.id}`, "POST", `/v1/billing_portal/configurations/${ours.id}`, portalParams(env, ids));
@@ -339,7 +340,7 @@ export async function runSetup(options: SetupOptions): Promise<void> {
       `create webhook ${url}`,
       "POST",
       "/v1/webhook_endpoints",
-      { url, enabled_events: WEBHOOK_EVENTS, api_version: STRIPE_API_VERSION, description: `Joutiya ${env}: Pro subscriptions`, metadata: { joutiya: "pro-plans" } },
+      { url, enabled_events: WEBHOOK_EVENTS, api_version: STRIPE_API_VERSION, description: `Aalan ${env}: Pro subscriptions`, metadata: { aalan: "pro-plans" } },
       `stripe-setup-${env}-webhook`,
     );
     if (created && secretFile) {
@@ -349,7 +350,7 @@ export async function runSetup(options: SetupOptions): Promise<void> {
     }
   }
 
-  const stripePrices = (plan: PaidPlanId) => Object.fromEntries(INTERVALS.map((interval) => [interval, ids[`joutiya_${plan}_${interval}_mad`] ?? "<created by --apply>"]));
+  const stripePrices = (plan: PaidPlanId) => Object.fromEntries(INTERVALS.map((interval) => [interval, ids[`aalan_${plan}_${interval}_mad`] ?? "<created by --apply>"]));
   write(`\nconfig/pricing.plans of ${env}:`);
   write(JSON.stringify({ essentiel: { stripePrices: stripePrices("essentiel") }, business: { stripePrices: stripePrices("business") }, stripePortalConfiguration: portalId ?? "<created by --apply>" }, null, 2));
   if (desiredPasses.length > 0) {
@@ -365,8 +366,9 @@ async function main(): Promise<void> {
   const raw: unknown = JSON.parse(readFileSync(new URL("../infra/targets.json", import.meta.url), "utf8"));
   const targetErrors = validateTargets(raw);
   if (targetErrors.length > 0) throw new Error(targetErrors.join("\n"));
-  const accountId = (raw as Targets).shared.stripe.accountId;
-  if (!accountId) throw new Error("shared.stripe.accountId must be recorded in infra/targets.json first");
+  const field = cli.env === "prod" ? "accountId" : "sandboxAccountId";
+  const accountId = (raw as Targets).shared.stripe[field];
+  if (!accountId) throw new Error(`shared.stripe.${field} must be recorded in infra/targets.json first`);
   registerSrcResolver();
   const { DEFAULT_PRICING } = await import("../src/config/pricing.ts");
   await runSetup({ ...cli, key: ownerVar("STRIPE_SETUP_KEY"), accountId, plans: DEFAULT_PRICING.plans, passes: DEFAULT_PRICING.passes });

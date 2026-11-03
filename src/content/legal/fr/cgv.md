@@ -50,7 +50,7 @@ Les packs se paient par carte sur la page sécurisée de notre prestataire Reven
 
 ## 6. Droit de rétractation {#retractation}
 
-Le consommateur peut se rétracter sans motif ni pénalité pendant 14 jours à compter de l'achat d'un pack ; ce délai respecte le minimum légal (14 jours en droit français, 7 jours selon l'article 36 de la loi marocaine n° 31-08). Les crédits non utilisés du pack lui sont alors remboursés sur simple demande à {email}, au plus tard dans les 14 jours suivant cette demande ; les crédits bonus du pack sont retirés en proportion.
+Le consommateur peut se rétracter sans motif ni pénalité pendant 14 jours à compter de l'achat d'un pack ; ce délai respecte le minimum légal (14 jours en droit français, 7 jours selon l'article 36 de la loi marocaine n° 31-08). Il se rétracte en ligne, depuis son porte-monnaie (« Se rétracter d'un achat de crédits »), ou par écrit à {email}. Il reçoit aussitôt un accusé de réception sur support durable, par e-mail et à l'écran. Les crédits non utilisés du pack sont retirés de son porte-monnaie dès la demande, et leur part payée lui est remboursée sur le moyen de paiement utilisé, au plus tard dans les 14 jours suivant la demande ; les crédits bonus du pack sont retirés en proportion. Les crédits étant dépensés dans l'ordre d'achat, les crédits non utilisés d'un pack sont ceux du solde qui ne proviennent pas de packs achetés après lui.
 
 Les crédits déjà utilisés ne sont pas remboursables. En demandant l'exécution immédiate d'une option, le consommateur reconnaît perdre son droit de rétractation une fois l'option exécutée.
 
@@ -58,7 +58,7 @@ Les abonnements Pro sont souscrits par des professionnels pour leur activité. C
 
 ## 7. Remboursements, contestations et solde négatif {#remboursements}
 
-Un remboursement, ou une contestation du paiement auprès de la banque, retire du compte les crédits du pack concerné, même déjà utilisés. Si le solde devient négatif, le porte-monnaie est bloqué jusqu'à sa régularisation.
+Un remboursement, ou une contestation du paiement auprès de la banque, retire du compte les crédits du pack concerné, même déjà utilisés : tous, ou la part correspondant au montant remboursé. Une rétractation ne retire que les crédits non utilisés (section 6). Si le solde devient négatif, le porte-monnaie est bloqué jusqu'à sa régularisation.
 
 ## 8. Factures et reçus {#factures}
 

@@ -20,7 +20,7 @@ const stripe = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/config/runtime", async (importOriginal) => {
   const { DEFAULT_PRICING } = await import("@/config/pricing");
-  const eur = { id: "eur_10", currency: "EUR", priceMinor: 1_000, paid: 100, bonus: 0, productId: "joutiya_credits_100_eur", packageId: "credits_100_eur" };
+  const eur = { id: "eur_10", currency: "EUR", priceMinor: 1_000, paid: 100, bonus: 0, productId: "aalan_credits_100_eur", packageId: "credits_100_eur" };
   return {
     ...(await importOriginal<typeof RuntimeModule>()),
     getFlags: vi.fn(async () => ({ salesEnabled: true, proSignupEnabled: true, paymentInstallmentsEnabled: false })),
@@ -80,7 +80,7 @@ async function seedOrder(transactionId: string, extra: Partial<OrderDoc>): Promi
     kind: "pack",
     accountId: "uid_exports_buyer",
     packId: "mad_100",
-    productId: "joutiya_credits_100_mad",
+    productId: "aalan_credits_100_mad",
     quantity: 1,
     credits: { paid: 100, bonus: 10 },
     currency: "MAD",
@@ -105,7 +105,7 @@ const eurOrder = (amountMinor: number, purchasedAt: string, extra: Partial<Order
   taxJurisdiction: "EU",
   currency: "EUR",
   packId: "eur_10",
-  productId: "joutiya_credits_100_eur",
+  productId: "aalan_credits_100_eur",
   credits: { paid: 100, bonus: 0 },
   amountMinor,
   locationEvidence: { countryCode: "FR" },
@@ -166,7 +166,7 @@ beforeAll(async () => {
   ids.sale = await seedOrder("txn_exports_sale", {});
   ids.refund = await seedOrder("txn_exports_refund", {
     packId: "mad_50",
-    productId: "joutiya_credits_50_mad",
+    productId: "aalan_credits_50_mad",
     credits: { paid: 50, bonus: 0 },
     amountMinor: 5_000,
     status: "refunded",
@@ -335,7 +335,7 @@ describe("yearly thresholds", () => {
     const account = (await billingAccountRef(buyer.uid).get()).data()!;
     const transactionId = `txn_${randomUUID()}`;
     const eventId = randomUUID();
-    await createBillingEvent({ source: "revenuecat", eventId, type: "NON_RENEWING_PURCHASE", environment: "SANDBOX", appUserId: account.rcAppUserId, productId: "joutiya_credits_100_eur", transactionId, store: "RC_BILLING", currency: "EUR", amountMinor: 1_000, countryCode: "FR", kind: "pack", status: "received", attempts: 0, receivedAt: new Date() });
+    await createBillingEvent({ source: "revenuecat", eventId, type: "NON_RENEWING_PURCHASE", environment: "SANDBOX", appUserId: account.rcAppUserId, productId: "aalan_credits_100_eur", transactionId, store: "RC_BILLING", currency: "EUR", amountMinor: 1_000, countryCode: "FR", kind: "pack", status: "received", attempts: 0, receivedAt: new Date() });
     const owned: RevenueCatPurchase = { id: `rcp_${transactionId}`, storePurchaseIdentifier: transactionId, status: "owned", environment: "sandbox", quantity: 1 };
     expect(await processBillingEvent(eventId, { listPurchases: async () => [owned] })).toBe("credited");
     expect(alert).toHaveBeenCalledWith(expect.objectContaining({ severity: "P1", title: "Pack en euros vendu au-delà du seuil UE" }));

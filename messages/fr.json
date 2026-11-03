@@ -4890,7 +4890,8 @@
       "refund": "Remboursement",
       "refund_reversed": "Remboursement annulé",
       "admin_adjust": "Ajustement par Aalan",
-      "option": "Option"
+      "option": "Option",
+      "withdrawal": "Rétractation"
     },
     "amount": "{count, plural, one {# crédit} other {# crédits}}",
     "fromPlan": "dont {count, plural, one {# crédit} other {# crédits}} de votre offre",
@@ -4899,7 +4900,8 @@
     "more": "Afficher plus",
     "available": "Crédits disponibles",
     "buy": "Acheter des crédits",
-    "paid": "Paiement reçu. Vos crédits apparaissent ici dans quelques instants."
+    "paid": "Paiement reçu. Vos crédits apparaissent ici dans quelques instants.",
+    "withdrawLink": "Se rétracter d'un achat de crédits (14 jours)"
   },
   "Packs": {
     "metaTitle": "Acheter des crédits",
@@ -4929,7 +4931,7 @@
     "notes": {
       "provider": "Le paiement se fait par carte sur la page sécurisée de notre prestataire RevenueCat, avec Stripe. Cette page peut s'afficher en anglais.",
       "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} MAD par an (Office des Changes).",
-      "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : écrivez à {email}."
+      "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : rétractez-vous depuis votre porte-monnaie, ou écrivez à {email}."
     },
     "consent": {
       "terms": "J'ai lu et j'accepte les",
@@ -5906,5 +5908,45 @@
       "unlimitedListings": "Annonces actives en illimité"
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture."
+  },
+  "Withdrawal": {
+    "metaTitle": "Rétractation d'un achat de crédits",
+    "title": "Se rétracter d'un achat de crédits",
+    "intro": "Vous pouvez vous rétracter sans motif pendant 14 jours après l'achat d'un pack. Les crédits non utilisés du pack sont retirés de votre porte-monnaie dès l'envoi, et leur part payée vous est remboursée sur votre moyen de paiement dans les 14 jours.",
+    "rules": "Les crédits déjà utilisés ne sont pas remboursés. Les crédits offerts avec le pack sont retirés en proportion. Les crédits sont dépensés dans l'ordre d'achat : un pack récent est le moins entamé.",
+    "back": "Retour au porte-monnaie",
+    "loading": "Chargement de vos achats",
+    "failed": "Vos achats n'ont pas pu être chargés.",
+    "retry": "Réessayer",
+    "notConsumer": "Les crédits d'une boutique sont achetés pour son activité professionnelle : le droit de rétractation ne s'applique pas (CGV, section 6).",
+    "packsTitle": "Achats rétractables",
+    "none": "Aucun achat de crédits des 14 derniers jours ne peut être rétracté.",
+    "packLabel": "Pack de {credits, plural, one {# crédit} other {# crédits}}, acheté le {date}",
+    "until": "Rétractation possible jusqu'au {date}",
+    "removable": "{count, plural, one {# crédit non utilisé sera retiré} other {# crédits non utilisés seront retirés}}",
+    "removableNone": "Tous les crédits du pack ont été utilisés : rien à rembourser",
+    "refund": "Remboursement : {amount, number} {currency}",
+    "statement": "Je vous notifie par la présente ma rétractation du contrat portant sur l'achat de ce pack de crédits.",
+    "submit": "Envoyer ma rétractation",
+    "choose": "Choisissez le pack concerné.",
+    "confirmRequired": "Cochez la déclaration de rétractation pour l'envoyer.",
+    "receiptTitle": "Rétractation reçue",
+    "receiptNumber": "Accusé de réception n° <num>{receipt}</num>",
+    "receiptAt": "Reçue le {date}",
+    "receiptRemoved": "{count, plural, one {# crédit non utilisé retiré} other {# crédits non utilisés retirés}} sur {total}",
+    "receiptRefund": "{amount, number} {currency} remboursés au plus tard le {date}",
+    "receiptRefunded": "{amount, number} {currency} remboursés le {date}",
+    "receiptMail": "Une copie de cet accusé de réception vous a été envoyée par e-mail. Conservez-la.",
+    "print": "Imprimer",
+    "historyTitle": "Vos rétractations",
+    "statusRequested": "Remboursement en cours",
+    "statusRefunded": "Remboursée",
+    "errors": {
+      "withdrawal_not_consumer": "Les crédits d'une boutique ne peuvent pas faire l'objet d'une rétractation.",
+      "withdrawal_exists": "Une rétractation a déjà été envoyée pour ce pack.",
+      "withdrawal_refunded": "Ce pack a déjà été remboursé.",
+      "withdrawal_expired": "Le délai de 14 jours de ce pack est dépassé.",
+      "withdrawal_nothing_left": "Tous les crédits de ce pack ont déjà été utilisés : il n'y a rien à rembourser."
+    }
   }
 }

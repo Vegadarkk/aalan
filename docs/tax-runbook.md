@@ -22,10 +22,13 @@ Chaque ligne est une condition de la porte « Ouverture des ventes » (spec §10
       coordonnées dans les CGV.
 - [ ] **CGV** : la version provisoire est en ligne (`/legal/cgv`). Elle doit être relue, puis complétée avec le
       médiateur.
-- [ ] **Fonction de rétractation en ligne** : un formulaire, avec un accusé de réception sur support durable. Ce
-      n'est pas encore codé : aujourd'hui, le remboursement de crédits se demande par e-mail.
-- [ ] **Remboursement partiel** : rembourser les seuls crédits non utilisés d'un pack. Aujourd'hui, un
-      remboursement retire le pack entier, à corriger dans le code (débit au prorata du montant remboursé).
+- [x] **Fonction de rétractation en ligne** (porte-monnaie, « Se rétracter d'un achat de crédits ») : les crédits
+      non utilisés du pack sont retirés à la demande, l'accusé de réception part par e-mail et s'affiche à l'écran.
+      Reste à le vérifier en mode test (section 11).
+- [x] **Remboursement partiel** : RevenueCat ne rembourse que des achats entiers. Une rétractation se rembourse
+      donc dans Stripe (remboursement partiel du paiement, montant affiché dans Ventes > « Rétractations à
+      rembourser »), puis se marque remboursée dans Ventes. Un remboursement ou une contestation d'un montant
+      inférieur au prix retire la même part des crédits du pack.
 - [ ] **Stripe** : accord écrit de Stripe sur la vente de crédits (activité « restreinte », pas interdite),
       activation du mode live, puis les clés de la section 10.
 - [ ] **Test réel** avec des cartes de 4 banques marocaines (paiement en MAD).
@@ -183,8 +186,11 @@ Les heures sont en UTC. Les alertes arrivent sur Telegram.
 Chaque clé est créée par toi dans le tableau de bord (2FA), une à la fois, et rangée dans `.env.local` sous le nom
 indiqué. Le fil qui t'y accompagne donne la ligne exacte. Aucune valeur ne passe dans le chat ni dans Git.
 
-- **Clé d'installation Stripe** (`JOUTIYA_STRIPE_SETUP_KEY`) :
-  - C'est une clé restreinte de courte durée : `rk_test_` pour le staging, `rk_live_` pour la prod.
+- **Comptes Stripe** : la prod utilise le compte `shared.stripe.accountId` d'`infra/targets.json` ; le staging, son
+  environnement de test (« sandbox » Stripe, identifiant de compte distinct, `shared.stripe.sandboxAccountId`). Les
+  clés du staging se créent dans cette sandbox.
+- **Clé d'installation Stripe** (`AALAN_STRIPE_SETUP_KEY`) :
+  - C'est une clé restreinte de courte durée : `rk_test_` (sandbox) pour le staging, `rk_live_` pour la prod.
   - Droits en écriture : Products, Prices, Customer portal, Webhook endpoints. Droit en lecture : le compte.
   - Elle sert à `node --env-file=<fichier> scripts/stripe-setup.ts <staging|prod> --apply --secret-file <nouveau
     fichier>`, qui demande ton accord avant de tourner.
@@ -204,3 +210,26 @@ indiqué. Le fil qui t'y accompagne donne la ligne exacte. Aucune valeur ne pass
     (`launchOffer.endsAt`).
   - Les prix des abonnements sont hors taxes. Ceux des packs en MAD comprennent la TVA marocaine.
   - Changer un prix d'abonnement suppose de relancer `stripe-setup.ts`, qui crée le nouveau prix.
+
+## 11. Tests en mode test avant l'ouverture (P7-1)
+
+Sur le staging, avec la sandbox Stripe et le projet RevenueCat du staging (événements `SANDBOX` seulement). Chaque
+test note l'heure, l'identifiant de l'événement et le résultat dans le fil qui les mène.
+
+Avant les tests : les prix Stripe de la sandbox et `salesEnabled` s'écrivent dans le Firestore du staging avec
+`node scripts/runtime-config.ts staging pricing <fichier.json>` puis `... staging flags <fichier.json>` (essai à
+blanc, puis `--apply`). Le script refuse d'ouvrir les ventes en production.
+
+- [ ] **Achat d'un pack** par le lien de paiement (carte de test `4242 4242 4242 4242`) : crédits versés une fois,
+      commande `paid`, consentement enregistré, reçu RevenueCat.
+- [ ] **Abonnement Pro** par Stripe Checkout, puis **renouvellement** : Stripe ne raccourcit pas les périodes en
+      test ; utiliser une horloge de test Stripe sur le client, en sachant que RevenueCat garde l'heure réelle.
+- [ ] **Remboursement de crédits déjà dépensés** : le solde passe en négatif, le porte-monnaie est gelé, alerte P2.
+- [ ] **Rétractation** : crédits non utilisés retirés, accusé reçu par e-mail, remboursement partiel dans Stripe, puis
+      « Marquer remboursé » ; vérifier ce que RevenueCat envoie après un remboursement partiel fait dans Stripe.
+- [ ] **Litige** : carte `4000 0000 0000 0259` ; gagner avec le texte `winning_evidence`, perdre avec
+      `losing_evidence` ; noter l'événement que RevenueCat envoie (non documenté).
+- [ ] **Rejeu d'un webhook** : renvoyer un événement déjà traité (RevenueCat : « Retry » dans l'historique ;
+      Stripe : « Resend ») : aucun double crédit.
+- [ ] **Rapprochement** : couper le webhook, acheter, lancer `reconcile-billing` : un seul crédit, alerte P2.
+- [ ] **Facture de test** d'un abonnement Pro avec l'ICE de la boutique, vérifiée dans le PDF Stripe.

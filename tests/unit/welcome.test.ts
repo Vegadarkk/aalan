@@ -6,6 +6,7 @@ import { isHomePathname, queueDoorOpening, takeQueuedDoor, welcomeAfterSignIn } 
 import { DUST_COUNT, projectMote, scatterMotes } from "@/lib/welcome/dust";
 import { DOOR_DURATION_MS, doorSteps, LEAF_OPEN_DEG, LEAF_STOP_DEG, MIN_PUSH_SCALE, PUSH_DELAY_MS, pushScale, REDUCED_FADE_MS, reducedSteps, stepsEnd } from "@/lib/welcome/motion";
 import { doorTilt, MAX_TILT_DEG } from "@/lib/welcome/tilt";
+import { GLINT_SPOTS, glintBox, glintPause, insideArch, pickGlint, TILES } from "@/lib/welcome/glints";
 import { CSRF_COOKIE } from "@/lib/security/cookies";
 import { CRAWLER_AGENT, DOOR_FALLBACK_MS, HOME_PATH, SIGNED_IN_COOKIE, WELCOME_SCRIPT } from "@/lib/welcome/script";
 
@@ -276,5 +277,60 @@ describe("door timeline", () => {
     expect(pushScale({ left: 0, top: 0, width: 0, height: 0 }, phone)).toBe(MIN_PUSH_SCALE);
     // A wide desktop needs more than a phone for the same door.
     expect(pushScale({ ...door, left: (1920 - width) / 2 }, { width: 1920, height: 1080 })).toBeGreaterThanOrEqual(scale);
+  });
+});
+
+describe("glints on the gate's tiles", () => {
+  it("sit on the tiles, clear of the arch, its edges and the plinth", async () => {
+    const { ALFIZ } = await import("@/components/welcome/door-scene");
+    expect(TILES).toEqual({ x: ALFIZ.x + 4, y: ALFIZ.y + 4, width: ALFIZ.width - 8, height: ALFIZ.height - 4 });
+    expect(GLINT_SPOTS.length).toBeGreaterThan(60);
+    for (const spot of GLINT_SPOTS) {
+      expect(insideArch(spot, 3)).toBe(false);
+      expect(spot.x).toBeGreaterThan(TILES.x);
+      expect(spot.x).toBeLessThan(TILES.x + TILES.width);
+      expect(spot.y).toBeGreaterThan(TILES.y);
+      expect(spot.y).toBeLessThan(414.16 - 4);
+    }
+    // Both sides of the arch and the band above it.
+    expect(GLINT_SPOTS.some((spot) => spot.x < 160 && spot.y > 300)).toBe(true);
+    expect(GLINT_SPOTS.some((spot) => spot.x > 352 && spot.y > 300)).toBe(true);
+    expect(GLINT_SPOTS.some((spot) => spot.y < 62)).toBe(true);
+  });
+
+  it("knows the arch: apex, springing, jambs and doorway", () => {
+    expect(insideArch({ x: 256, y: 64 })).toBe(true);
+    expect(insideArch({ x: 256, y: 60 })).toBe(false);
+    expect(insideArch({ x: 145, y: 200 })).toBe(true);
+    expect(insideArch({ x: 138, y: 200 })).toBe(false);
+    expect(insideArch({ x: 161, y: 380 })).toBe(true);
+    expect(insideArch({ x: 158, y: 380 })).toBe(false);
+    expect(insideArch({ x: 256, y: 300 })).toBe(true);
+  });
+
+  it("spread out and never repeat a recent spot", () => {
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const recent: { x: number; y: number }[] = [];
+    for (let turn = 0; turn < 200; turn++) {
+      const showing = recent.slice(-2);
+      const glint = pickGlint(showing, recent, random);
+      expect(glint).not.toBeNull();
+      if (!glint) return;
+      for (const other of showing) expect(Math.hypot(glint.x - other.x, glint.y - other.y)).toBeGreaterThanOrEqual(48);
+      expect(recent.slice(-6).some((other) => other.x === glint.x && other.y === glint.y)).toBe(false);
+      expect(glint.scale).toBeGreaterThanOrEqual(0.8);
+      expect(glint.scale).toBeLessThanOrEqual(1.2);
+      expect(glint.duration).toBeGreaterThanOrEqual(1100);
+      recent.push({ x: glint.x, y: glint.y });
+      const pause = glintPause(random);
+      expect(pause).toBeGreaterThanOrEqual(120);
+      expect(pause).toBeLessThanOrEqual(2350);
+    }
+    expect(new Set(recent.map((spot) => `${spot.x},${spot.y}`)).size).toBeGreaterThan(40);
+  });
+
+  it("places a glint's box in the door's box", () => {
+    expect(glintBox({ x: 256, y: 249 }, 10)).toEqual({ left: "45.833%", top: "47.409%", width: "8.333%", height: "5.181%" });
   });
 });

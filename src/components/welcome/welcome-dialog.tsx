@@ -7,6 +7,7 @@ import { doorSteps, MIN_PUSH_SCALE, pushScale, reducedSteps, SKIP_FADE_MS, type 
 import { doorTilt } from "@/lib/welcome/tilt";
 import { WELCOME_ATTRIBUTE, type WelcomeState } from "@/lib/welcome/script";
 import { playDust } from "./dust-layer";
+import { playGlints } from "./glint-layer";
 
 // The welcome threshold's behaviour; its markup and texts come from the server (welcome-threshold.tsx).
 // The pre-paint script has already decided whether it shows (html[data-welcome]): without that
@@ -15,7 +16,9 @@ import { playDust } from "./dust-layer";
 // opens the door. "door": the door opens at once (a sign-in just landed here). While it opens, any
 // click, tap or Escape skips to a short fade. At the end the state goes, focus moves to #main.
 // Issue #199: on the screen, the door leans a little towards a mouse pointer (never on touch or with
-// reduced motion); while the door opens, dust floats in its light over the threshold.
+// reduced motion); while the door opens, dust floats in its light over the threshold. Owner, 3 Nov
+// 2026: while the screen waits, light catches the gate's gilded tiles at random spots (never with
+// reduced motion).
 
 type Phase = "pending" | "screen" | "door" | "opening" | "closing" | "done";
 
@@ -48,6 +51,7 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
   const unmountedState = useRef<string | null>(null);
   const dust = useRef<HTMLDivElement>(null);
   const stopDust = useRef<() => void>(() => undefined);
+  const stopGlints = useRef<() => void>(() => undefined);
   const [done, setDone] = useState(false);
 
   const lit = useCallback(() => {
@@ -62,6 +66,7 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     phase.current = "done";
     window.clearTimeout(litTimer.current);
     stopDust.current();
+    stopGlints.current();
     document.documentElement.removeAttribute(WELCOME_ATTRIBUTE);
     setDone(true);
     if (focus) focusMain();
@@ -74,6 +79,7 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     if (!element || (state !== "screen" && state !== "door")) return;
     phase.current = "opening";
     entry.current = state;
+    stopGlints.current();
     html.setAttribute(WELCOME_ATTRIBUTE, `${state} ${OPEN}`);
     // The pressed action fades out: focus stays in the dialog until the page takes it.
     element.focus({ preventScroll: true });
@@ -189,6 +195,22 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
       window.cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, [done]);
+
+  // Glints on the tiles while the screen waits; they stop when the door opens.
+  useEffect(() => {
+    const layer = root.current?.querySelector<HTMLElement>("[data-welcome-glints]");
+    if (!layer || done || phase.current !== "screen") return;
+    const motion = window.matchMedia("(prefers-reduced-motion: no-preference)");
+    if (!motion.matches) return;
+    const stop = playGlints(layer);
+    stopGlints.current = stop;
+    // Reduced motion turned on meanwhile: no more glints (CSS hides the layer at once).
+    motion.addEventListener("change", stop, { once: true });
+    return () => {
+      motion.removeEventListener("change", stop);
+      stop();
     };
   }, [done]);
 

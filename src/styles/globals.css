@@ -492,9 +492,49 @@ html[data-welcome]:has(#main:target) .welcome {
   stroke: var(--color-gold-100);
   stroke-width: 0.9;
 }
+/* The tiles where a random glint catches them (glint-layer.ts): warm gilding, not white. */
+.welcome-khatam-glint path {
+  fill: none;
+  stroke: var(--color-gold-200);
+  stroke-width: 1;
+}
 .welcome-glint {
   transform-box: fill-box;
   transform-origin: center;
+}
+/* Random glints on the tiles while the screen waits (glint-layer.ts): boxes placed in the door's box,
+   faded and turned by their opacity and transform. Gone once the door opens, and under reduced motion. */
+.welcome-glints {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.welcome-glints svg {
+  position: absolute;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.welcome-glint-flare {
+  overflow: visible;
+  fill: var(--color-cream-50);
+}
+/* The flare's halo: gilding catching the light, not a white spark (a gradient, no filter). */
+.welcome-glint-halo-core {
+  stop-color: var(--color-gold-100);
+  stop-opacity: 0.85;
+}
+.welcome-glint-halo-edge {
+  stop-color: var(--color-gold-300);
+  stop-opacity: 0;
+}
+html[data-welcome~="open"] .welcome-glints,
+html[data-welcome~="door"] .welcome-glints {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-glints {
+    display: none;
+  }
 }
 .welcome-alfiz-line {
   fill: none;

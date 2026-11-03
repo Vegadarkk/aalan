@@ -120,7 +120,9 @@ test.describe("welcome threshold", () => {
     // What Escape starts, read in the same task: one 200 ms crossfade, no swing or push. The key
     // listener is a passive effect that can land after networkidle on a loaded runner: press again
     // until the door opens (a press it missed starts nothing), then never again, since a second
-    // Escape would skip the opening. The animations of the press that opened it are kept.
+    // Escape would skip the opening. The animations of the press that opened it are kept. Only the
+    // script's animations count: under reduced motion every CSS transition lasts 0.01 ms
+    // (globals.css), and a style change on the dialog as the door opens may start one.
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -131,6 +133,7 @@ test.describe("welcome threshold", () => {
           seen.__opening = document
             .querySelector(".welcome")
             ?.getAnimations({ subtree: true })
+            .filter((animation) => !(animation instanceof CSSTransition) && !(animation instanceof CSSAnimation))
             .map((animation) => ({ target: (animation.effect as KeyframeEffect).target?.className, duration: animation.effect?.getTiming().duration }));
           return seen.__opening;
         }),

@@ -274,7 +274,7 @@ describe("invoice identifiers", () => {
 
   it("prints the publisher's mentions in the footer, from the legal config", () => {
     expect(invoiceFooter(DEFAULT_LEGAL)).toBe(
-      "Adil DARKAOUI DAHMANI, entrepreneur individuel (EI), nom commercial Adark Prime, 6 rue d'Armaillé, 75017 Paris, SIREN 947788303. TVA non applicable, article 293 B du CGI.",
+      "Adil DARKAOUI DAHMANI, entrepreneur individuel (EI), nom commercial Adark Prime, 6 rue d'Armaillé, 75017 Paris, SIREN 947788303, n° TVA FR41947788303. TVA non applicable, article 293 B du CGI.",
     );
     expect(invoiceFooter({ ...DEFAULT_LEGAL, vatRegime: "assujetti" })).toMatch(/SIREN 947788303\. TVA intracommunautaire : FR41947788303\.$/);
   });

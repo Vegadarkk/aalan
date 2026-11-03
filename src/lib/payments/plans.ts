@@ -115,7 +115,9 @@ export function invoiceFields(legal: ProLegal): { name: string; value: string }[
 
 /** The publisher's mentions under every invoice (issuer, address, SIREN, VAT), from config/legal. */
 export function invoiceFooter(legal: LegalConfig): string {
-  return `${publisherIdentity(legal)}, ${legal.hqAddress}, SIREN ${legal.siren}. ${vatMention(legal)}.`;
+  // Under the franchise the VAT number still exists (vatMention prints it only once liable).
+  const number = legal.vatRegime === "franchise" && legal.vatNumber ? `, n° TVA ${legal.vatNumber}` : "";
+  return `${publisherIdentity(legal)}, ${legal.hqAddress}, SIREN ${legal.siren}${number}. ${vatMention(legal)}.`;
 }
 
 export function pageUrl(locale: Locale, query = ""): string {

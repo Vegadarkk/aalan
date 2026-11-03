@@ -39,6 +39,7 @@ export interface DirectoryFilter {
 /** URL segment of each activity: /boutiques/activite/{segment}. */
 export const SECTOR_SEGMENTS: Record<ProSector, string> = {
   general: "boutiques",
+  dealer: "concessions-automobiles",
   real_estate: "agences-immobilieres",
   car_rental: "location-voitures",
   holiday_rental: "location-saisonniere",

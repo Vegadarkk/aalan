@@ -37,8 +37,8 @@ describe("commitments catalogue", () => {
     expect(guideProcedureHref({ rubric: "pro-cooperative", procedure: "pro-ice" })).toBe("/demarches/pro-cooperative#procedure-pro-ice");
   });
 
-  it("gives every agency sector its own commitments, none to a general shop", () => {
-    for (const sector of PRO_SECTORS) expect(sectorCommitmentScope(sector)).toBe(sector === "general" ? null : sector);
+  it("gives every agency sector its own commitments, none to a general shop or a dealership", () => {
+    for (const sector of PRO_SECTORS) expect(sectorCommitmentScope(sector)).toBe(sector === "general" || sector === "dealer" ? null : sector);
   });
 });
 

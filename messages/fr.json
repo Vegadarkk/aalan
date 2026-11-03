@@ -4085,12 +4085,14 @@
       "lead": "Une agence immobilière, de location de voitures ou de location saisonnière a une vitrine dédiée : ses biens par transaction, sa flotte filtrable par dates ou ses logements.",
       "sectors": {
         "general": "Commerce et services",
+        "dealer": "Concession automobile",
         "real_estate": "Agence immobilière",
         "car_rental": "Location de voitures",
         "holiday_rental": "Location saisonnière"
       },
       "sectorHints": {
         "general": "Vitrine de boutique classique.",
+        "dealer": "Vitrine de boutique avec votre stock de véhicules.",
         "real_estate": "Vitrine d'agence, mandat et honoraires sur vos annonces.",
         "car_rental": "Vitrine de flotte par catégorie, disponibilités par dates.",
         "holiday_rental": "Vitrine d'agence, logements meublés à la nuit ou à la semaine."
@@ -5982,12 +5984,14 @@
     "allCities": "Toutes les villes",
     "sectors": {
       "general": "Boutiques",
+      "dealer": "Concessions automobiles",
       "real_estate": "Agences immobilières",
       "car_rental": "Location de voitures",
       "holiday_rental": "Location saisonnière"
     },
     "sectorOne": {
       "general": "Boutique",
+      "dealer": "Concession automobile",
       "real_estate": "Agence immobilière",
       "car_rental": "Agence de location de voitures",
       "holiday_rental": "Agence de location saisonnière"

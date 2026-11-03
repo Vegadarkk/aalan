@@ -4075,12 +4075,14 @@
       "lead": "Tajensit n tegrawin, n ukra n tkeṛṛusin niɣ n ukra n iẓuṛaṛ ɣar-s vitrine nnes: tiɣawsiwin nnes s twuri, tikeṛṛusin nnes s wussan niɣ tiddar nnes.",
       "sectors": {
         "general": "Tijaṛt d tinefliwin",
+        "dealer": "Concession n tkeṛṛusin",
         "real_estate": "Tajensit n tegrawin (immobilier)",
         "car_rental": "Akra n tkeṛṛusin",
         "holiday_rental": "Akra n iẓuṛaṛ (saisonnière)"
       },
       "sectorHints": {
         "general": "Vitrine n tḥanut tamsasit.",
+        "dealer": "Vitrine n tḥanut s tkeṛṛusin nnec i uzenzi.",
         "real_estate": "Vitrine n tejensit, mandat d honoraires deg annonces nnec.",
         "car_rental": "Vitrine n tkeṛṛusin s taggayt, wussan i xwan.",
         "holiday_rental": "Vitrine n tejensit, tiddar s lfeṛc nsent s yiḍ niɣ s simana."
@@ -5972,12 +5974,14 @@
     "allCities": "Marra timdinin",
     "sectors": {
       "general": "Tiḥuna",
+      "dealer": "Concessions n tkeṛṛusin",
       "real_estate": "Agences n ixxamen",
       "car_rental": "Akra n ṭumubilat",
       "holiday_rental": "Akra n vacances"
     },
     "sectorOne": {
       "general": "Taḥanut",
+      "dealer": "Concession n tkeṛṛusin",
       "real_estate": "Agence n ixxamen",
       "car_rental": "Agence n ukra n ṭumubilat",
       "holiday_rental": "Agence n ukra n vacances"

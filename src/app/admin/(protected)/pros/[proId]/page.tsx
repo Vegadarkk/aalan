@@ -213,7 +213,14 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
           ) : null}
 
           {pending && review.kybc.submittedAt ? (
-            <ProDecisionForm proId={review.proId} submittedAt={review.kybc.submittedAt} phoneVerified={phoneVerified} ownerActive={owner?.status === "active"} />
+            <ProDecisionForm
+              proId={review.proId}
+              submittedAt={review.kybc.submittedAt}
+              phoneVerified={phoneVerified}
+              ownerActive={owner?.status === "active"}
+              sector={review.sector}
+              correctableSectors={review.correctableSectors}
+            />
           ) : review.effectsPending && review.kybc.submittedAt && review.kybc.registrySource ? (
             <ProEffectsRerun proId={review.proId} submittedAt={review.kybc.submittedAt} registrySource={review.kybc.registrySource} />
           ) : review.kybc.rejectReason ? (

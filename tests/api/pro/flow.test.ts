@@ -236,6 +236,31 @@ describe("back-office KYBC decision", () => {
     expect(await getListing(second)).toMatchObject({ sellerType: "pro", proId });
   });
 
+  it("keeps a dealership applied for, and lets the moderator correct the activity (B13)", async () => {
+    const dealer = await member({ phone: freshPhone() });
+    const applied = await applyAs(dealer, application([await kybPiece(dealer)], { sector: "dealer" }));
+    expect(applied.status).toBe(201);
+    const dealerId = applied.body.proId;
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${dealerId}`, moderator);
+    expect(review.body.review).toMatchObject({ sector: "dealer", correctableSectors: ["general", "dealer"] });
+    const refused = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${dealerId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: review.body.review.kybc.submittedAt, sector: "car_rental" });
+    expect(code(refused.body)).toBe("commitments_required");
+    const verified = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${dealerId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: review.body.review.kybc.submittedAt });
+    expect(verified.status).toBe(200);
+    expect((await getProProfile(dealerId))?.sector).toBe("dealer");
+
+    // A shop applied as a general one, corrected into a dealership at the verification: journaled.
+    const shop = await member({ phone: freshPhone() });
+    const shopId = (await applyAs(shop, application([await kybPiece(shop)]))).body.proId;
+    const shopReview = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${shopId}`, moderator);
+    expect(shopReview.body.review.sector).toBe("general");
+    const corrected = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${shopId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: shopReview.body.review.kybc.submittedAt, sector: "dealer" });
+    expect(corrected.status).toBe(200);
+    expect((await getProProfile(shopId))?.sector).toBe("dealer");
+    const entry = (await db().collection(COLLECTIONS.auditLogs).where("target.id", "==", shopId).where("action", "==", "pro.verify").get()).docs[0];
+    expect(entry?.get("reason")).toBe("sector general -> dealer");
+  });
+
   it("commits the verification even when Firebase Auth fails, marks the effects pending, and the same verify reruns them", async () => {
     const owner = await member({ phone: freshPhone() });
     const listingId = await publishedListing(owner);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Building2, CarFront, Palmtree, Store } from "lucide-react";
+import { Building2, CarFront, KeyRound, Palmtree, Store } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { FormMessage } from "@/components/auth/form-message";
@@ -24,7 +24,7 @@ import { ProCommitments } from "./pro-commitments";
 // Becoming an agency takes the trade's legal commitments and the admin guide's procedures, ticked
 // before the save (the server refuses it without them).
 
-const ICONS = { general: Store, real_estate: Building2, car_rental: CarFront, holiday_rental: Palmtree } as const;
+const ICONS = { general: Store, dealer: CarFront, real_estate: Building2, car_rental: KeyRound, holiday_rental: Palmtree } as const;
 
 export function AgencySettings({ shop }: { shop: Pick<ProSelfView, "sector" | "feeSchedule"> }) {
   const t = useTranslations("Pro.agency");

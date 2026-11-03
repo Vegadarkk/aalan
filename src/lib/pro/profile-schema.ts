@@ -25,11 +25,13 @@ export const PRO_SLUG_MAX = 60;
 export const SANITARY_NUMBERS_MAX = 50;
 
 /**
- * Business sector (Agence pack design §3): "real_estate" makes the storefront an agency's,
+ * Business sector (Agence pack design §3): "dealer" is a car dealership (a general storefront
+ * that shows its vehicle stock, kept so staff and the Pro space see the activity applied for, B13),
+ * "real_estate" makes the storefront an agency's,
  * "car_rental" a car rental agency's with its fleet (rental pack §5), "holiday_rental" a seasonal
  * rental agency's (location-saisonniere/conception.md §1); absent reads "general".
  */
-export const PRO_SECTORS = ["general", "real_estate", "car_rental", "holiday_rental"] as const;
+export const PRO_SECTORS = ["general", "dealer", "real_estate", "car_rental", "holiday_rental"] as const;
 export type ProSector = (typeof PRO_SECTORS)[number];
 /** The agency's fee schedule shown on its storefront (free text, no contact details). */
 export const AGENCY_FEE_SCHEDULE_MAX = 500;

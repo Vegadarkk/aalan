@@ -31,14 +31,14 @@ import { ProCommitments } from "./pro-commitments";
 // (src/lib/pro/kybc.ts), so a refusal is shown on its field before anything is sent; the server
 // stays the judge.
 
-/** What the applicant does; a dealership is a general shop whose storefront shows its vehicle stock. */
+/** What the applicant does; a dealership is a shop whose storefront shows its vehicle stock. */
 export const ACTIVITIES = ["shop", "dealer", "real_estate", "car_rental", "holiday_rental"] as const;
 export type Activity = (typeof ACTIVITIES)[number];
 const ACTIVITY_ICONS: Record<Activity, LucideIcon> = { shop: Store, dealer: CarFront, real_estate: Building2, car_rental: KeyRound, holiday_rental: Palmtree };
 
 /** The sector sent for an activity (src/lib/pro/profile-schema.ts). */
 export function sectorOf(activity: Activity): ProSector {
-  return activity === "shop" || activity === "dealer" ? "general" : activity;
+  return activity === "shop" ? "general" : activity;
 }
 
 /** The agency commitments an activity adds to the shop's own, or null. */
@@ -79,7 +79,7 @@ type MessageKey = "required" | "activityRequired" | "nameLength" | "cityRequired
 export function initialDraft(previous: ProSelfView | null): Draft {
   const form = previous && (LEGAL_FORMS as readonly string[]).includes(previous.legalForm) ? (previous.legalForm as LegalForm) : null;
   return {
-    // A rejected application keeps its sector; a dealership was stored as a general shop.
+    // A rejected application keeps its sector (a dealership's too since B13).
     activity: previous ? (previous.sector === "general" ? "shop" : previous.sector) : null,
     name: previous?.name ?? "",
     description: previous?.description ?? "",

@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { inputClassName } from "@/components/ui/input";
 import { PRO_REGISTRY_SOURCES, PRO_REJECT_REASON_MAX, PRO_REJECT_REASON_MIN, type ProDecisionInput, type ProDecisionResponse } from "@/lib/contracts/pro";
+import type { ProSector } from "@/lib/pro/profile-schema";
 import { cn } from "@/lib/utils";
 import { adminFetch, errorMessage } from "./api-client";
+import { SECTOR_LABEL } from "./pro-labels";
 
 // Decision on a Pro application (phase 7 design §4): verify (registry consulted, phone verified)
 // or reject with a motivated reason sent to the applicant as written. `submittedAt` pins the
@@ -23,6 +25,7 @@ const MESSAGES: Record<string, string> = {
   invalid_body: `Le motif doit compter de ${PRO_REJECT_REASON_MIN} à ${PRO_REJECT_REASON_MAX} caractères.`,
   forbidden: "Réservé aux modérateurs et aux admins.",
   rate_limited: "Trop de décisions en peu de temps. Réessayez dans quelques minutes.",
+  commitments_required: "Cette activité demande les engagements d'agence du Pro : il la choisira lui-même dans son espace après la validation.",
 };
 
 const REGISTRY_LABEL: Record<(typeof PRO_REGISTRY_SOURCES)[number], string> = { ompic: "OMPIC (registre du commerce)", directinfo: "DirectInfo", odco: "ODCo (registre central des coopératives)" };
@@ -38,14 +41,18 @@ interface ProDecisionFormProps {
   submittedAt: string;
   phoneVerified: boolean;
   ownerActive: boolean;
+  /** The activity applied for, and those the moderator may set instead (B13). */
+  sector: ProSector;
+  correctableSectors: readonly ProSector[];
 }
 
-export function ProDecisionForm({ proId, submittedAt, phoneVerified, ownerActive }: ProDecisionFormProps) {
+export function ProDecisionForm({ proId, submittedAt, phoneVerified, ownerActive, sector: appliedSector, correctableSectors }: ProDecisionFormProps) {
   const router = useRouter();
   const groupId = useId();
   const [choice, setChoice] = useState<Choice>("verify");
   const [registry, setRegistry] = useState<(typeof PRO_REGISTRY_SOURCES)[number] | "">("");
   const [reason, setReason] = useState("");
+  const [sector, setSector] = useState<ProSector>(appliedSector);
   const [fieldError, setFieldError] = useState<{ registry?: string; reason?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +64,7 @@ export function ProDecisionForm({ proId, submittedAt, phoneVerified, ownerActive
         setFieldError({ registry: "Indiquez le registre consulté." });
         return null;
       }
-      return { action: "verify", registrySource: registry, submittedAt };
+      return { action: "verify", registrySource: registry, submittedAt, ...(sector !== appliedSector ? { sector } : {}) };
     }
     const text = reason.trim();
     if (text.length < PRO_REJECT_REASON_MIN) {
@@ -123,6 +130,16 @@ export function ProDecisionForm({ proId, submittedAt, phoneVerified, ownerActive
               {PRO_REGISTRY_SOURCES.map((source) => (
                 <option key={source} value={source}>
                   {REGISTRY_LABEL[source]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Activité de la boutique" hint={sector === appliedSector ? "Celle de la demande. Corrigez-la si elle ne correspond pas aux justificatifs." : `Corrigée : la demande indiquait « ${SECTOR_LABEL[appliedSector] ?? appliedSector} ».`}>
+            <select name="sector" value={sector} onChange={(event) => setSector(event.target.value as ProSector)} className={inputClassName}>
+              {correctableSectors.map((value) => (
+                <option key={value} value={value}>
+                  {SECTOR_LABEL[value] ?? value}
+                  {value === appliedSector ? " (demandée)" : ""}
                 </option>
               ))}
             </select>

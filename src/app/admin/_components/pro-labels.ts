@@ -10,6 +10,7 @@ export const LEGAL_FORM_LABEL: Record<string, string> = {
 /** Business sector chosen with the application (src/lib/pro/profile-schema.ts). */
 export const SECTOR_LABEL: Record<string, string> = {
   general: "Commerce et services",
+  dealer: "Concession automobile",
   real_estate: "Agence immobilière",
   car_rental: "Location de voitures",
   holiday_rental: "Location saisonnière",

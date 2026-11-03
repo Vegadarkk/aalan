@@ -6,7 +6,7 @@ import { HttpError } from "@/lib/http/errors";
 import { proProfileSchema } from "@/lib/pro/profile-schema";
 import { retagWrite } from "@/lib/pro/retag";
 import { KYBC_END_RETENTION_MS } from "@/lib/pro/kybc-retention";
-import { decidedProfile, isEffectsRerun } from "@/lib/pro/review";
+import { correctableSectors, decidedProfile, isEffectsRerun } from "@/lib/pro/review";
 
 // KYBC decision (phase 7 design §4): the profile after a moderator's verify or reject, and the
 // listing patch of the retag effect.
@@ -83,6 +83,31 @@ describe("decidedProfile", () => {
     conflict(() => decidedProfile(record({ lifecycle: "verified", kybc: { ...record().kybc, status: "verified" } }), verify, CTX));
     conflict(() => decidedProfile(record({ lifecycle: "rejected", kybc: { ...record().kybc, status: "rejected" } }), reject, CTX));
     conflict(() => decidedProfile(record(), { ...verify, submittedAt: NOW.toISOString() }, CTX));
+  });
+});
+
+describe("activity at the verification (B13)", () => {
+  it("keeps the dealership applied for", () => {
+    expect(decidedProfile(record({ sector: "dealer" }), verify, CTX).sector).toBe("dealer");
+  });
+
+  it("lets the moderator correct a shop into a dealership and back", () => {
+    expect(decidedProfile(record(), { ...verify, sector: "dealer" }, CTX).sector).toBe("dealer");
+    expect(decidedProfile(record({ sector: "dealer" }), { ...verify, sector: "general" }, CTX).sector).toBeUndefined();
+    expect(proProfileSchema.safeParse(decidedProfile(record(), { ...verify, sector: "dealer" }, CTX)).success).toBe(true);
+  });
+
+  it("refuses an agency sector whose commitments the applicant did not accept", () => {
+    expect(correctableSectors(record())).toEqual(["general", "dealer"]);
+    const agency = record({ sector: "real_estate", sectorCommitment: { sector: "real_estate", version: "1", at: SUBMITTED } });
+    expect(correctableSectors(agency)).toEqual(["general", "dealer", "real_estate"]);
+    expect(decidedProfile(agency, { ...verify, sector: "dealer" }, CTX).sector).toBe("dealer");
+    try {
+      decidedProfile(record(), { ...verify, sector: "car_rental" }, CTX);
+      throw new Error("expected a 409");
+    } catch (error) {
+      expect((error as HttpError).code).toBe("commitments_required");
+    }
   });
 });
 

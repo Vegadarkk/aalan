@@ -7,6 +7,8 @@ import { CategoryGrid } from "@/components/home/category-grid";
 import { FeaturedCarousel } from "@/components/home/featured-carousel";
 import { HomePillars } from "@/components/home/home-pillars";
 import { HomeShortcuts } from "@/components/home/home-shortcuts";
+import { HomeShops } from "@/components/home/home-shops";
+import { cardLabels } from "@/components/pro/directory-card";
 import { Container } from "@/components/layout/container";
 import { RentCarLink } from "@/components/rental/rent-car-link";
 import { RentCarModule } from "@/components/rental/rent-car-module";
@@ -34,6 +36,9 @@ import { getFlags } from "@/lib/config/runtime";
 import { alternates } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
+import { directoryShops } from "@/lib/pro/directory";
+import { homeShops } from "@/lib/pro/directory-view";
 import { FEATURED_HOME_SLOTS } from "@/lib/search/featured";
 import { SEARCH_PATH } from "@/lib/search/params";
 import { featuredListings, latestListings } from "@/lib/search/service";
@@ -92,7 +97,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
   const map = searchMapConfig();
-  const [t, own, welcome, flags, featured, recent, labels, legal] = await Promise.all([
+  const [t, own, welcome, flags, featured, recent, labels, legal, directory, shops] = await Promise.all([
     getTranslations({ locale, namespace: "Home" }),
     getTranslations({ locale, namespace: "SearchMap" }),
     welcomeTexts(locale),
@@ -101,6 +106,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     section("recent", () => latestListings({}, HOME_RECENT_COUNT)),
     mapListingLabels(locale),
     getLegalConfig(),
+    getNumbersTranslations({ locale, namespace: "Directory" }),
+    // The verified shops' row (UX audit of the Pro shops, 10): the directory's shared copy, never a failure of the page.
+    directoryShops().catch((error: unknown) => {
+      logger.warn({ section: "shops", err: (error as Error).message }, "home: shops section unavailable");
+      return [];
+    }),
   ]);
   const serverView = defaultView("home", map !== null);
   // A listing drawn for À la Une shows once on the map, as its gold arch.
@@ -167,6 +178,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <CategoryGrid />
                   <HomeShortcuts />
                   <RentCarModule locale={locale} />
+                  <HomeShops shops={homeShops(shops, 4, locale)} labels={(shop) => cardLabels(directory, shop)} locale={locale} title={t("shops.title")} all={t("shops.all")} />
                   {featured && featured.length > 0 ? <FeaturedCarousel cards={featured} locale={locale} renderAction={favoriteAction} /> : null}
                   {recent && recent.length > 0 ? (
                     <section aria-labelledby="home-recent" data-testid="home-recent" className="flex flex-col gap-5">

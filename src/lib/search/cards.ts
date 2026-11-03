@@ -29,9 +29,10 @@ function promoOf(doc: CardDocument, now: Date): { promo?: CardPromo } {
 /**
  * `featured` marks a card served in an À la Une slot; the "Sponsorisé" mention needs a boost still
  * running at `now` (an expiry not yet swept from the index never shows it). `dates`: a car rental
- * search by dates, whose cards carry the estimated total and the freshness.
+ * search by dates, whose cards carry the estimated total and the freshness. `shopName`: the
+ * shop of a Pro's listing (src/lib/search/shop-names.ts).
  */
-export function toSearchCard(doc: CardDocument, now: Date, featured = false, dates?: RentalDates): SearchCard {
+export function toSearchCard(doc: CardDocument, now: Date, featured = false, dates?: RentalDates, shopName?: string): SearchCard {
   const photo = doc.photo ? { id: doc.photo.id, w: doc.photo.w, h: doc.photo.h, blurhash: doc.photo.blurhash } : null;
   return {
     id: doc.id,
@@ -45,6 +46,7 @@ export function toSearchCard(doc: CardDocument, now: Date, featured = false, dat
     photo,
     photoCount: Number.isInteger(doc.photoCount) ? doc.photoCount : photo ? 1 : 0,
     sellerType: doc.sellerType === "pro" ? "pro" : "individual",
+    ...(doc.sellerType === "pro" && shopName ? { shopName } : {}),
     sortAt: new Date(Number.isFinite(doc.sortAt) ? doc.sortAt : now.getTime()).toISOString(),
     bumped: doc.isBumped === true,
     featured: featured && typeof doc.featuredUntil === "number" && doc.featuredUntil > now.getTime(),

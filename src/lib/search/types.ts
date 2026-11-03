@@ -127,6 +127,8 @@ export const CARD_FIELDS = [
   "photo",
   "photoCount",
   "sellerType",
+  // The shop's name on a Pro's card (UX audit of the Pro shops, lot 2), looked up server side, never sent.
+  "sellerPublicId",
   "sortAt",
   "isBumped",
   "featuredUntil",
@@ -151,8 +153,9 @@ export const CARD_FIELDS = [
   "promoReference",
 ] as const satisfies readonly (keyof SearchDocument)[];
 type CardField = (typeof CARD_FIELDS)[number];
-/** The `a_*` card fields stay optional, as in the index (a listing without the criterion). */
-export type CardDocument = Pick<SearchDocument, Exclude<CardField, `a_${string}`>> & Partial<Pick<SearchDocument, Extract<CardField, `a_${string}`>>>;
+/** The `a_*` card fields stay optional, as in the index (a listing without the criterion); so does the seller's publicId (cards of tests and fixtures). */
+type OptionalCardField = `a_${string}` | "sellerPublicId";
+export type CardDocument = Pick<SearchDocument, Exclude<CardField, OptionalCardField>> & Partial<Pick<SearchDocument, Extract<CardField, OptionalCardField>>>;
 
 // ---- Engine query model (adapters translate it; never built from raw user strings).
 
@@ -238,6 +241,8 @@ export interface SearchCard {
   photo: SearchPhoto | null;
   photoCount: number;
   sellerType: "individual" | "pro";
+  /** A Pro's listing: the name of its shop when the storefront is shown (directory copy). */
+  shopName?: string;
   /** ISO 8601. */
   sortAt: string;
   /** "Remontée" mention (§8). */

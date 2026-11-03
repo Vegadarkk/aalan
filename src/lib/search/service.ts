@@ -5,6 +5,7 @@ import { cityBySlug } from "@/config/regions";
 import { searchEngine } from "@/lib/search/engine";
 import { normalizeQuery } from "@/lib/search/normalize";
 import { toSearchCard } from "./cards";
+import { shopNamesFor } from "./shop-names";
 import { FEATURED_POOL_SIZE, FEATURED_SEARCH_SLOTS, drawFeatured } from "./featured";
 import { dayNumber, moroccoToday, occupiedDays } from "@/lib/listings/rental-availability";
 import { RENTAL_SEARCH_AHEAD_DAYS, SEARCH_MAX_PAGE, SEARCH_MAX_TOTAL_HITS, SEARCH_PAGE_SIZE, canonicalSearchParams, effectiveSort, rentalDuration, type RentalDates, type SearchParams, type SearchSort } from "./params";
@@ -312,11 +313,13 @@ export async function runSearch(input: SearchParams, options: RunSearchOptions =
     }
   }
   const pool = withFeatured ? firstResult(first.extra).hits : [];
+  const drawn = drawFeatured(pool, FEATURED_SEARCH_SLOTS, options.seed ?? randomUUID());
+  const shopOf = await shopNamesFor([...result.hits, ...drawn]);
   return {
     params,
     sort,
-    hits: result.hits.map((doc) => toSearchCard(doc, now, false, dates)),
-    featured: drawFeatured(pool, FEATURED_SEARCH_SLOTS, options.seed ?? randomUUID()).map((doc) => toSearchCard(doc, now, true)),
+    hits: result.hits.map((doc) => toSearchCard(doc, now, false, dates, shopOf(doc))),
+    featured: drawn.map((doc) => toSearchCard(doc, now, true, undefined, shopOf(doc))),
     total: result.totalHits,
     page,
     totalPages: Math.min(result.totalPages, Math.ceil(SEARCH_MAX_TOTAL_HITS / hitsPerPage), SEARCH_MAX_PAGE),
@@ -336,5 +339,7 @@ export async function latestListings(params: SearchParams, limit: number): Promi
 export async function featuredListings(params: SearchParams, count: number, seed?: string): Promise<SearchCard[]> {
   const now = new Date();
   const result = firstResult(await searchEngine().search([featuredQuery(canonicalSearchParams(params), now)]));
-  return drawFeatured(result.hits, count, seed ?? randomUUID()).map((doc) => toSearchCard(doc, now, true));
+  const drawn = drawFeatured(result.hits, count, seed ?? randomUUID());
+  const shopOf = await shopNamesFor(drawn);
+  return drawn.map((doc) => toSearchCard(doc, now, true, undefined, shopOf(doc)));
 }

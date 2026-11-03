@@ -96,6 +96,10 @@
       "guideHint": "Véhicule, logement, auto-entrepreneur, MRE : les étapes et les papiers",
       "pricing": "Tarifs",
       "pricingHint": "Publier gratuitement, options de visibilité et offres Pro"
+    },
+    "shops": {
+      "title": "Boutiques et agences vérifiées",
+      "all": "Voir toutes les boutiques"
     }
   },
   "Welcome": {

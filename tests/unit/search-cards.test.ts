@@ -91,3 +91,13 @@ describe("toSearchCard", () => {
     expect(toSearchCard(doc({ sortAt: Number.NaN }), NOW).sortAt).toBe(NOW.toISOString());
   });
 });
+
+describe("toSearchCard shop name", () => {
+  it("names the shop of a Pro's listing, never the seller of a member's, never the publicId", () => {
+    const pro = toSearchCard(doc({ sellerType: "pro", sellerPublicId: "pub1234567" }), NOW, false, undefined, "Maison Lalla");
+    expect(pro.shopName).toBe("Maison Lalla");
+    expect(JSON.stringify(pro)).not.toContain("pub1234567");
+    expect(toSearchCard(doc({ sellerPublicId: "pub1234567" }), NOW, false, undefined, "Maison Lalla")).not.toHaveProperty("shopName");
+    expect(toSearchCard(doc({ sellerType: "pro" }), NOW)).not.toHaveProperty("shopName");
+  });
+});

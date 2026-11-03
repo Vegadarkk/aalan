@@ -1,20 +1,19 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BadgeCheck, MapPin, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Container } from "@/components/layout/container";
 import { LandingBreadcrumb, SubcategoryChips, type LandingChip, type LandingCrumb } from "@/components/seo/landing";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
-import { ShopBand, ShopEmblem } from "@/components/pro/shop-emblem";
+import { DirectoryCard, cardLabels } from "@/components/pro/directory-card";
 import { pageLocale } from "@/i18n/params";
 import { alternates } from "@/lib/i18n/metadata";
-import { listDirectoryShops } from "@/lib/pro/directory";
+import { directoryShops } from "@/lib/pro/directory";
 import { DIRECTORY_CITY_CHIPS, countByCity, countBySector, directoryPath, filterShops, parseDirectorySegments, sortShops, type DirectoryFilter } from "@/lib/pro/directory-view";
 import { PRO_SECTORS } from "@/lib/pro/profile-schema";
 import { PRO_LANDING_PATH } from "@/lib/search/shortcuts";
@@ -43,7 +42,7 @@ const restKeyOf = (rest: string[] | undefined) => (rest ?? []).join("/");
 const load = cache(async (restKey: string) => {
   const filter = parseDirectorySegments(restKey ? restKey.split("/") : []);
   if (!filter) return null;
-  return { filter, shops: await listDirectoryShops() };
+  return { filter, shops: await directoryShops() };
 });
 
 /** The translator and the H1 of a filter: "Agences immobilières à Casablanca". */
@@ -138,52 +137,11 @@ export default async function DirectoryPage({ params }: { params: Params }) {
           <>
             <h2 className="text-lg font-semibold text-foreground-muted">{countLabel}</h2>
             <ul data-testid="directory-list" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {results.map((shop) => {
-                const city = cityBySlug(shop.citySlug);
-                return (
-                  <li key={shop.proId} className="min-w-0">
-                    {/* The whole card leads to the storefront: the name's link stretches over it. */}
-                    <article className="relative flex h-full flex-col gap-3 overflow-hidden rounded-lg border border-border bg-surface px-5 pb-5 transition-[border-color,box-shadow] duration-150 ease-door focus-within:border-foreground/40 hover:border-foreground/40 hover:shadow-sm">
-                      <ShopBand name={shop.name} className="-mx-5 w-auto" />
-                      <div className="-mt-9 flex items-end gap-4">
-                        <ShopEmblem name={shop.name} sector={shop.sector} />
-                        <div className="flex min-w-0 flex-col gap-1 pb-0.5">
-                          <h3 className="text-lg leading-tight font-semibold">
-                            <Link href={`/boutique/${shop.segment}`} prefetch={false} dir="auto" className="break-words after:absolute after:inset-0 after:rounded-lg">
-                              {shop.name}
-                            </Link>
-                          </h3>
-                          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-foreground-muted">
-                            <span>{t(`sectorOne.${shop.sector}`)}</span>
-                            {city ? (
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
-                                {cityName(city, locale)}
-                              </span>
-                            ) : null}
-                          </p>
-                        </div>
-                      </div>
-                      {shop.excerpt ? (
-                        <p dir="auto" className="line-clamp-3 text-sm text-pretty text-foreground-muted">
-                          {shop.excerpt}
-                        </p>
-                      ) : null}
-                      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm">
-                        {shop.example ? (
-                          <Badge variant="neutral">{t("badges.example")}</Badge>
-                        ) : (
-                          <Badge variant="featured">
-                            <BadgeCheck className="size-3.5" aria-hidden="true" />
-                            {shop.certified ? t("badges.certified") : t("badges.verified")}
-                          </Badge>
-                        )}
-                        <span className="text-foreground-muted">{shop.listings > 0 ? t("listings", { count: shop.listings }) : t("listingsNone")}</span>
-                      </div>
-                    </article>
-                  </li>
-                );
-              })}
+              {results.map((shop) => (
+                <li key={shop.proId} className="min-w-0">
+                  <DirectoryCard shop={shop} locale={locale} labels={cardLabels(t, shop)} />
+                </li>
+              ))}
             </ul>
           </>
         ) : none ? (

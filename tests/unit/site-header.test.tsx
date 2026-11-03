@@ -114,13 +114,16 @@ describe("SiteHeader", () => {
     expect(row?.[1]).toBe(fr.Nav.categories);
     const body = row?.[2] ?? "";
     for (const category of CATEGORIES) expect(body).toContain(`href="/fr/c/${category.id}"`);
-    // The two doors close the scrolling line below lg and stand after it, fixed, from lg (owner, 30 Oct 2026).
+    // Below lg « Boutiques » opens the scrolling line and « Démarches » closes it (UX audit of the Pro
+    // shops, 9); from lg both stand after it, fixed (owner, 30 Oct 2026).
     const doors = body.match(/data-testid="category-doors" class="([^"]*)"/g) ?? [];
-    expect(doors).toHaveLength(2);
+    expect(doors).toHaveLength(3);
     expect(doors[0]).toContain("lg:hidden");
-    expect(doors[1]).toContain("hidden h-11 shrink-0 items-center gap-1.5 lg:flex");
+    expect(doors[1]).toContain("lg:hidden");
+    expect(doors[2]).toContain("hidden h-11 shrink-0 items-center gap-1.5 lg:flex");
     expect(body.match(/href="\/fr\/boutiques"/g)).toHaveLength(2);
     expect(body.match(/href="\/fr\/demarches"/g)).toHaveLength(2);
+    expect(body.indexOf('href="/fr/boutiques"')).toBeLessThan(body.indexOf('href="/fr/c/'));
     expect(body).toContain("lucide-shopping-bag");
     expect(body).toContain("lucide-scroll-text");
     expect(body).toContain(fr.Nav.shops);

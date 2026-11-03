@@ -1,4 +1,5 @@
 import { cityBySlug } from "@/config/regions";
+import type { BannerKey } from "@/config/storefront";
 import { PRO_SECTORS, type ProSector } from "@/lib/pro/profile-schema";
 import { DIRECTORY_PATH } from "@/lib/search/shortcuts";
 
@@ -20,8 +21,12 @@ export interface DirectoryShop {
   example: boolean;
   /** Badge « Certifié »: the pieces were checked in detail. */
   certified: boolean;
+  /** The owner's public id: the listings' `sellerPublicId` (the shop's name on their cards). */
+  ownerPublicId: string;
   /** The owner's active listings (users.stats, denormalised). */
   listings: number;
+  /** The house banner the shop picked (UX audit lot 1); none: the band of its name's hue. */
+  bannerKey?: BannerKey;
 }
 
 export interface DirectoryFilter {
@@ -109,4 +114,11 @@ export function excerptOf(description: string, max = EXCERPT_MAX): string {
   const cut = first.slice(0, max + 1);
   const space = cut.lastIndexOf(" ");
   return `${(space > max / 2 ? cut.slice(0, space) : cut.slice(0, max)).replace(/[\s,;:.]+$/, "")}…`;
+}
+
+/** The home page's row (UX audit of the Pro shops, 10): real shops with listings first, at most `count`. */
+export function homeShops(shops: readonly DirectoryShop[], count = 4, locale = "fr"): DirectoryShop[] {
+  return sortShops(shops, locale)
+    .sort((a, b) => Number(a.example) - Number(b.example) || Number(b.certified) - Number(a.certified) || b.listings - a.listings)
+    .slice(0, count);
 }

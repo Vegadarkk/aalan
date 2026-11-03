@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { GLINT_SLOTS, GLOW_R, TILES } from "@/lib/welcome/glints";
+import { TILES, TILES_BOX } from "@/lib/welcome/glints";
 import { DOOR_VIEWBOX, PUSH_POINT } from "@/lib/welcome/motion";
 
 // The logo's door (public/brand/aalan-icon.svg, same paths as DoorMark) in layers, so that it can
@@ -7,7 +7,7 @@ import { DOOR_VIEWBOX, PUSH_POINT } from "@/lib/welcome/motion";
 // gold threshold, the pool of light on the ground, the leaf's shadow, and the ochre leaf on top, an HTML element of its
 // own (SVG children cannot turn in 3D) with a front and a back face. A glint of the rising light crosses
 // the tiles: a ring growing from the doorway, the mask of a brighter copy of them (issue #199). While
-// the screen waits, light catches the tiles here and there (glint-layer.ts). Parts are found by
+// the screen waits, waves of light glide over the gilded tiles (glint-layer.ts). Parts are found by
 // data-welcome-part (src/components/welcome/welcome-dialog.tsx). Decorative: the dialog is named by
 // its tagline.
 
@@ -29,8 +29,6 @@ export const ALFIZ = { x: 110, y: 44, width: 292, height: 370 } as const;
 /** Khatam lattice of the frame's spandrels: eight-pointed stars touching on the diagonals. */
 const KHATAM = "M12 3.51L20.49 12L12 20.49L3.51 12ZM6 6H18V18H6Z";
 const KHATAM_CORNER = "M0 -8.49L8.49 0L0 8.49L-8.49 0ZM-6 -6H6V6H-6Z";
-/** A four-pointed flare in a -1..1 box: thin rays, a bright crossing. */
-const FLARE = "M0 -1C0.03 -0.16 0.16 -0.03 1 0C0.16 0.03 0.03 0.16 0 1C-0.03 0.16 -0.16 0.03 -1 0C-0.16 -0.03 -0.03 -0.16 0 -1Z";
 /** Where the glint starts: the doorway's centre. */
 const GLINT = { cx: 256, cy: 280, r: 200 } as const;
 
@@ -109,16 +107,6 @@ export function DoorScene() {
           <mask id="welcome-glint" maskUnits="userSpaceOnUse" x={ALFIZ.x} y={ALFIZ.y} width={ALFIZ.width} height={ALFIZ.height}>
             <circle className="welcome-glint" data-welcome-part="glint" fill="url(#welcome-glint-ring)" {...GLINT} />
           </mask>
-          {/* The random glints' patch of lit tiles: full at the spot, gone at its radius. */}
-          <radialGradient id="welcome-glint-fade">
-            <stop offset="0" stopColor="#fff" />
-            <stop offset="0.45" stopColor="#fff" stopOpacity="0.6" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="welcome-glint-halo">
-            <stop offset="0" className="welcome-glint-halo-core" />
-            <stop offset="1" className="welcome-glint-halo-edge" />
-          </radialGradient>
         </defs>
         <rect className="fill-bab-900" {...ALFIZ} />
         <rect className="welcome-alfiz-tiles" fill="url(#welcome-khatam)" {...ALFIZ} />
@@ -132,23 +120,14 @@ export function DoorScene() {
         {/* The plinth the frame stands on, under the door's own gold threshold. */}
         <rect className="welcome-plinth" x={ALFIZ.x - 6} y={414.16} width={ALFIZ.width + 12} height={23.04} rx={3} />
       </svg>
-      {/* Glints on the tiles while the screen waits, under the arch's layer: placed and played by
-          glint-layer.ts. Each slot: the lit tiles around the spot, cropped by its viewBox, and a flare. */}
-      <div className="welcome-glints" data-welcome-glints="">
-        {Array.from({ length: GLINT_SLOTS }, (_, index) => (
-          <div key={index} data-glint="">
-            <svg className="welcome-glint-glow" viewBox="0 0 1 1" focusable="false">
-              <mask id={`welcome-glint-${index}`} maskUnits="userSpaceOnUse" {...TILES}>
-                <circle fill="url(#welcome-glint-fade)" r={GLOW_R} />
-              </mask>
-              <rect fill="url(#welcome-khatam-glint)" mask={`url(#welcome-glint-${index})`} {...TILES} />
-            </svg>
-            <svg className="welcome-glint-flare" viewBox="-1 -1 2 2" focusable="false">
-              <circle r="0.5" fill="url(#welcome-glint-halo)" />
-              <path d={FLARE} />
-            </svg>
-          </div>
-        ))}
+      {/* Waves of light over the tiles while the screen waits, under the arch's layer: played by
+          glint-layer.ts. The tiles' box clips a soft band holding a brighter copy of the lattice. */}
+      <div className="welcome-glints" data-welcome-glints="" style={TILES_BOX}>
+        <div className="welcome-glint-band" data-glint-band="">
+          <svg viewBox={`${TILES.x} ${TILES.y} ${TILES.width} ${TILES.height}`} preserveAspectRatio="none" focusable="false">
+            <rect fill="url(#welcome-khatam-glint)" {...TILES} />
+          </svg>
+        </div>
       </div>
       <svg className="welcome-layer" viewBox={VIEWBOX} focusable="false">
         <path className="fill-bab-700" d={ARCH} />

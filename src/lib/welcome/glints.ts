@@ -1,111 +1,62 @@
-// Glints on the gate's gilded tiles while the welcome screen waits (owner, 3 Nov 2026: "un effet de
-// brillance aléatoire" on the gold mosaic): now and then, at a random point of the khatam lattice,
-// light catches the gilding: the tiles around it brighten and a small four-pointed flare blooms and
-// turns. Played by src/components/welcome/glint-layer.ts with the Web Animations API (transform and
-// opacity only); never under reduced motion, never once the door opens.
+// Waves of light across the gate's gilded tiles while the welcome screen waits (owner, 3 Nov 2026:
+// "un effet de vague de dorure, comme les reflets d'or sur un objet", not sparkles): now and then a
+// soft diagonal band of light glides over the khatam lattice, brightening the gilding as it passes,
+// at a random angle, direction, speed and moment. Played by src/components/welcome/glint-layer.ts
+// with the Web Animations API (transform only); never under reduced motion, never once the door opens.
 
 import { DOOR_VIEWBOX } from "@/lib/welcome/motion";
 
-/** The gate's frame inside its inner gold line (ALFIZ in door-scene.tsx, inset by 4). */
+/** The gate's frame inside its inner gold line (ALFIZ in door-scene.tsx, inset by 4; the plinth below). */
 export const TILES = { x: 114, y: 48, width: 284, height: 366 } as const;
-/**
- * The arch cut out of the tiles (ARCH in door-scene.tsx): two arcs of radius 136.32 meeting at the
- * apex (256, 62.8), each springing at y 267.23 from x 160 and 352, then straight jambs down. Inside
- * it means inside both arcs' circles above the springing line, between the jambs below it.
- */
-const ARCH = { r: 136.32, cy: 197.474, left: 160, right: 352, springing: 267.23 } as const;
-/** Centres of the arcs: the start arc's circle is centred right of the axis, and the reverse. */
-const ARCH_CENTRES = [277.121, 234.879] as const;
-/** The tiles' pattern (door-scene.tsx): 24-unit tiles from (244, 44). */
-const TILE = { x: 244, y: 44, size: 24 } as const;
-/** No glint centred this close to the arch, the frame's edge or the plinth. */
-const MARGIN = 4;
-/** Radius of the brightened tiles around a glint, and half the flare's box (viewBox units). */
-export const GLOW_R = 22;
-export const FLARE_R = 14;
-/** Glints shown at once, at most. */
-export const GLINT_SLOTS = 3;
-/** Two glints at once stay at least this far apart, and a spot is not reused this soon. */
-const SPREAD = 48;
-const RECENT = 6;
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface Glint extends Point {
-  /** How much of FLARE_R the flare reaches. */
-  scale: number;
-  /** Turn of the flare as it blooms, in degrees (either way). */
-  turn: number;
+export interface Wave {
+  /** Tilt of the band from the vertical, in degrees (its travel is across it). */
+  angle: number;
+  /** +1: travels towards the band's right (rotated), -1: the other way. */
+  direction: 1 | -1;
+  /** The band's width, as a share of the tiles' width. */
+  width: number;
+  /** How bright the gilding gets, 0..1. */
+  strength: number;
   duration: number;
 }
 
-/** Whether a point is inside the arch grown by `margin` (viewBox units). */
-export function insideArch({ x, y }: Point, margin = 0): boolean {
-  if (y >= ARCH.springing) return x > ARCH.left - margin && x < ARCH.right + margin;
-  return ARCH_CENTRES.every((cx) => Math.hypot(x - cx, y - ARCH.cy) < ARCH.r + margin);
-}
-
-/**
- * Where a glint may show: the lattice's bright points (the stars' centres, at every half tile on
- * the diagonals, and the tips where they touch), on the tiles and clear of the arch.
- */
-export const GLINT_SPOTS: readonly Point[] = (() => {
-  const spots: Point[] = [];
-  const half = TILE.size / 2;
-  const quarter = TILE.size / 4;
-  const add = (x: number, y: number) => {
-    const inTiles = x >= TILES.x + MARGIN && x <= TILES.x + TILES.width - MARGIN && y >= TILES.y + MARGIN && y <= TILES.y + TILES.height - MARGIN * 3;
-    if (inTiles && !insideArch({ x, y }, MARGIN)) spots.push({ x, y });
-  };
-  for (let i = -12; i <= 12; i++) {
-    for (let j = 0; j <= 32; j++) {
-      // Star centres: both families of the khatam, on alternate half-tile nodes.
-      if ((i + j) % 2 === 0) add(TILE.x + i * half, TILE.y + j * half);
-      // Tips where two stars touch, a quarter tile off the nodes.
-      add(TILE.x + quarter + i * half, TILE.y + quarter + j * half);
-    }
-  }
-  return spots;
-})();
-
-/**
- * The next glint, away from those showing and from the last few spots. Null if none fits (it never
- * happens with GLINT_SLOTS and the lattice's size, but the caller just waits for the next turn).
- */
-export function pickGlint(showing: readonly Point[], recent: readonly Point[], random: () => number = Math.random): Glint | null {
-  const free = GLINT_SPOTS.filter(
-    (spot) => showing.every((other) => Math.hypot(spot.x - other.x, spot.y - other.y) >= SPREAD) && !recent.slice(-RECENT).some((other) => other.x === spot.x && other.y === spot.y),
-  );
-  const spot = free[Math.floor(random() * free.length)];
-  if (!spot) return null;
+/** The next wave: a reflection sliding over gold, never twice the same. */
+export function pickWave(random: () => number = Math.random): Wave {
+  const tilt = 18 + random() * 24;
   return {
-    ...spot,
-    scale: 0.8 + random() * 0.4,
-    turn: (random() < 0.5 ? -1 : 1) * (35 + random() * 55),
-    duration: 1100 + random() * 700,
+    angle: random() < 0.5 ? tilt : -tilt,
+    direction: random() < 0.5 ? 1 : -1,
+    width: 0.32 + random() * 0.22,
+    strength: 0.7 + random() * 0.3,
+    duration: 1900 + random() * 1100,
   };
 }
 
-/** Wait before the next glint starts, in ms: irregular, so that no rhythm shows. */
-export function glintPause(random: () => number = Math.random): number {
-  // Mostly a second or two, now and then two glints almost together.
-  return random() < 0.15 ? 120 + random() * 250 : 650 + random() * 1700;
+/** Wait between two waves, in ms: irregular, so that no rhythm shows. */
+export function wavePause(random: () => number = Math.random): number {
+  return 1600 + random() * 3400;
 }
 
-/** The first glint waits for the gate's entrance (globals.css, welcome-enter: 1.4 s). */
-export const FIRST_GLINT_MS = 1700;
+/** The first wave waits for the gate's entrance (globals.css, welcome-enter: 1.4 s). */
+export const FIRST_WAVE_MS = 1600;
+
+/**
+ * The band's box and travel for tiles of `width` x `height` px: as long as their diagonal (it
+ * crosses them at any angle), centred, and moved from fully outside on one side to the other.
+ */
+export function waveGeometry(wave: Wave, width: number, height: number): { band: { width: number; height: number }; travel: number } {
+  const diagonal = Math.hypot(width, height);
+  const band = { width: wave.width * width, height: diagonal * 1.1 };
+  return { band, travel: diagonal / 2 + band.width / 2 };
+}
 
 const percent = (value: number) => `${(value * 100).toFixed(3)}%`;
 
-/** A square box of radius r around a point, placed in the door's box (CSS left, top, width, height). */
-export function glintBox({ x, y }: Point, r: number): { left: string; top: string; width: string; height: string } {
-  return {
-    left: percent((x - r - DOOR_VIEWBOX.x) / DOOR_VIEWBOX.width),
-    top: percent((y - r - DOOR_VIEWBOX.y) / DOOR_VIEWBOX.height),
-    width: percent((2 * r) / DOOR_VIEWBOX.width),
-    height: percent((2 * r) / DOOR_VIEWBOX.height),
-  };
-}
+/** The tiles' box in the door's box (CSS left, top, width, height). */
+export const TILES_BOX = {
+  left: percent((TILES.x - DOOR_VIEWBOX.x) / DOOR_VIEWBOX.width),
+  top: percent((TILES.y - DOOR_VIEWBOX.y) / DOOR_VIEWBOX.height),
+  width: percent(TILES.width / DOOR_VIEWBOX.width),
+  height: percent(TILES.height / DOOR_VIEWBOX.height),
+} as const;

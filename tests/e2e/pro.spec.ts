@@ -138,8 +138,9 @@ test.describe("Pro accounts", () => {
 
     await page.goto("/fr/pro");
     await expect(page.getByRole("heading", { name: "Ouvrir une boutique Pro sur Aalan" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Vérifier mon numéro" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Envoyer ma demande" })).toHaveCount(0);
+    // No verified phone: the application stays open, the moderator calls the number at the KYBC (Z1-03).
+    await expect(page.getByText("Votre numéro de mobile sera vérifié par un appel de notre équipe", { exact: false })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Envoyer ma demande" })).toBeVisible();
     await seedVerifiedPhone(email);
     await page.reload();
     await expect(page.getByText("Votre compte remplit les conditions pour demander un compte Pro.")).toBeVisible({ timeout: 15_000 });

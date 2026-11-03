@@ -365,6 +365,7 @@
         "displayNameMin": "Isem ixs ad yesɛa ɣas 2 n yisekkilen.",
         "displayNameMax": "Isem war yezmir ad yeɛdu 40 n yisekkilen.",
         "displayNameFormat": "Sxdem kan isekkilen, uṭṭunen, tallunin, tinqiḍin, ' niɣ -.",
+        "displayNameContact": "Kkes uṭṭun n tilifun niɣ asaɣ : imdukal yaḍen ad dak-arin s tibratin n Aalan.",
         "consentRequired": "Ixs ad tɛellmeḍ x waya ḥima ad tkemmleḍ.",
         "currentPassword": "Ari awal n uɛeddi nnec n dǧa.",
         "phone": "Ari uṭṭun n portable n Lmeɣrib (06 niɣ 07).",
@@ -502,6 +503,7 @@
         "title": "Profil",
         "body": "Isem i ɣa yban ad d-yban deg annonces nnec d deg tibratin.",
         "displayName": "Isem i ɣa yban",
+        "displayNameHint": "{count} zi {max} n yisekkilen. Ad yban deg annonces nnec d deg tibratin : war uṭṭun war asaɣ.",
         "locale": "Tutlayt n usit",
         "save": "Ḥrez",
         "saved": "Profil yettwaḥrez"
@@ -563,7 +565,31 @@
         "none": "War tella ca tarrayt n tukcimt yettwaḥerzen."
       },
       "signOut": "Ffeɣ",
-      "signedOut": "Teffɣeḍ"
+      "signedOut": "Teffɣeḍ",
+      "notifications": {
+        "title": "E-mails d tilɣa",
+        "body": "Fren e-mails i k-d-ittasen. Tzemred ad tbeddled rray nnec melmi ma tebɣid.",
+        "loading": "Ismenyaf nnec ad ttwaɛemmaren",
+        "retry": "Ɛawed",
+        "messagesEmail": {
+          "label": "Tibratin d ibedda",
+          "hint": "Yiwen n e-mail mala qqimen-k-id tibratin (yiwen kul 6 n swayeɛ ula d ktar), asmekti n ibedda d tiktiwin i k-d-yewḍen.",
+          "on": "Ad ak-d-asen e-mails n tibratin",
+          "off": "War ak-d-ttasen ca e-mails n tibratin"
+        },
+        "marketing": {
+          "label": "Imaynuten d tiwsatin n Aalan",
+          "hint": "Ma tebɣid : kra n e-mails x imaynuten n usmel d tiwsatin nneɣ.",
+          "since": "Tqebled-t ass n {date}.",
+          "on": "Ad ak-d-asen imaynuten d tiwsatin nneɣ",
+          "off": "War ak-d-ttasen ca imaynuten niɣ tiwsatin nneɣ"
+        },
+        "alerts": {
+          "body": "Tilɣa n tiqqesin nnec yettwaḥerzen ttwasewjadent yiwet yiwet.",
+          "action": "Sewjed tilɣa inu"
+        },
+        "always": "E-mails ixs uḥsab nnec (taɣellist, anekcam, tigtiwin n umεeyyen d isuturen n tuɣalin) ttwaznent dima."
+      }
     },
     "verifications": {
       "title": "Senqed uṭṭun inu",
@@ -3905,6 +3931,7 @@
       "settings": "Rzem iɣewwaren inu",
       "inactive": "Amiḍan nnec ixs ad yexdem ḥima ad tessutreḍ amiḍan Pro.",
       "phoneCall": "Uṭṭun nnec n portable ad t-isenqed yiwen zi tarbaɛt nneɣ s usiwel mala nettɣar asuter.",
+      "verifyPhoneNow": "Tzemred daɣ ad t-tsenqded dɣya s WhatsApp.",
       "ready": "Amiḍan nnec yessaweḍ ayen ixsen ḥima ad tessutreḍ amiḍan Pro."
     },
     "closed": "Isuturen n umiḍan Pro ttwaqqnen i tura. Uɣal-d zeɣ qbel.",
@@ -3972,6 +3999,7 @@
       "resubmit": "Azen asuter inu yettwaseɣten",
       "required": "Amkan-a ixs ad t-tɛemmreḍ.",
       "nameLength": "Isem ixs ad yili zi 2 ar {max} n yisekkilen.",
+      "nameContact": "Kkes uṭṭun n tilifun niɣ asaɣ zi yisem : imsaɣen nnec ad dak-arin s tibratin n Aalan.",
       "iceFormat": "ICE ɣar-s 15 n wuṭṭunen.",
       "identifierFormat": "Sxdem uṭṭunen d yisekkilen kan.",
       "cityRequired": "Xtar tamdint n tḥanut.",

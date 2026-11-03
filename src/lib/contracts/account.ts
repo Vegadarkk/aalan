@@ -223,3 +223,25 @@ export interface StorefrontSettings {
   bannerKey: BannerKey;
   citySlug: string | null;
 }
+
+/**
+ * POST /api/account/notifications (audit B2: Z1-02, zone 5 n°4): each switch optional. `marketing`
+ * is the opt-in to Aalan's news and offers given (or not) at sign-up, withdrawn or given again here;
+ * `messagesEmail` covers the e-mails of the messaging (grouped new messages, meeting reminders,
+ * reviews). Saved-search alerts keep their own switch per search (/recherches).
+ */
+export const notificationSettingsSchema = z
+  .object({
+    marketing: z.boolean().optional(),
+    messagesEmail: z.boolean().optional(),
+  })
+  .strict();
+export type NotificationSettingsInput = z.infer<typeof notificationSettingsSchema>;
+
+/** What the settings section shows. */
+export interface NotificationSettings {
+  marketing: boolean;
+  /** ISO date of the opt-in in force, null when none. */
+  marketingSince: string | null;
+  messagesEmail: boolean;
+}

@@ -17,6 +17,7 @@ import { getUser } from "@/lib/db/repositories/users";
 import { HttpError } from "@/lib/http/errors";
 import { newListingId, slugify } from "@/lib/listings/ids";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
+import { displayNameContact } from "@/lib/moderation/display-name";
 import { firstStrictIssue } from "@/lib/moderation/free-text";
 import { isPhoneVerificationConfigured } from "@/lib/phone-verify/config";
 import { normalizeMoroccanMobile } from "@/lib/phone/normalize";
@@ -45,10 +46,10 @@ export const newProId = newListingId;
 
 /**
  * Eligibility of an application (and of sending its pieces): applications open
- * (`config/flags.proSignupEnabled`), an account not Pro yet, active, with a verified e-mail and
- * phone, and no application in progress for it (a rejected one may be resubmitted). While the
- * WhatsApp check is unavailable (Meta app pending), the phone is verified by a moderator's call
- * during the review instead: the application then carries the number to call.
+ * (`config/flags.proSignupEnabled`), an account not Pro yet, active, with a verified e-mail, and
+ * no application in progress for it (a rejected one may be resubmitted). The phone never gates the
+ * application (decision of 19 Oct 2026, audit Z1-03): an unverified one is checked by a
+ * moderator's call during the review, so the application then carries the number to call.
  */
 export async function assertCanApply(auth: AuthContext): Promise<{ user: UserDoc; existing: ProProfileRecord | null }> {
   const uid = auth.user.uid;
@@ -59,7 +60,6 @@ export async function assertCanApply(auth: AuthContext): Promise<{ user: UserDoc
   const user = await getUser(uid);
   if (!user || user.status !== "active") throw new HttpError(403, "account_suspended");
   if (!user.badges.emailVerified) throw new HttpError(403, "email_not_verified");
-  if (!user.badges.phoneVerified && isPhoneVerificationConfigured()) throw new HttpError(403, "phone_required");
 
   const existing = user.proId ? await getProProfile(user.proId) : null;
   if (existing && existing.lifecycle !== "rejected") throw new HttpError(409, "pro_application_exists");
@@ -73,10 +73,16 @@ export async function assertCanApply(auth: AuthContext): Promise<{ user: UserDoc
 export async function submitApplication(actor: ProActor, input: ProApplyInput, now = new Date()): Promise<{ proId: string }> {
   const uid = actor.auth.user.uid;
   const { user, existing } = await assertCanApply(actor.auth);
+  // The name and presentation become the public storefront: same text screen as its later edits
+  // (updateShopCard), and no number or link in the name (audit B6, Z1-27).
+  const { prohibited } = await getAbuseRules();
+  if (displayNameContact(input.name)) throw new HttpError(422, "invalid_text", "shop name holds a contact detail", { details: { field: "name", issue: "contact" } });
+  const descriptionIssue = input.description ? firstStrictIssue(input.description, prohibited) : null;
+  if (descriptionIssue) throw new HttpError(422, "invalid_text", "presentation refused by the text screen", { details: { field: "description", issue: descriptionIssue } });
   // An agency applies as such (journey review 2026-10-29): its trade's commitments come with the shop's.
   const agencyScope = sectorCommitmentScope(input.sector);
   if (agencyScope && !input.sectorCommitment) throw new HttpError(400, "commitments_required", "the agency commitments must be accepted");
-  // The badge may be false only while the WhatsApp check is unavailable: the number to call is then part of the application.
+  // Without the badge the number to call is part of the application (checked by the moderator at the KYBC).
   let phoneToCheck: string | undefined;
   if (!user.badges.phoneVerified) {
     if (!input.phone) throw new HttpError(400, "phone_required");

@@ -107,8 +107,10 @@ function Application({ me, previous, onReload }: { me: ProMeResponse; previous: 
   const t = useTranslations("Pro");
   if (!me.signupOpen) return <ErrorBanner tone="info" title={t("closed")} />;
   const { emailVerified, phoneVerified, accountActive } = me.eligibility;
-  const byCall = !phoneVerified && me.phoneVerification === "call";
-  const eligible = accountActive && emailVerified && (phoneVerified || byCall);
+  // A Pro's phone is checked by a moderator's call during the KYBC review (decision of 19 Oct 2026,
+  // WhatsApp parked with Meta): an unverified number never blocks the application (Z1-03, L4-01).
+  const byCall = !phoneVerified;
+  const eligible = accountActive && emailVerified;
   return (
     <div className="flex flex-col gap-10">
       {previous ? (
@@ -133,7 +135,15 @@ function Application({ me, previous, onReload }: { me: ProMeResponse; previous: 
             {byCall ? (
               <li className="flex items-start gap-3 px-4 py-3.5">
                 <PhoneCall className="mt-0.5 size-5 shrink-0 text-structure dark:text-gold-300" aria-hidden="true" />
-                <span className="text-sm text-pretty">{t("eligibility.phoneCall")}</span>
+                <span className="flex-1 text-sm text-pretty">
+                  {t("eligibility.phoneCall")}
+                  {me.phoneVerification === "whatsapp" ? (
+                    <>
+                      {" "}
+                      <InlineLink href="/verifications">{t("eligibility.verifyPhoneNow")}</InlineLink>
+                    </>
+                  ) : null}
+                </span>
               </li>
             ) : (
               <Requirement done={phoneVerified} label={t("eligibility.phone")} action={phoneVerified ? null : <InlineLink href="/verifications">{t("eligibility.verifyPhone")}</InlineLink>} />

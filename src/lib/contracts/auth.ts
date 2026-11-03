@@ -2,6 +2,7 @@ import { z } from "@/lib/zod";
 import { LEGAL_VERSIONS } from "@/config/legal-versions";
 import { LOCALES } from "@/config/site";
 import { safeNextPath } from "@/lib/auth/next-path";
+import { displayNameContact } from "@/lib/moderation/display-name";
 import { PASSWORD_MAX, PASSWORD_MIN } from "./endpoints";
 
 // Shared client/server contracts of the authentication API (phase 2). Imported by the forms
@@ -25,12 +26,17 @@ export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 /** Length only here; strength (common passwords, repetition) is checked by src/lib/auth/password-policy.ts. */
 export const passwordSchema = z.string().min(PASSWORD_MIN).max(PASSWORD_MAX);
 
+/** Longest display name (audit Z1-04: shown to the member with a counter). */
+export const DISPLAY_NAME_MAX = 40;
+
 export const displayNameSchema = z
   .string()
   .trim()
   .min(2)
-  .max(40)
-  .regex(/^[\p{L}\p{M}\p{N} .'’-]+$/u);
+  .max(DISPLAY_NAME_MAX)
+  .regex(/^[\p{L}\p{M}\p{N} .'’-]+$/u)
+  // No phone number or link in a name shown on every listing and conversation (Z1-04, B6).
+  .refine((name) => displayNameContact(name) === null, { message: "contact" });
 
 export const localeSchema = z.enum(LOCALES);
 

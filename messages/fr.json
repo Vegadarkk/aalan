@@ -5479,11 +5479,21 @@
       "stale": "Disponibilité à confirmer avec l'agence (dernière mise à jour le {date}).",
       "never": "Disponibilité à confirmer avec l'agence.",
       "note": "Indication de l'agence, sans engagement : la réservation se confirme avec elle.",
+      "pickHint": "Touchez le jour de départ puis celui de retour pour préparer votre demande de réservation.",
+      "pickEnd": "Touchez maintenant le jour de retour.",
+      "picked": "Du {from} au {to} ({count, plural, one {# jour} other {# jours}})",
+      "pickedBlocked": "Cette période comprend des jours indiqués indisponibles : l'agence vous dira ce qu'elle peut proposer.",
+      "request": "Demander ces dates",
+      "clear": "Effacer",
       "home": {
         "updatedOn": "Déclarées par l'annonceur, mises à jour le {date}.",
         "stale": "Disponibilité à confirmer avec l'annonceur (dernière mise à jour le {date}).",
         "never": "Disponibilité à confirmer avec l'annonceur.",
-        "note": "Indication de l'annonceur, sans engagement : le séjour se confirme avec lui. Une nuit indisponible est marquée sur le jour d'arrivée."
+        "note": "Indication de l'annonceur, sans engagement : le séjour se confirme avec lui. Une nuit indisponible est marquée sur le jour d'arrivée.",
+        "pickHint": "Touchez le jour d'arrivée puis celui de départ pour préparer votre demande de séjour.",
+        "pickEnd": "Touchez maintenant le jour de départ.",
+        "picked": "Du {from} au {to} ({count, plural, one {# nuit} other {# nuits}})",
+        "pickedBlocked": "Ce séjour comprend des nuits indiquées indisponibles : l'annonceur vous dira ce qu'il peut proposer."
       }
     },
     "search": {
@@ -5492,12 +5502,20 @@
       "note": "Totaux estimés hors caution, tarif dégressif appliqué : le prix final est celui du contrat de l'agence.",
       "barTitle": "Vos dates de location",
       "submit": "Voir les véhicules libres",
+      "placeholder": "Choisir",
+      "calendar": "Calendrier des dates de location",
+      "pickFrom": "Touchez le jour de départ",
+      "pickTo": "Touchez maintenant le jour de retour",
+      "clear": "Effacer les dates",
       "home": {
         "from": "Arrivée",
         "to": "Départ",
         "note": "Totaux estimés pour le nombre de nuits, hors caution, taxe de séjour et frais : le prix final est celui que l'annonceur confirme.",
         "barTitle": "Vos dates de séjour",
-        "submit": "Voir les logements libres"
+        "submit": "Voir les logements libres",
+        "calendar": "Calendrier des dates de séjour",
+        "pickFrom": "Touchez le jour d'arrivée",
+        "pickTo": "Touchez maintenant le jour de départ"
       }
     },
     "home": {

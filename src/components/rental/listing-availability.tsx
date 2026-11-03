@@ -1,31 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useHydrated } from "@/components/auth/use-hydrated";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RentalUnit } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import type { RentalAvailability } from "@/lib/contracts/listings";
 import { formatDate } from "@/lib/listings/client/format";
-import { RENTAL_AHEAD_DAYS, blockedSet, isFresh, moroccoToday } from "@/lib/listings/rental-availability";
+import { RENTAL_AHEAD_DAYS, RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, blockedSet, dayString, isFresh, moroccoToday, occupiedDays, rentalDuration } from "@/lib/listings/rental-availability";
 import { cn } from "@/lib/utils";
 import { AvailabilityCalendar } from "./availability-calendar";
+import { formatRentalDay, requestRentalDates } from "./rental-day";
 
 // The listing page's availability block (rental pack §3; a holiday home: seasonal rental conception
 // §2, its nights): this month and the next, as declared by the agency or the host. The page is cached (ISR), so the days are drawn in the browser, on today's date.
+// With `requestable` (the contact bar offers a booking request), a tap on a day starts the period
+// and a second tap ends it; "Demander ces dates" opens the request on them (owner's report of
+// 3 Nov 2026: the calendar looked like a picker and did nothing on a tablet). The same bounds as
+// the request itself: a start within 180 days, at most 60 days, one night at least for a stay.
 
-export function ListingAvailability({ rental, locale, unit = "day" }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit }) {
+interface Range {
+  from: number;
+  to: number | null;
+}
+
+export function ListingAvailability({ rental, locale, unit = "day", requestable = false }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit; requestable?: boolean }) {
   const t = useTranslations("Rental.listing");
   const hydrated = useHydrated();
   const [monthOffset, setMonthOffset] = useState(0);
+  const [range, setRange] = useState<Range | null>(null);
   // Server and hydration render a skeleton; the browser's clock then draws the days.
   const [clock] = useState(() => Date.now());
   const now = hydrated ? clock : null;
   const fresh = now !== null && isFresh(rental.updatedAt ? Date.parse(rental.updatedAt) : null, now);
   const today = now === null ? 0 : moroccoToday(now);
-  const text = (key: "updatedOn" | "stale" | "never" | "note") => (unit === "night" ? (`home.${key}` as const) : key);
+  const nights = unit === "night";
+  const gap = nights ? 1 : 0;
+  const blocked = blockedSet(rental.unavailable);
+  const text = <K extends "updatedOn" | "stale" | "never" | "note" | "pickHint" | "pickEnd" | "picked" | "pickedBlocked">(key: K) => (nights ? (`home.${key}` as const) : key);
+  const dates = range && range.to !== null ? { from: dayString(range.from), to: dayString(range.to) } : null;
+  const crossesBlocked = dates !== null && occupiedDays(dates, unit).some((day) => blocked.has(day));
+
+  function onDay(day: number) {
+    if (range && range.to === null && day >= range.from + gap && day - range.from <= RENTAL_SEARCH_DAYS_MAX) {
+      setRange({ from: range.from, to: day });
+      return;
+    }
+    // A new start: within the request's horizon only.
+    setRange(day <= today + RENTAL_SEARCH_AHEAD_DAYS ? { from: day, to: null } : null);
+  }
+
   return (
     <section data-testid="rental-availability" aria-labelledby="rental-availability-title" className="flex flex-col gap-4">
       <h2 id="rental-availability-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -37,20 +64,44 @@ export function ListingAvailability({ rental, locale, unit = "day" }: { rental: 
       ) : (
         <>
           <p className={cn("text-sm text-pretty", fresh ? "text-foreground-muted" : "font-medium text-warning")} data-testid="rental-availability-freshness">
-            {rental.updatedAt
-              ? t(text(fresh ? "updatedOn" : "stale"), { date: formatDate(new Date(rental.updatedAt), locale) })
-              : t(text("never"))}
+            {rental.updatedAt ? t(text(fresh ? "updatedOn" : "stale"), { date: formatDate(new Date(rental.updatedAt), locale) }) : t(text("never"))}
           </p>
           <AvailabilityCalendar
             locale={locale}
             today={today}
             lastDay={today + RENTAL_AHEAD_DAYS - 1}
-            blocked={blockedSet(rental.unavailable)}
+            blocked={blocked}
             monthOffset={monthOffset}
             months={2}
             onMonthOffset={setMonthOffset}
             maxMonthOffset={10}
+            {...(requestable ? { onDay, range, lastEditable: today + RENTAL_SEARCH_AHEAD_DAYS + RENTAL_SEARCH_DAYS_MAX } : {})}
           />
+          {requestable ? (
+            <div className="flex flex-col gap-3 rounded-md bg-surface-muted p-3 sm:flex-row sm:items-center sm:justify-between" data-testid="rental-availability-pick">
+              <div className="flex min-w-0 flex-col gap-1">
+                <p role="status" className="text-sm font-medium text-pretty">
+                  {dates
+                    ? t(text("picked"), { from: formatRentalDay(dates.from, locale), to: formatRentalDay(dates.to, locale), count: rentalDuration(dates) })
+                    : t(text(range ? "pickEnd" : "pickHint"))}
+                </p>
+                {crossesBlocked ? <p className="text-xs text-warning text-pretty">{t(text("pickedBlocked"))}</p> : null}
+              </div>
+              {range ? (
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setRange(null)}>
+                    {t("clear")}
+                  </Button>
+                  {dates ? (
+                    <Button type="button" variant="structure" size="sm" data-testid="rental-availability-request" onClick={() => requestRentalDates(dates)}>
+                      <Send aria-hidden="true" />
+                      {t("request")}
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </>
       )}
       <p className="text-xs text-foreground-muted text-pretty">{t(text("note"))}</p>

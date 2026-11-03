@@ -113,11 +113,14 @@ export function invoiceFields(legal: ProLegal): { name: string; value: string }[
   return fields.slice(0, 4);
 }
 
+/** Moroccan VAT of the Pro offers (owner, 3 Nov 2026): HT price paid as is, the Pro self-assesses; to confirm with the DGI. */
+export const PRO_VAT_MENTION = "Aalan ne facture pas de TVA marocaine : le professionnel l'autoliquide si elle est due.";
+
 /** The publisher's mentions under every invoice (issuer, address, SIREN, VAT), from config/legal. */
 export function invoiceFooter(legal: LegalConfig): string {
   // Under the franchise the VAT number still exists (vatMention prints it only once liable).
   const number = legal.vatRegime === "franchise" && legal.vatNumber ? `, n° TVA ${legal.vatNumber}` : "";
-  return `${publisherIdentity(legal)}, ${legal.hqAddress}, SIREN ${legal.siren}${number}. ${vatMention(legal)}.`;
+  return `${publisherIdentity(legal)}, ${legal.hqAddress}, SIREN ${legal.siren}${number}. ${vatMention(legal)}. ${PRO_VAT_MENTION}`;
 }
 
 export function pageUrl(locale: Locale, query = ""): string {

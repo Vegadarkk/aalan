@@ -22,7 +22,7 @@ Un crédit vaut 1 dirham toutes taxes comprises. Les crédits s'achètent par pa
 ## 3. Prix, commande et paiement {#prix}
 
 - Les packs sont affichés toutes taxes comprises. Les packs en dirhams comprennent la TVA marocaine de 20 % (article 115 bis du Code général des impôts marocain).
-- Les abonnements Pro et le Pass Boutique sont affichés hors taxes.
+- Les abonnements Pro et le Pass Boutique sont affichés hors taxes. {brand} ne facture pas de TVA sur ces services : le prix hors taxes est le prix payé, et le professionnel autoliquide la TVA marocaine si elle est due.
 - Mention fiscale de l'éditeur : {vat}.
 - Le prix dû est celui affiché au moment de la commande.
 
@@ -41,7 +41,7 @@ Les packs se paient par carte sur la page sécurisée de notre prestataire Reven
 ## 5. Pass Boutique {#pass}
 
 - Le Pass Boutique est réservé aux comptes Pro vérifiés. Il donne, pour la durée affichée (30 jours à ce jour), les quotas, la boutique et les crédits mensuels de l'offre Essentiel.
-- Il se paie en une seule fois, par carte, sur la page de paiement de Stripe. Son prix est affiché hors taxes ; la TVA s'y ajoute et figure sur la facture.
+- Il se paie en une seule fois, par carte, sur la page de paiement de Stripe. Son prix est affiché hors taxes ; c'est le prix payé, sans TVA facturée (article 3).
 - Il ne se renouvelle pas. Il ne se résilie pas et n'est pas remboursé au prorata.
 - Un nouveau pass acheté pendant un pass en cours le prolonge à partir de sa fin, dans la limite de 90 jours à l'avance. Ses crédits s'ajoutent à ceux qui restent ; les crédits d'un pass ne servent que pendant le pass et ne sont pas reportés après sa fin.
 - Il ne peut pas être acheté pendant un abonnement en cours ni pendant l'offre de lancement.

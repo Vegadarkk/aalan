@@ -5164,7 +5164,7 @@
     "yours": "Offre nnec",
     "notesTitle": "Zzat ma ad tawiḍ abonnement",
     "notes": {
-      "stripe": "Adfaɛ s takarḍa deg tasna s taɣellist n Stripe, s tefransist. TVA ad tettwarnu x ssuma HT d ad tban deg yal tafaktuṛt.",
+      "stripe": "Adfaɛ s takarḍa deg tasna s taɣellist n Stripe, s tefransist. Ssuma HT d netta ay tettxelleṣeḍ: Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
       "renewal": "Abonnement ad yesnulfu weḥdes. Tzemmreḍ ad t-tessbeṭṭleḍ melmi ma texsed: ad yeqqim ar tagra n tallit i txelleṣeḍ.",
       "credits": "Crédits d « À la Une » n wayyur war ttwaḥerzen ca i wayyur nniḍen: ad uɣalen ɣer umḍan nsen yal ayyur.",
       "invoices": "Tifaktuṛin nnec ɣar-sent ICE d uṭṭunen n tḥanut nnec."
@@ -5206,7 +5206,7 @@
       "currentEnds": "Yexdem ar {date}, bla asnulfu.",
       "extendHint": "Pass amaynu ad yarnu {days} n wussan i pass nnec, zi {date}.",
       "notes": {
-        "once": "Yiwen n udfaɛ kan s takarḍa deg tasna s taɣellist n Stripe. TVA ad tettwarnu x ssuma HT d ad tban deg tfaktuṛt.",
+        "once": "Yiwen n udfaɛ kan s takarḍa deg tasna s taɣellist n Stripe. Ssuma HT d netta ay tettxelleṣeḍ: Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
         "credits": "Crédits bla idrimen xeddmen deg pass. Mala trniḍ wussan, ad ttwarnan crédits nnes x wid i d-yeqqimen; war ttɛeddayen ca deffir n tagra n pass.",
         "end": "Deg tagra n pass, annonces nnec yeɛeddan amḍan bla idrimen ad ttwaḥebsent, war ttwakksent ca. Ad dak-d nini 7 n wussan d 1 n wass zzat.",
         "subscribe": "Tzemmreḍ ula ad tawiḍ abonnement deg pass: mala t-tiwiḍ ɣas 2 n wussan zzat n tagra nnes, abonnement war yettwaxelleṣ ca ɣir deg tagra n pass; mala t-tiwiḍ deffir, ad yettwaxelleṣ nican."
@@ -6063,7 +6063,8 @@
       "more": "Ssen twefka Pro",
       "unlimitedListings": "Annonces xedment bla tilisa",
       "stockImport": "Asekcem n stock s ufaylu",
-      "recommended": "Nenṣeḥ-ak yis"
+      "recommended": "Nenṣeḥ-ak yis",
+      "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs."
     },
     "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt.",
     "compare": {

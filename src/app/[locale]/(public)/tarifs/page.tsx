@@ -195,6 +195,10 @@ export default async function PricingPage({ params }: { params: Params }) {
           />
           <Card Icon={BadgeCheck} title={t("pros.premium")} price={t("pros.onQuote")} items={[listings(null), t("pros.premiumSupport"), t("pros.storefront")]} />
         </div>
+        {/* The VAT treatment of the Pro offers (owner, 3 Nov 2026): the HT price is the price paid. */}
+        <p className="text-sm text-foreground-muted text-pretty" data-testid="pricing-vat">
+          {t("pros.vatNote")}
+        </p>
         {/* What each offer gives on day 1, and what is announced as coming (UX audit of the Pro shops,
             §7 lot 3): nothing promised that is not delivered. */}
         <div className="flex flex-col gap-3">

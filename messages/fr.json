@@ -528,7 +528,9 @@
         "saved": "Vitrine enregistrée",
         "view": "Voir ma vitrine",
         "loading": "Chargement de la vitrine",
-        "retry": "Réessayer"
+        "retry": "Réessayer",
+        "proBody": "Votre page publique est la vitrine de votre boutique : bannière, présentation, adresse et horaires se règlent dans l'espace Pro.",
+        "proEdit": "Modifier ma fiche boutique"
       },
       "password": {
         "title": "Mot de passe",
@@ -4123,6 +4125,51 @@
       "save": "Enregistrer les réseaux",
       "saved": "Réseaux sociaux enregistrés. Votre vitrine est mise à jour.",
       "failed": "Les réseaux sociaux n'ont pas été enregistrés."
+    },
+    "card": {
+      "title": "Ma fiche boutique",
+      "lead": "Ce que les acheteurs voient sur votre vitrine, en plus de vos annonces. Le nom reste celui validé lors de la vérification : pour le changer, écrivez-nous.",
+      "description": "Présentation en français",
+      "descriptionHint": "Ce que vous vendez, vos services, vos garanties. Sans numéro ni lien : ils ont leurs propres champs.",
+      "descriptionAr": "Présentation en arabe",
+      "descriptionArHint": "Facultatif. Affichée sur la version arabe de votre vitrine ; sinon, la présentation en français s'affiche.",
+      "cityRequired": "Choisissez la ville de la boutique.",
+      "address": "Adresse de la boutique",
+      "addressHint": "Facultatif. Votre adresse professionnelle, affichée avec un lien d'itinéraire. Jamais une adresse privée.",
+      "hours": "Horaires d'ouverture",
+      "hoursHint": "Cochez les jours d'ouverture. Votre vitrine indique alors « Ouvert » ou « Fermé » à l'heure marocaine.",
+      "days": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi",
+        "sat": "Samedi",
+        "sun": "Dimanche"
+      },
+      "from": "{day}, ouverture",
+      "to": "{day}, fermeture",
+      "addBreak": "Ajouter une pause",
+      "removeBreak": "Retirer la pause",
+      "copyWeek": "Appliquer du lundi au samedi",
+      "closed": "Fermé",
+      "hoursInvalid": "{day} : l'heure de fermeture doit suivre l'heure d'ouverture, et la pause la première période.",
+      "hoursNote": "Précision sur les horaires",
+      "hoursNoteHint": "Facultatif. Exemple : fermé les jours fériés, horaires d'été en juillet et août.",
+      "contact": "Être joint",
+      "showPhone": "Afficher mon numéro vérifié",
+      "showPhoneHint": "Un bouton « Appeler » sur la vitrine. Le numéro n'apparaît qu'aux membres connectés qui le demandent, comme sur vos annonces.",
+      "whatsapp": "Joignable sur WhatsApp au même numéro",
+      "whatsappHint": "Un bouton « WhatsApp » sur la vitrine, sur votre numéro vérifié.",
+      "phoneMissing": "Votre compte n'a pas encore de numéro vérifié.",
+      "verifyPhone": "Vérifier mon numéro",
+      "website": "Site de la boutique",
+      "websiteHint": "Facultatif. Une adresse en https://.",
+      "websiteInvalid": "Saisissez une adresse complète qui commence par https://",
+      "save": "Enregistrer la fiche",
+      "saved": "Fiche boutique enregistrée",
+      "failed": "La fiche n'a pas été enregistrée",
+      "view": "Voir ma vitrine"
     }
   },
   "Messaging": {
@@ -4800,7 +4847,29 @@
       "newTab": "(s'ouvre dans un nouvel onglet)",
       "note": "Liens déclarés par la boutique, vers des sites extérieurs au nôtre. Gardez vos échanges et vos rendez-vous dans la messagerie, et ne versez jamais d'acompte à un compte qui vous contacte en dehors du site."
     },
-    "directory": "Annuaire des boutiques"
+    "directory": "Annuaire des boutiques",
+    "info": {
+      "title": "Infos pratiques",
+      "route": "Itinéraire",
+      "newTab": "(s'ouvre dans un nouvel onglet)",
+      "website": "Site de la boutique",
+      "closed": "Fermé",
+      "slot": "{from} – {to}",
+      "openUntil": "Ouvert jusqu'à {time}",
+      "closedOpensToday": "Fermé, ouvre à {time}",
+      "closedOpensOn": "Fermé, ouvre {day} à {time}",
+      "closedNow": "Fermé",
+      "note": "Informations déclarées par la boutique, sous sa seule responsabilité. Vérifiez les horaires avec elle avant de vous déplacer.",
+      "days": {
+        "mon": "Lundi",
+        "tue": "Mardi",
+        "wed": "Mercredi",
+        "thu": "Jeudi",
+        "fri": "Vendredi",
+        "sat": "Samedi",
+        "sun": "Dimanche"
+      }
+    }
   },
   "Options": {
     "title": "Mettre en avant « {title} »",

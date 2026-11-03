@@ -22,7 +22,7 @@ import { FormMessage, useApiErrorMessage, useFieldMessage } from "./form-message
 import { PasswordField } from "./password-field";
 import { Section } from "./settings-section";
 import { AccountClosedView, CloseAccountSection, DataSection } from "@/components/account/account-sections";
-import { StorefrontSection } from "@/components/account/storefront-section";
+import { ProStorefrontNotice, StorefrontSection } from "@/components/account/storefront-section";
 import { ExamplesSwitch } from "@/components/examples/examples-controls";
 import type { CloseAccountResponse } from "@/lib/contracts/account";
 
@@ -67,7 +67,8 @@ export function SettingsView() {
       ) : (
         <div className="flex flex-col divide-y divide-border">
           <ProfileSection key={`${session.uid}-${session.displayName}-${session.locale}`} session={session} />
-          <StorefrontSection />
+          {/* A Pro's public page is its shop's storefront, edited in the Pro area (UX audit of the Pro shops, B3). */}
+          {session.role === "pro" ? <ProStorefrontNotice /> : <StorefrontSection />}
           <ExamplesSection />
           <PasswordSection email={session.email} displayName={session.displayName} hasPassword={session.providers.includes("password")} />
           <VerificationSection session={session} />

@@ -18,7 +18,7 @@ import { db } from "@/lib/firebase/admin";
 import { aggregationReads, consume } from "@/lib/quota";
 import { assertQuotas, PUBLIC_READ_QUOTAS } from "@/lib/quota/gate";
 import { storefrontShown } from "@/lib/pro/lifecycle";
-import { PRO_ID_PATTERN, type ProSector, type RentalAgency } from "@/lib/pro/profile-schema";
+import { PRO_ID_PATTERN, type OpeningHours, type ProSector, type RentalAgency } from "@/lib/pro/profile-schema";
 import { sellerReviews } from "@/lib/reviews/seller";
 import { ratingSummary } from "@/lib/reviews/views";
 import { rentalAvailabilityOf } from "./availability";
@@ -349,6 +349,8 @@ export interface PublicProfileView extends PublicSeller {
   listings: PublicListingCard[];
   /** The newest published reviews (no query while the seller has none). */
   reviews: ReviewPage;
+  /** The account's shop, if any: /profil of a Pro whose storefront is shown redirects there (UX audit B3). */
+  proId: string | null;
 }
 
 const NO_REVIEWS: ReviewPage = { reviews: [], next: null };
@@ -362,16 +364,16 @@ export async function getPublicProfile(publicId: string, limit = 24): Promise<Pu
   await assertQuotas(PUBLIC_READ_QUOTAS);
   const user = await findUserByPublicId(publicId);
   if (!user || !isVisibleAccount(user)) return null;
-  if (user.status === "suspended") return { ...toSeller(user, 0), listings: [], reviews: NO_REVIEWS };
+  if (user.status === "suspended") return { ...toSeller(user, 0), listings: [], reviews: NO_REVIEWS, proId: user.proId ?? null };
   return profileView(user, limit);
 }
 
 async function profileView(user: UserRecord, limit: number): Promise<PublicProfileView> {
   const [view, reviews] = await Promise.all([publishedView(user, limit), user.stats.ratingCount > 0 ? sellerReviews(user.uid, REVIEWS_PAGE) : NO_REVIEWS]);
-  return { ...view, reviews };
+  return { ...view, reviews, proId: user.proId ?? null };
 }
 
-async function publishedView(user: UserRecord, limit: number): Promise<Omit<PublicProfileView, "reviews">> {
+async function publishedView(user: UserRecord, limit: number): Promise<Omit<PublicProfileView, "reviews" | "proId">> {
   const fetched = await listPublishedByOwner(user.uid, limit);
   // Listings hidden by a report (D11) are not shown, nor counted when the page shows them all.
   const records = fetched.filter((listing) => !listing.moderation.hiddenBy);
@@ -406,6 +408,15 @@ export interface PublicStorefront {
   sections: ShopSection[];
   /** The shop's social links (none while a moderator hides them, none for an example shop). */
   social: PublicSocialLink[];
+  /** The presentation in Arabic ("" when none): the Arabic page shows it, the others fall back to it. */
+  descriptionAr: string;
+  /** Shop card (UX audit of the Pro shops, lot 1): its address ("" when none), weekly hours, website. */
+  address: string;
+  hours: OpeningHours | null;
+  website: string | null;
+  bannerKey: BannerKey;
+  /** The verified number can be revealed (POST /api/shops/{proId}/phone), and opens WhatsApp. */
+  contact: { phone: boolean; whatsapp: boolean };
 }
 
 /**
@@ -436,6 +447,12 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
     example: profile.example === true,
     sections: profile.sections ?? [],
     social: profile.example ? [] : publicSocialLinks(profile.social),
+    descriptionAr: profile.descriptionAr ?? "",
+    address: profile.address ?? "",
+    hours: profile.hours ?? null,
+    website: profile.example ? null : (profile.website ?? null),
+    bannerKey: profile.bannerKey ?? DEFAULT_BANNER,
+    contact: profile.example || !user.badges.phoneVerified ? { phone: false, whatsapp: false } : { phone: profile.showPhone === true, whatsapp: profile.whatsapp },
   };
 }
 

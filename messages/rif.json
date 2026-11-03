@@ -518,7 +518,9 @@
         "saved": "Vitrine tettwaḥrez",
         "view": "Ẓar vitrine inu",
         "loading": "Vitrine ad tettwaɛemmar",
-        "retry": "Ɛawed"
+        "retry": "Ɛawed",
+        "proBody": "Tasna nnec tazayezt d tafrent n tḥanut nnec: tabanirt, asenṭel, tansa d ikuden ttwasbedden deg tallunt Pro.",
+        "proEdit": "Beddel tafiche n tḥanut inu"
       },
       "password": {
         "title": "Awal n uɛeddi",
@@ -4113,6 +4115,51 @@
       "save": "Ḥrez iẓeḍwan",
       "saved": "Iẓeḍwan n tmetti ttwaḥerzen. Vitrine nnec tettwabeddel.",
       "failed": "Iẓeḍwan n tmetti war ttwaḥerzen ca."
+    },
+    "card": {
+      "title": "Tafiche n tḥanut inu",
+      "lead": "Ayen ẓerren imsaɣen deg tfrent nnec, ar tama n yiɣaṛen nnec. Isem iqqim d win yettwasenqden: ad t-tbeddled, aru-yaɣ.",
+      "description": "Asenṭel s tefransist",
+      "descriptionHint": "Ayen ttenzed, tinafa nnec, ḍḍmanat nnec. War uṭṭun war aseɣwen: ɣur-sen tixxamin nsen.",
+      "descriptionAr": "Asenṭel s taɛrabt",
+      "descriptionArHint": "S lexyar. Ad d-yban deg tfrent s taɛrabt; mala ulac, ad d-yban usenṭel s tefransist.",
+      "cityRequired": "Fren tamdint n tḥanut.",
+      "address": "Tansa n tḥanut",
+      "addressHint": "S lexyar. Tansa nnec n twuri, ad d-tban ak d useɣwen n ubrid. Ca n tansa tusligt ula d yiwet.",
+      "hours": "Ikuden n twaldit",
+      "hoursHint": "Cṛeḍ ussan n twaldit. Tafrent nnec ad tini « Yeldi » niɣ « Imdel » s tsaɛt n Lmeɣrib.",
+      "days": {
+        "mon": "Letnayen",
+        "tue": "Tlata",
+        "wed": "Larbeɛ",
+        "thu": "Lexmis",
+        "fri": "Jjemɛa",
+        "sat": "Sebt",
+        "sun": "Lḥed"
+      },
+      "from": "{day}, twaldit",
+      "to": "{day}, amdal",
+      "addBreak": "Rnu asgunfu",
+      "removeBreak": "Kkes asgunfu",
+      "copyWeek": "Seqdec-it zeg Letnayen ar Sebt",
+      "closed": "Imdel",
+      "hoursInvalid": "{day}: tasaɛt n umdal ixeṣṣ ad tili deffir tasaɛt n twaldit, d usgunfu deffir tazwara.",
+      "hoursNote": "Tafatit ɣef ikuden",
+      "hoursNoteHint": "S lexyar. Amedya: imdel deg ussan n lɛid, ikuden n unebdu deg yulyuz d ɣuct.",
+      "contact": "Ad k-d-yaweḍ yiwen",
+      "showPhone": "Sken-d uṭṭun inu yettwasenqden",
+      "showPhoneHint": "Taqeffalt « Ssiwel » deg tfrent. Uṭṭun ad d-yban kan i yiɛeggalen yeqqnen i t-yessutren, am deg yiɣaṛen nnec.",
+      "whatsapp": "Ttawḍeɣ deg WhatsApp s yiwen n uṭṭun",
+      "whatsappHint": "Taqeffalt « WhatsApp » deg tfrent, s uṭṭun nnec yettwasenqden.",
+      "phoneMissing": "Amiḍan nnec ur ɣur-s ca n uṭṭun yettwasenqden.",
+      "verifyPhone": "Sneqd uṭṭun inu",
+      "website": "Asmel n tḥanut",
+      "websiteHint": "S lexyar. Tansa s https://.",
+      "websiteInvalid": "Aru tansa tummidt i yebdan s https://",
+      "save": "Ḥrez tafiche",
+      "saved": "Tafiche n tḥanut tettwaḥrez",
+      "failed": "Tafiche ur tettwaḥrez ca",
+      "view": "Ẓer tafrent inu"
     }
   },
   "Messaging": {
@@ -4790,7 +4837,29 @@
       "newTab": "(ad yettwarzem deg onglet amaynu)",
       "note": "Isuɣan i d-tenna taḥanut, ɣer isiten beṛṛa n Aalan. Qqim deg tebratin i umsawal d imyafiyen nnec, d werǧin ad tefkeḍ aḥric n idrimen i umiḍan i dak-d yessiwlen beṛṛa n site."
     },
-    "directory": "Tabdart n tḥuna"
+    "directory": "Tabdart n tḥuna",
+    "info": {
+      "title": "Isalan ifessasen",
+      "route": "Abrid",
+      "newTab": "(ad yettwaldi deg yiwen n useqqem amaynu)",
+      "website": "Asmel n tḥanut",
+      "closed": "Imdel",
+      "slot": "{from} – {to}",
+      "openUntil": "Yeldi alami {time}",
+      "closedOpensToday": "Imdel, ad yeldi g {time}",
+      "closedOpensOn": "Imdel, ad yeldi {day} g {time}",
+      "closedNow": "Imdel",
+      "note": "Isalan i d-tenna tḥanut, s tmasit-nnes. Sneqd ikuden ak d nettat qbel ad truḥed.",
+      "days": {
+        "mon": "Letnayen",
+        "tue": "Tlata",
+        "wed": "Larbeɛ",
+        "thu": "Lexmis",
+        "fri": "Jjemɛa",
+        "sat": "Sebt",
+        "sun": "Lḥed"
+      }
+    }
   },
   "Options": {
     "title": "Ssbeyyen « {title} »",

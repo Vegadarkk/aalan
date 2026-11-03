@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { CalendarDays, Flag, MapPin, Search } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
@@ -29,7 +29,7 @@ import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
 import { alternates } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
-import { getPublicProfile, profilePath } from "@/lib/listings/public";
+import { getPublicProfile, profilePath, publicShopRef, storefrontPath } from "@/lib/listings/public";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
 
@@ -48,6 +48,9 @@ export function generateStaticParams(): { publicId: string }[] {
 type Params = Promise<{ locale: string; publicId: string }>;
 
 const load = cache((publicId: string) => getPublicProfile(publicId, STOREFRONT_LISTINGS));
+
+/** A Pro has one public page, its storefront (UX audit of the Pro shops, B3): null when it shows none. */
+const shopOf = cache(async (proId: string | null) => (proId ? publicShopRef(proId) : null));
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale: value, publicId } = await params;
@@ -74,6 +77,8 @@ export default async function ProfilePage({ params }: { params: Params }) {
   setRequestLocale(locale);
   const profile = await load(publicId);
   if (!profile) notFound();
+  const shop = profile.sellerType === "pro" ? await shopOf(profile.proId) : null;
+  if (shop) permanentRedirect(storefrontPath(locale, shop.segment));
 
   const [t, categories, legal, flags] = await Promise.all([
     getNumbersTranslations({ locale, namespace: "Profile" }),

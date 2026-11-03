@@ -30,12 +30,17 @@ vi.mock("@/lib/firebase/admin", () => {
   const query = { where: () => query, count: () => ({ get: async () => ({ data: () => ({ count: repo.count() }) }) }) };
   return { db: () => ({ collection: () => query }) };
 });
+const shops = vi.hoisted(() => ({ getProProfile: vi.fn() }));
+vi.mock("@/lib/db/repositories/pro-profiles", () => ({ getProProfile: shops.getProProfile }));
 vi.mock("@/lib/legal/config", () => ({ getLegalConfig: async () => ({ dsaContactEmail: "dsa@joutiya.test" }) }));
 vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof NextNavigation>()),
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
+  },
+  permanentRedirect: (to: string) => {
+    throw new Error(`NEXT_REDIRECT ${to}`);
   },
 }));
 vi.mock("next-intl/server", async () => {
@@ -141,6 +146,17 @@ describe("profile page", () => {
       repo.findUserByPublicId.mockResolvedValue(user(overrides));
       await expect(ProfilePage(params(PUBLIC_ID))).rejects.toThrow("NEXT_NOT_FOUND");
     }
+  });
+
+  it("sends a Pro whose storefront is shown to its shop: one public page per Pro (UX audit B3)", async () => {
+    repo.findUserByPublicId.mockResolvedValue(user({ type: "pro", proId: "abcdefgh" }));
+    repo.listPublishedByOwner.mockResolvedValue([]);
+    repo.count.mockReturnValue(0);
+    shops.getProProfile.mockResolvedValue({ proId: "abcdefgh", slug: "maison-lalla-fes", name: "Maison Lalla", lifecycle: "verified", plan: "essentiel" });
+    await expect(ProfilePage(params(PUBLIC_ID))).rejects.toThrow("NEXT_REDIRECT /fr/boutique/maison-lalla-fes-abcdefgh");
+    // A shop whose storefront is not shown keeps the profile page.
+    shops.getProProfile.mockResolvedValue({ proId: "abcdefgh", slug: "maison-lalla-fes", name: "Maison Lalla", lifecycle: "downgraded", plan: "none" });
+    expect(await renderPage()).toContain("Salma");
   });
 
   it("fails the render before any read on a degraded-reads day, so Next keeps serving the last generated page", async () => {

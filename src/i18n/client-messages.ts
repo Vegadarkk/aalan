@@ -89,6 +89,8 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   "Auth.errors",
   "Listing.errors",
   "Report",
+  // « Partager » in the storefront's header (UX audit of the Pro shops, B2).
+  "ListingPage.share",
   // « Payer chez le vendeur » of a Pro's storefront (phase 7).
   "SellerPayment.public",
   // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).

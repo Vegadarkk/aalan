@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { BadgePercent } from "lucide-react";
 import { radioKeyTarget } from "@/components/post/controls/chips";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,19 @@ export function StorefrontTabs({ label, tabs, panels }: { label: string; tabs: S
     () => "",
   );
   const current = Math.max(0, hash ? tabs.findIndex((tab) => hashOf(tab) === hash) : 0);
+  const root = useRef<HTMLDivElement>(null);
+  const opened = useRef(false);
+
+  // A shared link to a shelf opened its tab but left the page at the top, the grid far below on a
+  // phone (UX audit of the Pro shops, B5): bring the tabs into view once, for a known hash only.
+  useEffect(() => {
+    if (opened.current) return;
+    opened.current = true;
+    const initial = window.location.hash.slice(1);
+    if (!initial || !tabs.some((tab) => hashOf(tab) === initial)) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    root.current?.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }, [tabs]);
 
   function choose(index: number) {
     const tab = tabs[index];
@@ -58,8 +71,9 @@ export function StorefrontTabs({ label, tabs, panels }: { label: string; tabs: S
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div role="tablist" aria-label={label} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
+    <div ref={root} className="flex scroll-mt-24 flex-col gap-6">
+      {/* One scrolling row up to the desktop: on a tablet the wrapped row left one tab alone (UX audit B11). */}
+      <div role="tablist" aria-label={label} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0">
         {tabs.map((tab, index) => {
           const selected = index === current;
           return (

@@ -2,6 +2,7 @@ import { Fragment, cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { BadgeCheck, CalendarDays, Flag, MapPin } from "lucide-react";
+import { ShareButton } from "@/components/listing/share-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -145,9 +146,14 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   const counts = agency && seller.publishedCount > 0 ? await shopSubcategoryCounts(seller.publicId, "immobilier") : null;
   const label = agency ? t("agency.label") : rentalAgency ? t("rental.label") : holidayAgency ? t("holiday.label") : t("label");
   const aside = (
-    <p className="rounded-md bg-surface-muted p-4 text-sm text-foreground-muted text-pretty">
-      {store.example ? t("example.note") : agency ? t("agency.verifiedNote") : rentalAgency ? t("rental.verifiedNote") : holidayAgency ? t("holiday.verifiedNote") : t("verifiedNote")}
-    </p>
+    <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-4 text-sm text-foreground-muted">
+      <p className="text-pretty">{store.example ? t("example.note") : agency ? t("agency.verifiedNote") : rentalAgency ? t("rental.verifiedNote") : holidayAgency ? t("holiday.verifiedNote") : t("verifiedNote")}</p>
+      {/* "Signaler" within reach (DSA art. 16(1), Phase 6 review), out of the header (UX audit B2); the dialog stays below. */}
+      <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 self-start ${quietLinkClassName}`}>
+        <Flag className="size-4 shrink-0" aria-hidden="true" />
+        {t("reportLink")}
+      </a>
+    </div>
   );
 
   const allListings = (
@@ -200,12 +206,12 @@ export default async function StorefrontPage({ params }: { params: Params }) {
                 <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
                 {profile("memberSince", { date: formatMemberSince(seller.memberSince, locale) })}
               </span>
-              <RatingLink rating={seller.rating} locale={locale} />
-              {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
-              <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
-                <Flag className="size-4 shrink-0" aria-hidden="true" />
-                {t("reportLink")}
-              </a>
+              <RatingLink rating={seller.rating} locale={locale} tone="onStructure" />
+            </div>
+            {/* Positive actions in the header (UX audit of the Pro shops, B2): the report dialog stays at
+                the foot of the page, linked from the shop card below (DSA art. 16(1)). */}
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <ShareButton url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`} title={store.name} className="border-structure-foreground/30" />
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start">
@@ -218,7 +224,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
         {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
         {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
           {store.description ? (
             <section aria-labelledby="storefront-about" className="flex flex-col gap-3">
               <h2 id="storefront-about" className="text-xl font-semibold">
@@ -232,7 +238,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
               {aside}
             </section>
           ) : null}
-          <div className={store.description ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 lg:col-span-2"}>
+          <div className={store.description ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 md:col-span-2"}>
             {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
             <FeeSchedule text={store.feeSchedule} />
             <SocialLinks links={store.social} />

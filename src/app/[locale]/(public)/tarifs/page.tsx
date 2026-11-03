@@ -129,6 +129,14 @@ export default async function PricingPage({ params }: { params: Params }) {
           </p>
         ) : null}
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <Card
+            Icon={Store}
+            title={t("pros.essentiel")}
+            price={n("perMonth", { amount: mad(essentiel.priceMinor.monthly) })}
+            note={n("perYear", { amount: mad(essentiel.priceMinor.yearly) })}
+            items={[listings(pricing.pro.essentiel.activeListings), n("pros.credits", { count: essentiel.credits }), t("pros.storefront")]}
+          />
+          {/* The pass after Essentiel (UX audit of the Pro shops, §6.3): listed first, 299 read as the cheaper choice. */}
           {pass ? (
             <Card
               Icon={Store}
@@ -139,19 +147,12 @@ export default async function PricingPage({ params }: { params: Params }) {
             />
           ) : null}
           <Card
-            Icon={Store}
-            title={t("pros.essentiel")}
-            price={n("perMonth", { amount: mad(essentiel.priceMinor.monthly) })}
-            note={n("perYear", { amount: mad(essentiel.priceMinor.yearly) })}
-            items={[listings(pricing.pro.essentiel.activeListings), n("pros.credits", { count: essentiel.credits }), t("pros.storefront")]}
-          />
-          <Card
             Icon={Sparkles}
             highlight={t("pros.recommended")}
             title={t("pros.business")}
             price={n("perMonth", { amount: mad(business.priceMinor.monthly) })}
             note={n("perYear", { amount: mad(business.priceMinor.yearly) })}
-            items={[listings(pricing.pro.business.activeListings), n("pros.credits", { count: business.credits }), n("pros.featured", { count: business.featured }), t("pros.storefront")]}
+            items={[listings(pricing.pro.business.activeListings), n("pros.credits", { count: business.credits }), n("pros.featured", { count: business.featured }), t("pros.stockImport"), t("pros.storefront")]}
           />
           <Card Icon={BadgeCheck} title={t("pros.premium")} price={t("pros.onQuote")} items={[listings(null), t("pros.premiumSupport"), t("pros.storefront")]} />
         </div>

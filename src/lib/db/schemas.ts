@@ -506,7 +506,10 @@ export type ContentOpDoc = z.infer<typeof contentOpSchema>;
 export const revealLogSchema = z
   .object({
     viewerUid: uid,
+    /** The listing revealed, or the shop's proId (same alphabet and length) when `kind` is "shop". */
     listingId: listingIdSchema,
+    /** A reveal from a shop's storefront (UX audit of the Pro shops, lot 1); absent for a listing. */
+    kind: z.literal("shop").optional(),
     ipPrefixHash: z.string().min(1).max(64),
     deviceHash: z.string().min(1).max(64),
     at: ts,
@@ -715,8 +718,12 @@ export type OfferEventDoc = z.infer<typeof offerEventSchema>;
 /** conversations/{cid}: one per (listing, buyer); cid derived on the server (D1). Served to participants by the API (D2). */
 export const conversationSchema = z
   .object({
+    /** The listing, or the shop's proId (same alphabet and length) when `subject` is "shop". */
     listingId: listingIdSchema,
+    /** The listing's slugId, or the storefront segment `{slug}-{proId}` of a shop conversation. */
     listingSlugId: slugIdSchema,
+    /** A conversation with a shop from its storefront, about no listing (UX audit of the Pro shops, lot 1). */
+    subject: z.literal("shop").optional(),
     sellerUid: uid,
     /** Pro listing: the shop's shared inbox (phase 7). */
     sellerProId: z.string().max(64).optional(),

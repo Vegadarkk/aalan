@@ -93,6 +93,12 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   "ListingPage.share",
   // « Ouvert jusqu'à… » of its practical information (UX audit lot 1).
   "Storefront.info",
+  // « Envoyer un message » and the number of the shop itself, without a listing (UX audit lot 1).
+  "ListingPage.contact",
+  "Offers.listing",
+  "Offers.field",
+  "Offers.dialog",
+  "Offers.errors",
   // « Payer chez le vendeur » of a Pro's storefront (phase 7).
   "SellerPayment.public",
   // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).

@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageOff } from "lucide-react";
+import { ImageOff, Store } from "lucide-react";
 import { usePublicConfig } from "@/lib/config/client";
 import type { ConversationView } from "@/lib/contracts/messaging";
 import { blurhashDataUrl } from "@/lib/listings/client/blurhash";
@@ -8,7 +8,8 @@ import { photoUrl } from "@/lib/listings/client/photo-url";
 import { cn } from "@/lib/utils";
 
 // The listing a conversation is about, as a small doorway: its first photo under the horseshoe
-// arch of the Joutiya door (the conversation's subject, where other inboxes put a face).
+// arch of the Aalan door (the conversation's subject, where other inboxes put a face). A message
+// to a shop itself, without a listing, shows a shopfront instead.
 
 const SIZES = {
   sm: "h-14 w-12",
@@ -16,7 +17,7 @@ const SIZES = {
   lg: "h-20 w-16",
 } as const;
 
-export function ListingDoor({ conversation, size = "sm", className }: { conversation: Pick<ConversationView, "listingId" | "listing">; size?: keyof typeof SIZES; className?: string }) {
+export function ListingDoor({ conversation, size = "sm", className }: { conversation: Pick<ConversationView, "listingId" | "listing"> & { subject?: ConversationView["subject"] }; size?: keyof typeof SIZES; className?: string }) {
   const config = usePublicConfig();
   const photo = conversation.listing.photo;
   const src = photo ? photoUrl(config?.mediaBaseUrl ?? null, conversation.listingId, photo.id, "s") : null;
@@ -30,6 +31,10 @@ export function ListingDoor({ conversation, size = "sm", className }: { conversa
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover" />
+      ) : conversation.subject === "shop" ? (
+        <span className="absolute inset-0 flex items-center justify-center bg-structure text-structure-foreground">
+          <Store className="size-4" strokeWidth={1.75} />
+        </span>
       ) : (
         <span className="absolute inset-0 flex items-center justify-center text-foreground-muted">
           <ImageOff className="size-4" strokeWidth={1.5} />

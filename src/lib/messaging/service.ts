@@ -13,7 +13,10 @@ import { logger } from "@/lib/logging/logger";
 import { listingOfferPrice } from "@/lib/offers/listing";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { publishConversationChange, publishNewMessage, publishRead } from "./events";
-import { conversationId } from "./ids";
+import { conversationId, shopConversationId } from "./ids";
+import { getProProfile } from "@/lib/db/repositories/pro-profiles";
+import { storefrontSegment } from "@/lib/listings/public";
+import { storefrontShown } from "@/lib/pro/lifecycle";
 import {
   BlockListFullError,
   ConversationAccessError,
@@ -199,6 +202,72 @@ export async function startConversation(actor: MessagingActor, input: { listingI
   } catch (error) {
     if (!(error instanceof ConversationExistsError)) throw error;
     // Two first messages raced: the second one is appended.
+    const appended = await append(actor, cid, input.text, analysis, now);
+    return { cid, messageId: appended.messageId, existing: true };
+  }
+  await afterMessage({ cid, messageId, senderUid: actor.uid, senderPublicId: buyer.publicId, recipientUid: seller.uid, flags: analysis.flags, now });
+  return { cid, messageId, existing: false };
+}
+
+/**
+ * A first message to a shop from its storefront (UX audit of the Pro shops, lot 1), about no
+ * listing: one conversation per (shop, buyer) in its own id namespace, shown with the shop's name
+ * where a listing's title goes and linking to the storefront. The same rules as a listing's first
+ * message (D4-D8): limits, a shown storefront (not an example), not one's own shop, a reachable
+ * owner, no block. Price offers and booking requests need a listing: none here.
+ */
+export async function startShopConversation(actor: MessagingActor, input: { proId: string; text: string }, now = new Date()): Promise<StartConversationResponse> {
+  const analysis = await analyze(input.text);
+  const cid = shopConversationId(input.proId, actor.uid);
+  const [existing, buyer] = await Promise.all([getConversation(cid), getUserRecord(actor.uid)]);
+  if (existing) {
+    const { messageId } = await append(actor, cid, input.text, analysis, now);
+    return { cid, messageId, existing: true };
+  }
+  if (!buyer) throw new HttpError(403, "forbidden", "account record missing");
+  await enforceLimit("conversation.new.uid", actor.uid);
+  if (now.getTime() - buyer.createdAt.getTime() < YOUNG_ACCOUNT_MS) await enforceLimit("conversation.new.young.uid", actor.uid);
+
+  const profile = await getProProfile(input.proId);
+  if (!profile || !storefrontShown(profile.lifecycle, profile.plan)) throw notFound();
+  if (profile.ownerUid === actor.uid || actor.claims.proId === profile.proId) throw new HttpError(409, "self_conversation");
+  if (profile.example) throw new HttpError(409, "listing_unavailable");
+
+  const [seller, blocks] = await Promise.all([getUserRecord(profile.ownerUid), getUserBlocks([actor.uid, profile.ownerUid])]);
+  if (!seller || SELLER_UNREACHABLE.includes(seller.status) || seller.status === "suspended") throw new HttpError(409, "listing_unavailable");
+  if (isPairBlocked(blocks, actor.uid, seller.uid)) throw new HttpError(403, "conversation_blocked");
+
+  const message = messageInput(actor.uid, input.text, analysis, now);
+  const conversation: ConversationDoc = {
+    listingId: profile.proId,
+    listingSlugId: storefrontSegment(profile.slug, profile.proId),
+    subject: "shop",
+    sellerUid: seller.uid,
+    sellerProId: profile.proId,
+    buyerUid: actor.uid,
+    participants: [actor.uid, seller.uid],
+    sellerName: seller.displayName,
+    sellerPublicId: seller.publicId,
+    buyerName: buyer.displayName,
+    buyerPublicId: buyer.publicId,
+    listingSnapshot: { title: profile.name, price: null, isDonation: false, photo: null, offers: false },
+    lastMessage: lastMessageOf(message),
+    unread: { [seller.uid]: 1, [actor.uid]: 0 },
+    blockedBy: [],
+    archivedBy: [],
+    hiddenFor: [],
+    status: "open",
+    messageCount: 1,
+    createdAt: now,
+    updatedAt: now,
+    purgeAt: conversationPurgeAt(now),
+    legalHold: [],
+  };
+  let messageId: string;
+  try {
+    messageId = await createConversation(cid, conversation, message);
+  } catch (error) {
+    if (!(error instanceof ConversationExistsError)) throw error;
     const appended = await append(actor, cid, input.text, analysis, now);
     return { cid, messageId: appended.messageId, existing: true };
   }

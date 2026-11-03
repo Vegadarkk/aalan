@@ -13,10 +13,10 @@ import type { RentalUnit } from "@/config/categories";
 import { getPathname, Link } from "@/i18n/navigation";
 import { ApiError, apiPost, loadSession, useSession } from "@/lib/auth/client";
 import type { SessionSummary } from "@/lib/contracts/auth";
-import { LISTING_API } from "@/lib/contracts/endpoints";
+import { LISTING_API, MESSAGING_API } from "@/lib/contracts/endpoints";
 import type { PhoneRevealResponse } from "@/lib/contracts/listings";
 import { isolateLtr } from "@/lib/i18n/bidi";
-import { findListingConversation } from "@/lib/messaging/client";
+import { findListingConversation, findShopConversation } from "@/lib/messaging/client";
 import { cn } from "@/lib/utils";
 import type { RevealChallengeProps, RevealErrorProps } from "./contact-feedback";
 import type { MessageDialogProps } from "./message-dialog";
@@ -104,6 +104,12 @@ export interface ContactBarProps {
    * the one the amount is checked against (promo included).
    */
   offer?: { price: number } | null;
+  /**
+   * A shop's storefront (UX audit of the Pro shops, lot 1): `listingId` is the shop's proId and
+   * `slugId` its storefront segment. The message goes to the shop (no listing), the number comes
+   * from the shop's reveal route, and the wide block sits in the storefront's contact card.
+   */
+  shop?: boolean;
 }
 
 export type ComposeIntent = "message" | "visit" | "test_drive" | "rental" | "offer";
@@ -168,7 +174,7 @@ function BarSpacer() {
   return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className="h-24 lg:hidden" />, document.body) : null;
 }
 
-export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null }: ContactBarProps) {
+export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false }: ContactBarProps) {
   const t = useTranslations("ListingPage.contact");
   const stay = rental === "night";
   const offers = useTranslations("Offers.listing");
@@ -186,7 +192,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
 
   const canReveal = showPhone || whatsapp;
   const own = status === "ready" && session !== null && session.publicId === sellerPublicId;
-  const next = `/${locale}/annonce/${slugId}`;
+  const next = shop ? `/${locale}/boutique/${slugId}` : `/${locale}/annonce/${slugId}`;
   /**
    * The listing's own action beside "Message" in the phone bar (owner's choice, 30 Oct 2026, UX
    * journeys 8): the dates of a rental, a visit, a test drive or an offer, the first that applies.
@@ -202,7 +208,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       return;
     }
     try {
-      const { phone } = await apiPost<PhoneRevealResponse>(LISTING_API.phone(listingId), turnstileToken ? { turnstileToken } : {});
+      const { phone } = await apiPost<PhoneRevealResponse>(shop ? MESSAGING_API.shopPhone(listingId) : LISTING_API.phone(listingId), turnstileToken ? { turnstileToken } : {});
       setState({ kind: "revealed", phone });
     } catch (error) {
       const code = error instanceof ApiError ? error.code : undefined;
@@ -219,7 +225,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     if (compose === "checking") return;
     setIntent(next);
     setCompose("checking");
-    const step = await messageStep(listingId);
+    const step = await messageStep(listingId, shop ? { loadSession, findListingConversation: findShopConversation } : undefined);
     if (step.kind === "signin") {
       setCompose("signin");
     } else if (step.kind === "thread" && next !== "rental") {
@@ -247,9 +253,9 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
   if (own) {
     return (
       <div data-testid="contact-bar" className="flex flex-col gap-3 rounded-md bg-surface-muted p-4">
-        <p className="text-sm text-pretty">{t("own")}</p>
+        <p className="text-sm text-pretty">{shop ? t("ownShop") : t("own")}</p>
         <Button asChild variant="outline" className="self-start">
-          <Link href="/mes-annonces">
+          <Link href={shop ? "/pro" : "/mes-annonces"}>
             <Settings2 aria-hidden="true" />
             {t("manage")}
           </Link>
@@ -461,6 +467,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
           listingId={listingId}
           listingTitle={listingTitle}
           sellerName={sellerName}
+          shop={shop}
           adultsOnly={adultsOnly}
           onSignedOut={() => setCompose("signin")}
           {...(intent === "test_drive" ? { initialText: t("testDriveText", { title: listingTitle ?? "" }), threadQuery: "rdv=test_drive" } : {})}

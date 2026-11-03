@@ -74,6 +74,10 @@ export const startConversationSchema = z
   .strict();
 export type StartConversationRequest = z.infer<typeof startConversationSchema>;
 
+/** POST /api/shops/{proId}/conversations: a first message to a shop from its storefront (UX audit lot 1). */
+export const startShopConversationSchema = z.object({ text: messageTextSchema, turnstileToken: turnstileTokenSchema }).strict();
+export type StartShopConversationRequest = z.infer<typeof startShopConversationSchema>;
+
 export const sendMessageSchema = z.object({ text: messageTextSchema }).strict();
 export type SendMessageRequest = z.infer<typeof sendMessageSchema>;
 
@@ -104,8 +108,12 @@ export interface UnreadResponse {
 /** One conversation as its participant sees it (inbox row, thread header; D2). Dates are epoch ms. */
 export interface ConversationView {
   cid: string;
+  /** The listing's id, or the shop's proId when `subject` is "shop". */
   listingId: string;
+  /** The listing's slugId, or the storefront segment of a shop conversation. */
   listingSlugId: string;
+  /** "shop": with a shop from its storefront, about no listing (UX audit of the Pro shops, lot 1). */
+  subject: "listing" | "shop";
   listing: { title: string; price: number | null; isDonation: boolean; photo: { id: string; blurhash: string } | null };
   role: "buyer" | "seller";
   counterpart: { publicId: string; displayName: string };

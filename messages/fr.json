@@ -3135,7 +3135,9 @@
           "rentalDraftPickup": "Bonjour, je souhaite séjourner à « {title} » du {from} au {to} ({days, plural, one {# nuit} other {# nuits}}) : {pickup}. Est-ce disponible ?",
           "rentalDatesMissing": "Choisissez les dates d'arrivée et de départ.",
           "rentalSafety": "Le séjour se conclut directement avec l'annonceur. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement."
-        }
+        },
+        "aboutShop": "Votre message arrive dans la messagerie de la boutique, sans lien avec une annonce précise.",
+        "placeholderShop": "Bonjour, j'ai une question sur vos produits ou vos services."
       },
       "visit": "Demander une visite",
       "visitShort": "Visite",
@@ -3150,7 +3152,8 @@
         "rentalHint": "Envoyez vos dates d'arrivée et de départ : l'annonceur confirme la disponibilité dans la messagerie. Rien ne se paie sur le site.",
         "signInRental": "Connectez-vous pour envoyer une demande de séjour. Vous reviendrez ensuite sur cette annonce."
       },
-      "variantText": "Bonjour, « {title} » en {variant} est-il toujours disponible ?"
+      "variantText": "Bonjour, « {title} » en {variant} est-il toujours disponible ?",
+      "ownShop": "C'est votre boutique. Les visiteurs voient ici les boutons pour vous contacter."
     },
     "safety": {
       "title": "Conseils de sécurité",
@@ -4242,7 +4245,8 @@
       "blockedMe": "Vous ne pouvez plus écrire dans cette conversation.",
       "counterpartClosed": "{name} a fermé son compte : vous pouvez relire la conversation, mais plus y écrire.",
       "frozen": "Cette conversation est suspendue : vous pouvez la lire, mais plus y écrire.",
-      "suspended": "Votre compte est suspendu : vous pouvez lire vos conversations, mais plus envoyer de message."
+      "suspended": "Votre compte est suspendu : vous pouvez lire vos conversations, mais plus envoyer de message.",
+      "shop": "Voir la boutique « {title} »"
     },
     "review": {
       "label": "Donner votre avis",
@@ -4869,7 +4873,8 @@
         "sat": "Samedi",
         "sun": "Dimanche"
       }
-    }
+    },
+    "contact": "Contacter la boutique"
   },
   "Options": {
     "title": "Mettre en avant « {title} »",

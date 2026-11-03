@@ -473,8 +473,10 @@ export function ThreadView({ cid }: { cid: string }) {
   const conversation = data.conversation;
   const name = conversation.counterpart.displayName;
   const writable = canWrite(conversation, suspended);
-  const listingHref = getPathname({ href: `/annonce/${conversation.listingSlugId}`, locale });
-  const price = conversation.listing.isDonation ? card("donation") : conversation.listing.price === null ? card("toDiscuss") : formatPrice(conversation.listing.price, locale);
+  // A message to a shop itself (no listing): its storefront, and no price.
+  const shop = conversation.subject === "shop";
+  const listingHref = getPathname({ href: shop ? `/boutique/${conversation.listingSlugId}` : `/annonce/${conversation.listingSlugId}`, locale });
+  const price = shop ? null : conversation.listing.isDonation ? card("donation") : conversation.listing.price === null ? card("toDiscuss") : formatPrice(conversation.listing.price, locale);
   const mine = lastMineStatus(data.messages);
   const pending = prunePending(view.pending, data.messages);
   const labels = { today: t("today"), yesterday: t("yesterday") };
@@ -487,7 +489,7 @@ export function ThreadView({ cid }: { cid: string }) {
             <ArrowLeft className="rtl:rotate-180" aria-hidden="true" />
           </Link>
         </Button>
-        <a href={listingHref} aria-label={t("listing", { title: isolate(conversation.listing.title) })} className="shrink-0 rounded-t-full rounded-b-md">
+        <a href={listingHref} aria-label={t(shop ? "shop" : "listing", { title: isolate(conversation.listing.title) })} className="shrink-0 rounded-t-full rounded-b-md">
           <ListingDoor conversation={conversation} size="md" />
         </a>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -498,7 +500,7 @@ export function ThreadView({ cid }: { cid: string }) {
             <a href={listingHref} dir="auto" className="min-w-0 truncate hover:text-foreground hover:underline">
               {conversation.listing.title}
             </a>
-            <span className={cn("shrink-0 font-medium tabular-nums", conversation.listing.isDonation ? "text-success" : "text-foreground")}>{price}</span>
+            {price ? <span className={cn("shrink-0 font-medium tabular-nums", conversation.listing.isDonation ? "text-success" : "text-foreground")}>{price}</span> : null}
           </p>
         </div>
         <ThreadActions conversation={conversation} onDone={onAction} onReport={() => setReport({ subject: { kind: "user" }, open: true })} />

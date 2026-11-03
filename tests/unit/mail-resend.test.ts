@@ -9,7 +9,7 @@ vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(),
 const MAIL: RenderedMail = {
   from: "Aalan <no-reply@notif.joutiya.ma>",
   to: "nadia@example.com",
-  subject: "Confirme ton adresse e-mail",
+  subject: "Confirmez votre adresse e-mail",
   text: "Bonjour",
   html: "<p>Bonjour</p>",
   tags: { template: "verifyEmail", env: "staging" },

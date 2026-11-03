@@ -9,11 +9,11 @@ const COPY: Record<MailLocale, { subject: string; title: string; roles: Record<R
     title: "Invitation à l'équipe Aalan",
     roles: { moderator: "modérateur·rice", admin: "administrateur·rice" },
     body: (role) => [
-      `Tu es invité·e à rejoindre l'équipe Aalan en tant que ${role}. Accepte l'invitation pour activer ton accès au back-office.`,
-      "L'accès passe par Cloudflare Access avec ton compte Google : la validation en deux étapes doit y être activée.",
+      `Vous êtes invité·e à rejoindre l'équipe Aalan en tant que ${role}. Acceptez l'invitation pour activer votre accès au back-office.`,
+      "L'accès passe par Cloudflare Access avec votre compte Google : la validation en deux étapes doit y être activée.",
     ],
     button: "Accepter l'invitation",
-    notYou: "Si tu n'attendais pas cette invitation, ignore cet e-mail.",
+    notYou: "Si vous n'attendiez pas cette invitation, ignorez cet e-mail.",
   },
   ar: {
     subject: "دعوة للانضمام إلى فريق Aalan",

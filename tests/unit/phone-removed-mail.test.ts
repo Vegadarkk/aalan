@@ -25,12 +25,12 @@ describe("phoneRemoved", () => {
 
   it("explains the removal in French, names the contact address and links to the verifications page", () => {
     const rendered = renderMail({ template: "phoneRemoved", locale: "fr", to: "nadia@example.com", data });
-    expect(rendered.subject).toBe("Ton numéro de téléphone a été retiré de ton compte");
+    expect(rendered.subject).toBe("Votre numéro de téléphone a été retiré de votre compte");
     for (const body of [rendered.html, rendered.text]) {
       expect(body).toContain("Bonjour Nadia,");
       expect(body).toContain("06 12 34 56 78");
       expect(body).toContain("sur un autre compte Aalan");
-      expect(body).toContain("retiré de ton compte");
+      expect(body).toContain("retiré de votre compte");
       expect(body).toContain(DEFAULT_LEGAL.email);
       expect(body).toContain(`${SITE}/fr/verifications`);
       expect(body).not.toMatch(/undefined|\[object Object\]/);

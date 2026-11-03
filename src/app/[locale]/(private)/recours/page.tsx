@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DecisionCard } from "@/components/appeals/decision-card";
 import { DecisionsView } from "@/components/appeals/decisions-view";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { DoorMark } from "@/components/feedback/door-mark";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
@@ -54,17 +53,13 @@ export default async function AppealsPage({ params, searchParams }: { params: Pr
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Appeals" });
   const token = tokenOf(await searchParams);
-  // Tarifit: account pages and their mail links are French until a native review (FrenchOnlyNotice).
-  const lang = locale === "rif" ? "fr" : undefined;
-
   if (token) {
     const link = await readLink(token);
     if (link.kind !== "ok") {
       const title = link.kind === "unavailable" ? t("link.title") : t(`link.${link.kind}Title`);
       const body = link.kind === "unavailable" ? t("errors.unavailable") : t(`link.${link.kind}Body`);
       return (
-        <Container lang={lang} className="max-w-xl py-12 lg:py-16">
-          <FrenchOnlyNotice className="mb-8" />
+        <Container className="max-w-xl py-12 lg:py-16">
           <section data-testid="appeal-link-state" data-kind={link.kind} className="flex flex-col items-center gap-5 rounded-lg border border-border bg-surface px-6 py-10 text-center shadow-sm shadow-bab-950/5 sm:px-10">
             <DoorMark className="w-16" />
             <h1 className="text-2xl font-semibold text-balance">{title}</h1>
@@ -82,8 +77,7 @@ export default async function AppealsPage({ params, searchParams }: { params: Pr
       );
     }
     return (
-      <Container lang={lang} className="max-w-2xl py-10 lg:py-14">
-        <FrenchOnlyNotice className="mb-8" />
+      <Container className="max-w-2xl py-10 lg:py-14">
         <header className="mb-8 flex flex-col gap-3">
           <h1 className="text-3xl font-semibold text-balance">{t("link.title")}</h1>
           <p className="max-w-prose text-foreground-muted text-pretty">{t("link.intro")}</p>
@@ -100,8 +94,7 @@ export default async function AppealsPage({ params, searchParams }: { params: Pr
     redirect({ href: next ? { pathname: "/connexion", query: { next } } : "/connexion", locale });
   }
   return (
-    <Container lang={lang} className="max-w-2xl py-10 lg:py-14">
-      <FrenchOnlyNotice className="mb-8" />
+    <Container className="max-w-2xl py-10 lg:py-14">
       <header className="mb-8 flex flex-col gap-3">
         <h1 className="text-3xl font-semibold text-balance">{t("page.title")}</h1>
         <p className="max-w-prose text-foreground-muted text-pretty">{t("page.intro")}</p>

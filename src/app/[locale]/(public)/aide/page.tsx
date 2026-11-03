@@ -7,10 +7,11 @@ import { AssistantLauncher } from "@/components/help/assistant-launcher";
 import { HelpSearch, type HelpSearchEntry } from "@/components/help/help-search";
 import { Container } from "@/components/layout/container";
 import { quietLinkClassName, textLinkClassName } from "@/components/ui/text-link";
-import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { localeParams, pageLocale } from "@/i18n/params";
 import { loadHelpArticles } from "@/lib/help/search";
 import { alternates } from "@/lib/i18n/metadata";
 import { cn } from "@/lib/utils";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Help centre home (design phase-5 D25): search over the locale's articles, the themes with their
 // articles, and the Assistant Joutiya. ISR like the legal pages: a limit read from config/legal
@@ -36,7 +37,7 @@ export default async function HelpHome({ params }: { params: Params }) {
     getTranslations({ locale, namespace: "Help" }),
     getTranslations({ locale, namespace: "Guide" }),
     // Prints a number: Tarifit pages format it as French (no Intl data for "rif").
-    getTranslations({ locale: numbersLocale(locale), namespace: "Help" }),
+    getNumbersTranslations({ locale, namespace: "Help" }),
     loadHelpArticles(locale),
   ]);
   const categories = helpCategories(locale);

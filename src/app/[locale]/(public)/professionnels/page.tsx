@@ -6,11 +6,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { localeParams, pageLocale } from "@/i18n/params";
 import { getPricing } from "@/lib/config/runtime";
 import { alternates } from "@/lib/i18n/metadata";
 import { DIRECTORY_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // The public page of the Pro offer (owner's choice B of 29 Oct 2026, UX audit): what a shop, a
 // dealer or an agency gets, the launch offer and the steps, for visitors and members who cannot
@@ -56,7 +57,7 @@ export default async function ProLandingPage({ params }: { params: Params }) {
   const [t, count, pricing] = await Promise.all([
     getTranslations({ locale, namespace: "ProLanding" }),
     // Prints numbers: Tarifit pages format them as French (no Intl data for "rif").
-    getTranslations({ locale: numbersLocale(locale), namespace: "ProLanding" }),
+    getNumbersTranslations({ locale, namespace: "ProLanding" }),
     getPricing(),
   ]);
   const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;

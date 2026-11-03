@@ -26,16 +26,9 @@ describe("messages", () => {
     expect([...flatten(ar).keys()].sort()).toEqual([...french.keys()].filter((key) => !SHARED.test(key)).sort());
   });
 
-  it("keeps Tarifit keys a subset of French (the rest falls back to French)", () => {
-    for (const key of flatten(rif).keys()) expect(french.has(key), key).toBe(true);
-  });
-
-  it("keeps rif.json free of Auth keys until a native review", () => {
-    // Decision 2026-10-16: a partial Tarifit translation of the account pages mixed two languages
-    // word by word. The whole Auth namespace falls back to French (with a notice on those pages)
-    // until a native speaker has reviewed a complete translation; add the keys all at once then.
-    expect(Object.keys(rif)).not.toContain("Auth");
-    for (const key of flatten(rif).keys()) expect(key.startsWith("Auth."), key).toBe(false);
+  it("translates every French key into Tarifit", () => {
+    // Owner, 3 Nov 2026: the whole interface is offered in Tarifit (native review before launch).
+    expect([...flatten(rif).keys()].sort()).toEqual([...french.keys()].filter((key) => !SHARED.test(key)).sort());
   });
 
   it("keeps the same ICU placeholders in every language", () => {

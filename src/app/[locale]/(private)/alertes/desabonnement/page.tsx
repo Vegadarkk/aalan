@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { UnsubscribeConfirm } from "@/components/alerts/unsubscribe-confirm";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { DoorMark } from "@/components/feedback/door-mark";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/layout/container";
@@ -45,8 +44,7 @@ export default async function UnsubscribePage({ params, searchParams }: { params
   const canConfirm = token !== undefined && (link.kind === "all" || (link.kind === "one" && link.active));
 
   return (
-    <Container lang={locale === "rif" ? "fr" : undefined} className="max-w-xl py-12 lg:py-16">
-      <FrenchOnlyNotice className="mb-8" />
+    <Container className="max-w-xl py-12 lg:py-16">
       <section className="flex flex-col items-center gap-5 rounded-lg border border-border bg-surface px-6 py-10 text-center shadow-sm shadow-bab-950/5 sm:px-10" data-testid="unsubscribe-page" data-kind={link.kind}>
         <DoorMark className="w-16" />
         <h1 className="text-2xl font-semibold text-balance">{title}</h1>

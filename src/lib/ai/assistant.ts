@@ -23,9 +23,11 @@ import { ProviderError } from "./types";
 // unusable answer all return "search": the route then shows help articles only. Nothing about the
 // person reaches the model besides the masked text they typed.
 
-const MAX_TOKENS = 700;
+// Sober by design (owner, 3 Nov 2026: minimal consumption, help and guidance only): an 80-word
+// answer plus the JSON envelope fits in 450 tokens, Arabic included.
+const MAX_TOKENS = 450;
 const TIMEOUT_MS = 20_000;
-export const ANSWER_MAX = 1500;
+export const ANSWER_MAX = 900;
 export const CITED_MAX = 3;
 
 /** The part of the SDK client the assistant uses (a stub in tests). */

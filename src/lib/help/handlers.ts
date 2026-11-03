@@ -10,7 +10,7 @@ import { loadHelpArticles, searchHelp } from "./search";
 
 // POST /api/assistant (design phase-5 D25, AF §6 and §7): visitors and members, same origin. Limits
 // before any other work, all "closed" (the AI budget is at stake: a store outage answers 503):
-// 20 per hour and 50 per day per account (signed in) or device, 1 000 per day per IPv6 /48, 200 per
+// 10 per hour and 30 per day per account (signed in) or device, 1 000 per day per IPv6 /48, 200 per
 // day per IP /64, then Turnstile. The session only picks the limiter key: no account read, nothing about the person
 // in the prompt. The AI being unavailable is not an error: 200 with the matching help articles.
 

@@ -123,9 +123,9 @@ describe("POST /api/assistant", () => {
     expect(down.body.articles[0]).toMatchObject({ slug: "decisions-et-recours", title: "القرارات والطعون" });
   });
 
-  it("limits each device to 20 questions an hour and 50 a day, before calling Claude", async () => {
-    expect(RATE_LIMITS["assistant.device.hour"]).toMatchObject({ points: 20, policy: "closed" });
-    expect(RATE_LIMITS["assistant.device.day"]).toMatchObject({ points: 50, policy: "closed" });
+  it("limits each device to 10 questions an hour and 30 a day, before calling Claude", async () => {
+    expect(RATE_LIMITS["assistant.device.hour"]).toMatchObject({ points: 10, policy: "closed" });
+    expect(RATE_LIMITS["assistant.device.day"]).toMatchObject({ points: 30, policy: "closed" });
     const jar = visitor();
     await spend("assistant.device.hour", deviceKey(jar));
     const hour = await ask(question, jar);

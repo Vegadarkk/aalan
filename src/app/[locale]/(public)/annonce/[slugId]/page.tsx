@@ -33,7 +33,7 @@ import { SellerCard } from "@/components/listing/seller-card";
 import { ShareButton } from "@/components/listing/share-button";
 import { ListingMapBlock } from "@/components/map/listing-map-block";
 import { ReportButton } from "@/components/report/report-button";
-import { RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, categoryById, datedRental, subcategoryById } from "@/config/categories";
+import { RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, subcategoryById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
@@ -302,8 +302,9 @@ export default async function ListingPage({ params }: { params: Params }) {
               renderedAt={renderedAt}
             />
             {guide && shownPrice !== null ? <PriceGuideBlock guide={guide} price={shownPrice} locale={locale} className="self-stretch sm:max-w-md" /> : null}
-            {listing.catalogue && published ? (
-              <ListingCatalogue listingId={listing.id} catalogue={listing.catalogue} axes={pickerAxes} price={listing.price} locale={locale} renderedAt={renderedAt} />
+            {/* No stock line on real estate, services or jobs; vehicles on a rental car (zone 3 P2-10). */}
+            {listing.catalogue && published && catalogueKind(subcategory) !== "none" ? (
+              <ListingCatalogue listingId={listing.id} catalogue={listing.catalogue} axes={pickerAxes} price={listing.price} locale={locale} renderedAt={renderedAt} fleet={catalogueKind(subcategory) === "fleet"} />
             ) : null}
             {realEstate ? <PropertyTerms attributes={listing.attributes} locale={locale} className="self-stretch sm:max-w-xl" /> : null}
             {subcategory?.adultsOnly ? (

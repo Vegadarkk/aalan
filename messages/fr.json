@@ -764,7 +764,14 @@
       "draftLimitTitle": "Vous avez déjà 5 brouillons",
       "draftLimitBody": "Publiez ou supprimez un brouillon depuis « Mes annonces » pour en commencer un nouveau.",
       "myListings": "Voir mes annonces",
-      "createFailed": "L'annonce n'a pas pu être créée"
+      "createFailed": "L'annonce n'a pas pu être créée",
+      "draftsLead": "Reprenez une annonce là où vous l'avez laissée, ou commencez-en une nouvelle : vos brouillons restent intacts.",
+      "newListing": "Nouvelle annonce",
+      "resumeAction": "Reprendre",
+      "untitled": "Brouillon sans titre",
+      "edited": "modifié {when}",
+      "allDrafts": "Voir mes {count} brouillons",
+      "checking": "Recherche de vos brouillons…"
     },
     "steps": {
       "categorie": "Catégorie",
@@ -852,7 +859,8 @@
       "whatsapp": "Contact par WhatsApp",
       "whatsappHint": "Ajoute un bouton WhatsApp vers votre numéro vérifié.",
       "priceCheck": "Vérifiez le prix : {price}, c'est bien au-dessus des annonces habituelles de cette catégorie. Gardez-le s'il est juste.",
-      "priceInWords": "En toutes lettres : {words}"
+      "priceInWords": "En toutes lettres : {words}",
+      "charactersMinRule": "{min} caractères minimum"
     },
     "contact": {
       "messagesAlways": "La messagerie Aalan est toujours disponible pour les acheteurs, sans rien afficher de personnel.",
@@ -929,6 +937,15 @@
         "failed": "Le recadrage a échoué. Réessayez, ou retirez la photo.",
         "cancel": "Annuler",
         "confirm": "Recadrer"
+      },
+      "ignored": {
+        "title": "Des fichiers n'ont pas été ajoutés",
+        "unsupported": "« {name} » : format non pris en charge (JPEG, PNG, WebP ou HEIC).",
+        "unreadable": "« {name} » : image illisible ou abîmée.",
+        "tooLarge": "« {name} » : la photo dépasse 10 Mo.",
+        "rejected": "« {name} » : {reason}",
+        "overflow": "{max} photos maximum : {count, plural, one {# fichier n'a pas été ajouté} other {# fichiers n'ont pas été ajoutés}}.",
+        "dismiss": "J'ai compris"
       }
     },
     "review": {
@@ -1048,7 +1065,8 @@
       "stock_pro_only": "Le suivi du stock est réservé aux boutiques Pro.",
       "stock_with_variants": "Avec des variantes, le stock se saisit pour chaque combinaison.",
       "no_variants": "Cette annonce n'a pas de variantes.",
-      "title_soldes": "Le mot « Soldes » n'est permis dans le titre que pendant des soldes lancées depuis « Mes annonces » : retirez-le."
+      "title_soldes": "Le mot « Soldes » n'est permis dans le titre que pendant des soldes lancées depuis « Mes annonces » : retirez-le.",
+      "price_required_amount": "Indiquez un prix."
     },
     "status": {
       "draft": "Brouillon",
@@ -1104,7 +1122,12 @@
       "ref": "Référence",
       "tooMany": "{count} combinaisons : {max} au plus. Retirez des valeurs.",
       "noneOffered": "Proposez au moins une combinaison.",
-      "fromVariants": "{criteria} : indiqué par les variantes, à l'étape Prix."
+      "fromVariants": "{criteria} : indiqué par les variantes, à l'étape Prix.",
+      "fleetTitle": "Véhicules disponibles",
+      "fleetHint": "Facultatif. Le nombre de véhicules identiques que vous louez avec cette annonce. Aalan ne loue rien à votre place : mettez-le à jour vous-même.",
+      "fleetTrack": "Indiquer le nombre de véhicules",
+      "fleetTrackHint": "L'annonce affiche « Plus que N véhicules disponibles » à partir de 5, et « Aucun véhicule disponible » à 0.",
+      "fleetStock": "Véhicules"
     },
     "numberInput": {
       "decimal": "Nombre entier uniquement, sans virgule ni centimes.",
@@ -2864,7 +2887,15 @@
       "untrackedShort": "Non suivi",
       "save": "Enregistrer",
       "cancel": "Annuler",
-      "saved": "Stock mis à jour"
+      "saved": "Stock mis à jour",
+      "fleetUntracked": "Nombre de véhicules non suivi",
+      "fleetSoldOut": "Aucun véhicule disponible : hors des résultats par défaut",
+      "fleetCount": "{count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetLow": "Plus que {count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetOpen": "Véhicules",
+      "fleetOpenOf": "Mettre à jour les véhicules disponibles de {title}",
+      "fleetTitle": "Véhicules disponibles de {title}",
+      "fleetStock": "Véhicules disponibles"
     },
     "promo": {
       "open": "Promotion",
@@ -3341,7 +3372,10 @@
       "allSoldOut": "Article épuisé. Il reste en ligne : écrivez au vendeur pour savoir s'il sera de nouveau disponible.",
       "valueSoldOut": "{value}, épuisé",
       "valueAbsent": "{value}, non proposé avec ce choix",
-      "before": "Au lieu de"
+      "before": "Au lieu de",
+      "fleetInStock": "Véhicules disponibles",
+      "fleetLow": "Plus que {count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetSoldOut": "Aucun véhicule disponible"
     },
     "promo": {
       "period": "Du {start} au {end}",

@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useNumbersTranslations } from "@/i18n/numbers";
 import { blurhashDataUrl } from "@/lib/listings/client/blurhash";
 import { ACCEPTED_INPUT_TYPES } from "@/lib/listings/client/prepare-image";
-import { isPhotoBusy, usedSlots, type PhotoItem } from "@/lib/listings/client/store";
+import { isPhotoBusy, usedSlots, type PhotoItem, type PhotoNotice } from "@/lib/listings/client/store";
 import { cn } from "@/lib/utils";
 import { PhotoCropDialog } from "./photo-crop-dialog";
 
@@ -36,6 +36,9 @@ interface PhotoUploaderProps {
   onCrop?: (key: string, file: File) => void;
   /** Published large variant of a ready photo: the crop source once the local file is gone. */
   largeUrlOf?: (item: PhotoItem) => string | null;
+  /** Files of the last addition left out, and why (zone 3 P2-7). */
+  notices?: PhotoNotice[];
+  onDismissNotices?: () => void;
 }
 
 type FocusTarget = { key: string; action: "back" | "forward" | "cover" };
@@ -44,7 +47,7 @@ function hasFiles(event: DragEvent): boolean {
   return Array.from(event.dataTransfer?.types ?? []).includes("Files");
 }
 
-export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onRefresh, onMove, keepOne = false, optional = false, onCrop, largeUrlOf }: PhotoUploaderProps) {
+export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onRefresh, onMove, keepOne = false, optional = false, onCrop, largeUrlOf, notices = [], onDismissNotices }: PhotoUploaderProps) {
   const t = useNumbersTranslations("Listing.photos");
   const errors = useTranslations("Listing.errors");
   const picker = useRef<HTMLInputElement>(null);
@@ -114,6 +117,31 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
         <span>{room > 0 ? t("tooMany", { count: room }) : t("full")}</span>
       </div>
       {uploadLimited ? <ErrorBanner tone="warning" title={errors("upload_limit")} /> : null}
+      {notices.length > 0 ? (
+        <ErrorBanner
+          tone="warning"
+          title={t("ignored.title")}
+          action={
+            onDismissNotices ? (
+              <button type="button" onClick={onDismissNotices} className="min-h-11 text-sm font-medium text-link hover:underline">
+                {t("ignored.dismiss")}
+              </button>
+            ) : null
+          }
+        >
+          <ul data-testid="photo-notices" className="flex list-disc flex-col gap-0.5 ps-4">
+            {notices.map((notice, index) => (
+              <li key={index}>
+                {notice.kind === "overflow"
+                  ? t("ignored.overflow", { max: maxPhotos, count: notice.count })
+                  : notice.kind === "rejected"
+                    ? t("ignored.rejected", { name: notice.name, reason: t(`rejectReasons.${notice.reason}`) })
+                    : t(`ignored.${notice.kind === "unsupported_media" ? "unsupported" : notice.kind === "decode_failed" ? "unreadable" : "tooLarge"}`, { name: notice.name })}
+              </li>
+            ))}
+          </ul>
+        </ErrorBanner>
+      ) : null}
       {withFaces > 0 ? (
         <ErrorBanner tone="warning" title={t("faces.title", { count: withFaces })}>
           {t(onCrop ? "faces.body" : "faces.bodyNoCrop", { count: withFaces })}

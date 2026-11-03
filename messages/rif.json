@@ -754,7 +754,14 @@
       "draftLimitTitle": "Tesɛiḍ yakan 5 n brouillons",
       "draftLimitBody": "Ssuffeɣ niɣ kkes yiwen n brouillon zi « Annonces inu » ḥima ad tebduḍ wayeḍ.",
       "myListings": "Ẓar annonces inu",
-      "createFailed": "Annonce war tezmir ca ad tettwasnulfu"
+      "createFailed": "Annonce war tezmir ca ad tettwasnulfu",
+      "draftsLead": "Reprenez une annonce là où vous l'avez laissée, ou commencez-en une nouvelle : vos brouillons restent intacts.",
+      "newListing": "Nouvelle annonce",
+      "resumeAction": "Reprendre",
+      "untitled": "Brouillon sans titre",
+      "edited": "modifié {when}",
+      "allDrafts": "Voir mes {count} brouillons",
+      "checking": "Recherche de vos brouillons…"
     },
     "steps": {
       "categorie": "Taggayt",
@@ -842,7 +849,8 @@
       "whatsapp": "Amsawal s WhatsApp",
       "whatsappHint": "Ad yernu taqeffalt n WhatsApp ɣer uṭṭun nnec yettwasneqden.",
       "priceCheck": "Vérifiez le prix : {price}, c'est bien au-dessus des annonces habituelles de cette catégorie. Gardez-le s'il est juste.",
-      "priceInWords": "En toutes lettres : {words}"
+      "priceInWords": "En toutes lettres : {words}",
+      "charactersMinRule": "{min} caractères minimum"
     },
     "contact": {
       "messagesAlways": "Tibratin n Aalan llant kul lweqt i imsaɣen, war ma ad tsekneḍ kra n wayen inek.",
@@ -919,6 +927,15 @@
         "failed": "Agzam war yeddi ca. Ɛawed, niɣ kkes tawlaft.",
         "cancel": "Ssbeṭṭel",
         "confirm": "Gzem"
+      },
+      "ignored": {
+        "title": "Des fichiers n'ont pas été ajoutés",
+        "unsupported": "« {name} » : format non pris en charge (JPEG, PNG, WebP ou HEIC).",
+        "unreadable": "« {name} » : image illisible ou abîmée.",
+        "tooLarge": "« {name} » : la photo dépasse 10 Mo.",
+        "rejected": "« {name} » : {reason}",
+        "overflow": "{max} photos maximum : {count, plural, one {# fichier n'a pas été ajouté} other {# fichiers n'ont pas été ajoutés}}.",
+        "dismiss": "J'ai compris"
       }
     },
     "review": {
@@ -1038,7 +1055,8 @@
       "stock_pro_only": "Aḍfar n stock i tḥuna Pro kan.",
       "stock_with_variants": "S variantes, stock ad t-taruḍ i yal combinaison.",
       "no_variants": "Annonce-a war ɣar-s ca variantes.",
-      "title_soldes": "Awal « Soldes » yettwaqbal deg uzwel kan deg lweqt n soldes i tebdiḍ zi « Annonces inu » : kkes-it."
+      "title_soldes": "Awal « Soldes » yettwaqbal deg uzwel kan deg lweqt n soldes i tebdiḍ zi « Annonces inu » : kkes-it.",
+      "price_required_amount": "Indiquez un prix."
     },
     "status": {
       "draft": "Brouillon",
@@ -1094,7 +1112,12 @@
       "ref": "Référence",
       "tooMany": "{count} n combinaisons : ar {max} kan. Kkes kra n lqiyam.",
       "noneOffered": "Ssumer ɣas yiwet n combinaison.",
-      "fromVariants": "{criteria} : yettwaru deg variantes, deg usurif n Ssuma."
+      "fromVariants": "{criteria} : yettwaru deg variantes, deg usurif n Ssuma.",
+      "fleetTitle": "Véhicules disponibles",
+      "fleetHint": "Facultatif. Le nombre de véhicules identiques que vous louez avec cette annonce. Aalan ne loue rien à votre place : mettez-le à jour vous-même.",
+      "fleetTrack": "Indiquer le nombre de véhicules",
+      "fleetTrackHint": "L'annonce affiche « Plus que N véhicules disponibles » à partir de 5, et « Aucun véhicule disponible » à 0.",
+      "fleetStock": "Véhicules"
     },
     "numberInput": {
       "decimal": "Nombre entier uniquement, sans virgule ni centimes.",
@@ -2854,7 +2877,15 @@
       "untrackedShort": "War yettwaḍfar",
       "save": "Ḥrez",
       "cancel": "Ssbeṭṭel",
-      "saved": "Stock yettwabeddel"
+      "saved": "Stock yettwabeddel",
+      "fleetUntracked": "Nombre de véhicules non suivi",
+      "fleetSoldOut": "Aucun véhicule disponible : hors des résultats par défaut",
+      "fleetCount": "{count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetLow": "Plus que {count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetOpen": "Véhicules",
+      "fleetOpenOf": "Mettre à jour les véhicules disponibles de {title}",
+      "fleetTitle": "Véhicules disponibles de {title}",
+      "fleetStock": "Véhicules disponibles"
     },
     "promo": {
       "open": "Promotion",
@@ -3331,7 +3362,10 @@
       "allSoldOut": "Tɣawsa tekmel. Teqqim deg internet: ari i umzenzu ḥima ad tessneḍ mala ad d-tuɣal.",
       "valueSoldOut": "{value}, yekmel",
       "valueAbsent": "{value}, war yella ca s uxtiṛ-a",
-      "before": "Deg umkan n"
+      "before": "Deg umkan n",
+      "fleetInStock": "Véhicules disponibles",
+      "fleetLow": "Plus que {count, plural, one {# véhicule disponible} other {# véhicules disponibles}}",
+      "fleetSoldOut": "Aucun véhicule disponible"
     },
     "promo": {
       "period": "Zi {start} ar {end}",

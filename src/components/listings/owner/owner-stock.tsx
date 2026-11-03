@@ -19,7 +19,8 @@ import { cn } from "@/lib/utils";
 
 type Catalogue = { stock: number | null; variants: ListingVariants | null };
 
-export function OwnerStock({ listingId, title, catalogue: initial }: { listingId: string; title: string; catalogue: Catalogue }) {
+/** `fleet`: a rental car's identical vehicles available, worded as such (zone 3 P2-10). */
+export function OwnerStock({ listingId, title, catalogue: initial, fleet = false }: { listingId: string; title: string; catalogue: Catalogue; fleet?: boolean }) {
   const t = useTranslations("MyListings.stock");
   const [catalogue, setCatalogue] = useState(initial);
   const [open, setOpen] = useState(false);
@@ -27,16 +28,19 @@ export function OwnerStock({ listingId, title, catalogue: initial }: { listingId
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5">
       <p className={cn("text-xs text-pretty", summary.tone === "danger" ? "font-medium text-danger" : summary.tone === "warning" ? "font-medium text-warning" : "text-foreground-muted")} data-testid="owner-stock">
-        {t(summary.key, summary.values)}
+        {fleet && !catalogue.variants ? t(FLEET_KEYS[summary.key] ?? summary.key, summary.values) : t(summary.key, summary.values)}
       </p>
-      <Button type="button" variant="outline" size="sm" className="max-sm:h-11" aria-label={t("openOf", { title: isolate(title) })} onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" size="sm" className="max-sm:h-11" aria-label={t(fleet ? "fleetOpenOf" : "openOf", { title: isolate(title) })} onClick={() => setOpen(true)}>
         <Boxes aria-hidden="true" />
-        {t("open")}
+        {t(fleet ? "fleetOpen" : "open")}
       </Button>
-      {open ? <StockDialog listingId={listingId} title={title} catalogue={catalogue} onClose={() => setOpen(false)} onSaved={setCatalogue} /> : null}
+      {open ? <StockDialog listingId={listingId} title={title} catalogue={catalogue} fleet={fleet} onClose={() => setOpen(false)} onSaved={setCatalogue} /> : null}
     </div>
   );
 }
+
+/** The rental wording of the single-stock lines. */
+const FLEET_KEYS: Partial<Record<Summary["key"], "fleetUntracked" | "fleetSoldOut" | "fleetCount" | "fleetLow">> = { untracked: "fleetUntracked", soldOut: "fleetSoldOut", count: "fleetCount", low: "fleetLow" };
 
 type Summary = { key: "untracked" | "soldOut" | "count" | "low" | "variants" | "variantsSoldOut"; values: Record<string, number>; tone: "muted" | "warning" | "danger" };
 
@@ -61,6 +65,7 @@ export function stockSummary(catalogue: Catalogue): Summary {
 }
 
 interface StockDialogProps {
+  fleet?: boolean;
   listingId: string;
   title: string;
   catalogue: Catalogue;
@@ -68,7 +73,7 @@ interface StockDialogProps {
   onSaved: (catalogue: Catalogue) => void;
 }
 
-function StockDialog({ listingId, title, catalogue, onClose, onSaved }: StockDialogProps) {
+function StockDialog({ listingId, title, catalogue, fleet = false, onClose, onSaved }: StockDialogProps) {
   const t = useTranslations("MyListings.stock");
   const apiMessage = useApiErrorMessage();
   const names = useVariantLabels();
@@ -105,7 +110,7 @@ function StockDialog({ listingId, title, catalogue, onClose, onSaved }: StockDia
           )}
         >
           <div className="flex flex-col gap-1.5 border-b border-border px-5 pt-5 pb-4 sm:px-6">
-            <Dialog.Title className="text-lg font-semibold text-balance">{t("title", { title: isolate(title) })}</Dialog.Title>
+            <Dialog.Title className="text-lg font-semibold text-balance">{t(fleet ? "fleetTitle" : "title", { title: isolate(title) })}</Dialog.Title>
             <Dialog.Description id={descriptionId} className="text-sm text-foreground-muted text-pretty">
               {t("hint")}
             </Dialog.Description>
@@ -127,8 +132,8 @@ function StockDialog({ listingId, title, catalogue, onClose, onSaved }: StockDia
               </ul>
             ) : (
               <div className="flex items-center justify-between gap-3 py-2">
-                <span className="font-medium">{t("stock")}</span>
-                <StockBox label={t("stock")} value={stock} onChange={setStock} />
+                <span className="font-medium">{t(fleet ? "fleetStock" : "stock")}</span>
+                <StockBox label={t(fleet ? "fleetStock" : "stock")} value={stock} onChange={setStock} />
               </div>
             )}
             <p className="pt-3 text-sm text-foreground-muted">{t("emptyHint")}</p>

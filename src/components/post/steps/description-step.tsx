@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type FocusEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Lightbulb } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -29,6 +29,14 @@ export function DescriptionStep({ onNext }: { onNext: () => void }) {
     formState: { errors },
   } = useForm<Form>({ resolver: zodResolver(descriptionStepSchema), defaultValues: { description: listing.description }, mode: "onTouched" });
   const description = useWatch({ control, name: "description" });
+  // No "too short" before the person has typed (zone 3 P2-8): the rule is the hint and the counter;
+  // the error comes with "Continuer", or on leaving a field that holds some text (still onTouched).
+  const field = register("description");
+  const registered = {
+    ...field,
+    // Leaving the field empty does not mark it touched: no error before the first character.
+    onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (event.target.value.trim() ? field.onBlur(event) : undefined),
+  };
 
   useEffect(() => {
     if (description !== listing.description) update({ description });
@@ -49,7 +57,7 @@ export function DescriptionStep({ onNext }: { onNext: () => void }) {
   return (
     <form id={STEP_FORM_ID} onSubmit={onSubmit} onBlur={() => void flush()} noValidate className="flex flex-col gap-5">
       <Field label={t("description")} hint={t("descriptionHint", { min: DESCRIPTION_MIN })} error={error} required>
-        <Textarea rows={6} autoFocus={!listing.description} maxLength={DESCRIPTION_MAX + 200} placeholder={t("descriptionPlaceholder")} {...register("description")} />
+        <Textarea rows={6} autoFocus={!listing.description} maxLength={DESCRIPTION_MAX + 200} placeholder={t("descriptionPlaceholder")} {...registered} />
       </Field>
       <CharacterCounter count={description.trim().length} min={DESCRIPTION_MIN} max={DESCRIPTION_MAX} />
       <aside className="flex gap-3 rounded-lg bg-surface-brand px-4 py-3 text-sm">

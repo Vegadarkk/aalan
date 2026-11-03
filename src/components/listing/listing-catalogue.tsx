@@ -36,16 +36,19 @@ export interface ListingCatalogueProps {
   locale: Locale;
   /** Epoch ms of the server render (the promotion's clock). */
   renderedAt: number;
+  /** A rental car: the stock counts identical vehicles available. */
+  fleet?: boolean;
 }
 
-export function ListingCatalogue({ listingId, catalogue, axes, price, locale, renderedAt }: ListingCatalogueProps) {
-  if (!catalogue.variants) return catalogue.stock === null ? null : <StockLine state={stockState(catalogue.stock)} count={catalogue.stock} />;
+export function ListingCatalogue({ listingId, catalogue, axes, price, locale, renderedAt, fleet = false }: ListingCatalogueProps) {
+  if (!catalogue.variants) return catalogue.stock === null ? null : <StockLine state={stockState(catalogue.stock)} count={catalogue.stock} fleet={fleet} />;
   return <VariantPicker listingId={listingId} variants={catalogue.variants} axes={axes} price={price} locale={locale} promo={catalogue.promo} renderedAt={renderedAt} />;
 }
 
 const STOCK_ICONS: Record<Exclude<StockState, "untracked">, typeof CircleCheck> = { in_stock: CircleCheck, low: TriangleAlert, sold_out: CircleSlash };
 
-function StockLine({ state, count, className }: { state: StockState; count: number | null; className?: string }) {
+/** `fleet`: a rental car, "Plus que 2 véhicules disponibles" rather than "en stock" (zone 3 P2-10). */
+function StockLine({ state, count, className, fleet = false }: { state: StockState; count: number | null; className?: string; fleet?: boolean }) {
   const t = useTranslations("ListingPage.catalogue");
   if (state === "untracked") return null;
   const Icon = STOCK_ICONS[state];
@@ -62,7 +65,7 @@ function StockLine({ state, count, className }: { state: StockState; count: numb
       )}
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {state === "low" ? t("low", { count: count ?? 0 }) : state === "sold_out" ? t("soldOut") : t("inStock")}
+      {state === "low" ? t(fleet ? "fleetLow" : "low", { count: count ?? 0 }) : state === "sold_out" ? t(fleet ? "fleetSoldOut" : "soldOut") : t(fleet ? "fleetInStock" : "inStock")}
     </p>
   );
 }

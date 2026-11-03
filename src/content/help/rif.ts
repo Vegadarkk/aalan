@@ -10,6 +10,7 @@ export const HELP_RIF: HelpLocaleContent = {
     annonces: { title: "Ad tessufɣeḍ d ad tsegdeḍ annonce", description: "Tasuffeɣt, tiwlafin, abeddel, aḥbas, asnulfu." },
     recherche: { title: "Tarzzut", description: "Ifilṭren, ayen tḥemmleḍ, tarzzut yettwaḥerzen d iselɣa." },
     messagerie: { title: "Tibratin", description: "Ad taruḍ i umzenzu, ad terreḍ, ad tḥebseḍ yiwen." },
+    boutiques: { title: "Tifrent n Pro", description: "Sken tafrent nnec, ssen-itt i medden, ḍfeṛ tirzefin-s." },
     securite: { title: "Taɣellist", description: "Ad tissineḍ tixriqin d mamec ad tḥedreḍ zzaysent." },
     moderation: { title: "Asmekti d tigtinin", description: "Ad tsmektiḍ x yiwet n tɣawsa, ad tfehmeḍ tagtint, ad tagiḍ fellas." },
     donnees: { title: "Isefka d tawuri n Aalan", description: "Isefka nnec, tawuri nneɣ, Amallal n Aalan." },
@@ -234,6 +235,32 @@ export const HELP_RIF: HelpLocaleContent = {
         "War t-tfekkeḍ ca isefka nnec: isem, tilifun, e-mail, adres, awal n uɛeddi niɣ code.",
       ],
       keywords: ["assistant", "amallal", "ia", "robot"],
+    },
+    "reussir-sa-boutique": {
+      title: "Ad tesnejḥeḍ tafrent nnec",
+      summary: "Ayen i d-yettawin imsaɣen ɣer tfrent nnec: tafiche, tabanirt, irayun, astay, beṭṭu d tidaddanin.",
+      blocks: [
+        "Tafrent nnec d asebter azayez n tḥanut nnec yettwasneqden: tiwennaḍin nnec, tafiche nnec d tiwaliwin yettwasneqden. Tettban deg tebdart n tḥuna, yisem n tḥanut nnec ad d-yban x kul tawennaḍt.",
+        {
+          steps: [
+            "Smed tafiche nnec deg tallunt n Pro: asekni s tefransist d taɛrabt, tamdint, tansa, isragen n twarzut d usit. Tafiche yemmden tettarra x yesteqsiyen qbel tabrat tamezwarut.",
+            "Xtar tabanirt n tfrent nnec deg tfiche-nni.",
+            "Snulfu-d irayun nnec (« Ijdiden », « Remḍan »…) deg tallunt n Pro, sya ssers kul tawennaḍt deg uray zeg « Annonces inu ».",
+            "Ṣemmeṛ ar 4 n twennaḍin zeg « Annonces inu »: ad d-banent deg « Astay n tfrent », deg yixef n tfrent nnec.",
+            "Bḍu aseɣwen n tfrent nnec s tqeffalt « Bḍu », deg yizeḍwan nnec d yimeslayen nnec.",
+          ],
+        },
+        {
+          list: [
+            "Tugniwin yesfan, yettwaṭṭfen s tafat n wass, d uzwel yesfan (tamatart, amudil, tiddi) ttaǧǧan imsaɣen ad sitten deg yigmaḍ.",
+            "Imsaɣen ttaran-ac-d zeg twennaḍt niɣ zeg tfrent nnec: err-asen s tazzla, ameslay yeqqim deg « Tibratin inu ».",
+            "Amsaɣ izemmar ad yeḍfeṛ tḥanut nnec: ad as-d-taweḍ tabrat s imayl xmi ɣa tessuffɣeḍ tawennaḍt tamaynut.",
+            "Tallunt n Pro tessenmalay tirzefin n tfrent nnec, tiẓri n twennaḍin nnec, tibratin i d-yewḍen d twennaḍin nnec yettwaẓṛen ugar, deg 7 niɣ 30 n wussan. Imeḍanen ttwasnefllen kul iḍ.",
+          ],
+        },
+        { note: "Aalan tesseɣyab tafrent nnec maca ur tettekki deg uzenzi nnec: axelleṣ, asiweḍ d tuṭṭfin ttemsefhamen garac d yimsaɣen nnec." },
+      ],
+      keywords: ["boutique", "tafrent", "tḥanut", "hanout", "pro", "ṣemmeṛ", "astay", "uray", "tidaddanin", "ḍfeṛ"],
     },
   },
 };

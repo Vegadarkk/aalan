@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
 import { footerDirectory } from "./footer-directory";
 
 const linkClass = cn(
-  "text-foreground-muted hover:text-foreground",
+  // A taller tap area within the 10 px gap between links (UX audit of the Pro shops, B9): 30 px, no overlap.
+  "relative text-foreground-muted after:absolute after:inset-x-0 after:-inset-y-[5px] hover:text-foreground",
   quietLinkClassName,
 );
 // The directory band sits on the structure green: lighter links, underlined like a plan of the site.
@@ -153,6 +154,12 @@ export function Footer({ publisher }: { publisher: string }) {
                 className={linkClass}
               >
                 {t("createShop")}
+              </Link>
+            </li>
+            <li>
+              {/* The shop guide of the help centre (UX audit of the Pro shops, lot 3). */}
+              <Link href="/aide/reussir-sa-boutique" prefetch={false} className={linkClass}>
+                {t("shopGuide")}
               </Link>
             </li>
             <li>

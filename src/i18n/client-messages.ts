@@ -93,6 +93,8 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   "ListingPage.share",
   // « Ouvert jusqu'à… » of its practical information (UX audit lot 1).
   "Storefront.info",
+  // « Suivre la boutique »: a saved search with its alert (UX audit lot 3).
+  "Storefront.follow",
   // « Envoyer un message » and the number of the shop itself, without a listing (UX audit lot 1).
   "ListingPage.contact",
   "Offers.listing",

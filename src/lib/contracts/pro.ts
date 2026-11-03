@@ -238,6 +238,8 @@ export const PRO_API = {
   me: "/api/pro/me",
   agency: "/api/pro/me/agency",
   sections: "/api/pro/me/sections",
+  /** PUT: the listings pinned on the storefront (« Sélection de la boutique »). */
+  pins: "/api/pro/me/pins",
   rental: "/api/pro/me/rental",
   rentalCheck: "/api/pro/me/rental/check",
   social: "/api/pro/me/social",

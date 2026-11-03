@@ -22,6 +22,7 @@ import { primaryAction } from "./buckets";
 import { ListingActions } from "./listing-actions";
 import { OwnerPaymentLinkRow, showsPaymentLink } from "./owner-payment-link";
 import { OwnerPromo, showsPromo } from "./owner-promo";
+import { OwnerPin } from "./owner-pin";
 import { OwnerSection } from "./owner-section";
 import { OwnerStock } from "./owner-stock";
 import { ListingStatusBadge } from "./status-badge";
@@ -42,6 +43,8 @@ interface OwnerListingCardProps {
   onChanged?: (listing: OwnerListingSummary) => void;
   /** The shop's storefront sections (catalogue §5): the row offers them. */
   sections?: ShopSection[];
+  /** The shop's pinned listings (UX audit lot 3) and how to pin or unpin this one; absent off a shop. */
+  pins?: { pinned: string[]; onPin: (id: string, pin: boolean) => Promise<void> };
   /** The shop's « Payer chez le vendeur » is shown: the row offers the listing's own link (catalogue §6). */
   paymentReady?: boolean;
 }
@@ -50,7 +53,7 @@ interface OwnerListingCardProps {
  * One row of "Mes annonces": cover, title, price, city, status, expiry, actions. On phones the
  * primary action takes the full row under the cover (its label is longer than the text column).
  */
-export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, now = new Date(), onChanged, sections = [], paymentReady = false }: OwnerListingCardProps) {
+export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins }: OwnerListingCardProps) {
   const t = useTranslations("MyListings");
   const locale = useLocale() as Locale;
   const city = listing.citySlug ? cityBySlug(listing.citySlug) : undefined;
@@ -119,6 +122,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
         {listing.rental ? <OwnerAvailability listingId={listing.id} title={title} rental={listing.rental} now={now} unit={datedRental(listing.subcategoryId)?.unit} /> : null}
         {listing.catalogue && STOCK_STATUSES.includes(listing.status) ? <OwnerStock listingId={listing.id} title={title} catalogue={listing.catalogue} /> : null}
         {onChanged && sections.length > 0 && listing.sectionId !== undefined && STOCK_STATUSES.includes(listing.status) ? <OwnerSection listing={listing} title={title} sections={sections} onChanged={onChanged} /> : null}
+        {pins && listing.status === "published" ? <OwnerPin listingId={listing.id} title={title} pinned={pins.pinned} onPin={pins.onPin} /> : null}
         {listing.catalogue && onChanged && showsPromo(listing) ? <OwnerPromo listing={{ ...listing, catalogue: listing.catalogue }} title={title} now={now} onChanged={onChanged} /> : null}
         {listing.paymentLink && onChanged && paymentReady && showsPaymentLink(listing) ? <OwnerPaymentLinkRow listing={{ ...listing, paymentLink: listing.paymentLink }} title={title} onChanged={onChanged} /> : null}
       </div>

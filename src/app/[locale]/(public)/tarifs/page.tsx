@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { BadgeCheck, Coins, Gift, Rocket, Sparkles, Store, User } from "lucide-react";
+import { BadgeCheck, Check, Clock, Coins, Gift, Minus, Rocket, Sparkles, Store, User } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
 import { localeParams, pageLocale } from "@/i18n/params";
 import { getPricing } from "@/lib/config/runtime";
+import { importsStock } from "@/lib/contracts/stock-import";
 import { alternates } from "@/lib/i18n/metadata";
 import { PRICING_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,23 @@ function Card({ title, price, note, items, Icon, highlight }: { title: string; p
   );
 }
 
+type Cell = string | boolean | "soon";
+
+/** One mark of the comparison: a value, included, not included, or « bientôt ». */
+function Mark({ value, labels }: { value: Cell; labels: { yes: string; no: string; soon: string } }) {
+  if (value === "soon") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-xs font-medium sm:px-2 text-foreground-muted">
+        <Clock className="size-3.5 max-sm:hidden" aria-hidden="true" />
+        {labels.soon}
+      </span>
+    );
+  }
+  if (value === true) return <Check className="mx-auto size-5 text-success" role="img" aria-label={labels.yes} />;
+  if (value === false) return <Minus className="mx-auto size-5 text-foreground-muted" role="img" aria-label={labels.no} />;
+  return <span className="font-medium tabular-nums">{value}</span>;
+}
+
 export default async function PricingPage({ params }: { params: Params }) {
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
@@ -70,6 +88,27 @@ export default async function PricingPage({ params }: { params: Params }) {
   const { essentiel, business } = pricing.plans;
   const pass = pricing.passes[0] ?? null;
   const listings = (value: number | null) => (value === null ? t("pros.unlimitedListings") : `${n("count", { count: value })} ${t("pros.activeListings")}`);
+  // The comparison table: Essentiel, the pass (when sold), Business; values from the same config.
+  const count = (value: number | null) => (value === null ? t("compare.unlimited") : n("count", { count: value }));
+  const columns = [
+    { key: "essentiel", title: t("pros.essentiel"), plan: "essentiel" as const, credits: essentiel.credits, featured: 0, commitment: t("compare.monthlyOrYearly") },
+    ...(pass ? [{ key: "pass", title: t("pros.pass.title"), plan: pass.plan, credits: pass.credits, featured: 0, commitment: n("compare.days", { days: pass.days }) }] : []),
+    { key: "business", title: t("pros.business"), plan: "business" as const, credits: business.credits, featured: business.featured, commitment: t("compare.monthlyOrYearly") },
+  ];
+  const every = (value: Cell): Cell[] => columns.map(() => value);
+  const rows: { key: string; label: string; cells: Cell[] }[] = [
+    { key: "listings", label: t("compare.rows.listings"), cells: columns.map((column) => count(pricing.pro[column.plan].activeListings)) },
+    { key: "photos", label: t("compare.rows.photos"), cells: columns.map((column) => count(pricing.pro[column.plan].photosPerListing)) },
+    { key: "credits", label: t("compare.rows.credits"), cells: columns.map((column) => count(column.credits)) },
+    { key: "featured", label: t("compare.rows.featured"), cells: columns.map((column) => (column.featured > 0 ? count(column.featured) : false)) },
+    { key: "storefront", label: t("compare.rows.storefront"), cells: every(true) },
+    { key: "contact", label: t("compare.rows.contact"), cells: every(true) },
+    { key: "stats", label: t("compare.rows.stats"), cells: every(true) },
+    { key: "stock", label: t("compare.rows.stock"), cells: columns.map((column) => importsStock(column.plan)) },
+    { key: "commitment", label: t("compare.rows.commitment"), cells: columns.map((column) => column.commitment) },
+    { key: "logo", label: t("compare.rows.logo"), cells: every("soon") },
+  ];
+  const marks = { yes: t("compare.yes"), no: t("compare.no"), soon: t("compare.soon") };
   return (
     <Container className="flex flex-col gap-12 py-8 md:py-12">
       <section className="arch threshold flex flex-col gap-3 rounded-b-lg bg-structure px-6 pt-12 pb-8 text-center text-structure-foreground sm:px-10 sm:text-start">
@@ -155,6 +194,44 @@ export default async function PricingPage({ params }: { params: Params }) {
             items={[listings(pricing.pro.business.activeListings), n("pros.credits", { count: business.credits }), n("pros.featured", { count: business.featured }), t("pros.stockImport"), t("pros.storefront")]}
           />
           <Card Icon={BadgeCheck} title={t("pros.premium")} price={t("pros.onQuote")} items={[listings(null), t("pros.premiumSupport"), t("pros.storefront")]} />
+        </div>
+        {/* What each offer gives on day 1, and what is announced as coming (UX audit of the Pro shops,
+            §7 lot 3): nothing promised that is not delivered. */}
+        <div className="flex flex-col gap-3">
+          <h3 id="pricing-compare" className="text-lg font-semibold">
+            {t("compare.title")}
+          </h3>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table aria-labelledby="pricing-compare" data-testid="pricing-compare" className="w-full min-w-[21rem] border-collapse text-xs sm:text-sm">
+              <thead className="bg-surface-muted">
+                <tr>
+                  <th scope="col" className="w-2/5 px-2 py-3 text-start font-medium text-foreground-muted sm:w-auto sm:px-4">
+                    {t("compare.feature")}
+                  </th>
+                  {columns.map((column) => (
+                    <th key={column.key} scope="col" className="px-1.5 py-3 text-center font-semibold sm:px-4">
+                      {column.title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((row) => (
+                  <tr key={row.key}>
+                    <th scope="row" className="px-2 py-3 text-start font-normal sm:px-4">
+                      {row.label}
+                    </th>
+                    {row.cells.map((cell, index) => (
+                      <td key={columns[index]?.key ?? index} className="px-1.5 py-3 text-center sm:px-4">
+                        <Mark value={cell} labels={marks} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-foreground-muted text-pretty">{t("compare.note")}</p>
         </div>
         <p className="text-sm text-foreground-muted">{t("pros.payAtSeller")}</p>
         <div className="flex flex-wrap gap-3">

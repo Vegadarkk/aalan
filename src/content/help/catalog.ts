@@ -9,7 +9,7 @@ import type { LegalSlug } from "@/config/legal-pages";
 // text with it. Never put a postal address, a company detail or a contact e-mail in an article:
 // link to the legal pages instead (they read config/legal).
 
-export const HELP_CATEGORIES = ["compte", "annonces", "recherche", "messagerie", "securite", "moderation", "donnees"] as const;
+export const HELP_CATEGORIES = ["compte", "annonces", "recherche", "messagerie", "boutiques", "securite", "moderation", "donnees"] as const;
 export type HelpCategory = (typeof HELP_CATEGORIES)[number];
 
 /** App pages an article may link to (labels: messages `Help.pages`). */
@@ -25,6 +25,9 @@ export const HELP_PAGES = {
   recherches: "/recherches",
   messages: "/messages",
   recours: "/recours",
+  espacePro: "/pro",
+  boutiques: "/boutiques",
+  tarifs: "/tarifs",
 } as const;
 export type HelpPage = keyof typeof HELP_PAGES;
 
@@ -47,6 +50,7 @@ export const HELP_SLUGS = [
   "donnees-personnelles",
   "role-d-aalan",
   "assistant-aalan",
+  "reussir-sa-boutique",
 ] as const;
 export type HelpSlug = (typeof HELP_SLUGS)[number];
 
@@ -76,6 +80,7 @@ export const HELP_META: Readonly<Record<HelpSlug, HelpArticleMeta>> = {
   "donnees-personnelles": { category: "donnees", links: [legal("confidentialite"), legal("cookies"), legal("mentions-legales")] },
   "role-d-aalan": { category: "donnees", links: [legal("cgu"), legal("droits-et-obligations"), help("eviter-les-arnaques")] },
   "assistant-aalan": { category: "donnees", links: [help("donnees-personnelles"), legal("confidentialite")] },
+  "reussir-sa-boutique": { category: "boutiques", links: [page("espacePro"), page("mesAnnonces"), page("boutiques"), page("tarifs")] },
 };
 
 /** A paragraph, a bullet list, numbered steps (a real sequence) or a caution note. */

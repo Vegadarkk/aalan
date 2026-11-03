@@ -1,6 +1,6 @@
 import { ApiError, apiDelete, apiGet, apiPost, apiPut, uploadToPresignedUrl, type UploadProgress } from "@/lib/auth/client";
 import { KYBC_DECLARED_TYPES, MAX_UPLOAD_BYTES, type KybcDeclaredType } from "@/lib/contracts/media";
-import type { SectionsInput, SectionsResponse } from "@/lib/contracts/catalog";
+import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse } from "@/lib/contracts/catalog";
 import { STOCK_API, type StockImportMode, type StockImportResponse, type StockListResponse } from "@/lib/contracts/stock-import";
 import { PRO_API, type KybcCompleteResponse, type KybcSignInput, type KybcSignResponse, type RentalCheckResponse, type ProAgencyInput, type ProAgencyResponse, type ProRentalInput, type ProRentalResponse, type ProSocialInput, type ProSocialResponse, type ProApplyInput, type ProApplyResponse, type ProMeResponse, type ProShopCardInput, type ProShopCardResponse } from "@/lib/contracts/pro";
 
@@ -12,6 +12,7 @@ export const loadProMe = () => apiGet<ProMeResponse>(PRO_API.me);
 
 export const saveProAgency = (input: ProAgencyInput) => apiPut<ProAgencyResponse>(PRO_API.agency, input);
 export const saveSections = (input: SectionsInput) => apiPut<SectionsResponse>(PRO_API.sections, input);
+export const savePins = (input: PinsInput) => apiPut<PinsResponse>(PRO_API.pins, input);
 export const saveRentalAgency = (input: ProRentalInput) => apiPut<ProRentalResponse>(PRO_API.rental, input);
 export const saveSocialLinks = (input: ProSocialInput) => apiPut<ProSocialResponse>(PRO_API.social, input);
 export const saveShopCard = (input: ProShopCardInput) => apiPut<ProShopCardResponse>(PRO_API.card, input);

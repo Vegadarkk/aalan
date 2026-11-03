@@ -102,7 +102,7 @@ export function ProCommitments({ scope, checked, onCheckedChange, error, classNa
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             onChange={(event) => onCheckedChange(event.target.checked)}
-            className="mt-0.5 size-4 shrink-0 accent-primary"
+            className="mt-0.5 size-5 shrink-0 accent-primary"
           />
           <span>{t(`accept.${scope}`)}</span>
         </label>

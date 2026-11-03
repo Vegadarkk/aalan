@@ -10,6 +10,7 @@ export const HELP_FR: HelpLocaleContent = {
     annonces: { title: "Déposer et gérer une annonce", description: "Dépôt, photos, modification, pause, renouvellement." },
     recherche: { title: "Rechercher", description: "Filtres, favoris, recherches enregistrées et alertes." },
     messagerie: { title: "Messagerie", description: "Écrire à un vendeur, répondre, bloquer quelqu'un." },
+    boutiques: { title: "Boutiques Pro", description: "Présenter sa boutique, la faire connaître, suivre ses visites." },
     securite: { title: "Sécurité", description: "Reconnaître une arnaque et s'en protéger." },
     moderation: { title: "Signalements et décisions", description: "Signaler un contenu, comprendre une décision, la contester." },
     donnees: { title: "Données et rôle d'Aalan", description: "Vos données, notre rôle d'hébergeur, l'Assistant Aalan." },
@@ -249,6 +250,32 @@ export const HELP_FR: HelpLocaleContent = {
         "Quand le service n'est pas disponible, l'assistant affiche les articles du centre d'aide qui correspondent à votre question.",
       ],
       keywords: ["assistant", "ia", "intelligence artificielle", "robot", "chatbot", "aide"],
+    },
+    "reussir-sa-boutique": {
+      title: "Réussir sa boutique",
+      summary: "Les réglages qui amènent les acheteurs sur votre vitrine : fiche, bannière, rayons, sélection, partage et statistiques.",
+      blocks: [
+        "Votre vitrine est la page publique de votre boutique vérifiée : vos annonces, votre fiche et vos avis vérifiés. Elle figure dans l'annuaire des boutiques, et le nom de votre boutique s'affiche sur chacune de vos annonces.",
+        {
+          steps: [
+            "Complétez votre fiche dans l'espace Pro : présentation en français et en arabe, ville, adresse, horaires d'ouverture et site web. Une fiche complète répond aux questions avant le premier message.",
+            "Choisissez la bannière de votre vitrine dans la même fiche.",
+            "Créez vos rayons (« Nouveautés », « Ramadan »…) dans l'espace Pro, puis rangez chaque annonce dans un rayon depuis « Mes annonces ».",
+            "Épinglez jusqu'à 4 annonces depuis « Mes annonces » : elles s'affichent dans « Sélection de la boutique », en tête de votre vitrine.",
+            "Partagez le lien de votre vitrine avec le bouton « Partager », sur vos réseaux et dans vos conversations.",
+          ],
+        },
+        {
+          list: [
+            "Des photos nettes, prises à la lumière du jour, et un titre précis (marque, modèle, taille) font cliquer dans les résultats.",
+            "Les acheteurs vous écrivent depuis une annonce ou directement depuis votre vitrine : répondez vite, la conversation reste dans « Mes messages ».",
+            "Un acheteur peut suivre votre boutique : il reçoit un e-mail quand vous publiez une nouvelle annonce.",
+            "L'espace Pro affiche les visites de votre vitrine, les vues de vos annonces, les messages reçus et vos annonces les plus vues, sur 7 ou 30 jours. Les chiffres sont mis à jour chaque nuit.",
+          ],
+        },
+        { note: "Aalan héberge votre vitrine mais n'intervient pas dans vos ventes : les paiements, les livraisons et les réservations se règlent directement entre vous et vos clients." },
+      ],
+      keywords: ["boutique", "vitrine", "pro", "professionnel", "magasin", "hanout", "épingler", "sélection", "rayon", "statistiques", "visites", "annuaire", "suivre"],
     },
   },
 };

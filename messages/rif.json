@@ -151,7 +151,8 @@
     "becomePro": "Ili d Pro",
     "createShop": "Snulfu taḥanut inu",
     "post": "Ssuffeɣ annonce",
-    "wallet": "Tasakkut n idrimen"
+    "wallet": "Tasakkut n idrimen",
+    "shopGuide": "Ad tesnejḥeḍ tafrent nnec"
   },
   "Legal": {
     "provisionalTitle": "Nnusxa i kra n lweqt",
@@ -200,7 +201,10 @@
       "favoris": "Ayen ḥemmleɣ",
       "recherches": "Tarzzut inu",
       "messages": "Tibratin inu",
-      "recours": "Tigtinin d urecwar"
+      "recours": "Tigtinin d urecwar",
+      "espacePro": "Tallunt inu n Pro",
+      "boutiques": "Tabdart n tḥuna",
+      "tarifs": "Ssumat"
     },
     "assistant": {
       "open": "Ssteqsi Amallal",
@@ -2927,6 +2931,16 @@
       "reauthTitle": "Kcem tikkelt nniḍen ḥima ad tbeddleḍ asaɣ-a",
       "reauthBody": "I taɣellist, asaɣ amaynu n udfaɛ ixs tukcimt n ddaw n 10 n tesdidin.",
       "reauth": "Kcem tikkelt nniḍen"
+    },
+    "pin": {
+      "add": "Ṣemmeṛ deg tfrent inu",
+      "remove": "Kkes-it zeg ustay",
+      "addOf": "Ṣemmeṛ deg tfrent inu: {title}",
+      "removeOf": "Kkes-it zeg ustay: {title}",
+      "added": "Tawennaḍt tettwaṣemmeṛ deg yixef n tfrent-nnek.",
+      "removed": "Tawennaḍt tettwakkes zeg ustay.",
+      "full": "Astay yeččur ({max, number} n twennaḍin)",
+      "position": "Astay n tfrent, {index, number} zeg {max, number}"
     }
   },
   "Map": {
@@ -4886,7 +4900,19 @@
         "sun": "Lḥed"
       }
     },
-    "contact": "Ssiwel i tḥanut"
+    "contact": "Ssiwel i tḥanut",
+    "follow": {
+      "follow": "Ḍfeṛ",
+      "followed": "Tettwaḍfeṛ",
+      "searchName": "Tafrent {name}",
+      "done": "Tḍefṛeḍ tafrent-a: ad ak-d-awḍent tiwennaḍin-s timaynutin s imayl.",
+      "manage": "Tirzzutin inu",
+      "limit": "Tewweḍḍ ar umeṭṭiq n tirzzutin i d-teḥḍiḍ. Kkes yiwet deg « Tirzzutin inu ».",
+      "failed": "Ur tezmireḍ ad tḍefṛeḍ tafrent-a tura. Ɛreḍ tikkelt nniḍen."
+    },
+    "pinned": {
+      "title": "Astay n tfrent"
+    }
   },
   "Options": {
     "title": "Ssbeyyen « {title} »",
@@ -6012,7 +6038,30 @@
       "stockImport": "Asekcem n stock s ufaylu",
       "recommended": "Nenṣeḥ-ak yis"
     },
-    "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt."
+    "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt.",
+    "compare": {
+      "title": "Ayen ɣa tawiḍ zeg wass amezwaru",
+      "feature": "Yella",
+      "unlimited": "Bla tilas",
+      "monthlyOrYearly": "S wayyur niɣ s useggas",
+      "days": "{days, number} n wussan",
+      "yes": "Yella",
+      "no": "Ur yelli",
+      "soon": "Qrib",
+      "note": "« Qrib »: yettwabeggen, ur d-yewḍ ɛad; ssuma ur tettbeddil xmi ɣa d-yaweḍ. Ikrediyen yellan d iwayyuren deg yimuttiyen, ttwasneqden deg tallit n Pass.",
+      "rows": {
+        "listings": "Annonces yeddren",
+        "photos": "Tugniwin i kul annonce",
+        "credits": "Ikrediyen n tmuɣli yellan",
+        "featured": "Annonces « À la Une » yellan (7 n wussan)",
+        "storefront": "Tafrent yettwasneqden: tafiche FR/AR, isragen, tabanirt, irayun, astay yettwaṣemmṛen",
+        "contact": "Tibratin d wuṭṭun zeg tfrent, « Ḍfeṛ tafrent »",
+        "stats": "Tidaddanin: tirzefin, tiẓri, tibratin, uṭṭunen i d-yebanen",
+        "stock": "Asekcem n stock s ufaylu",
+        "commitment": "Tallit",
+        "logo": "Alugu n tfrent"
+      }
+    }
   },
   "Withdrawal": {
     "metaTitle": "Tuɣalin x usɣi n crédits",

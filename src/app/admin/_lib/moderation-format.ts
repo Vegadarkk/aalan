@@ -1,16 +1,52 @@
 import { decisionTemplate } from "@/config/decision-templates";
 import { reportReason, SLA_MS, type ReportPriority } from "@/config/report-reasons";
+import { moroccoTime } from "@/lib/appointments/time";
 import type { AuthorityRequestView, DecisionView } from "@/lib/decisions/contracts";
+import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 
 // French wording and time arithmetic of the moderation back office (design D12, D24), client-safe:
 // the server pages and the client islands (live SLA timers) share it. The staff work in Morocco.
 
-export const TIME_ZONE = "Africa/Casablanca";
-export const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: TIME_ZONE });
-export const dateOnly = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: TIME_ZONE });
+// Every date of the back office is Morocco's wall clock, on the server and in the browser alike,
+// whatever the runtime's time zone data (Morocco is UTC+0 since 20 Sept 2026; stale browsers still
+// put Africa/Casablanca at UTC+1, audit zone 7 P1-3 / B11). See src/lib/i18n/morocco-time.ts.
 
-export const formatDateTime = (iso: string | null | undefined) => (iso ? dateTime.format(new Date(iso)) : "");
-export const formatDate = (iso: string | null | undefined) => (iso ? dateOnly.format(new Date(iso)) : "");
+/** The words that name the time zone on screen. */
+export const TIME_ZONE_LABEL = "heure du Maroc";
+
+const FORMATS = {
+  dateTime: { dateStyle: "medium", timeStyle: "short" },
+  date: { dateStyle: "medium" },
+  longDate: { dateStyle: "long" },
+} as const satisfies Record<string, Intl.DateTimeFormatOptions>;
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/** `at` (ISO string, epoch ms or Date) in Morocco's time, "" when missing or invalid. */
+export function formatMorocco(at: string | number | Date | null | undefined, style: keyof typeof FORMATS = "dateTime"): string {
+  if (at === null || at === undefined || at === "") return "";
+  const ms = at instanceof Date ? at.getTime() : typeof at === "number" ? at : Date.parse(at);
+  if (Number.isNaN(ms)) return "";
+  const timeZone = moroccoTimeZone(ms);
+  const key = `${style}|${timeZone}`;
+  let format = formatters.get(key);
+  if (!format) {
+    format = new Intl.DateTimeFormat("fr-FR", { ...FORMATS[style], timeZone });
+    formatters.set(key, format);
+  }
+  return format.format(ms);
+}
+
+export const formatDateTime = (iso: string | null | undefined) => formatMorocco(iso, "dateTime");
+export const formatDate = (iso: string | null | undefined) => formatMorocco(iso, "date");
+
+/** A `datetime-local` value ("2026-11-03T18:30") read as Morocco's wall clock whatever the browser's zone, as an ISO instant. */
+export function moroccoLocalToIso(value: string): string | undefined {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/.exec(value);
+  if (!match) return undefined;
+  const [, day = "", hours = "", minutes = ""] = match;
+  const at = moroccoTime(day, Number(hours) * 60 + Number(minutes));
+  return Number.isNaN(at) ? undefined : new Date(at).toISOString();
+}
 
 export const plural = (count: number, one: string, many: string) => `${count} ${count > 1 ? many : one}`;
 

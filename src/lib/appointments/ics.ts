@@ -1,11 +1,31 @@
 import { SITE_NAME } from "@/config/site";
 import type { Slot } from "@/lib/contracts/appointments";
+import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { slotEnd } from "./rules";
 
 // "Ajouter à mon agenda": an iCalendar event (RFC 5545) built in the browser from the confirmed
 // slot, downloaded as a .ics file. No server call, no third-party calendar link.
+// DTSTART/DTEND are floating local times (RFC 5545 §3.3.5 form #1): Morocco's wall clock, no Z,
+// no TZID. A meeting in Morocco happens at 10:00 on the spot whatever the phone's time zone data
+// says (audit zone 5 n°10: a phone with stale data showed a UTC time one hour late). DTSTAMP stays UTC.
 
 const stamp = (at: number) => new Date(at).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+
+/** Morocco's wall clock at `at` as an iCalendar floating DATE-TIME (YYYYMMDDTHHMMSS). */
+export function moroccoFloating(at: number): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: moroccoTimeZone(at),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(at);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${part("year")}${part("month")}${part("day")}T${part("hour")}${part("minute")}${part("second")}`;
+}
 
 /** RFC 5545 TEXT escaping, then folding at 75 octets is left to the readers (all accept long lines). */
 const text = (value: string) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
@@ -30,8 +50,8 @@ export function appointmentIcs(input: IcsInput): string {
     "BEGIN:VEVENT",
     `UID:${input.id}@${SITE_NAME.toLowerCase()}.ma`,
     `DTSTAMP:${stamp(input.now ?? Date.now())}`,
-    `DTSTART:${stamp(input.slot.start)}`,
-    `DTEND:${stamp(slotEnd(input.slot))}`,
+    `DTSTART:${moroccoFloating(input.slot.start)}`,
+    `DTEND:${moroccoFloating(slotEnd(input.slot))}`,
     `SUMMARY:${text(input.title)}`,
     `DESCRIPTION:${text(input.description)}`,
     ...(input.place ? [`LOCATION:${text(input.place)}`] : []),

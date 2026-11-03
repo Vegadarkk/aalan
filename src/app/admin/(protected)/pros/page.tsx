@@ -7,13 +7,12 @@ import { requirePageStaff } from "@/lib/auth/current-user";
 import { rentalCheckQueue } from "@/lib/pro/rental-check";
 import { proQueue } from "@/lib/pro/review";
 import { LEGAL_FORM_LABEL, RENTAL_CHECK_ISSUE_LABEL, formatIce } from "../../_components/pro-labels";
+import { formatMorocco } from "../../_lib/moderation-format";
 
 // KYBC queue of the back office (phase 7 design §4): submitted Pro applications, oldest first;
 // then the car rental licence documents the AI check left in doubt (decision 5). Moderators and admins.
 
 export const metadata: Metadata = { title: "Comptes Pro" };
-
-const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" });
 
 export default async function ProQueuePage() {
   await requirePageStaff(["moderator", "admin"]);
@@ -56,7 +55,7 @@ export default async function ProQueuePage() {
                       </span>
                       {item.iceFormatOk ? null : <Badge variant="warning">Format ICE à vérifier</Badge>}
                       <Badge>{item.pieces > 1 ? `${item.pieces} pièces` : "1 pièce"}</Badge>
-                      <span className="text-foreground-muted">{dateTime.format(new Date(item.submittedAt))}</span>
+                      <span className="text-foreground-muted">{formatMorocco(item.submittedAt)}</span>
                     </span>
                   </Link>
                 </li>
@@ -94,7 +93,7 @@ export default async function ProQueuePage() {
                     <span className="font-mono tabular-nums" dir="ltr">
                       N° {item.agrementRef}
                     </span>
-                    <span className="text-foreground-muted">{dateTime.format(new Date(item.submittedAt))}</span>
+                    <span className="text-foreground-muted">{formatMorocco(item.submittedAt)}</span>
                   </span>
                 </Link>
               </li>

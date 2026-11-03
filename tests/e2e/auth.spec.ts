@@ -302,7 +302,7 @@ test.describe("account", () => {
     const file = await downloading;
     expect(file.suggestedFilename()).toMatch(/^aalan-mes-donnees-\d{4}-\d{2}-\d{2}\.json$/);
     const data = JSON.parse(await readFile(await file.path(), "utf8")) as { format: string; account: { email: string } };
-    expect(data.format).toBe("joutiya.account-export");
+    expect(data.format).toBe("aalan.account-export");
     expect(data.account.email).toBe(email);
 
     // The closure: the time line, then an explicit acknowledgement before the button works.

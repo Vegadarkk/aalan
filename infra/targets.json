@@ -78,13 +78,13 @@
     },
     "staging": {
       "firebase": {
-        "projectId": "joutiya-staging",
-        "projectNumber": "365736224142",
+        "projectId": "aalan-staging",
+        "projectNumber": "410714423718",
         "firestoreLocation": "europe-west9",
-        "appId": "1:365736224142:web:c8243457d7f0423f8430df"
+        "appId": "1:410714423718:web:fa8c5271d7b67d70c70f67"
       },
       "google": {
-        "oauthClientId": "365736224142-cs8si5388vk1g12uneaack086jhr6m5s.apps.googleusercontent.com"
+        "oauthClientId": "410714423718-amfpvbaf15r3cppm60s5m311tuh8ihe9.apps.googleusercontent.com"
       },
       "turnstile": {
         "siteKey": "0x4AAAAAAFYY7P8KeaWCGihV"

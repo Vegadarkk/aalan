@@ -75,8 +75,8 @@ describe("app.env names", () => {
       SITE_URL: "https://staging.aalan.ma",
       ADMIN_HOST: "admin-staging.aalan.ma",
       CSP_REPORT_ONLY: "true",
-      FIREBASE_SERVICE_ACCOUNT: "joutiya-web@joutiya-staging.iam.gserviceaccount.com",
-      GOOGLE_CLOUD_PROJECT: "joutiya-staging",
+      FIREBASE_SERVICE_ACCOUNT: "aalan-web@aalan-staging.iam.gserviceaccount.com",
+      GOOGLE_CLOUD_PROJECT: "aalan-staging",
       TURNSTILE_SITE_KEY: "0x4AAAAAAFYY7P8KeaWCGihV",
       MEDIA_BASE_URL: "https://media-staging.joutiya.ma",
     });

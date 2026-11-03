@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/firebase/admin";
+import { db, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { parseUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { proProfileFromSnapshot, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { COLLECTIONS } from "@/lib/db/schemas";
@@ -45,8 +45,50 @@ function toShop(profile: ProProfileRecord, owner: UserRecord): DirectoryShop {
     sector: profile.sector ?? "general",
     example: profile.example === true,
     certified: profile.certified !== undefined && profile.example !== true,
+    ownerPublicId: owner.publicId,
     listings: owner.stats.activeListings,
+    ...(profile.bannerKey ? { bannerKey: profile.bannerKey } : {}),
   };
+}
+
+/** One process-wide copy for 5 minutes, the ISR period: the home page's row and the shop names of
+ *  listing cards share it instead of each reading every shop again. The directory reads afresh
+ *  (`fresh`), as before, and refreshes the copy: a new shop is listed on its next render. */
+const SHARED_TTL_MS = 5 * 60_000;
+let shared: { at: number; shops: Promise<DirectoryShop[]> } | null = null;
+
+/** listDirectoryShops through the shared copy; a failed read is not kept. */
+export function directoryShops(now = Date.now(), options: { fresh?: boolean } = {}): Promise<DirectoryShop[]> {
+  if (!options.fresh && shared && now - shared.at < SHARED_TTL_MS) return shared.shops;
+  const entry = { at: now, shops: listDirectoryShops() };
+  shared = entry;
+  entry.shops.catch(() => {
+    if (shared === entry) shared = null;
+  });
+  return entry.shops;
+}
+
+const NO_NAMES: ReadonlyMap<string, string> = new Map();
+let names: { shops: Promise<DirectoryShop[]>; map: Promise<ReadonlyMap<string, string>> } | null = null;
+
+/**
+ * Shop names by their owner's publicId, for the cards of Pro listings (UX audit of the Pro shops,
+ * lot 2), from the shared copy. Empty without Firebase or when the directory cannot be read: a card
+ * then shows the « Pro » badge alone.
+ */
+export function shopNamesByPublicId(): Promise<ReadonlyMap<string, string>> {
+  if (!isFirebaseConfigured()) return Promise.resolve(NO_NAMES);
+  const shops = directoryShops();
+  if (names?.shops !== shops) {
+    names = { shops, map: shops.then((list) => new Map(list.map((shop) => [shop.ownerPublicId, shop.name] as const))).catch(() => NO_NAMES) };
+  }
+  return names.map;
+}
+
+/** Tests: forget the shared copy. */
+export function resetDirectoryShopsCache(): void {
+  shared = null;
+  names = null;
 }
 
 /** The shops of the directory, unsorted (the view sorts and filters). */

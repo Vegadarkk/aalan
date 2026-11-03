@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BriefcaseBusiness, Camera, ImageOff } from "lucide-react";
+import { BriefcaseBusiness, Camera, ImageOff, Store } from "lucide-react";
 import { rentalFragment } from "@/components/rental/rental-day";
 import { BoostBadge } from "@/components/search/boost-badge";
 import type { CardBadge } from "@/components/search/filter-model";
@@ -35,7 +35,7 @@ export const LISTING_CARD_SIZES = "(min-width: 1024px) 18rem, (min-width: 640px)
 
 export interface ListingCardProps {
   /** `rental`: a car rental in a search by dates (estimated total, freshness). */
-  listing: PublicListingCard & Pick<SearchCard, "rental">;
+  listing: PublicListingCard & Pick<SearchCard, "rental" | "shopName">;
   mediaBaseUrl: string | null;
   locale: Locale;
   /** Heading level of the title inside the surrounding page. */
@@ -109,6 +109,15 @@ export function ListingCard({ listing, mediaBaseUrl, locale, headingLevel = "h3"
         <p data-testid="card-rental" className="flex flex-col text-xs tabular-nums">
           {listing.rental.total !== null ? <span className="font-medium">{t(datedRental(listing.subcategoryId)?.unit === "night" ? "rentalTotalNights" : "rentalTotal", { days: listing.rental.days, total: formatPrice(listing.rental.total, locale) })}</span> : null}
           {listing.rental.fresh ? null : <span className="text-warning">{t("rentalToConfirm")}</span>}
+        </p>
+      ) : null}
+      {/* The shop of a Pro's listing (UX audit of the Pro shops, lot 2): who sells, before the click. */}
+      {listing.shopName ? (
+        <p data-testid="card-shop" className="flex min-w-0 items-center gap-1 text-xs font-medium text-structure dark:text-gold-300">
+          <Store className="size-3.5 shrink-0" aria-hidden="true" />
+          <span dir="auto" className="truncate">
+            {listing.shopName}
+          </span>
         </p>
       ) : null}
       <p className="flex min-w-0 flex-wrap gap-x-2 text-xs text-foreground-muted">

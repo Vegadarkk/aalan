@@ -436,6 +436,37 @@ export const listingStatsSchema = z
   .strict();
 export type ListingStatsDoc = z.infer<typeof listingStatsSchema>;
 
+const statsCount = z.number().int().min(0);
+/** One day of a shop's counters (UTC day), as stats-flush writes it. */
+export const shopStatsDaySchema = z
+  .object({
+    /** Storefront views, one per visitor and day. */
+    v: statsCount,
+    /** Views of the shop's listings, one per visitor, listing and day. */
+    lv: statsCount,
+    /** Conversations started, from the storefront or about one of its listings. */
+    c: statsCount,
+    /** Numbers and WhatsApp revealed (first reveal of each member). */
+    r: statsCount,
+    /** The day's most viewed listings: listingId -> [views, conversations] (at most 50). */
+    l: z.record(z.string().max(64), z.tuple([statsCount, statsCount])).optional(),
+  })
+  .strict();
+export type ShopStatsDay = z.infer<typeof shopStatsDaySchema>;
+
+/**
+ * shopStats/{proId} (UX audit of the Pro shops, lot 1): the shop's counters per UTC day, written
+ * once a night by stats-flush from the Valkey counters (src/lib/stats/counters.ts); the Pro space
+ * reads the last 30 days. Days older than ~35 days are deleted by the same writes.
+ */
+export const shopStatsSchema = z
+  .object({
+    days: z.record(z.string().regex(/^\d{4}-\d{2}-\d{2}$/), shopStatsDaySchema),
+    updatedAt: ts,
+  })
+  .strict();
+export type ShopStatsDoc = z.infer<typeof shopStatsSchema>;
+
 /** Every purpose of §5; phase 3 signs `listing` only (contracts/media.ts). */
 export const UPLOAD_DOC_PURPOSES = ["listing", "kyb", "avatar", "pro_logo"] as const;
 export const UPLOAD_BUCKETS = ["media", "private"] as const;
@@ -506,7 +537,10 @@ export type ContentOpDoc = z.infer<typeof contentOpSchema>;
 export const revealLogSchema = z
   .object({
     viewerUid: uid,
+    /** The listing revealed, or the shop's proId (same alphabet and length) when `kind` is "shop". */
     listingId: listingIdSchema,
+    /** A reveal from a shop's storefront (UX audit of the Pro shops, lot 1); absent for a listing. */
+    kind: z.literal("shop").optional(),
     ipPrefixHash: z.string().min(1).max(64),
     deviceHash: z.string().min(1).max(64),
     at: ts,
@@ -715,8 +749,12 @@ export type OfferEventDoc = z.infer<typeof offerEventSchema>;
 /** conversations/{cid}: one per (listing, buyer); cid derived on the server (D1). Served to participants by the API (D2). */
 export const conversationSchema = z
   .object({
+    /** The listing, or the shop's proId (same alphabet and length) when `subject` is "shop". */
     listingId: listingIdSchema,
+    /** The listing's slugId, or the storefront segment `{slug}-{proId}` of a shop conversation. */
     listingSlugId: slugIdSchema,
+    /** A conversation with a shop from its storefront, about no listing (UX audit of the Pro shops, lot 1). */
+    subject: z.literal("shop").optional(),
     sellerUid: uid,
     /** Pro listing: the shop's shared inbox (phase 7). */
     sellerProId: z.string().max(64).optional(),
@@ -1244,6 +1282,8 @@ export const COLLECTIONS = {
   // Phase 3
   listings: "listings",
   listingStats: "listingStats",
+  /** shopStats/{proId}: a shop's daily counters (src/lib/stats/flush.ts). */
+  shopStats: "shopStats",
   uploads: "uploads",
   searchOutbox: "searchOutbox",
   contentOps: "contentOps",

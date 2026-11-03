@@ -43,6 +43,7 @@ function row(n: number, updatedAt: number, patch: Partial<ConversationView> = {}
     cid: cid(n),
     listingId: `listing${n}`,
     listingSlugId: `velo-listing${n}`,
+    subject: "listing",
     listing: { title: `Annonce ${n}`, price: 1000, isDonation: false, photo: null },
     role: "buyer",
     counterpart: { publicId: "abcdefghjk", displayName: "Salma" },

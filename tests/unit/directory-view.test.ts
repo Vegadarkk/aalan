@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { countByCity, countBySector, directoryPath, excerptOf, filterShops, parseDirectorySegments, sectorBySegment, sortShops, type DirectoryShop } from "@/lib/pro/directory-view";
+import { countByCity, countBySector, directoryPath, excerptOf, filterShops, homeShops, parseDirectorySegments, sectorBySegment, sortShops, type DirectoryShop } from "@/lib/pro/directory-view";
 
 // The shop directory's pure side: path segments <-> filter, sorting, facet counts, excerpts.
 
 function shop(over: Partial<DirectoryShop> & { proId: string }): DirectoryShop {
-  return { segment: `${over.proId}-slug`, name: over.proId, excerpt: "", citySlug: "casablanca", sector: "general", example: false, certified: false, listings: 0, ...over };
+  return { segment: `${over.proId}-slug`, name: over.proId, excerpt: "", citySlug: "casablanca", sector: "general", example: false, certified: false, ownerPublicId: `pub-${over.proId}`, listings: 0, ...over };
 }
 
 describe("parseDirectorySegments", () => {
@@ -82,5 +82,20 @@ describe("excerptOf", () => {
     expect(excerptOf(long, 200)).toBe(long);
     expect(excerptOf("a".repeat(50), 20)).toBe(`${"a".repeat(20)}…`);
     expect(excerptOf("Ouvert tous les jours, sauf le dimanche.", 22)).toBe("Ouvert tous les jours…");
+  });
+});
+
+describe("homeShops", () => {
+  it("keeps four shops for the home page: real ones first, the certified, then the fullest", () => {
+    const shops = [
+      shop({ proId: "example", example: true, listings: 40 }),
+      shop({ proId: "empty" }),
+      shop({ proId: "small", listings: 2 }),
+      shop({ proId: "big", listings: 30 }),
+      shop({ proId: "certified", certified: true, listings: 1 }),
+    ];
+    expect(homeShops(shops).map((entry) => entry.proId)).toEqual(["certified", "big", "small", "empty"]);
+    expect(homeShops(shops, 2).map((entry) => entry.proId)).toEqual(["certified", "big"]);
+    expect(homeShops([])).toEqual([]);
   });
 });

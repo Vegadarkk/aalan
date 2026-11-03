@@ -23,7 +23,7 @@ import { MESSAGE_TEXT_MAX } from "@/lib/contracts/endpoints";
 import { isolate } from "@/lib/i18n/bidi";
 import { formatPrice, parsePriceInput } from "@/lib/listings/client/format";
 import { moroccoToday, rentalDuration } from "@/lib/listings/rental-availability";
-import { startConversation } from "@/lib/messaging/client";
+import { startConversation, startShopConversation } from "@/lib/messaging/client";
 import type { OfferProblem } from "@/lib/offers/rules";
 import { RENTAL_PICKUP_MAX, rentalRequestProblem } from "@/lib/rental-requests/rules";
 import type { RentalDates } from "@/lib/search/params";
@@ -98,12 +98,14 @@ export interface MessageDialogProps {
   initialText?: string;
   /** Query of the thread opened once sent (`rdv=test_drive` opens the slot picker). */
   threadQuery?: string;
+  /** To a shop from its storefront: `listingId` is its proId, the message is about no listing (UX audit lot 1). */
+  shop?: boolean;
 }
 
 /** Texts of a stay (ListingPage.contact.compose.home), the car rental's otherwise. */
 type RentalComposeKey = "rentalTitle" | "rentalTitleFallback" | "rentalDates" | "rentalPickup" | "rentalPickupPlaceholder" | "rentalDraft" | "rentalDraftPickup" | "rentalDatesMissing" | "rentalSafety";
 
-export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sellerName, adultsOnly = false, intent = "message", rentalUnit = "day", onSignedOut, initialText, threadQuery, offerPrice }: MessageDialogProps) {
+export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sellerName, adultsOnly = false, intent = "message", rentalUnit = "day", onSignedOut, initialText, threadQuery, offerPrice, shop = false }: MessageDialogProps) {
   const t = useTranslations("ListingPage.contact.compose");
   const offers = useTranslations("Offers.listing");
   const offerDialog = useTranslations("Offers.dialog");
@@ -174,7 +176,9 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
     setPending(true);
     setError(null);
     try {
-      const { cid } = await startConversation({
+      const { cid } = shop
+        ? await startShopConversation(listingId, { text: text.trim(), turnstileToken: token })
+        : await startConversation({
         listingId,
         text: text.trim(),
         turnstileToken: token,
@@ -227,7 +231,11 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                       ? t("title", { name: isolate(sellerName) })
                       : t("titleFallback")}
               </Dialog.Title>
-              {listingTitle ? <Dialog.Description className="text-foreground-muted text-pretty">{t("about", { title: isolate(listingTitle) })}</Dialog.Description> : null}
+              {shop ? (
+                <Dialog.Description className="text-foreground-muted text-pretty">{t("aboutShop")}</Dialog.Description>
+              ) : listingTitle ? (
+                <Dialog.Description className="text-foreground-muted text-pretty">{t("about", { title: isolate(listingTitle) })}</Dialog.Description>
+              ) : null}
             </div>
 
             {rental ? (
@@ -289,7 +297,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                 dir="auto"
                 value={text}
                 maxLength={MESSAGE_TEXT_MAX}
-                placeholder={t("placeholder")}
+                placeholder={shop ? t("placeholderShop") : t("placeholder")}
                 aria-invalid={problem ? true : undefined}
                 aria-describedby={problem ? `${counterId}-problem` : remaining <= 200 ? counterId : undefined}
                 className="min-h-28 resize-none"

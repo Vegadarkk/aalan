@@ -11,3 +11,8 @@ const VERSION = "conv:v1";
 export function conversationId(listingId: string, buyerUid: string): string {
   return createHash("sha256").update(`${VERSION}:${listingId}:${buyerUid}`).digest("base64url").slice(0, 22);
 }
+
+/** A buyer's conversation with a shop from its storefront: its own namespace, never a listing's. */
+export function shopConversationId(proId: string, buyerUid: string): string {
+  return conversationId(`shop:${proId}`, buyerUid);
+}

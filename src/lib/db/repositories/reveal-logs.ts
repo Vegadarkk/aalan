@@ -35,6 +35,8 @@ export interface RevealLogInput {
   ip: string;
   /** Rate-limit device key (`d:<id>` or `anon:<ip bucket>`). */
   deviceKey: string;
+  /** "shop": `listingId` is the shop's proId (a reveal from its storefront). */
+  kind?: "shop";
   now?: Date;
 }
 
@@ -43,6 +45,7 @@ export function buildRevealLog(input: RevealLogInput): RevealLogDoc {
   return revealLogSchema.parse({
     viewerUid: input.viewerUid,
     listingId: input.listingId,
+    ...(input.kind ? { kind: input.kind } : {}),
     ipPrefixHash: ipPrefixHash(input.ip),
     deviceHash: deviceHash(input.deviceKey),
     at: now,

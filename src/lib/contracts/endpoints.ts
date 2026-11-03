@@ -84,6 +84,10 @@ export const MESSAGING_API = {
   appointment: (cid: string) => `/api/conversations/${cid}/appointment`,
   /** POST RentalRequestAction -> 201 RentalRequestResponse (contracts/rental-requests.ts). */
   rentalRequest: (cid: string) => `/api/conversations/${cid}/rental-request`,
+  /** POST { text, turnstileToken }: first message to a shop from its storefront (UX audit lot 1). */
+  shopConversation: (proId: string) => `/api/shops/${encodeURIComponent(proId)}/conversations`,
+  /** POST { turnstileToken? } -> PhoneRevealResponse: the shop's verified number. */
+  shopPhone: (proId: string) => `/api/shops/${encodeURIComponent(proId)}/phone`,
   /** GET { total } (Valkey). */
   unread: "/api/messages/unread",
   /** GET text/event-stream of MessagingEvent (session cookie; one per tab, D2). */
@@ -147,4 +151,9 @@ export const SELLER_PAYMENT_API = {
   admin: "/api/admin/seller-payments",
   adminReview: "/api/admin/seller-payments/review",
   adminShop: (proId: string) => `/api/admin/pros/${encodeURIComponent(proId)}/payment`,
+} as const;
+
+/** View beacon of the cached listing and storefront pages (shop counters, src/lib/stats). */
+export const STATS_API = {
+  view: "/api/stats/view",
 } as const;

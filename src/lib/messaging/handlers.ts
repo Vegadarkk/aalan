@@ -27,10 +27,12 @@ import { actOnRentalRequest, rentalListingUnit, requestAction } from "@/lib/rent
 import { assertOfferListing } from "@/lib/offers/listing";
 import { actOnOffer, makeAction } from "@/lib/offers/service";
 import { verifyTurnstile } from "@/lib/security/turnstile";
-import { conversationId } from "./ids";
+import { conversationId, shopConversationId } from "./ids";
+import { startShopConversationSchema } from "@/lib/contracts/messaging";
+import { proIdSchema } from "@/lib/pro/profile-schema";
 import { screenPlace } from "./place";
 import { MESSAGING_READ_QUOTAS, conversationRow, inboxPage, threadPage, type Charged } from "./reads";
-import { MESSAGING_QUOTAS, changeConversationState, readConversation, sendMessage, startConversation, unreadBadge, type MessagingActor } from "./service";
+import { MESSAGING_QUOTAS, changeConversationState, readConversation, sendMessage, startConversation, startShopConversation, unreadBadge, type MessagingActor } from "./service";
 import { markSeen } from "./unread";
 import { enforceSendLimits } from "./send-limits";
 import { decodeCursor, type CursorKind } from "./views";
@@ -162,6 +164,25 @@ export async function handleStart(request: Request): Promise<Response> {
   // One millisecond later: the request's step reads after the message in the thread.
   if (rental && listing) await actOnRentalRequest(actor, body.cid, requestAction(rental), new Date(now.getTime() + 1), listing);
   if (offer && offerPrice !== undefined) await actOnOffer(actor, body.cid, makeAction(offer), new Date(now.getTime() + 1), offerPrice);
+  return json(body, { status: 201 });
+}
+
+/**
+ * POST /api/shops/{proId}/conversations {text, turnstileToken} -> 201 StartConversationResponse: a
+ * first message to a shop from its storefront (UX audit of the Pro shops, lot 1). The order of
+ * handleStart: send limits and quotas, Turnstile before any read, then the shop.
+ */
+export async function handleStartShop(request: Request, rawProId: unknown): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true, checkRevoked: true });
+  const proId = proIdSchema.safeParse(rawProId);
+  if (!proId.success) throw notFound();
+  const input = await readJson(request, startShopConversationSchema, MESSAGE_BODY_MAX);
+  await enforceSendLimits(auth.user.uid, shopConversationId(proId.data, auth.user.uid));
+  await assertQuotas(MESSAGING_QUOTAS);
+  const identity = requestIdentity(request.headers);
+  const check = await verifyTurnstile(input.turnstileToken, { action: "message", remoteIp: identity.ip, hostname: new URL(serverEnv().SITE_URL).hostname });
+  if (!check.ok) throw new HttpError(403, "turnstile_failed", undefined, { details: { codes: check.codes } });
+  const body: StartConversationResponse = await startShopConversation(actorOf(auth), { proId: proId.data, text: input.text });
   return json(body, { status: 201 });
 }
 

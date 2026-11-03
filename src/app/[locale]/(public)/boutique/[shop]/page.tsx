@@ -2,6 +2,8 @@ import { Fragment, cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { BadgeCheck, CalendarDays, Flag, MapPin } from "lucide-react";
+import { ContactBar } from "@/components/listing/contact-bar";
+import { ViewBeacon } from "@/components/stats/view-beacon";
 import { ShareButton } from "@/components/listing/share-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
@@ -228,7 +230,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
           </span>
         </header>
         </div>
-        {store.example ? <ExampleBanner scope="shop" /> : null}
+        {store.example ? <ExampleBanner scope="shop" /> : <ViewBeacon scope="shop" id={store.proId} />}
 
         {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
         {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}
@@ -248,6 +250,16 @@ export default async function StorefrontPage({ params }: { params: Params }) {
             </section>
           ) : null}
           <div className={about ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 md:col-span-2"}>
+            {/* Contact without a listing (UX audit lot 1): a message to the shop, its number or WhatsApp
+                when the Pro shows them. Phones get the fixed bar; an example shop is never contactable. */}
+            {store.example ? null : (
+              <section id="contact" aria-labelledby="storefront-contact" className="flex scroll-mt-24 flex-col gap-3 lg:rounded-lg lg:border lg:border-border lg:bg-surface lg:p-4">
+                <h2 id="storefront-contact" className="sr-only text-base font-semibold lg:not-sr-only">
+                  {t("contact")}
+                </h2>
+                <ContactBar shop listingId={store.proId} slugId={store.segment} sellerPublicId={seller.publicId} sellerName={store.name} showPhone={store.contact.phone} whatsapp={store.contact.whatsapp} />
+              </section>
+            )}
             <ShopPracticalInfo address={store.address} citySlug={store.citySlug} hours={store.hours} website={store.website} locale={locale} />
             {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
             <FeeSchedule text={store.feeSchedule} />

@@ -9,10 +9,11 @@ import { Container } from "./container";
 import { showsCategoryRow } from "./shell-paths";
 
 // The category row under the header (Carte vivante, lot 1): the category pages as floating chips in
-// one scrolling line, then two doors in their own style, the directory of verified shops
+// one scrolling line, and two doors in their own style, the directory of verified shops
 // (« Boutiques », owner's choice of 30 Oct 2026) and the guide of the administrative procedures
-// (« Démarches »). Below lg the line bleeds to the screen edge, fades out at its end (room after the
-// last chip so that it scrolls clear of the fade) and the two doors close it, reached by a swipe.
+// (« Démarches »). Below lg the line bleeds to the screen edge and fades out at its end (room after
+// the last chip so that it scrolls clear of the fade); « Boutiques » opens it, in view without a
+// swipe (UX audit of the Pro shops, 9: it sat 1 800 px off a phone screen), « Démarches » closes it.
 // From lg the thirteen chips never fit the line (owner's report of 30 Oct 2026: the last ones were
 // out of reach on a desktop, the scrollbar hidden), so the line ends with a pair of arrows, a mouse
 // drag also scrolls it, and the two doors stand after it, fixed, always in view. Each link is a
@@ -53,9 +54,10 @@ export function CategoryChips({ items, label, shops, guide, previous, next }: Ca
       </span>
     </Link>
   );
+  const divider = <span className="h-5 w-px bg-border-strong" aria-hidden="true" />;
   const doors = (
     <>
-      <span className="h-5 w-px bg-border-strong" aria-hidden="true" />
+      {divider}
       {door(DIRECTORY_PATH, ShoppingBag, shops)}
       {door("/demarches", ScrollText, guide)}
     </>
@@ -84,6 +86,10 @@ export function CategoryChips({ items, label, shops, guide, previous, next }: Ca
               "lg:mx-0 lg:scroll-px-0 lg:ps-0 lg:pe-12",
             )}
           >
+            <li data-testid="category-doors" className="flex shrink-0 snap-start items-center gap-1.5 lg:hidden">
+              {door(DIRECTORY_PATH, ShoppingBag, shops)}
+              {divider}
+            </li>
             {items.map((item) => {
               const href = `/c/${item.id}`;
               return (
@@ -95,7 +101,8 @@ export function CategoryChips({ items, label, shops, guide, previous, next }: Ca
               );
             })}
             <li data-testid="category-doors" className="flex shrink-0 snap-start items-center gap-1.5 lg:hidden">
-              {doors}
+              {divider}
+              {door("/demarches", ScrollText, guide)}
             </li>
           </ul>
         </RailScroller>

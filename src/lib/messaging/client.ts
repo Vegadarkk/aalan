@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from "@/lib/auth/client";
 import { MESSAGING_API } from "@/lib/contracts/endpoints";
-import type { ConversationResponse, ConversationsPage, ConversationStateRequest, MessagesPage, SendMessageResponse, StartConversationResponse, UnreadResponse } from "@/lib/contracts/messaging";
+import type { ConversationResponse, ConversationsPage, ConversationStateRequest, MessagesPage, SendMessageResponse, StartConversationResponse, StartShopConversationRequest, UnreadResponse } from "@/lib/contracts/messaging";
 import type { StartConversationWithOffer } from "@/lib/contracts/offers";
 
 // Browser side of the messaging API (design phase-5 D2-D9): same-origin JSON calls with the CSRF
@@ -27,7 +27,18 @@ export function fetchInbox(options: { cursor?: string; archived?: boolean } = {}
  */
 export async function findListingConversation(listingId: string): Promise<string | null> {
   const page = await fetchInbox();
-  return page.conversations.find((row) => row.listingId === listingId && row.role === "buyer")?.cid ?? null;
+  return page.conversations.find((row) => row.listingId === listingId && row.subject === "listing" && row.role === "buyer")?.cid ?? null;
+}
+
+/** My conversation with a shop from its storefront among my most recent ones, or null (as above). */
+export async function findShopConversation(proId: string): Promise<string | null> {
+  const page = await fetchInbox();
+  return page.conversations.find((row) => row.listingId === proId && row.subject === "shop" && row.role === "buyer")?.cid ?? null;
+}
+
+/** POST the first message to a shop from its storefront (Turnstile token of the "message" action). */
+export function startShopConversation(proId: string, input: StartShopConversationRequest): Promise<StartConversationResponse> {
+  return apiPost<StartConversationResponse>(MESSAGING_API.shopConversation(proId), input);
 }
 
 /** GET one inbox row (404 when deleted for me or not mine). */

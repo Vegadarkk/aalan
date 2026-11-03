@@ -86,6 +86,10 @@
       "guideHint": "Ṭumubil, axxam, auto-entrepreneur, MRE : tiseddarin d lewraq",
       "pricing": "Ssumat",
       "pricingHint": "Ssuffeɣ bla idrimen, options ḥima ad d-yban annonce nnec, d iɛerḍen n Pro"
+    },
+    "shops": {
+      "title": "Tiḥuna d agences yettwasenqden",
+      "all": "Ẓar akk tiḥuna"
     }
   },
   "Welcome": {
@@ -3125,7 +3129,9 @@
           "rentalDraftPickup": "Azul, xseɣ ad qqimeɣ deg « {title} » zi {from} ar {to} ({days, plural, one {# n yiḍ} other {# n iḍan}}): {pickup}. Mala yella?",
           "rentalDatesMissing": "Xtar ass n tuɣda d wass n tuffɣa.",
           "rentalSafety": "Aqqimi yettwakemmal nican d umessufeɣ n annonce. {site} war tettaɣ wala tasbeqt wala caution: war tefkeḍ walu zzat ma ad tesneqdeḍ amessufeɣ d uxxam."
-        }
+        },
+        "aboutShop": "Tabrat nnec ad taweḍ ɣer tḥanut, war ma tettwaqqen ɣer ca n annonce.",
+        "placeholderShop": "Azul, ɣari asteqsi x tɣawsiwin niɣ x lxedmat nnwem."
       },
       "visit": "Ssuter tirzi",
       "visitShort": "Tirzi",
@@ -3140,7 +3146,8 @@
         "rentalHint": "Azen ass n tuɣda d wass n tuffɣa: amessufeɣ ad dak-isentem mala yella deg tibratin. Walu war yettwaxelleṣ deg usit.",
         "signInRental": "Kcem ḥima ad tazneḍ asuter n uqqimi. Uca ad d-tuɣaleḍ ɣer annonce-a."
       },
-      "variantText": "Azul, « {title} » s {variant} ɛad yella?"
+      "variantText": "Azul, « {title} » s {variant} ɛad yella?",
+      "ownShop": "Ta d taḥanut nnec. Imerza ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen."
     },
     "safety": {
       "title": "Inaɣen n taɣellist",
@@ -4160,6 +4167,24 @@
       "saved": "Tafiche n tḥanut tettwaḥrez",
       "failed": "Tafiche ur tettwaḥrez ca",
       "view": "Ẓer tafiche x tfrent"
+    },
+    "stats": {
+      "title": "Tisisniyin",
+      "period": "Tallit",
+      "last7": "7 n wussan",
+      "last30": "30 n wussan",
+      "tiles": {
+        "storefrontViews": "Tirzaf ɣer tfrent",
+        "listingViews": "Tiẓri n annonces",
+        "contacts": "Tibratin i d-yewḍen",
+        "reveals": "Inemra i yettwaskanen"
+      },
+      "topTitle": "Annonces i yettwaẓren ugar (30 n wussan)",
+      "topCounts": "{views, plural, one {# n tiẓri} other {# n tiẓri}} · {contacts, plural, one {# n tbrat} other {# n tbratin}}",
+      "gone": "Annonce tettwakkes",
+      "unavailable": "Tisisniyin war llint ura. Ɛawed ticki.",
+      "note": "Ttwasnefnint yal tameddit, ar {date}. Tarzeft tettwaḥseb yiwet n tikkelt i yal yiwen deg wass; « Tibratin i d-yewḍen » ḥesbent timeslayin timaynutin.",
+      "noteLoading": "Ttwasnefnint yal tameddit."
     }
   },
   "Messaging": {
@@ -4232,7 +4257,8 @@
       "blockedMe": "War tzemmreḍ ca ad tariḍ deg tmeslayt-a.",
       "counterpartClosed": "{name} yeqqen amiḍan nnes: tzemmreḍ ad tɛawdeḍ ad teɣreḍ tameslayt, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "frozen": "Tameslayt-a tettwaḥbes: tzemmreḍ ad tt-teɣreḍ, maca war tzemmreḍ ca ad tariḍ deg-s.",
-      "suspended": "Amiḍan nnec yettwaḥbes: tzemmreḍ ad teɣreḍ timeslayin nnec, maca war tzemmreḍ ca ad tazneḍ tabrat."
+      "suspended": "Amiḍan nnec yettwaḥbes: tzemmreḍ ad teɣreḍ timeslayin nnec, maca war tzemmreḍ ca ad tazneḍ tabrat.",
+      "shop": "Ẓar taḥanut « {title} »"
     },
     "review": {
       "label": "Efk tamuɣli nnec",
@@ -4859,7 +4885,8 @@
         "sat": "Sebt",
         "sun": "Lḥed"
       }
-    }
+    },
+    "contact": "Ssiwel i tḥanut"
   },
   "Options": {
     "title": "Ssbeyyen « {title} »",

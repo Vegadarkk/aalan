@@ -7,6 +7,7 @@ import { SOCIAL_HANDLE_MAX, SOCIAL_NETWORKS } from "@/config/social-links";
 import { shopSectionsSchema } from "@/lib/contracts/catalog";
 import { sellerInfoInputSchema } from "@/lib/contracts/seller-payment";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
+import { BANNER_KEYS } from "@/config/storefront";
 import { KYBC_MAX_PIECES, KYBC_STATUSES, proLegalSchema } from "./kybc";
 import { PLAN_SOURCES, PRO_STATES } from "./lifecycle";
 
@@ -43,6 +44,42 @@ export type RentalPayment = (typeof RENTAL_PAYMENTS)[number];
 export const RENTAL_AGREMENT_PATTERN = /^(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ./_-]{1,38}[A-Za-z0-9]$/;
 
 const unique = <T>(items: readonly T[]) => new Set(items).size === items.length;
+
+/**
+ * The shop card (UX audit of the Pro shops, lot 1): the owner's practical information shown on
+ * the storefront. The address and the hours note pass the storefront text screen; the hours are a
+ * weekly schedule (Morocco's wall clock) so the storefront can say « Ouvert » or « Fermé ».
+ */
+export const PRO_ADDRESS_MAX = 160;
+export const PRO_HOURS_NOTE_MAX = 200;
+export const PRO_WEBSITE_MAX = 200;
+export const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
+/** Two opening periods a day at most (morning, afternoon). */
+export const HOURS_SLOTS_MAX = 2;
+const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+export const openingHoursSchema = z
+  .object({
+    days: z
+      .array(
+        z
+          .object({
+            day: z.enum(WEEKDAYS),
+            slots: z
+              .array(z.object({ from: clock, to: clock }).strict().refine((slot) => slot.from < slot.to, "slot ends before it starts"))
+              .min(1)
+              .max(HOURS_SLOTS_MAX)
+              .refine((slots) => slots.every((slot, index) => index === 0 || (slots[index - 1]?.to ?? "") <= slot.from), "slots overlap"),
+          })
+          .strict(),
+      )
+      .max(WEEKDAYS.length)
+      .refine((days) => unique(days.map((day) => day.day)), "duplicate day"),
+    /** « Fermé les jours fériés », « sur rendez-vous le dimanche »: free text, screened. */
+    note: z.string().trim().max(PRO_HOURS_NOTE_MAX),
+  })
+  .strict();
+export type OpeningHours = z.infer<typeof openingHoursSchema>;
 
 /**
  * The car rental agency's settings (decision 3: the licence reference is required to publish a
@@ -173,12 +210,21 @@ export const proProfileSchema = z
     name: z.string().trim().min(2).max(PRO_NAME_MAX),
     slug: z.string().min(1).max(PRO_SLUG_MAX).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     description: z.string().max(PRO_DESCRIPTION_MAX),
+    /** The presentation in Arabic (shop card, UX audit lot 1): the storefront shows it in Arabic, falling back to `description`. */
+    descriptionAr: z.string().max(PRO_DESCRIPTION_MAX).optional(),
+    /** The shop's own address, shown on its storefront (a professional address, never a private one). */
+    address: z.string().max(PRO_ADDRESS_MAX).optional(),
+    hours: openingHoursSchema.optional(),
+    /** The verified number may be revealed from the storefront (under the listing reveal rules). */
+    showPhone: z.boolean().optional(),
+    /** House banner of the storefront (src/config/storefront.ts), never an uploaded file. */
+    bannerKey: z.enum(BANNER_KEYS).optional(),
     logoKey: z.string().max(200).optional(),
     coverKey: z.string().max(200).optional(),
     /** Verified number, revealed under quota like an individual's (never in the HTML). */
     phonePublic: z.string().max(20).optional(),
     whatsapp: z.boolean(),
-    website: z.url({ protocol: /^https$/ }).max(200).optional(),
+    website: z.url({ protocol: /^https$/ }).max(PRO_WEBSITE_MAX).optional(),
     /** Social links shown on the storefront (PUT /api/pro/me/social); absent until the owner sets some. */
     social: socialLinksSchema.optional(),
     regionCode: regionCodeSchema,

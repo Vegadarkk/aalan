@@ -2,7 +2,7 @@ import "server-only";
 import { requireUser } from "@/lib/auth/guards";
 import { uploadIdSchema } from "@/lib/contracts/media";
 import { sectionsInputSchema } from "@/lib/contracts/catalog";
-import { kybcSignSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
+import { kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
 import { STOCK_IMPORT_BODY_MAX_BYTES, stockImportRequestSchema } from "@/lib/contracts/stock-import";
 import { serverEnv } from "@/lib/env";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -14,7 +14,7 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { completeKybcUpload, deleteKybcUpload, signKybcUpload } from "./kybc-uploads";
 import { submitRentalCheck } from "./rental-check";
-import { proSelf, submitApplication, updateAgency, updateRentalAgency, updateSections } from "./service";
+import { proSelf, submitApplication, updateAgency, updateRentalAgency, updateSections, updateShopCard } from "./service";
 import { updateSocialLinks } from "./social-links";
 import { importStock, stockList } from "./stock-import/service";
 
@@ -68,6 +68,14 @@ export async function handleMe(request: Request): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("pro.read.uid", auth.user.uid);
   return json(await proSelf(auth));
+}
+
+/** PUT /api/pro/me: the shop card shown on the storefront (UX audit of the Pro shops, lot 1). */
+export async function handleShopCard(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  const input = await readJson(request, proShopCardSchema);
+  await enforceLimit("pro.agency.uid", auth.user.uid);
+  return json(await updateShopCard(auth, input));
 }
 
 /** PUT /api/pro/me/agency: the shop's sector and the agency's fee schedule. */

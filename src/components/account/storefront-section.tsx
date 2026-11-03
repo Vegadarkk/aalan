@@ -108,34 +108,7 @@ function StorefrontForm({ saved, onSaved }: { saved: StorefrontSettings; onSaved
   return (
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-6">
       <FormMessage error={serverError} />
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">{t("banner")}</legend>
-        <div role="radiogroup" aria-label={t("banner")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {BANNER_KEYS.map((key) => {
-            const checked = key === bannerKey;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="radio"
-                aria-checked={checked}
-                onClick={() => setBannerKey(key)}
-                className="group flex flex-col gap-1.5 rounded-md text-start"
-              >
-                <span className={cn("relative block h-16 overflow-hidden rounded-md ring-offset-2 ring-offset-background transition-shadow", checked ? "ring-3 ring-primary" : "ring-1 ring-border group-hover:ring-border-strong")}>
-                  <StorefrontBanner bannerKey={key} id={`picker-${key}`} />
-                  {checked ? (
-                    <span className="absolute end-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="size-4" aria-hidden="true" />
-                    </span>
-                  ) : null}
-                </span>
-                <span className={cn("text-sm", checked ? "font-medium" : "text-foreground-muted")}>{t(`banners.${key}`)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+      <BannerPicker value={bannerKey} onChange={setBannerKey} />
 
       <Field label={t("bio")} hint={t("bioHint")} error={issue ? issues(issue) : undefined}>
         <textarea rows={5} maxLength={BIO_MAX} value={bio} onChange={(event) => setBio(event.target.value)} dir="auto" className={cn(inputClassName, "h-auto min-h-32 py-3 leading-relaxed")} />
@@ -167,5 +140,54 @@ function StorefrontForm({ saved, onSaved }: { saved: StorefrontSettings; onSaved
         </Button>
       </div>
     </form>
+  );
+}
+
+/** For a Pro: the storefront is the shop's, edited in the Pro area (UX audit of the Pro shops, B3). */
+export function ProStorefrontNotice() {
+  const t = useTranslations("Auth.settings.storefront");
+  return (
+    <Section id="storefront" title={t("title")} body={t("proBody")}>
+      <Button asChild variant="outline">
+        <Link href="/pro#fiche-boutique">{t("proEdit")}</Link>
+      </Button>
+    </Section>
+  );
+}
+
+/** The six house banners as a radio group (member storefront, and a Pro's shop card). */
+export function BannerPicker({ value, onChange }: { value: BannerKey; onChange: (key: BannerKey) => void }) {
+  const t = useTranslations("Auth.settings.storefront");
+  const bannerKey = value;
+  const setBannerKey = onChange;
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-2 text-sm font-medium">{t("banner")}</legend>
+      <div role="radiogroup" aria-label={t("banner")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {BANNER_KEYS.map((key) => {
+          const checked = key === bannerKey;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              onClick={() => setBannerKey(key)}
+              className="group flex flex-col gap-1.5 rounded-md text-start"
+            >
+              <span className={cn("relative block h-16 overflow-hidden rounded-md ring-offset-2 ring-offset-background transition-shadow", checked ? "ring-3 ring-primary" : "ring-1 ring-border group-hover:ring-border-strong")}>
+                <StorefrontBanner bannerKey={key} id={`picker-${key}`} />
+                {checked ? (
+                  <span className="absolute end-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="size-4" aria-hidden="true" />
+                  </span>
+                ) : null}
+              </span>
+              <span className={cn("text-sm", checked ? "font-medium" : "text-foreground-muted")}>{t(`banners.${key}`)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }

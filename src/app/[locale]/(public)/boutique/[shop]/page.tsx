@@ -18,6 +18,8 @@ import { RentalFleet, type FleetLabels } from "@/components/rental/rental-fleet"
 import { RentalAgencyCard, RentalBranches, RentalConditions } from "@/components/rental/rental-storefront";
 import { SellerInfo } from "@/components/pro/seller-info";
 import { ShopEmblem } from "@/components/pro/shop-emblem";
+import { ShopPracticalInfo } from "@/components/pro/shop-practical-info";
+import { StorefrontBanner } from "@/components/profile/storefront-banner";
 import { SocialLinks } from "@/components/pro/social-links";
 import { StorefrontTabs } from "@/components/storefront/storefront-tabs";
 import { LandingBreadcrumb } from "@/components/seo/landing";
@@ -144,6 +146,8 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   const agency = store.sector === "real_estate";
   const holidayAgency = store.sector === "holiday_rental";
   const counts = agency && seller.publishedCount > 0 ? await shopSubcategoryCounts(seller.publicId, "immobilier") : null;
+  // The presentation in the page's language when the shop wrote it (UX audit lot 1), else the other one.
+  const about = locale === "ar" ? store.descriptionAr || store.description : store.description || store.descriptionAr;
   const label = agency ? t("agency.label") : rentalAgency ? t("rental.label") : holidayAgency ? t("holiday.label") : t("label");
   const aside = (
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-4 text-sm text-foreground-muted">
@@ -187,9 +191,13 @@ export default async function StorefrontPage({ params }: { params: Params }) {
       <Container className="flex flex-col gap-10 py-8 lg:gap-12 lg:py-12">
         {/* Back to the directory of shops (owner's choice of 30 Oct 2026), the way the category landings lead home. */}
         <LandingBreadcrumb steps={[{ label: seo("home"), href: "/" }, { label: t("directory"), href: DIRECTORY_PATH }, { label: store.name }]} className="-mb-4 lg:-mb-6" />
-        {/* The shop's door: the Pro green under the arch, its gold threshold, its emblem until a logo is uploaded. */}
-        <header data-testid="storefront-header" className="arch threshold flex flex-col items-center gap-5 rounded-b-lg bg-structure px-6 pt-12 pb-9 text-center text-structure-foreground sm:flex-row sm:items-end sm:gap-7 sm:px-10 sm:text-start">
-          <ShopEmblem name={store.name} sector={store.sector ?? "general"} size="lg" />
+        {/* The shop's door: its house banner (UX audit lot 1), the Pro green with its gold threshold, its emblem until a logo is uploaded. */}
+        <div className="flex flex-col">
+          <div data-testid="storefront-banner" data-banner={store.bannerKey} className="h-24 overflow-hidden rounded-t-lg sm:h-32 lg:h-40">
+            <StorefrontBanner bannerKey={store.bannerKey} id={store.proId} />
+          </div>
+        <header data-testid="storefront-header" className="threshold flex flex-col items-center gap-5 rounded-b-lg bg-structure px-6 pt-0 pb-9 text-center text-structure-foreground sm:flex-row sm:items-end sm:gap-7 sm:px-10 sm:text-start">
+          <ShopEmblem name={store.name} sector={store.sector ?? "general"} size="lg" className="-mt-10 sm:-mt-8" />
           <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
             <p className="text-sm text-structure-foreground/80">{label}</p>
             <h1 dir="auto" className="text-3xl font-semibold text-balance break-words sm:text-4xl">
@@ -214,36 +222,38 @@ export default async function StorefrontPage({ params }: { params: Params }) {
               <ShareButton url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`} title={store.name} className="border-structure-foreground/30" />
             </div>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start sm:mt-6">
             {store.example ? null : <BadgeCheck className="size-4" aria-hidden="true" />}
             {store.example ? t("example.badge") : agency || rentalAgency || holidayAgency ? t("agency.verified") : t("verified")}
           </span>
         </header>
+        </div>
         {store.example ? <ExampleBanner scope="shop" /> : null}
 
         {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
         {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}
 
         <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
-          {store.description ? (
+          {about ? (
             <section aria-labelledby="storefront-about" className="flex flex-col gap-3">
               <h2 id="storefront-about" className="text-xl font-semibold">
                 {t("about")}
               </h2>
               <p dir="auto" className="max-w-prose leading-relaxed whitespace-pre-line text-pretty">
-                {store.description}
+                {about}
               </p>
               {/* Under the presentation, not in the cards column: a two-line presentation beside a tall
                   column left a void under it (UX audit, finding 22). */}
               {aside}
             </section>
           ) : null}
-          <div className={store.description ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 md:col-span-2"}>
+          <div className={about ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 md:col-span-2"}>
+            <ShopPracticalInfo address={store.address} citySlug={store.citySlug} hours={store.hours} website={store.website} locale={locale} />
             {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
             <FeeSchedule text={store.feeSchedule} />
             <SocialLinks links={store.social} />
             {store.payment ? <PayAtSeller payment={store.payment} className="rounded-lg border border-border bg-surface p-4" /> : null}
-            {store.description ? null : aside}
+            {about ? null : aside}
           </div>
         </div>
 

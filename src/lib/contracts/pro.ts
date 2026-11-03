@@ -4,10 +4,15 @@ import { turnstileTokenSchema } from "@/lib/contracts/auth";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
 import { KYBC_DECLARED_TYPES, MAX_UPLOAD_BYTES, uploadIdSchema, type KybcDeclaredType } from "@/lib/contracts/media";
 import { SOCIAL_INPUT_MAX, SOCIAL_NETWORKS, type SocialNetwork } from "@/config/social-links";
+import { BANNER_KEYS, type BannerKey } from "@/config/storefront";
 import { KYBC_MAX_PIECES, KYBC_MIN_PIECES, proLegalSchema } from "@/lib/pro/kybc";
 import {
   AGENCY_FEE_SCHEDULE_MAX,
   PHONE_CHECK_OUTCOMES,
+  PRO_ADDRESS_MAX,
+  PRO_WEBSITE_MAX,
+  openingHoursSchema,
+  type OpeningHours,
   PRO_DESCRIPTION_MAX,
   PRO_NAME_MAX,
   PRO_SECTORS,
@@ -236,6 +241,8 @@ export const PRO_API = {
   rental: "/api/pro/me/rental",
   rentalCheck: "/api/pro/me/rental/check",
   social: "/api/pro/me/social",
+  /** PUT: the shop card (presentation FR/AR, city, address, hours, contact, website, banner). */
+  card: "/api/pro/me",
   kybcSign: "/api/pro/kybc/uploads",
   kybcComplete: (id: string) => `/api/pro/kybc/uploads/${id}/complete`,
   kybcDelete: (id: string) => `/api/pro/kybc/uploads/${id}`,
@@ -380,4 +387,41 @@ export interface ProSelfView {
   rentalCheck: RentalCheckView | null;
   /** Social links shown on the storefront. */
   social: ProSocialView;
+  /** The shop card shown on the storefront (PUT /api/pro/me). */
+  card: ProShopCard;
 }
+
+/**
+ * PUT /api/pro/me (UX audit of the Pro shops, lot 1): the shop card, replaced whole. The name
+ * stays the verified one (a moderator changes it); the city moves the shop's region with it.
+ * `website` "" removes it; `hours` null removes the schedule.
+ */
+export const proShopCardSchema = z
+  .object({
+    description: z.string().trim().max(PRO_DESCRIPTION_MAX),
+    descriptionAr: z.string().trim().max(PRO_DESCRIPTION_MAX),
+    citySlug: citySlugSchema,
+    address: z.string().trim().max(PRO_ADDRESS_MAX),
+    hours: openingHoursSchema.nullable(),
+    showPhone: z.boolean(),
+    whatsapp: z.boolean(),
+    website: z.union([z.literal(""), z.url({ protocol: /^https$/, hostname: z.regexes.domain }).max(PRO_WEBSITE_MAX)]),
+    bannerKey: z.enum(BANNER_KEYS),
+  })
+  .strict();
+export type ProShopCardInput = z.infer<typeof proShopCardSchema>;
+
+/** The shop card as its owner edits it; `phoneVerified` says whether a number can be shown at all. */
+export interface ProShopCard {
+  description: string;
+  descriptionAr: string;
+  citySlug: string;
+  address: string;
+  hours: OpeningHours | null;
+  showPhone: boolean;
+  whatsapp: boolean;
+  website: string;
+  bannerKey: BannerKey;
+  phoneVerified: boolean;
+}
+export type ProShopCardResponse = { card: ProShopCard };

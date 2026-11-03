@@ -91,6 +91,8 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   "Report",
   // « Partager » in the storefront's header (UX audit of the Pro shops, B2).
   "ListingPage.share",
+  // « Ouvert jusqu'à… » of its practical information (UX audit lot 1).
+  "Storefront.info",
   // « Payer chez le vendeur » of a Pro's storefront (phase 7).
   "SellerPayment.public",
   // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).

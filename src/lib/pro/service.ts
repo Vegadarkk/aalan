@@ -4,7 +4,9 @@ import { launchOfferOpen, listingQuotas } from "@/config/pricing";
 import type { AuthContext } from "@/lib/auth/guards";
 import { getAbuseRules, getFlags, getPricing } from "@/lib/config/runtime";
 import type { SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
-import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProMeResponse, ProRentalInput, ProRentalResponse } from "@/lib/contracts/pro";
+import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
+import { cityBySlug } from "@/config/regions";
+import { DEFAULT_BANNER } from "@/config/storefront";
 import { db } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { countActive } from "@/lib/db/repositories/listings";
@@ -174,8 +176,79 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       rental: profile.rental ?? null,
       rentalCheck: profile.rentalCheck ? rentalCheckView(profile.rentalCheck) : null,
       social: socialView(profile.social),
+      card: shopCard(profile, user?.badges.phoneVerified ?? false),
     },
   };
+}
+
+/** The shop card as its owner edits it (UX audit of the Pro shops, lot 1). */
+export function shopCard(profile: ProProfileRecord, phoneVerified: boolean): ProShopCard {
+  return {
+    description: profile.description,
+    descriptionAr: profile.descriptionAr ?? "",
+    citySlug: profile.citySlug,
+    address: profile.address ?? "",
+    hours: profile.hours ?? null,
+    showPhone: profile.showPhone === true,
+    whatsapp: profile.whatsapp,
+    website: profile.website ?? "",
+    bannerKey: profile.bannerKey ?? DEFAULT_BANNER,
+    phoneVerified,
+  };
+}
+
+/**
+ * PUT /api/pro/me (UX audit of the Pro shops, lot 1): the shop card, replaced whole, by the owner
+ * of a verified shop that publishes. Every free text passes the storefront text screen (no contact
+ * detail, prohibited term or sensitive data): the number and WhatsApp are switches over the
+ * verified number, never typed. A number can be shown only once verified; the city moves the region.
+ */
+export async function updateShopCard(auth: AuthContext, input: ProShopCardInput, now = new Date()): Promise<ProShopCardResponse> {
+  const [profile, { prohibited }, user] = await Promise.all([ownedPublishingShop(auth), getAbuseRules(), getUser(auth.user.uid)]);
+  const texts: [string, string][] = [
+    ["description", input.description],
+    ["descriptionAr", input.descriptionAr],
+    ["address", input.address],
+    ["hours.note", input.hours?.note ?? ""],
+  ];
+  for (const [field, text] of texts) {
+    const issue = text ? firstStrictIssue(text, prohibited) : null;
+    if (issue) throw new HttpError(422, "invalid_text", "shop card refused by the text screen", { details: { field, issue } });
+  }
+  const city = cityBySlug(input.citySlug);
+  if (!city) throw new HttpError(400, "invalid_body", "unknown city", { details: [{ path: ["citySlug"], code: "invalid" }] });
+  const phoneVerified = user?.badges.phoneVerified ?? false;
+  if ((input.showPhone || input.whatsapp) && !phoneVerified) throw new HttpError(409, "phone_required");
+  const hours = input.hours && (input.hours.days.length > 0 || input.hours.note) ? input.hours : null;
+  await proProfileRef(profile.proId).update({
+    description: input.description,
+    descriptionAr: input.descriptionAr || FieldValue.delete(),
+    citySlug: city.slug,
+    regionCode: city.regionCode,
+    address: input.address || FieldValue.delete(),
+    hours: hours ?? FieldValue.delete(),
+    showPhone: input.showPhone,
+    whatsapp: input.whatsapp,
+    website: input.website || FieldValue.delete(),
+    bannerKey: input.bannerKey,
+    updatedAt: Timestamp.fromDate(now),
+  });
+  void consume("firestore.reads", 2);
+  void consume("firestore.writes", 1);
+  if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
+  const next: ProProfileRecord = {
+    ...profile,
+    description: input.description,
+    ...(input.descriptionAr ? { descriptionAr: input.descriptionAr } : { descriptionAr: undefined }),
+    citySlug: city.slug,
+    address: input.address || undefined,
+    hours: hours ?? undefined,
+    showPhone: input.showPhone,
+    whatsapp: input.whatsapp,
+    website: input.website || undefined,
+    bannerKey: input.bannerKey,
+  };
+  return { card: shopCard(next, phoneVerified) };
 }
 
 /**

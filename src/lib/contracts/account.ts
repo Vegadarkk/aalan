@@ -1,3 +1,4 @@
+import type { OpeningHours } from "@/lib/pro/profile-schema";
 import type { Locale } from "@/config/site";
 import { BANNER_KEYS, BIO_MAX, type BannerKey } from "@/config/storefront";
 import { citySlugSchema } from "@/lib/contracts/listings";
@@ -156,6 +157,11 @@ export interface AccountExport {
     name: string;
     slug: string;
     description: string;
+    /** Shop card (UX audit of the Pro shops, lot 1). */
+    descriptionAr: string | null;
+    address: string | null;
+    hours: OpeningHours | null;
+    showPhone: boolean;
     website: string | null;
     /** Social links of the storefront (handles). */
     social: { network: string; handle: string }[];

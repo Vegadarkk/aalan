@@ -385,8 +385,7 @@
         "copy": "Copier le lien",
         "copied": "Lien copié"
       },
-      "googleError": "Le bouton Google n'a pas pu se charger. Connectez-vous avec votre adresse e-mail.",
-      "frenchOnly": "Cette partie du site est en français pour le moment."
+      "googleError": "Le bouton Google n'a pas pu se charger. Connectez-vous avec votre adresse e-mail."
     },
     "signIn": {
       "title": "Se connecter",
@@ -5794,7 +5793,7 @@
       "storefront": "Une vitrine publique à votre nom, avec vos horaires, votre adresse et vos liens",
       "listings": "Jusqu'à {count} annonces en ligne avec l'offre Essentiel, marquées Pro",
       "messaging": "La messagerie, la prise de rendez-vous et les avis vérifiés de vos clients",
-      "stock": "L'import de votre stock par fichier, les variantes de taille et de couleur",
+      "stock": "Les variantes de taille et de couleur, et l'import de votre stock par fichier avec les offres Business et Premium",
       "planning": "Pour les loueurs, le planning de flotte et les demandes par dates"
     },
     "offer": "Offre de lancement : l'offre Essentiel est offerte aux boutiques validées jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant tout paiement.",
@@ -5913,7 +5912,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "Le plus choisi",
+      "recommended": "Recommandé",
       "onQuote": "Sur devis",
       "credits": "{count, number} crédits de visibilité inclus",
       "listings": "{count, plural, one {# annonce active} other {# annonces actives}}",
@@ -5924,7 +5923,8 @@
       "payAtSeller": "Paiement chez le vendeur : Aalan ne prend aucune commission sur vos ventes.",
       "cta": "Créer ma boutique",
       "more": "Découvrir l'offre Pro",
-      "unlimitedListings": "Annonces actives en illimité"
+      "unlimitedListings": "Annonces actives en illimité",
+      "stockImport": "Import du stock par fichier"
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture."
   },

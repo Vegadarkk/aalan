@@ -64,7 +64,10 @@ export function ListingPrice({ price, from, isDonation, negotiable, unit, mode, 
 function PromoNotice({ promo, percent, reference, now, locale }: { promo: PromoView; percent: number; reference: number | null; now: number; locale: Locale }) {
   const t = useTranslations("ListingPage.promo");
   // Morocco's wall clock whatever the browser's time zone data (src/lib/i18n/morocco-time.ts).
-  const format = (at: number) => new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: moroccoTimeZone(at) }).format(at);
+  // The day alone for a buyer (UX audit of the Pro shops, B10); a flash sale (72 h at most) keeps its hour.
+  const withHour = promo.kind === "flash";
+  const format = (at: number) =>
+    new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: withHour ? "short" : "long", ...(withHour ? { hour: "2-digit", minute: "2-digit" } : {}), timeZone: moroccoTimeZone(at) }).format(at);
   const left = promo.endsAt - now;
   const countdown = promo.kind === "flash" || left < DAY_MS;
   const hours = Math.floor(left / HOUR_MS);

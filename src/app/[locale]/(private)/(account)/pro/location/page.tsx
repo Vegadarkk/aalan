@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { Container } from "@/components/layout/container";
 import { RentalAgencySettingsPage } from "@/components/rental/rental-agency-settings";
 import { textLinkClassName } from "@/components/ui/text-link";
@@ -21,9 +20,7 @@ export default async function RentalAgencyPage({ params }: { params: Promise<{ l
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "RentalAgency" });
   return (
-    // Tarifit: the account pages are French until a native review (see FrenchOnlyNotice).
-    <Container lang={locale === "rif" ? "fr" : undefined} className="max-w-4xl py-10 lg:py-14">
-      <FrenchOnlyNotice className="mb-8" />
+    <Container className="max-w-4xl py-10 lg:py-14">
       <Link href="/pro" className={cn("mb-6 inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
         <ArrowLeft aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
         {t("back")}

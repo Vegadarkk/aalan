@@ -1,10 +1,10 @@
 import { createTranslator, useLocale, useMessages, useTimeZone, useTranslations } from "next-intl";
 import { numbersLocale } from "./params";
 
-// useTranslations for a namespace without Tarifit text whose messages print numbers or plurals
-// (ICU `#`, `{count, plural}`): under "rif" its French catalog is formatted in French
-// (numbersLocale: "1 200 annonces", "0 annonce"), as the server pages do with
-// getTranslations({ locale: numbersLocale(locale) }). Other locales get useTranslations itself.
+// useTranslations for a namespace whose messages print numbers or plurals (ICU `#`,
+// `{count, plural}`): under "rif" the Tarifit text is formatted in French (numbersLocale:
+// "1 200"), as the server pages do with getNumbersTranslations (numbers-server.ts). Other locales
+// get useTranslations itself.
 
 function useNumbersTranslator(namespace?: string) {
   const locale = useLocale();

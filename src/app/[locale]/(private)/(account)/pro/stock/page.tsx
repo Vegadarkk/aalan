@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { Container } from "@/components/layout/container";
 import { StockImport } from "@/components/pro/stock-import";
 import { textLinkClassName } from "@/components/ui/text-link";
@@ -24,9 +23,7 @@ export default async function StockImportPage({ params }: { params: Promise<{ lo
   // The Turnstile widget of the publish step runs under the page's CSP nonce.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    // Tarifit: the account pages are French until a native review (see FrenchOnlyNotice).
-    <Container lang={locale === "rif" ? "fr" : undefined} className="max-w-3xl py-10 lg:py-14">
-      <FrenchOnlyNotice className="mb-8" />
+    <Container className="max-w-3xl py-10 lg:py-14">
       <Link href="/pro" className={cn("mb-6 inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
         <ArrowLeft aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
         {t("back")}

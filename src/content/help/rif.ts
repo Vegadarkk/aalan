@@ -1,8 +1,8 @@
 import type { HelpLocaleContent } from "./catalog";
 
 // Help centre, Tarifit in Latin script (design phase-5 D25, Z9): same articles and facts as fr.ts,
-// shorter. Draft wording: a native speaker reviews it before launch (owner, log L6-U4). Interface
-// labels stay in French, as the rif interface itself falls back to French (messages/rif.json).
+// shorter. Draft wording: a native speaker reviews it before launch (owner, log L6-U4). Quoted
+// interface labels are those of messages/rif.json.
 
 export const HELP_RIF: HelpLocaleContent = {
   categories: {
@@ -22,9 +22,9 @@ export const HELP_RIF: HelpLocaleContent = {
         "Ad teẓreḍ annonces war ttexs amiḍan. Amiḍan ixs-it ḥima ad tessufɣeḍ annonce, ad taruḍ i umzenzu, niɣ ad teḥrezeḍ ayen tḥemmleḍ.",
         {
           steps: [
-            "Rzem tasna n « Inscription » d xtar: e-mail d awal n uɛeddi, niɣ amiḍan Google.",
+            "Rzem tasna n « Snulfu amiḍan » d xtar: e-mail d awal n uɛeddi, niɣ amiḍan Google.",
             "S e-mail, rzem asaɣ n usentem i dak-d ɣa yawḍen: amiḍan nnec ad yexdem xmi tsentmeḍ e-mail.",
-            "Isem nnec ad d-yban deg annonces d tebratin; tzemmreḍ ad t-tbeddleḍ deg « Mes paramètres ».",
+            "Isem nnec ad d-yban deg annonces d tebratin; tzemmreḍ ad t-tbeddleḍ deg « Iɣewwaren inu ».",
           ],
         },
         "Amiḍan bla idrimen. Xtar awal n uɛeddi war tesxedmeḍ deg wadeg nniḍen.",
@@ -38,9 +38,9 @@ export const HELP_RIF: HelpLocaleContent = {
         "Kcem s tarrayt i texṭareḍ: e-mail d awal n uɛeddi, niɣ Google.",
         {
           list: [
-            "Tettuḍ awal n uɛeddi: ssuter asaɣ deg tasna « Mot de passe oublié ». Asaɣ ad dak-d yawḍ s e-mail.",
-            "Ad tbeddleḍ awal n uɛeddi: « Mes paramètres », « Mot de passe ».",
-            "Amiḍan n Google war ɣar-s awal n uɛeddi: ssuter asaɣ n « Mot de passe oublié » ḥima ad tegged yiwen.",
+            "Tettuḍ awal n uɛeddi: ssuter asaɣ deg tasna « Tettuḍ awal n uɛeddi ». Asaɣ ad dak-d yawḍ s e-mail.",
+            "Ad tbeddleḍ awal n uɛeddi: « Iɣewwaren inu », « Awal n uɛeddi ».",
+            "Amiḍan n Google war ɣar-s awal n uɛeddi: ssuter asaɣ n « Tettuḍ awal n uɛeddi » ḥima ad tegged yiwen.",
           ],
         },
         "Mala tarid awal n uɛeddi ixeṣṣṛen aṭas n tikkal, tukcimt ad tettwaḥbes kra n tesdidin.",
@@ -55,7 +55,7 @@ export const HELP_RIF: HelpLocaleContent = {
         "Ad tessufɣeḍ annonce bla idrimen. Ixs amiḍan s e-mail yettwasentmen.",
         {
           steps: [
-            "Wet x « Déposer une annonce » d xtar taggayt.",
+            "Wet x « Ssuffeɣ annonce » d xtar taggayt.",
             "Ari x tɣawsa: azwel, aglam, ssuma niɣ tamuḥant.",
             "Rnu tawlaft ɣas d yiwet: tamezwarut d tin n wudem.",
             "Ari tamdint; ḥuma war ttexs adres nnec.",
@@ -64,8 +64,8 @@ export const HELP_RIF: HelpLocaleContent = {
         },
         "Brouillon nnec yettwaḥraz mala tettaruḍ. Tzemmreḍ ad teḥrezeḍ ar {maxDrafts} n brouillons; brouillon war yettwabeddel {draftPurgeDays} n wussan ad yettwakkes.",
         "S umata, annonce ad tban nican. Kra n annonces ad tent-iɣar umsefrez zzat n usuffeɣ, s umata deg 24 n tsaɛtin.",
-        "Annonce ad teqqim {ttlDays} n wussan. Tiɣawsiwin yettwagedlen deg Aalan ad tent-tafeḍ deg tasna « Objets interdits ».",
-        "Koumiyas d ijenwiyen n tẓeyyent ad ten-tessufɣeḍ ɣas deg taggayt « Koumiyas & poignards décoratifs », i imeqqranen kan (18 n iseggusa d uqqaren): ad tsentmeḍ belli d tɣawsa n tẓeyyent, amsefrez ad iɣar kul annonce zzat n usuffeɣ, d amsawal s tebratin kan.",
+        "Annonce ad teqqim {ttlDays} n wussan. Tiɣawsiwin yettwagedlen deg Aalan ad tent-tafeḍ deg tasna « Tiɣawsiwin yettwagedlen ».",
+        "Koumiyas d ijenwiyen n tẓeyyent ad ten-tessufɣeḍ ɣas deg taggayt « Koumiyas & ijenwiyen n tẓeyyent », i imeqqranen kan (18 n iseggusa d uqqaren): ad tsentmeḍ belli d tɣawsa n tẓeyyent, amsefrez ad iɣar kul annonce zzat n usuffeɣ, d amsawal s tebratin kan.",
       ],
       keywords: ["annonce", "ssuffeɣ", "zzenz", "brouillon", "publier", "koumiya"],
     },
@@ -87,14 +87,14 @@ export const HELP_RIF: HelpLocaleContent = {
     },
     "gerer-mes-annonces": {
       title: "Ad tsegdeḍ annonces nnec",
-      summary: "Beddel, ḥbes, ger « vendue », snulfu niɣ kkes annonce deg « Mes annonces ».",
+      summary: "Beddel, ḥbes, ger « Tettwazenz », snulfu niɣ kkes annonce deg « Annonces inu ».",
       blocks: [
-        "Marra annonces nnec ɛlant deg « Mes annonces ».",
+        "Marra annonces nnec ɛlant deg « Annonces inu ».",
         {
           list: [
             "Abeddel: kra n ubeddel ad t-iɣar umsefrez zzat ma ad yban.",
             "Aḥbas: annonce ad teffeɣ zi tarzzut; tzemmreḍ ad tt-terreḍ mala war tekmil.",
-            "« Vendue »: annonce ad teffeɣ zi tarzzut.",
+            "« Tettwazenz »: annonce ad teffeɣ zi tarzzut.",
             "Asnulfu: deg {renewDays} n wussan ineggura, niɣ deffir n tagra; annonce ad tales {ttlDays} n wussan.",
             "Akkes: annonce ad tekkes i lebda.",
           ],
@@ -108,8 +108,8 @@ export const HELP_RIF: HelpLocaleContent = {
       summary: "Awalen, taggayt, ssuma, tamdint d asettef ḥima ad tafeḍ annonce.",
       blocks: [
         "Ari kra n wawalen deg tarzzut, s tefransist, s taɛrabt niɣ s darija. Ɛawed s ifilṭren: taggayt, ssuma, tamdint.",
-        "Settef s « Pertinence », « Plus récentes », s ssuma niɣ s « Plus proches ».",
-        "Ul (cœur) deg annonce ad tt-yerr ɣer « Mes favoris ».",
+        "Settef s « Ayen yemsasan uggar », « Timaynutin », s ssuma niɣ s « Tiqerbanin ».",
+        "Ul (cœur) deg annonce ad tt-yerr ɣer « Ayen ḥemmleɣ ».",
       ],
       keywords: ["tarzzut", "recherche", "ifilṭren", "favoris", "ssuma"],
     },
@@ -119,7 +119,7 @@ export const HELP_RIF: HelpLocaleContent = {
       blocks: [
         "Zi tasna n tarzzut, ḥrez-tt s ifilṭren nnes. Tzemmreḍ ad teḥrezeḍ ar {savedMax}.",
         "I yal tarzzut, xtar e-mail yal ass niɣ war ca. Yal e-mail ɣar-s asaɣ ḥima ad t-tḥebseḍ.",
-        "Ad tent-tafeḍ deg « Mes recherches ».",
+        "Ad tent-tafeḍ deg « Tirzzutin inu ».",
       ],
       keywords: ["alerte", "asselɣu", "mes recherches", "e-mail"],
     },
@@ -145,7 +145,7 @@ export const HELP_RIF: HelpLocaleContent = {
       title: "Ad tḥebseḍ yiwen",
       summary: "Aḥbas ad iqen marra tibratin jar-awen.",
       blocks: [
-        "Deg tmeslayt, rzem tabdart n tigawin d xtar « Bloquer ». War tettarum ca jar-awen.",
+        "Deg tmeslayt, rzem tabdart n tigawin d xtar « Ḥbes ». War tettarum ca jar-awen.",
         "Win tḥebseḍ ad iẓar kan belli war yezmir ca ad dak-yari. Tzemmreḍ ad t-tserreḥeḍ melmi ma texsed.",
         "Aḥbas war yessawaḍ ca i umsefrez: mala tabrat d tamencuṛt niɣ d taxriqt, smekti fellas.",
       ],
@@ -172,7 +172,7 @@ export const HELP_RIF: HelpLocaleContent = {
       title: "Ad tsmektiḍ x yiwet n tɣawsa",
       summary: "Annonce, amiḍan niɣ tabrat war iṣeḥḥan, smekti fellas s kra n tikkal n ufus.",
       blocks: [
-        "Wet x « Signaler » deg annonce niɣ deg umiḍan, niɣ deg tabdart n tmeslayt. Xtar sebba, d ari ayen teẓriḍ.",
+        "Wet x « Smekti » deg annonce niɣ deg umiḍan, niɣ deg tabdart n tmeslayt. Xtar sebba, d ari ayen teẓriḍ.",
         "Bla amiḍan, ari isem nnec d e-mail nnec. I tɣawsiwin yeqqursen aṭas (arraw imecṭaḥ, terrorisme, asexsi n tudert), tzemmreḍ ad tsmektiḍ bla isem.",
         "Tiɣawsiwin ixsen awerri ad ttwaɣrent deg yiwet n tsaɛet; tinniḍen deg 24 n tsaɛtin, 3 niɣ 7 n wussan.",
         { note: "Mala yella uɛekkuz nican, ɛeyyeḍ i police (19) niɣ i Gendarmerie royale (177)." },
@@ -183,10 +183,10 @@ export const HELP_RIF: HelpLocaleContent = {
       title: "Tigtinin d urecwar",
       summary: "Yal tagtint ɣar-s sebba nnes, tzemmreḍ ad tagiḍ fellas deg 6 n wayyuren.",
       blocks: [
-        "Mala yekkes umsefrez kra niɣ yeɛqeb amiḍan, ad dak-d yawḍ e-mail s sebba. Marra tigtinin nnec deg « Décisions et recours ».",
+        "Mala yekkes umsefrez kra niɣ yeɛqeb amiḍan, ad dak-d yawḍ e-mail s sebba. Marra tigtinin nnec deg « Tigtinin d urecwar ».",
         {
           steps: [
-            "Rzem tagtint deg « Décisions et recours », niɣ asaɣ n e-mail.",
+            "Rzem tagtint deg « Tigtinin d urecwar », niɣ asaɣ n e-mail.",
             "Ari mayemmi tagtint war tṣeḥḥa ca.",
             "Azen: ad tt-iɣar umsefrez nniḍen, s umata deg {appealDays} n wussan.",
           ],
@@ -207,9 +207,9 @@ export const HELP_RIF: HelpLocaleContent = {
     },
     "donnees-personnelles": {
       title: "Isefka nnec",
-      summary: "Ayen nḥerrez, mayemmi, ar melmi, d mamec ad tsexdmeḍ izerfan nnec: deg « Politique de confidentialité ».",
+      summary: "Ayen nḥerrez, mayemmi, ar melmi, d mamec ad tsexdmeḍ izerfan nnec: deg « Isefka d tbaḍnit ».",
       blocks: [
-        "« Politique de confidentialité » tessiwel x isefka, x wussan n uḥraz d x izerfan nnec.",
+        "« Isefka d tbaḍnit » tessiwel x isefka, x wussan n uḥraz d x izerfan nnec.",
         "Medden ẓerren kan isem nnec d annonces nnec. E-mail nnec werǧin ad yban.",
         "War tessufɣeḍ ca isefka n medden nniḍen (isem, tilifun, adres, tawlaft).",
       ],

@@ -16,13 +16,14 @@ import { categoryById } from "@/config/categories";
 import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
-import { numbersLocale, pageLocale } from "@/i18n/params";
+import { pageLocale } from "@/i18n/params";
 import { CATEGORY_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { alternates } from "@/lib/i18n/metadata";
 import { SEARCH_PATH, searchQueryObject } from "@/lib/search/params";
 import { cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import type { SearchCard } from "@/lib/search/types";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 const favoriteAction = (card: SearchCard) => <FavoriteButton listingId={card.id} />;
 
@@ -59,7 +60,7 @@ interface Labels {
 }
 
 async function labelsOf(locale: Locale, target: SeoTarget): Promise<Labels> {
-  const [t, names] = await Promise.all([getTranslations({ locale: numbersLocale(locale), namespace: "Seo" }), getTranslations({ locale, namespace: "Categories" })]);
+  const [t, names] = await Promise.all([getNumbersTranslations({ locale, namespace: "Seo" }), getTranslations({ locale, namespace: "Categories" })]);
   type CategoryKey = Parameters<typeof names>[0];
   const category = names(`${target.category}.name` as CategoryKey);
   const subcategory = target.subcategory ? names(`${target.category}.sub.${target.subcategory}` as CategoryKey) : undefined;
@@ -80,7 +81,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const locale = pageLocale(value);
   const data = await load(category, restKeyOf(rest));
   if (!data || data.verdict === "notFound") return {};
-  const [t, labels] = await Promise.all([getTranslations({ locale: numbersLocale(locale), namespace: "Seo" }), labelsOf(locale, data.target)]);
+  const [t, labels] = await Promise.all([getNumbersTranslations({ locale, namespace: "Seo" }), labelsOf(locale, data.target)]);
   const title = t("metaTitle", { heading: labels.heading });
   const description = data.total > 0 ? t("metaDescription", { heading: labels.heading, count: data.total }) : t("metaDescriptionEmpty", { heading: labels.heading });
   const path = seoPath(data.target);
@@ -105,7 +106,7 @@ export default async function CategoryLandingPage({ params }: { params: Params }
   const { target, response, counts, total } = data;
   const recent = withoutFeatured(response.hits, response.featured);
   const [t, names, labels] = await Promise.all([
-    getTranslations({ locale: numbersLocale(locale), namespace: "Seo" }),
+    getNumbersTranslations({ locale, namespace: "Seo" }),
     getTranslations({ locale, namespace: "Categories" }),
     labelsOf(locale, target),
   ]);

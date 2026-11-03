@@ -10,7 +10,7 @@ import type { SearchParams } from "@/lib/search/params";
 import type { SearchCard, SearchResponse } from "@/lib/search/types";
 
 // /recherche review fixes: the results toolbar fits a 360 px phone (icon-only save, shrinking sort,
-// tighter filters button), Tarifit counts read "1 200" like the French pages, and a listing shown
+// tighter filters button), Tarifit counts group thousands as "1 200", like the French pages, and a listing shown
 // in the À la Une band is not repeated in the grid below it.
 
 const mocks = vi.hoisted(() => ({
@@ -131,13 +131,13 @@ describe("results toolbar on a phone", () => {
 });
 
 describe("result count", () => {
-  it("groups thousands the French way on Tarifit pages (no Intl data for rif)", async () => {
+  it("prints the Tarifit text with French thousands on Tarifit pages (no Intl data for rif)", async () => {
     mocks.runSearch.mockImplementation(async (params) => response(params, { hits: [card("aaaa2345")], total: 5000, totalPages: 50 }));
-    expect(count(await renderPage({}, "rif"))).toBe("Plus de 1 200 annonces");
+    expect(count(await renderPage({}, "rif"))).toBe("Uggar n 1 200 n annonces");
     expect(count(await renderPage({}, "fr"))).toBe("Plus de 1 200 annonces");
 
     mocks.runSearch.mockImplementation(async (params) => response(params, { hits: [card("aaaa2345")], total: 1150, totalPages: 48 }));
-    expect(count(await renderPage({ q: "velo" }, "rif"))).toBe("1 150 annonces");
+    expect(count(await renderPage({ q: "velo" }, "rif"))).toBe("1 150 n annonces");
   });
 });
 

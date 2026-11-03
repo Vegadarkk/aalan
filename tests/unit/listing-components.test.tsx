@@ -216,12 +216,14 @@ describe("SellerCard", () => {
   });
 
   it("sends a Pro with a storefront to /boutique: name and 'Voir la boutique' with the count", () => {
-    const html = render(<SellerCard seller={{ ...seller, sellerType: "pro" }} fallbackName="" fallbackType="pro" locale="fr" storefront="maison-lalla-abcd1234" />);
+    const html = render(<SellerCard seller={{ ...seller, sellerType: "pro" }} fallbackName="" fallbackType="pro" locale="fr" storefront={{ segment: "maison-lalla-abcd1234", name: "Maison Lalla", sector: "general" }} />);
     expect(html).not.toContain("/profil/");
     expect(html.match(/href="\/fr\/boutique\/maison-lalla-abcd1234"/g)).toHaveLength(2);
     const content = text(html);
     expect(content).toContain("Voir la boutique");
     expect(content).toContain("2 annonces en ligne");
+    // The shop's emblem, as on its storefront (UX audit B8), not the member's initial.
+    expect(html).toContain(">ML</text>");
   });
 
   it("falls back to the denormalized name, without profile link, when the account has no public face", () => {

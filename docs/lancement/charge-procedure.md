@@ -1,8 +1,9 @@
 # Test de charge : procédure (D17)
 
-Le test mesure ce que la VM tient avant le lancement : **40 pages/s hors cache** (p95 < 500 ms) et
+Le test mesure ce que la VM tient avant le lancement : il demande **40 pages/s hors cache** (p95 < 500 ms) et
 **50 recherches/s** (p95 < 300 ms), 3 minutes chacun après 1 minute de chauffe, CPU de la VM
-< 70 % sur les deux OCPU. Il vise le staging, avec les limites CPU et mémoire de la production.
+< 70 % sur les deux OCPU. Objectif retenu le 3 novembre 2026 (propriétaire) : 14 pages/s hors cache,
+la capacité mesurée au n° 6 ; les 40 demandés servent à mesurer la saturation. Il vise le staging, avec les limites CPU et mémoire de la production.
 Le résultat va dans `docs/lancement/charge.md` (créé seulement avec un vrai résultat : le contrôle
 de lancement le cherche) et fixe le seuil de passage à un VPS.
 

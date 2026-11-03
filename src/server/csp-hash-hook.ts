@@ -99,8 +99,8 @@ function applyHead(res: Res, buffered: Buffering): void {
 
 function tightenCsp(res: Res, body: Buffer): void {
   if (res.getHeader("content-encoding")) return;
-  const html = body.toString("utf8");
-  const { hashes, untrusted } = inlineScripts(html);
+  // Scanned as bytes: decoding a whole page cost as much as hashing it.
+  const { hashes, untrusted } = inlineScripts(body);
   if (untrusted > 0) {
     // Plain stderr line: the hook runs before the app logger exists.
     console.warn(JSON.stringify({ level: 40, msg: "csp: untrusted inline script left unhashed", count: untrusted }));

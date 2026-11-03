@@ -2,14 +2,27 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import fr from "../../messages/fr.json";
-import { HELP_PAGE_CLIENT_NAMESPACES, HOME_PAGE_CLIENT_NAMESPACES, pickMessages, PUBLIC_CLIENT_NAMESPACES, SEARCH_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
+import {
+  CATEGORY_PAGE_CLIENT_NAMESPACES,
+  GUIDE_PAGE_CLIENT_NAMESPACES,
+  HELP_PAGE_CLIENT_NAMESPACES,
+  HOME_PAGE_CLIENT_NAMESPACES,
+  LAYOUT_CLIENT_NAMESPACES,
+  LISTING_PAGE_CLIENT_NAMESPACES,
+  pickMessages,
+  PROFILE_PAGE_CLIENT_NAMESPACES,
+  SEARCH_PAGE_CLIENT_NAMESPACES,
+  STOREFRONT_PAGE_CLIENT_NAMESPACES,
+} from "@/i18n/client-messages";
 
-// The public pages ship only PUBLIC_CLIENT_NAMESPACES to the browser. A client component that reads
-// another namespace would show raw keys there: this walks the import graph of the public routes
-// (static and dynamic imports, from each "use client" boundary down) and checks every
-// useTranslations namespace a client module reads is in the list.
+// The public layout ships LAYOUT_CLIENT_NAMESPACES to the browser and each public page provides
+// its own list in a nested provider (which replaces, never merges). A client component that reads
+// a namespace missing from the provider above it would show raw keys: this walks the import graph
+// of every public route file (static and dynamic imports, from each "use client" boundary down)
+// and checks each list against the namespaces the modules under its provider read, both ways.
 
 const SRC = path.resolve(__dirname, "../../src");
+const PUBLIC = path.join(SRC, "app/[locale]/(public)");
 
 function resolveImport(from: string, specifier: string): string | null {
   let base: string;
@@ -71,68 +84,76 @@ function clientNamespaces(entries: string[]): Map<string, Set<string>> {
   return found;
 }
 
-const coveredBy = (list: readonly string[]) => (namespace: string) => list.some((path) => namespace === path || namespace.startsWith(`${path}.`));
-const covered = coveredBy(PUBLIC_CLIENT_NAMESPACES);
+const covers = (entry: string, namespace: string) => namespace === entry || namespace.startsWith(`${entry}.`);
 const lookup = (tree: unknown, dotted: string) => dotted.split(".").reduce<unknown>((node, key) => (typeof node === "object" && node !== null ? (node as Record<string, unknown>)[key] : undefined), tree);
 
-/** The search page wraps its content in its own provider with the extra search namespaces. */
-const SEARCH_PAGE = path.join(SRC, "app/[locale]/(public)/recherche/page.tsx");
-/** The home page wraps its living map in a provider with the extra home namespaces (lot 3). */
-const HOME_PAGE = path.join(SRC, "app/[locale]/(public)/page.tsx");
-/** The help centre's layout wraps its pages in a provider with the extra help namespaces (phase-5 D25). */
-const HELP_DIR = path.join(SRC, "app/[locale]/(public)/aide");
+interface Provider {
+  name: string;
+  list: readonly string[];
+  /** Route files (relative to the public segment) rendered under this provider; a directory covers everything in it. */
+  routes: string[];
+}
+
+/** The page providers (PageMessages), mirroring the pages; every other route file renders under the layout's provider. */
+const PAGE_PROVIDERS: Provider[] = [
+  { name: "HOME_PAGE_CLIENT_NAMESPACES", list: HOME_PAGE_CLIENT_NAMESPACES, routes: ["page.tsx"] },
+  { name: "SEARCH_PAGE_CLIENT_NAMESPACES", list: SEARCH_PAGE_CLIENT_NAMESPACES, routes: ["recherche/page.tsx"] },
+  { name: "LISTING_PAGE_CLIENT_NAMESPACES", list: LISTING_PAGE_CLIENT_NAMESPACES, routes: ["annonce/[slugId]/page.tsx"] },
+  { name: "CATEGORY_PAGE_CLIENT_NAMESPACES", list: CATEGORY_PAGE_CLIENT_NAMESPACES, routes: ["c/[category]/[[...rest]]/page.tsx"] },
+  { name: "STOREFRONT_PAGE_CLIENT_NAMESPACES", list: STOREFRONT_PAGE_CLIENT_NAMESPACES, routes: ["boutique/[shop]/page.tsx"] },
+  { name: "PROFILE_PAGE_CLIENT_NAMESPACES", list: PROFILE_PAGE_CLIENT_NAMESPACES, routes: ["profil/[publicId]/page.tsx"] },
+  { name: "GUIDE_PAGE_CLIENT_NAMESPACES", list: GUIDE_PAGE_CLIENT_NAMESPACES, routes: ["demarches/page.tsx"] },
+  // The help centre's layout wraps every page under it.
+  { name: "HELP_PAGE_CLIENT_NAMESPACES", list: HELP_PAGE_CLIENT_NAMESPACES, routes: ["aide/"] },
+];
+const LAYOUT: Provider = { name: "LAYOUT_CLIENT_NAMESPACES", list: LAYOUT_CLIENT_NAMESPACES, routes: [] };
+
+const routeFiles = filesUnder(PUBLIC).filter((file) => /\/(page|layout|error|not-found|loading|template)\.tsx$/.test(file));
+const providerOf = (file: string) => {
+  const route = path.relative(PUBLIC, file);
+  return PAGE_PROVIDERS.find((provider) => provider.routes.some((prefix) => (prefix.endsWith("/") ? route.startsWith(prefix) : route === prefix))) ?? LAYOUT;
+};
+const filesOf = (provider: Provider) => routeFiles.filter((file) => providerOf(file) === provider);
 
 describe("public client messages", () => {
-  const entries = filesUnder(path.join(SRC, "app/[locale]/(public)"))
-    .filter((file) => /\/(page|layout|error|not-found|loading|template)\.tsx$/.test(file))
-    .filter((file) => file !== SEARCH_PAGE && file !== HOME_PAGE && !file.startsWith(`${HELP_DIR}${path.sep}`));
-  const used = clientNamespaces(entries);
-  const helpEntries = filesUnder(HELP_DIR).filter((file) => /\/page\.tsx$/.test(file));
-
-  it("covers what the search page's islands read with the public and search lists", () => {
-    const search = clientNamespaces([SEARCH_PAGE]);
-    expect(search.has("SearchFilters")).toBe(true);
-    const both = coveredBy([...PUBLIC_CLIENT_NAMESPACES, ...SEARCH_PAGE_CLIENT_NAMESPACES]);
-    const missing = [...search].filter(([namespace]) => !both(namespace)).map(([namespace, files]) => `${namespace} (${[...files].join(", ")})`);
-    expect(missing).toEqual([]);
-    for (const namespace of SEARCH_PAGE_CLIENT_NAMESPACES) expect(lookup(fr, namespace), namespace).toBeTypeOf("object");
-  });
-
-  it("covers what the home page's islands read with the public and home lists", () => {
-    const home = clientNamespaces([HOME_PAGE]);
-    expect(home.has("SearchMap.view")).toBe(true);
-    const both = coveredBy([...PUBLIC_CLIENT_NAMESPACES, ...HOME_PAGE_CLIENT_NAMESPACES]);
-    const missing = [...home].filter(([namespace]) => !both(namespace)).map(([namespace, files]) => `${namespace} (${[...files].join(", ")})`);
-    expect(missing).toEqual([]);
-    for (const namespace of HOME_PAGE_CLIENT_NAMESPACES) expect(lookup(fr, namespace), namespace).toBeTypeOf("object");
-  });
-
-  it("covers what the help pages' islands read with the public and help lists", () => {
-    expect(helpEntries.length).toBe(3);
-    const help = clientNamespaces(helpEntries);
-    expect(help.has("Help.assistant")).toBe(true);
-    const both = coveredBy([...PUBLIC_CLIENT_NAMESPACES, ...HELP_PAGE_CLIENT_NAMESPACES]);
-    const missing = [...help].filter(([namespace]) => !both(namespace)).map(([namespace, files]) => `${namespace} (${[...files].join(", ")})`);
-    expect(missing).toEqual([]);
-    for (const namespace of HELP_PAGE_CLIENT_NAMESPACES) expect(lookup(fr, namespace), namespace).toBeTypeOf("object");
-  });
-
   it("finds the client islands of the public routes", () => {
-    expect(entries.length).toBeGreaterThan(5);
-    for (const namespace of ["Nav", "ListingPage.gallery", "ListingPage.contact"]) expect(used.has(namespace), namespace).toBe(true);
+    expect(routeFiles.length).toBeGreaterThan(15);
+    const layout = clientNamespaces(filesOf(LAYOUT));
+    for (const namespace of ["Nav", "Consent", "Error"]) expect(layout.has(namespace), namespace).toBe(true);
+    const listing = clientNamespaces(filesOf(PAGE_PROVIDERS[2]!));
+    for (const namespace of ["ListingPage.gallery", "ListingPage.contact"]) expect(listing.has(namespace), namespace).toBe(true);
   });
 
-  it("covers every namespace a public client component reads", () => {
-    const missing = [...used].filter(([namespace]) => !covered(namespace)).map(([namespace, files]) => `${namespace} (${[...files].join(", ")})`);
-    expect(missing).toEqual([]);
-  });
+  for (const provider of [LAYOUT, ...PAGE_PROVIDERS]) {
+    describe(provider.name, () => {
+      const files = filesOf(provider);
+      const used = clientNamespaces(files);
 
-  it("names only namespaces that exist", () => {
-    for (const namespace of PUBLIC_CLIENT_NAMESPACES) expect(lookup(fr, namespace), namespace).toBeTypeOf("object");
-  });
+      it("is rendered by its routes alone", () => {
+        expect(files.length).toBeGreaterThan(0);
+        for (const file of files) {
+          const source = readFileSync(file, "utf8");
+          const own = provider !== LAYOUT && (provider.routes.includes(path.relative(PUBLIC, file)) || /\/layout\.tsx$/.test(file));
+          expect(source.includes(`namespaces={${provider.name}}`), path.relative(SRC, file)).toBe(own);
+          if (!own) expect(source.includes("PageMessages"), path.relative(SRC, file)).toBe(false);
+        }
+      });
 
-  it("ships a fraction of the catalog", () => {
-    const picked = JSON.stringify(pickMessages(fr, PUBLIC_CLIENT_NAMESPACES)).length;
+      it("covers every namespace its client components read", () => {
+        const missing = [...used].filter(([namespace]) => !provider.list.some((entry) => covers(entry, namespace))).map(([namespace, readers]) => `${namespace} (${[...readers].join(", ")})`);
+        expect(missing).toEqual([]);
+      });
+
+      it("names only namespaces its client components read, and that exist", () => {
+        const unused = provider.list.filter((entry) => ![...used.keys()].some((namespace) => covers(entry, namespace)));
+        expect(unused).toEqual([]);
+        for (const entry of provider.list) expect(lookup(fr, entry), entry).toBeTypeOf("object");
+      });
+    });
+  }
+
+  it("ships a fraction of the catalog with the layout", () => {
+    const picked = JSON.stringify(pickMessages(fr, LAYOUT_CLIENT_NAMESPACES)).length;
     expect(picked).toBeLessThan(JSON.stringify(fr).length / 4);
   });
 });
@@ -157,5 +178,11 @@ describe("pickMessages", () => {
 
   it("skips unknown paths", () => {
     expect(pickMessages(messages, ["D", "A.q", "C.x"])).toEqual({});
+  });
+
+  it("shares the catalog's subtrees, so a page's and the layout's messages travel once", () => {
+    const picked = pickMessages(messages, ["A.y", "B"]);
+    expect(picked.B).toBe(messages.B);
+    expect((picked.A as typeof messages.A).y).toBe(messages.A.y);
   });
 });

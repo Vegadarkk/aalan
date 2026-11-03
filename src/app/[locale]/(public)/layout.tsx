@@ -5,7 +5,7 @@ import { hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { RootShell } from "@/components/layout/root-shell";
-import { PUBLIC_CLIENT_NAMESPACES } from "@/i18n/client-messages";
+import { LAYOUT_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { rootMetadata, SITE_VIEWPORT } from "@/lib/i18n/metadata";
 
 // Public anonymous pages: static or ISR, hash-based CSP, cacheable by Cloudflare (§1, §6).
@@ -24,9 +24,10 @@ export default async function PublicLayout({ children, params }: { children: Rea
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  // The browser gets only the messages of the public client islands (src/i18n/client-messages.ts).
+  // The browser gets the messages of the layout's own client islands; a page adds its own in a nested
+  // provider (src/i18n/client-messages.ts).
   return (
-    <RootShell locale={locale} clientNamespaces={PUBLIC_CLIENT_NAMESPACES}>
+    <RootShell locale={locale} clientNamespaces={LAYOUT_CLIENT_NAMESPACES}>
       {children}
     </RootShell>
   );

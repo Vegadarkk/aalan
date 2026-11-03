@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider, type AbstractIntlMessages } from "next-intl";
 import type * as NextNavigation from "next/navigation";
@@ -22,6 +23,9 @@ const mocks = vi.hoisted(() => ({
   latestListings: vi.fn<(params: SearchParams, limit: number) => Promise<SearchCard[]>>(),
   warn: vi.fn(),
 }));
+// The page's own message provider is an async server component (src/components/i18n/page-messages.tsx,
+// kept exact by client-messages.test.ts): the provider of this test carries the whole catalog.
+vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/search/service", () => ({ featuredListings: mocks.featuredListings, latestListings: mocks.latestListings }));
 vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: mocks.warn, error: vi.fn(), debug: vi.fn(), fatal: vi.fn() } }));
 vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));

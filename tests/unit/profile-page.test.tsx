@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import type * as NextNavigation from "next/navigation";
@@ -18,6 +19,9 @@ const repo = vi.hoisted(() => ({
   count: vi.fn<() => number>(),
 }));
 // The heart is a client island (app router hooks): its own tests cover it (phase 4).
+// The page's own message provider is an async server component (src/components/i18n/page-messages.tsx,
+// kept exact by client-messages.test.ts): the provider of this test carries the whole catalog.
+vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/components/favorites/favorite-button", () => ({ FavoriteButton: ({ listingId }: { listingId: string }) => <span data-favorite={listingId} /> }));
 vi.mock("@/lib/db/repositories/listings", () => ({ getListing: vi.fn(), listPublishedByOwner: repo.listPublishedByOwner }));
 vi.mock("@/lib/db/repositories/profiles", () => ({ findUserByPublicId: repo.findUserByPublicId, getUserRecord: vi.fn() }));

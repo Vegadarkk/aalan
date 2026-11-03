@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { AgencyTransactions, FeeSchedule } from "@/components/listing/agency-storefront";
 import { ListingCard } from "@/components/listing/listing-card";
@@ -31,6 +32,7 @@ import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
+import { STOREFRONT_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
 import { alternates } from "@/lib/i18n/metadata";
@@ -174,135 +176,137 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   );
 
   return (
-    <Container className="flex flex-col gap-10 py-8 lg:gap-12 lg:py-12">
-      {/* Back to the directory of shops (owner's choice of 30 Oct 2026), the way the category landings lead home. */}
-      <LandingBreadcrumb steps={[{ label: seo("home"), href: "/" }, { label: t("directory"), href: DIRECTORY_PATH }, { label: store.name }]} className="-mb-4 lg:-mb-6" />
-      {/* The shop's door: the Pro green under the arch, its gold threshold, its emblem until a logo is uploaded. */}
-      <header data-testid="storefront-header" className="arch threshold flex flex-col items-center gap-5 rounded-b-lg bg-structure px-6 pt-12 pb-9 text-center text-structure-foreground sm:flex-row sm:items-end sm:gap-7 sm:px-10 sm:text-start">
-        <ShopEmblem name={store.name} sector={store.sector ?? "general"} size="lg" />
-        <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
-          <p className="text-sm text-structure-foreground/80">{label}</p>
-          <h1 dir="auto" className="text-3xl font-semibold text-balance break-words sm:text-4xl">
-            {store.name}
-          </h1>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-structure-foreground/85 sm:justify-start">
-            {city ? (
+    <PageMessages locale={locale} namespaces={STOREFRONT_PAGE_CLIENT_NAMESPACES}>
+      <Container className="flex flex-col gap-10 py-8 lg:gap-12 lg:py-12">
+        {/* Back to the directory of shops (owner's choice of 30 Oct 2026), the way the category landings lead home. */}
+        <LandingBreadcrumb steps={[{ label: seo("home"), href: "/" }, { label: t("directory"), href: DIRECTORY_PATH }, { label: store.name }]} className="-mb-4 lg:-mb-6" />
+        {/* The shop's door: the Pro green under the arch, its gold threshold, its emblem until a logo is uploaded. */}
+        <header data-testid="storefront-header" className="arch threshold flex flex-col items-center gap-5 rounded-b-lg bg-structure px-6 pt-12 pb-9 text-center text-structure-foreground sm:flex-row sm:items-end sm:gap-7 sm:px-10 sm:text-start">
+          <ShopEmblem name={store.name} sector={store.sector ?? "general"} size="lg" />
+          <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
+            <p className="text-sm text-structure-foreground/80">{label}</p>
+            <h1 dir="auto" className="text-3xl font-semibold text-balance break-words sm:text-4xl">
+              {store.name}
+            </h1>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-structure-foreground/85 sm:justify-start">
+              {city ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="size-4 shrink-0" aria-hidden="true" />
+                  {cityName(city, locale)}
+                </span>
+              ) : null}
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="size-4 shrink-0" aria-hidden="true" />
-                {cityName(city, locale)}
+                <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
+                {profile("memberSince", { date: formatMemberSince(seller.memberSince, locale) })}
               </span>
-            ) : null}
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-              {profile("memberSince", { date: formatMemberSince(seller.memberSince, locale) })}
-            </span>
-            <RatingLink rating={seller.rating} locale={locale} />
-            {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
-            <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
-              <Flag className="size-4 shrink-0" aria-hidden="true" />
-              {t("reportLink")}
-            </a>
+              <RatingLink rating={seller.rating} locale={locale} />
+              {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
+              <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
+                <Flag className="size-4 shrink-0" aria-hidden="true" />
+                {t("reportLink")}
+              </a>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start">
+            {store.example ? null : <BadgeCheck className="size-4" aria-hidden="true" />}
+            {store.example ? t("example.badge") : agency || rentalAgency || holidayAgency ? t("agency.verified") : t("verified")}
+          </span>
+        </header>
+        {store.example ? <ExampleBanner scope="shop" /> : null}
+
+        {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
+        {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
+          {store.description ? (
+            <section aria-labelledby="storefront-about" className="flex flex-col gap-3">
+              <h2 id="storefront-about" className="text-xl font-semibold">
+                {t("about")}
+              </h2>
+              <p dir="auto" className="max-w-prose leading-relaxed whitespace-pre-line text-pretty">
+                {store.description}
+              </p>
+              {/* Under the presentation, not in the cards column: a two-line presentation beside a tall
+                  column left a void under it (UX audit, finding 22). */}
+              {aside}
+            </section>
+          ) : null}
+          <div className={store.description ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 lg:col-span-2"}>
+            {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
+            <FeeSchedule text={store.feeSchedule} />
+            <SocialLinks links={store.social} />
+            {store.payment ? <PayAtSeller payment={store.payment} className="rounded-lg border border-border bg-surface p-4" /> : null}
+            {store.description ? null : aside}
           </div>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start">
-          {store.example ? null : <BadgeCheck className="size-4" aria-hidden="true" />}
-          {store.example ? t("example.badge") : agency || rentalAgency || holidayAgency ? t("agency.verified") : t("verified")}
-        </span>
-      </header>
-      {store.example ? <ExampleBanner scope="shop" /> : null}
 
-      {counts ? <AgencyTransactions counts={counts} shopPublicId={seller.publicId} /> : null}
-      {fleet ? <RentalFleet fleet={fleet} labels={fleetLabels(fleet, (key) => criteria(key as Parameters<typeof criteria>[0]))} shopPublicId={seller.publicId} mediaBaseUrl={media} locale={locale} /> : null}
+        {fleet ? <RentalConditions conditions={fleet.conditions} locale={locale} /> : null}
+        {store.rental ? <RentalBranches rental={store.rental} locale={locale} /> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
-        {store.description ? (
-          <section aria-labelledby="storefront-about" className="flex flex-col gap-3">
-            <h2 id="storefront-about" className="text-xl font-semibold">
-              {t("about")}
+        {vehicles ? <DealerStock stock={vehicles} shop={seller.publicId} /> : null}
+
+        {fleet && listings.length === 0 ? null : (
+          <section aria-labelledby="storefront-listings" className="flex flex-col gap-6">
+            <h2 id="storefront-listings" className="text-xl font-semibold">
+              {fleet ? t("rental.otherListings", { count: listedCount }) : profile("listingsTitle", { count: seller.publishedCount })}
             </h2>
-            <p dir="auto" className="max-w-prose leading-relaxed whitespace-pre-line text-pretty">
-              {store.description}
-            </p>
-            {/* Under the presentation, not in the cards column: a two-line presentation beside a tall
-                column left a void under it (UX audit, finding 22). */}
-            {aside}
+            {shelves.length > 0 ? (
+              <StorefrontTabs
+                label={t("shelves.label")}
+                tabs={[
+                  { key: "all", label: t("shelves.all"), count: listedCount },
+                  ...shelves.map((shelf) => ({ key: shelf.key, label: shelf.kind === "promo" ? t("shelves.promotions") : shelf.name, count: shelf.total, promo: shelf.kind === "promo" })),
+                ]}
+                panels={[
+                  allListings,
+                  ...shelves.map((shelf) => (
+                    <Fragment key={shelf.key}>
+                      <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
+                        {shelf.listings.map((listing) => (
+                          <li key={listing.id} className="min-w-0">
+                            <ListingCard listing={listing} mediaBaseUrl={media} locale={locale} action={<FavoriteButton listingId={listing.id} />} />
+                          </li>
+                        ))}
+                      </ul>
+                      {shelf.total > shelf.listings.length ? (
+                        <Button asChild variant="outline" className="self-start">
+                          <Link href={searchPath(shelf.params)}>{t("shelves.seeAll", { count: shelf.total })}</Link>
+                        </Button>
+                      ) : null}
+                    </Fragment>
+                  )),
+                ]}
+              />
+            ) : (
+              allListings
+            )}
           </section>
-        ) : null}
-        <div className={store.description ? "flex flex-col gap-4 self-start" : "flex max-w-prose flex-col gap-4 lg:col-span-2"}>
-          {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
-          <FeeSchedule text={store.feeSchedule} />
-          <SocialLinks links={store.social} />
-          {store.payment ? <PayAtSeller payment={store.payment} className="rounded-lg border border-border bg-surface p-4" /> : null}
-          {store.description ? null : aside}
-        </div>
-      </div>
+        )}
 
-      {fleet ? <RentalConditions conditions={fleet.conditions} locale={locale} /> : null}
-      {store.rental ? <RentalBranches rental={store.rental} locale={locale} /> : null}
+  {store.payment ? <SellerInfo payment={store.payment} /> : null}
 
-      {vehicles ? <DealerStock stock={vehicles} shop={seller.publicId} /> : null}
-
-      {fleet && listings.length === 0 ? null : (
-        <section aria-labelledby="storefront-listings" className="flex flex-col gap-6">
-          <h2 id="storefront-listings" className="text-xl font-semibold">
-            {fleet ? t("rental.otherListings", { count: listedCount }) : profile("listingsTitle", { count: seller.publishedCount })}
-          </h2>
-          {shelves.length > 0 ? (
-            <StorefrontTabs
-              label={t("shelves.label")}
-              tabs={[
-                { key: "all", label: t("shelves.all"), count: listedCount },
-                ...shelves.map((shelf) => ({ key: shelf.key, label: shelf.kind === "promo" ? t("shelves.promotions") : shelf.name, count: shelf.total, promo: shelf.kind === "promo" })),
-              ]}
-              panels={[
-                allListings,
-                ...shelves.map((shelf) => (
-                  <Fragment key={shelf.key}>
-                    <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
-                      {shelf.listings.map((listing) => (
-                        <li key={listing.id} className="min-w-0">
-                          <ListingCard listing={listing} mediaBaseUrl={media} locale={locale} action={<FavoriteButton listingId={listing.id} />} />
-                        </li>
-                      ))}
-                    </ul>
-                    {shelf.total > shelf.listings.length ? (
-                      <Button asChild variant="outline" className="self-start">
-                        <Link href={searchPath(shelf.params)}>{t("shelves.seeAll", { count: shelf.total })}</Link>
-                      </Button>
-                    ) : null}
-                  </Fragment>
-                )),
-              ]}
-            />
-          ) : (
-            allListings
-          )}
-        </section>
-      )}
-
-{store.payment ? <SellerInfo payment={store.payment} /> : null}
-
-      <SellerReviews
-        rating={seller.rating}
-        page={seller.reviews}
-        publicId={seller.publicId}
-        sellerName={store.name}
-        locale={locale}
-        report={{ email: legal.dsaContactEmail, url: `${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}#avis` }}
-      />
-
-      {/* Profiles stay out of the ad inventory (AF §8 table): house promotion only. */}
-      <AdSlot placement="profile-bottom" eligible={false} promos={availablePromos(flags)} seed={store.segment} />
-      {/* The report buttons' link from the header lands here (DSA art. 16, Phase 6 review). */}
-      <div id="signaler" className="scroll-mt-24">
-        <ReportButton
-          target={{ type: "user", id: seller.publicId }}
-          subject={store.name}
-          ownerPublicId={seller.publicId}
-          email={legal.dsaContactEmail}
-          url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`}
+        <SellerReviews
+          rating={seller.rating}
+          page={seller.reviews}
+          publicId={seller.publicId}
+          sellerName={store.name}
+          locale={locale}
+          report={{ email: legal.dsaContactEmail, url: `${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}#avis` }}
         />
-      </div>
-    </Container>
+
+        {/* Profiles stay out of the ad inventory (AF §8 table): house promotion only. */}
+        <AdSlot placement="profile-bottom" eligible={false} promos={availablePromos(flags)} seed={store.segment} />
+        {/* The report buttons' link from the header lands here (DSA art. 16, Phase 6 review). */}
+        <div id="signaler" className="scroll-mt-24">
+          <ReportButton
+            target={{ type: "user", id: seller.publicId }}
+            subject={store.name}
+            ownerPublicId={seller.publicId}
+            email={legal.dsaContactEmail}
+            url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`}
+          />
+        </div>
+      </Container>
+    </PageMessages>
   );
 }

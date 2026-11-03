@@ -450,10 +450,18 @@ export function storefrontSegment(slug: string, proId: string): string {
   return `${slug}-${proId}`;
 }
 
-/** The /boutique segment of a Pro's shop while its storefront is shown, else null: the seller card of a listing links there (UX journeys, 6). */
-export async function publicStorefrontSegment(proId: string): Promise<string | null> {
+/** A Pro's shop as the seller card of its listings shows it: the /boutique segment, its name and trade (one emblem everywhere, UX audit B8). */
+export interface PublicShopRef {
+  segment: string;
+  name: string;
+  sector: ProSector;
+}
+
+/** The shop of a Pro listing while its storefront is shown, else null: the seller card of a listing links there (UX journeys, 6). */
+export async function publicShopRef(proId: string): Promise<PublicShopRef | null> {
   const profile = await getProProfile(proId);
-  return profile && storefrontShown(profile.lifecycle, profile.plan) ? storefrontSegment(profile.slug, profile.proId) : null;
+  if (!profile || !storefrontShown(profile.lifecycle, profile.plan)) return null;
+  return { segment: storefrontSegment(profile.slug, profile.proId), name: profile.name, sector: profile.sector ?? "general" };
 }
 
 /** The proId of a /boutique segment "{slug}-{proId}", or null when it cannot be one. */

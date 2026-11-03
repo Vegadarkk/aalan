@@ -46,7 +46,7 @@ import { getLegalConfig } from "@/lib/legal/config";
 import { formatDate, formatPrice } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
 import { listingJsonLd } from "@/lib/listings/jsonld";
-import { getPublishedBySlugId, getSeller, listingPath, publicStorefrontSegment, toPublicListing, type PublicListing, type PublicSeller } from "@/lib/listings/public";
+import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { offerAllowed } from "@/lib/offers/eligibility";
 import { offerReferencePrice } from "@/lib/offers/rules";
@@ -114,11 +114,11 @@ async function sellerOf(ownerUid: string): Promise<PublicSeller | null> {
   }
 }
 
-/** The shop's /boutique segment for a Pro listing, null for the others or when the lookup fails. */
-async function storefrontOf(proId: string | undefined): Promise<string | null> {
+/** The shop of a Pro listing, null for the others or when the lookup fails. */
+async function storefrontOf(proId: string | undefined): Promise<PublicShopRef | null> {
   if (!proId) return null;
   try {
-    return await publicStorefrontSegment(proId);
+    return await publicShopRef(proId);
   } catch (error) {
     logger.warn({ err: (error as Error).message }, "listing page: storefront lookup failed");
     return null;

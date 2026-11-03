@@ -23,6 +23,8 @@ import { paymentEligible } from "@/lib/pro/seller-payment-rules";
 import { cn } from "@/lib/utils";
 import { RentalSetup } from "@/components/rental/rental-setup";
 import { AgencySettings } from "./agency-settings";
+import { ShopEmblem } from "./shop-emblem";
+import { importsStock } from "@/lib/contracts/stock-import";
 import { SectionsSettings } from "./sections-settings";
 import { SocialLinksSettings } from "./social-links-settings";
 import { ProApplicationForm } from "./pro-application-form";
@@ -230,9 +232,8 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
   return (
     <div className="flex flex-col gap-8">
       <section className="threshold flex flex-col gap-4 rounded-lg bg-structure px-6 pt-6 pb-7 text-structure-foreground sm:flex-row sm:items-center sm:gap-5">
-        <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-featured text-featured-foreground">
-          <Store className="size-7" aria-hidden="true" />
-        </span>
+        {/* The emblem of its storefront and directory card (UX audit of the Pro shops, B8). */}
+        <ShopEmblem name={shop.name} sector={shop.sector} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 dir="auto" className="truncate text-2xl font-semibold">
             {shop.name}
@@ -288,7 +289,8 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
               <Link href="/deposer">{t("newListing")}</Link>
             </Button>
           ) : null}
-          {canPublish ? (
+          {/* Only where the plan imports (Business, Premium): an Essentiel shop met a 403 (UX audit B4). */}
+          {canPublish && importsStock(plan) ? (
             <Button asChild variant="outline">
               <Link href="/pro/stock">{t("stockImport")}</Link>
             </Button>

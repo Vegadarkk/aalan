@@ -5783,7 +5783,7 @@
       "storefront": "Vitrine n medden s yisem nnec, s tisaɛtin nnec, adres nnec d isuɣan nnec",
       "listings": "Ar {count} n annonces deg internet s twefka Essentiel, s ucrac Pro",
       "messaging": "Tibratin, amyafa d rray yettwasenqden n yimsaɣen nnec",
-      "stock": "Asekcem n stock nnec s ufaylu, inawen n tiddi d yini",
+      "stock": "Inawen n tiddi d yini, d usekcem n stock nnec s ufaylu s tefrayin Business d Premium",
       "planning": "I wid itekran, planning n ṭumubilat d isutar s wussan"
     },
     "offer": "Twefka n usenṭi: twefka Essentiel bla idrimen i tḥuna yettwaqbalen ar tarzemt n uzenzi. Ad dak-nini {days} n wussan zzat n kra n udfaɛ.",
@@ -5902,7 +5902,6 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "Win xtaren aṭas",
       "onQuote": "S devis",
       "credits": "{count, number} n crédits n tbanit dg-s",
       "listings": "{count, plural, one {# n annonce texdem} other {# n annonces xedment}}",
@@ -5913,7 +5912,9 @@
       "payAtSeller": "Adfaɛ ɣer umzenzu: Aalan war tettaɣ ula d commission x uzenzi nnec.",
       "cta": "Snulfu taḥanut inu",
       "more": "Ssen twefka Pro",
-      "unlimitedListings": "Annonces xedment bla tilisa"
+      "unlimitedListings": "Annonces xedment bla tilisa",
+      "stockImport": "Asekcem n stock s ufaylu",
+      "recommended": "Ittwasumer"
     },
     "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt."
   },

@@ -1,12 +1,13 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_LEGAL } from "@/config/legal";
 import { DEFAULT_PRICING, planOfEntitlement, resolvePricingConfig } from "@/config/pricing";
 import { resetServerEnv } from "@/lib/env";
 import { invoiceViews } from "@/lib/payments/invoices";
 import { noticeDue } from "@/lib/payments/launch-offer";
 import { passPurchaseEffect } from "@/lib/payments/pass";
 import { passEndAfter, passNoticeDue, runningPassEnd } from "@/lib/payments/pass-rules";
-import { invoiceFields } from "@/lib/payments/plans";
+import { invoiceFields, invoiceFooter } from "@/lib/payments/plans";
 import { listCustomerSubscriptions, postStripeReceipt, RevenueCatApiError, type RevenueCatSubscription } from "@/lib/payments/revenuecat-api";
 import { formEncode, stripeRequest, StripeApiError, verifyStripeSignature } from "@/lib/payments/stripe-api";
 import { addMonthsUtc, chooseSubscription, grantSlot, intervalOf, lifecycleEventFor, subscriptionStatusOf } from "@/lib/payments/subscriptions";
@@ -269,6 +270,13 @@ describe("invoice identifiers", () => {
       { name: "ICE", value: "001234567000089" },
       { name: "Taxe professionnelle", value: "55" },
     ]);
+  });
+
+  it("prints the publisher's mentions in the footer, from the legal config", () => {
+    expect(invoiceFooter(DEFAULT_LEGAL)).toBe(
+      "Adil DARKAOUI DAHMANI, entrepreneur individuel (EI), nom commercial Adark Prime, 6 rue d'Armaillé, 75017 Paris, SIREN 947788303. TVA non applicable, article 293 B du CGI.",
+    );
+    expect(invoiceFooter({ ...DEFAULT_LEGAL, vatRegime: "assujetti" })).toMatch(/SIREN 947788303\. TVA intracommunautaire : FR41947788303\.$/);
   });
 });
 

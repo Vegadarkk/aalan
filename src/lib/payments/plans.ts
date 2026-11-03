@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { publisherIdentity, vatMention, type LegalConfig } from "@/config/legal";
 import { launchOfferOpen, PAID_PLANS, type PricingConfig } from "@/config/pricing";
 import type { Locale } from "@/config/site";
 import type { AuthContext } from "@/lib/auth/guards";
@@ -11,6 +12,7 @@ import { getFlags, getPricing } from "@/lib/config/runtime";
 import { serverEnv } from "@/lib/env";
 import { db } from "@/lib/firebase/admin";
 import { HttpError, notFound, unavailable } from "@/lib/http/errors";
+import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
 import type { ProLegal } from "@/lib/pro/kybc";
 import { passEndAfter, runningPassEnd } from "./pass-rules";
@@ -111,6 +113,11 @@ export function invoiceFields(legal: ProLegal): { name: string; value: string }[
   return fields.slice(0, 4);
 }
 
+/** The publisher's mentions under every invoice (issuer, address, SIREN, VAT), from config/legal. */
+export function invoiceFooter(legal: LegalConfig): string {
+  return `${publisherIdentity(legal)}, ${legal.hqAddress}, SIREN ${legal.siren}. ${vatMention(legal)}.`;
+}
+
 export function pageUrl(locale: Locale, query = ""): string {
   return `${serverEnv().SITE_URL.replace(/\/+$/, "")}/${locale}/pro/abonnement${query}`;
 }
@@ -122,7 +129,7 @@ export async function stripeCustomer(account: BillingAccountDoc & { id: string }
     ...(email ? { email } : {}),
     preferred_locales: ["fr"],
     metadata: { accountId: account.id, app_user_id: account.rcAppUserId },
-    invoice_settings: { custom_fields: invoiceFields(profile.legal) },
+    invoice_settings: { custom_fields: invoiceFields(profile.legal), footer: invoiceFooter(await getLegalConfig()) },
   };
   if (account.stripeCustomerId) {
     await stripeRequest("POST", `/v1/customers/${encodeURIComponent(account.stripeCustomerId)}`, params);

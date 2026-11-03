@@ -259,7 +259,7 @@ describe("plan checkout", () => {
     expect(customer!.params).toMatchObject({
       name: "Atlas Auto",
       metadata: { accountId: `pro_${proId}`, app_user_id: account!.rcAppUserId },
-      invoice_settings: { custom_fields: [{ name: "ICE", value: "001234567000089" }, { name: "IF", value: "1234567" }, { name: "RC", value: "12345" }] },
+      invoice_settings: { custom_fields: [{ name: "ICE", value: "001234567000089" }, { name: "IF", value: "1234567" }, { name: "RC", value: "12345" }], footer: expect.stringContaining("SIREN 947788303. TVA non applicable, article 293 B du CGI.") },
     });
     expect(session).toMatchObject({ method: "POST", path: "/v1/checkout/sessions" });
     expect(session!.params).toMatchObject({

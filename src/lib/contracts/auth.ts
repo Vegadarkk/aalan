@@ -9,8 +9,11 @@ import { PASSWORD_MAX, PASSWORD_MIN } from "./endpoints";
 
 /** Version strings recorded with the consents (users/{uid}/private.consents). */
 export const CGU_VERSION = LEGAL_VERSIONS.cgu.version;
-/** 2026-10-19: the text names each provider, its role and region (audit C2-04); older consents are asked again. */
-export const TRANSFERS_CONSENT_VERSION = "2026-10-19";
+/**
+ * 2026-10-19: the text names each provider, its role and region (audit C2-04); older consents are asked again.
+ * 2026-11-03: OpenAI marked "only if activated", like AdSense (zone 1 audit Z1-14).
+ */
+export const TRANSFERS_CONSENT_VERSION = "2026-11-03";
 /** Version of the opt-in text for information e-mails (SignUp.consents.marketing). */
 export const MARKETING_CONSENT_VERSION = "2026-10";
 

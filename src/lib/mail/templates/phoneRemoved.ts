@@ -7,14 +7,14 @@ import { GREETING, mailContact, pageUrl, renderLayout, type BuiltMail, type Mail
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: (phone: string) => string[]; button: string; notYou: (contact: string) => string }> = {
   fr: {
-    subject: "Ton numéro de téléphone a été retiré de ton compte",
+    subject: "Votre numéro de téléphone a été retiré de votre compte",
     title: "Numéro retiré",
     body: (phone) => [
-      `Le numéro ${phone} vient d'être vérifié depuis ce téléphone sur un autre compte Aalan. Il a donc été retiré de ton compte, et tes annonces n'affichent plus le badge « Téléphone vérifié ».`,
-      "Si c'est bien toi (un second compte, par exemple), tout est en ordre. Tu peux vérifier un autre numéro à tout moment.",
+      `Le numéro ${phone} vient d'être vérifié depuis ce téléphone sur un autre compte Aalan. Il a donc été retiré de votre compte, et vos annonces n'affichent plus le badge « Téléphone vérifié ».`,
+      "Si c'est bien vous (un second compte, par exemple), tout est en ordre. Vous pouvez vérifier un autre numéro à tout moment.",
     ],
     button: "Vérifier un numéro",
-    notYou: (contact) => `Si ce n'est pas toi, écris-nous sans attendre à ${contact} depuis cette adresse e-mail : nous vérifierons avec toi.`,
+    notYou: (contact) => `Si ce n'est pas vous, écrivez-nous sans attendre à ${contact} depuis cette adresse e-mail : nous vérifierons avec vous.`,
   },
   ar: {
     subject: "تمت إزالة رقم هاتفك من حسابك",

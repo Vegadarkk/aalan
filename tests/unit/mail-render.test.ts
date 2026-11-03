@@ -166,10 +166,10 @@ describe("renderMail", () => {
 
   it("ends security mails with the not-you sentence in both languages", () => {
     for (const template of ["verifyEmail", "resetPassword", "signupExisting"] as const) {
-      expect(renderMail(mail(template, "fr")).text).toContain("Si tu n'es pas à l'origine de cette demande, ignore cet e-mail.");
+      expect(renderMail(mail(template, "fr")).text).toContain("Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.");
       expect(renderMail(mail(template, "ar")).text).toContain("إذا لم تكن أنت من قام بهذا الطلب");
     }
-    expect(renderMail(mail("passwordChanged", "fr")).text).toContain("Si tu n'es pas à l'origine de cette demande");
+    expect(renderMail(mail("passwordChanged", "fr")).text).toContain("Si vous n'êtes pas à l'origine de ce changement");
   });
 
   it("escapes interpolated values", () => {
@@ -188,6 +188,9 @@ describe("renderMail", () => {
     const fr = renderMail(mail("passwordChanged", "fr"));
     expect(fr.text).toContain("16 octobre 2026");
     expect(fr.text).not.toContain("2026-10-16T09:30");
+    // The time zone is named (audit Z1-05).
+    expect(fr.text).toContain("(heure du Maroc)");
+    expect(renderMail(mail("passwordChanged", "ar")).text).toContain("(بتوقيت المغرب)");
     expect(fr.html).toContain(`${SITE}/fr/mot-de-passe-oublie`);
     const rif = renderMail(mail("passwordChanged", "rif"));
     expect(rif.html).toContain(`${SITE}/rif/mot-de-passe-oublie`);

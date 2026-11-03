@@ -132,7 +132,7 @@ const FOOTER: Record<MailLocale, { auto: string; reply: string; publisher: (who:
 
 /** Security sentence closing every security mail. */
 export const NOT_YOU: Record<MailLocale, string> = {
-  fr: "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail.",
+  fr: "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.",
   ar: "إذا لم تكن أنت من قام بهذا الطلب، فتجاهل هذا البريد الإلكتروني.",
 };
 
@@ -152,8 +152,12 @@ export function formatDate(value: string, locale: Locale): string {
   if (Number.isNaN(date.getTime())) return value;
   // Tarifit has no Intl data: the copy is French, so is the date.
   const tag = LOCALE_TAGS[locale === "rif" ? "fr" : locale];
-  return new Intl.DateTimeFormat(tag, { dateStyle: "long", timeStyle: "short", timeZone: moroccoTimeZone(date.getTime()) }).format(date);
+  // The time zone is named (audit Z1-05): a phone whose time zone data predates Morocco's switch to
+  // UTC would otherwise make the reader add an hour.
+  return `${new Intl.DateTimeFormat(tag, { dateStyle: "long", timeStyle: "short", timeZone: moroccoTimeZone(date.getTime()) }).format(date)} ${MOROCCO_TIME[locale === "ar" ? "ar" : "fr"]}`;
 }
+
+const MOROCCO_TIME: Record<MailLocale, string> = { fr: "(heure du Maroc)", ar: "(بتوقيت المغرب)" };
 
 /** Formats an ISO date as a day (no time) for the recipient (Morocco time). */
 export function formatDay(value: string, locale: Locale): string {

@@ -3,11 +3,11 @@ import { formatDate, GREETING, pageUrl, renderLayout, type BuiltMail, type MailL
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: (at: string) => string[]; button: string; notYou: string }> = {
   fr: {
-    subject: "Ton mot de passe a été modifié",
+    subject: "Votre mot de passe a été modifié",
     title: "Mot de passe modifié",
-    body: (at) => [`Le mot de passe de ton compte Aalan a été modifié le ${at}.`, "Si c'est bien toi, tout est en ordre : tu n'as rien à faire."],
+    body: (at) => [`Le mot de passe de votre compte Aalan a été modifié le ${at}.`, "Si c'est bien vous, tout est en ordre : vous n'avez rien à faire."],
     button: "Réinitialiser mon mot de passe",
-    notYou: "Si tu n'es pas à l'origine de cette demande, réinitialise ton mot de passe sans attendre grâce au bouton ci-dessus, puis ignore cet e-mail.",
+    notYou: "Si vous n'êtes pas à l'origine de ce changement, réinitialisez votre mot de passe sans attendre grâce au bouton ci-dessus.",
   },
   ar: {
     subject: "تم تغيير كلمة المرور الخاصة بك",

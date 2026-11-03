@@ -5484,6 +5484,7 @@
       "pickedBlocked": "Cette période comprend des jours indiqués indisponibles : l'agence vous dira ce qu'elle peut proposer.",
       "request": "Demander ces dates",
       "clear": "Effacer",
+      "exampleNoRequest": "Annonce exemple : aucune demande ne peut être envoyée.",
       "home": {
         "updatedOn": "Déclarées par l'annonceur, mises à jour le {date}.",
         "stale": "Disponibilité à confirmer avec l'annonceur (dernière mise à jour le {date}).",

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import type * as NextNavigation from "next/navigation";
@@ -15,6 +16,9 @@ import { sitemapShardOf, type SearchCard, type SearchDocument, type SearchEngine
 // lead, chips, city links, breadcrumb + JSON-LD, links to /recherche) on the in-memory engine. The
 // grid and the À la Une row are L3b's components: stubbed here to the cards they receive.
 
+// The page's own message provider is an async server component (src/components/i18n/page-messages.tsx,
+// kept exact by client-messages.test.ts): the provider of this test carries the whole catalog.
+vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/components/search/results-grid", () => ({
   ResultsGrid: ({ cards }: { cards: SearchCard[] }) => (
     <ul data-testid="results-grid">

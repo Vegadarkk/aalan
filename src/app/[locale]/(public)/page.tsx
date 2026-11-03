@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { ExamplesHiddenNotice } from "@/components/examples/examples-controls";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
@@ -25,8 +24,9 @@ import { ResultsGrid } from "@/components/search/results-grid";
 import { SearchNavigationProvider } from "@/components/search/search-navigation";
 import { Button } from "@/components/ui/button";
 import { WelcomeThreshold, welcomeTexts } from "@/components/welcome/welcome-threshold";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { availablePromos } from "@/config/house-promos";
-import { HOME_PAGE_CLIENT_NAMESPACES, PUBLIC_CLIENT_NAMESPACES, pickMessages } from "@/i18n/client-messages";
+import { HOME_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { Link } from "@/i18n/navigation";
 import { pageLocale } from "@/i18n/params";
 import { searchMapConfig } from "@/lib/config/public";
@@ -92,7 +92,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
   const map = searchMapConfig();
-  const [t, own, welcome, flags, featured, recent, labels, legal, messages] = await Promise.all([
+  const [t, own, welcome, flags, featured, recent, labels, legal] = await Promise.all([
     getTranslations({ locale, namespace: "Home" }),
     getTranslations({ locale, namespace: "SearchMap" }),
     welcomeTexts(locale),
@@ -101,7 +101,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     section("recent", () => latestListings({}, HOME_RECENT_COUNT)),
     mapListingLabels(locale),
     getLegalConfig(),
-    getMessages({ locale }),
   ]);
   const serverView = defaultView("home", map !== null);
   // A listing drawn for À la Une shows once on the map, as its gold arch.
@@ -109,93 +108,89 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const cards = new Map([...(recent ?? []), ...(featured ?? [])].map((card) => [card.id, card]));
   const featuredRows = listings.filter((listing) => listing.featured);
   const recentRows = listings.filter((listing) => !listing.featured);
-  // The map's switch, sheet, pins and detail panel read the SearchMap namespace (a nested provider replaces, never merges).
-  const clientMessages = pickMessages(messages, [...PUBLIC_CLIENT_NAMESPACES, ...HOME_PAGE_CLIENT_NAMESPACES]);
 
   return (
-    <>
+    <PageMessages locale={locale} namespaces={HOME_PAGE_CLIENT_NAMESPACES}>
       {/* First visit only (decided before paint, see src/lib/welcome/script.ts); hidden otherwise. */}
       <WelcomeThreshold locale={locale} texts={welcome} />
-      <NextIntlClientProvider locale={locale} messages={clientMessages}>
-        <SearchNavigationProvider>
-          <SearchMapRoot variant="home" startSnap="half" serverView={serverView} map={map} listings={listings} params={{}} className="flex flex-1 flex-col">
-            <Container className="search-flow pt-4 sm:pt-8">
-              <section id="search-panel" aria-labelledby="home-title" data-testid="home-panel" className="search-panel home-panel flex flex-col">
-                <SheetHandle />
-                <header className="search-panel-head home-panel-head flex flex-col gap-4 sm:flex-row sm:items-start">
-                  <div className="min-w-0 flex-1">
-                    <h1 id="home-title" className="max-w-2xl text-2xl font-semibold text-balance sm:text-3xl">
-                      {t("title")}
-                    </h1>
-                    <p className="mt-2 max-w-xl text-foreground-muted text-pretty sm:text-lg">{t("subtitle")}</p>
-                  </div>
-                  <ViewToggle className="home-view-toggle self-start" />
-                </header>
-                <MapFailedNotice />
+      <SearchNavigationProvider>
+        <SearchMapRoot variant="home" startSnap="half" serverView={serverView} map={map} listings={listings} params={{}} className="flex flex-1 flex-col">
+          <Container className="search-flow pt-4 sm:pt-8">
+            <section id="search-panel" aria-labelledby="home-title" data-testid="home-panel" className="search-panel home-panel flex flex-col">
+              <SheetHandle />
+              <header className="search-panel-head home-panel-head flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="min-w-0 flex-1">
+                  <h1 id="home-title" className="max-w-2xl text-2xl font-semibold text-balance sm:text-3xl">
+                    {t("title")}
+                  </h1>
+                  <p className="mt-2 max-w-xl text-foreground-muted text-pretty sm:text-lg">{t("subtitle")}</p>
+                </div>
+                <ViewToggle className="home-view-toggle self-start" />
+              </header>
+              <MapFailedNotice />
 
-                {/* Map view (and its no-script page): the panel's content. */}
-                {map ? (
-                  <RowsArea className="search-rows home-rows flex flex-col gap-6">
-                    <CategoryGrid variant="rail" />
-                    <HomeShortcuts compact />
-                    {featuredRows.length > 0 ? (
-                      <section aria-labelledby="home-featured-rows" data-testid="home-featured-rows" className="flex flex-col gap-1">
-                        <FeaturedHeading id="home-featured-rows" className="px-2" />
-                        <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={2} label={own("featuredRows")} />
-                      </section>
-                    ) : null}
-                    {recentRows.length > 0 ? (
-                      <section aria-labelledby="home-recent-rows" data-testid="home-recent-rows" className="flex flex-col gap-1">
-                        <h2 id="home-recent-rows" className="px-2 text-base font-semibold sm:text-lg">
-                          {t("recent.title")}
-                        </h2>
-                        <ExamplesHiddenNotice className="px-2" />
-                        <ResultRows listings={recentRows} cards={cards} renderAction={rowFavorite} priorityCount={featuredRows.length > 0 ? 0 : 2} label={t("recent.title")} />
-                      </section>
-                    ) : null}
-                    <Button asChild variant="outline" className="mx-2">
-                      <Link href={SEARCH_PATH}>{t("recent.all")}</Link>
-                    </Button>
-                    <RentCarLink className="mx-2" />
-                    {/* The holiday rentals beside the cars (owner, 2026-10-31). */}
-                    <RentCarLink kind="holiday" className="mx-2" />
-                    <HomePillars compact className="px-2 pb-2" />
-                  </RowsArea>
-                ) : null}
+              {/* Map view (and its no-script page): the panel's content. */}
+              {map ? (
+                <RowsArea className="search-rows home-rows flex flex-col gap-6">
+                  <CategoryGrid variant="rail" />
+                  <HomeShortcuts compact />
+                  {featuredRows.length > 0 ? (
+                    <section aria-labelledby="home-featured-rows" data-testid="home-featured-rows" className="flex flex-col gap-1">
+                      <FeaturedHeading id="home-featured-rows" className="px-2" />
+                      <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={2} label={own("featuredRows")} />
+                    </section>
+                  ) : null}
+                  {recentRows.length > 0 ? (
+                    <section aria-labelledby="home-recent-rows" data-testid="home-recent-rows" className="flex flex-col gap-1">
+                      <h2 id="home-recent-rows" className="px-2 text-base font-semibold sm:text-lg">
+                        {t("recent.title")}
+                      </h2>
+                      <ExamplesHiddenNotice className="px-2" />
+                      <ResultRows listings={recentRows} cards={cards} renderAction={rowFavorite} priorityCount={featuredRows.length > 0 ? 0 : 2} label={t("recent.title")} />
+                    </section>
+                  ) : null}
+                  <Button asChild variant="outline" className="mx-2">
+                    <Link href={SEARCH_PATH}>{t("recent.all")}</Link>
+                  </Button>
+                  <RentCarLink className="mx-2" />
+                  {/* The holiday rentals beside the cars (owner, 2026-10-31). */}
+                  <RentCarLink kind="holiday" className="mx-2" />
+                  <HomePillars compact className="px-2 pb-2" />
+                </RowsArea>
+              ) : null}
 
-                {/* List view: the classic home page, its ad slot included (rendered only there: no hidden ad). */}
-                <ListViewOnly serverView={serverView}>
-                  <div className="flex flex-col gap-12 py-10 sm:gap-14 sm:py-14">
-                    {/* Desktop only (AF §8 table): no ad on the phone home page. */}
-                    <AdSlot placement="home-leaderboard" eligible promos={availablePromos(flags)} seed="home" />
-                    <CategoryGrid />
-                    <HomeShortcuts />
-                    <RentCarModule locale={locale} />
-                    {featured && featured.length > 0 ? <FeaturedCarousel cards={featured} locale={locale} renderAction={favoriteAction} /> : null}
-                    {recent && recent.length > 0 ? (
-                      <section aria-labelledby="home-recent" data-testid="home-recent" className="flex flex-col gap-5">
-                        <h2 id="home-recent" className="text-xl font-semibold">
-                          {t("recent.title")}
-                        </h2>
-                        <ExamplesHiddenNotice />
-                        <ResultsGrid cards={recent.slice(0, HOME_GRID_COUNT)} locale={locale} renderAction={favoriteAction} />
-                        <Button asChild variant="outline" className="self-center">
-                          <Link href={SEARCH_PATH}>{t("recent.all")}</Link>
-                        </Button>
-                      </section>
-                    ) : null}
-                    <HomePillars />
-                  </div>
-                </ListViewOnly>
-                <PanelLegal publisher={legal.companyName} className="search-panel-legal" />
-              </section>
-            </Container>
-            <PanelHandle />
-            <MapStage />
-            <DetailPanel />
-          </SearchMapRoot>
-        </SearchNavigationProvider>
-      </NextIntlClientProvider>
-    </>
+              {/* List view: the classic home page, its ad slot included (rendered only there: no hidden ad). */}
+              <ListViewOnly serverView={serverView}>
+                <div className="flex flex-col gap-12 py-10 sm:gap-14 sm:py-14">
+                  {/* Desktop only (AF §8 table): no ad on the phone home page. */}
+                  <AdSlot placement="home-leaderboard" eligible promos={availablePromos(flags)} seed="home" />
+                  <CategoryGrid />
+                  <HomeShortcuts />
+                  <RentCarModule locale={locale} />
+                  {featured && featured.length > 0 ? <FeaturedCarousel cards={featured} locale={locale} renderAction={favoriteAction} /> : null}
+                  {recent && recent.length > 0 ? (
+                    <section aria-labelledby="home-recent" data-testid="home-recent" className="flex flex-col gap-5">
+                      <h2 id="home-recent" className="text-xl font-semibold">
+                        {t("recent.title")}
+                      </h2>
+                      <ExamplesHiddenNotice />
+                      <ResultsGrid cards={recent.slice(0, HOME_GRID_COUNT)} locale={locale} renderAction={favoriteAction} />
+                      <Button asChild variant="outline" className="self-center">
+                        <Link href={SEARCH_PATH}>{t("recent.all")}</Link>
+                      </Button>
+                    </section>
+                  ) : null}
+                  <HomePillars />
+                </div>
+              </ListViewOnly>
+              <PanelLegal publisher={legal.companyName} className="search-panel-legal" />
+            </section>
+          </Container>
+          <PanelHandle />
+          <MapStage />
+          <DetailPanel />
+        </SearchMapRoot>
+      </SearchNavigationProvider>
+    </PageMessages>
   );
 }

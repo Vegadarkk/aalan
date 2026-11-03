@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { ListingCard } from "@/components/listing/listing-card";
 import { formatMemberSince, SellerAvatar, SellerBadges } from "@/components/listing/seller-card";
@@ -23,6 +24,7 @@ import { CANONICAL_ORIGIN, LOCALE_TAGS, SITE_NAME, type Locale } from "@/config/
 import { STOREFRONT_LISTINGS } from "@/config/storefront";
 import { Link } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
+import { PROFILE_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
 import { alternates } from "@/lib/i18n/metadata";
@@ -92,116 +94,118 @@ export default async function ProfilePage({ params }: { params: Params }) {
   const categoryNames = Object.fromEntries(categoryIds.map((id) => [id, categories(`${id}.name` as Parameters<typeof categories>[0])]));
 
   return (
-    <Container className="flex flex-col gap-10 py-6 lg:gap-12 lg:py-10">
-      <header data-testid="profile-header" className="flex flex-col">
-        <div data-testid="storefront-banner" data-banner={profile.bannerKey} className="h-28 overflow-hidden rounded-lg sm:h-40 lg:h-48">
-          <StorefrontBanner bannerKey={profile.bannerKey} id={profile.publicId} />
-        </div>
-        <div className="flex flex-col gap-5 px-1 sm:flex-row sm:items-start sm:gap-6 sm:px-6">
-          <SellerAvatar name={profile.displayName} size="xl" className="-mt-12 outline-4 outline-background sm:-mt-14" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:pt-4">
-            <p className="text-sm text-foreground-muted">{profile.sellerType === "pro" ? t("roleBusiness") : t("roleIndividual")}</p>
-            <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold text-balance break-words">
-              <span dir="auto" className="min-w-0">
-                {profile.displayName}
-              </span>
-              {profile.sellerType === "pro" ? <span className="rounded-sm bg-structure px-2 py-0.5 text-sm font-medium text-structure-foreground">{t("pro")}</span> : null}
-            </h1>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
-                {t("memberSince", { date: formatMemberSince(profile.memberSince, locale) })}
-              </span>
-              {city ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="size-4 shrink-0" aria-hidden="true" />
-                  {cityName(city, locale)}
+    <PageMessages locale={locale} namespaces={PROFILE_PAGE_CLIENT_NAMESPACES}>
+      <Container className="flex flex-col gap-10 py-6 lg:gap-12 lg:py-10">
+        <header data-testid="profile-header" className="flex flex-col">
+          <div data-testid="storefront-banner" data-banner={profile.bannerKey} className="h-28 overflow-hidden rounded-lg sm:h-40 lg:h-48">
+            <StorefrontBanner bannerKey={profile.bannerKey} id={profile.publicId} />
+          </div>
+          <div className="flex flex-col gap-5 px-1 sm:flex-row sm:items-start sm:gap-6 sm:px-6">
+            <SellerAvatar name={profile.displayName} size="xl" className="-mt-12 outline-4 outline-background sm:-mt-14" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:pt-4">
+              <p className="text-sm text-foreground-muted">{profile.sellerType === "pro" ? t("roleBusiness") : t("roleIndividual")}</p>
+              <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold text-balance break-words">
+                <span dir="auto" className="min-w-0">
+                  {profile.displayName}
                 </span>
-              ) : null}
-              <RatingLink rating={profile.rating} locale={locale} />
-              {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
-              <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
-                <Flag className="size-4 shrink-0" aria-hidden="true" />
-                {t("reportLink")}
-              </a>
+                {profile.sellerType === "pro" ? <span className="rounded-sm bg-structure px-2 py-0.5 text-sm font-medium text-structure-foreground">{t("pro")}</span> : null}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-foreground-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
+                  {t("memberSince", { date: formatMemberSince(profile.memberSince, locale) })}
+                </span>
+                {city ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-4 shrink-0" aria-hidden="true" />
+                    {cityName(city, locale)}
+                  </span>
+                ) : null}
+                <RatingLink rating={profile.rating} locale={locale} />
+                {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
+                <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
+                  <Flag className="size-4 shrink-0" aria-hidden="true" />
+                  {t("reportLink")}
+                </a>
+              </div>
+              <SellerBadges badges={profile.badges} sellerType={profile.sellerType} className="mt-1" />
             </div>
-            <SellerBadges badges={profile.badges} sellerType={profile.sellerType} className="mt-1" />
           </div>
-        </div>
-      </header>
+        </header>
 
-      {profile.bio ? (
-        <section aria-labelledby="profile-about" className="flex max-w-prose flex-col gap-3 border-s-2 border-featured ps-5">
-          <h2 id="profile-about" className="text-lg font-semibold">
-            {t("about")}
-          </h2>
-          <p dir="auto" className="whitespace-pre-line text-pretty">
-            {profile.bio}
-          </p>
-        </section>
-      ) : null}
-
-      <section aria-labelledby="profile-listings" className="flex flex-col gap-6">
-        <h2 id="profile-listings" className="text-xl font-semibold">
-          {t("listingsTitle", { count: profile.publishedCount })}
-        </h2>
-        {items.length > 0 ? (
-          <ListingShelf
-            items={items}
-            labels={{
-              sort: t("shelf.sort"),
-              sorts: { recent: t("shelf.recent"), priceAsc: t("shelf.priceAsc"), priceDesc: t("shelf.priceDesc") },
-              filter: t("shelf.filter"),
-              all: t("shelf.all"),
-              categories: categoryNames,
-            }}
-          />
-        ) : (
-          <EmptyState
-            title={t("emptyTitle")}
-            action={
-              <Button asChild variant="outline">
-                <Link href="/recherche">{t("browse")}</Link>
-              </Button>
-            }
-          >
-            {t("emptyBody", { name: isolate(profile.displayName) })}
-          </EmptyState>
-        )}
-        {hidden > 0 ? (
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-foreground-muted">{t("newest", { shown: profile.listings.length })}</p>
-            <Button asChild variant="outline">
-              <Link href={`/recherche?vendeur-id=${profile.publicId}`} prefetch={false}>
-                <Search aria-hidden="true" />
-                {t("seeAll")}
-              </Link>
-            </Button>
-          </div>
+        {profile.bio ? (
+          <section aria-labelledby="profile-about" className="flex max-w-prose flex-col gap-3 border-s-2 border-featured ps-5">
+            <h2 id="profile-about" className="text-lg font-semibold">
+              {t("about")}
+            </h2>
+            <p dir="auto" className="whitespace-pre-line text-pretty">
+              {profile.bio}
+            </p>
+          </section>
         ) : null}
-      </section>
 
-      <SellerReviews
-        rating={profile.rating}
-        page={profile.reviews}
-        publicId={profile.publicId}
-        sellerName={profile.displayName}
-        locale={locale}
-        report={{ email: legal.dsaContactEmail, url: `${CANONICAL_ORIGIN}${profilePath(locale, profile.publicId)}#avis` }}
-      />
+        <section aria-labelledby="profile-listings" className="flex flex-col gap-6">
+          <h2 id="profile-listings" className="text-xl font-semibold">
+            {t("listingsTitle", { count: profile.publishedCount })}
+          </h2>
+          {items.length > 0 ? (
+            <ListingShelf
+              items={items}
+              labels={{
+                sort: t("shelf.sort"),
+                sorts: { recent: t("shelf.recent"), priceAsc: t("shelf.priceAsc"), priceDesc: t("shelf.priceDesc") },
+                filter: t("shelf.filter"),
+                all: t("shelf.all"),
+                categories: categoryNames,
+              }}
+            />
+          ) : (
+            <EmptyState
+              title={t("emptyTitle")}
+              action={
+                <Button asChild variant="outline">
+                  <Link href="/recherche">{t("browse")}</Link>
+                </Button>
+              }
+            >
+              {t("emptyBody", { name: isolate(profile.displayName) })}
+            </EmptyState>
+          )}
+          {hidden > 0 ? (
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-foreground-muted">{t("newest", { shown: profile.listings.length })}</p>
+              <Button asChild variant="outline">
+                <Link href={`/recherche?vendeur-id=${profile.publicId}`} prefetch={false}>
+                  <Search aria-hidden="true" />
+                  {t("seeAll")}
+                </Link>
+              </Button>
+            </div>
+          ) : null}
+        </section>
 
-      {/* Profiles stay out of the ad inventory (AF §8 table): house promotion only. */}
-      <AdSlot placement="profile-bottom" eligible={false} promos={availablePromos(flags)} seed={publicId} />
-      {/* The report buttons' link from the header lands here (DSA art. 16, Phase 6 review). */}
-      <div id="signaler" className="scroll-mt-24">
-        <ReportButton
-          target={{ type: "user", id: profile.publicId }}
-          subject={profile.displayName}
-          ownerPublicId={profile.publicId}
-          email={legal.dsaContactEmail}
-          url={`${CANONICAL_ORIGIN}${profilePath(locale, profile.publicId)}`}
+        <SellerReviews
+          rating={profile.rating}
+          page={profile.reviews}
+          publicId={profile.publicId}
+          sellerName={profile.displayName}
+          locale={locale}
+          report={{ email: legal.dsaContactEmail, url: `${CANONICAL_ORIGIN}${profilePath(locale, profile.publicId)}#avis` }}
         />
-      </div>
-    </Container>
+
+        {/* Profiles stay out of the ad inventory (AF §8 table): house promotion only. */}
+        <AdSlot placement="profile-bottom" eligible={false} promos={availablePromos(flags)} seed={publicId} />
+        {/* The report buttons' link from the header lands here (DSA art. 16, Phase 6 review). */}
+        <div id="signaler" className="scroll-mt-24">
+          <ReportButton
+            target={{ type: "user", id: profile.publicId }}
+            subject={profile.displayName}
+            ownerPublicId={profile.publicId}
+            email={legal.dsaContactEmail}
+            url={`${CANONICAL_ORIGIN}${profilePath(locale, profile.publicId)}`}
+          />
+        </div>
+      </Container>
+    </PageMessages>
   );
 }

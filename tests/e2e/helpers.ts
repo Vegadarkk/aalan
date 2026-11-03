@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { getApps, initializeApp, type App } from "firebase-admin/app";
 import sharp from "sharp";
 
@@ -93,4 +93,20 @@ export async function storePhoto(listingId: string, photoId: string, color = { r
     await writeFile(metaPath, JSON.stringify({ contentType: "image/webp", size: body.byteLength, cacheControl: "public, max-age=31536000, immutable", storedAt: new Date().toISOString() }));
   }
   return { w: variants.l.width, h: variants.l.height };
+}
+
+/**
+ * Picks a rental period in RentalDatesFields: a tap on the field `field` (its label) opens the
+ * calendar, then a tap on each day given (moving to the next months as needed). An end day closes
+ * the calendar.
+ */
+export async function pickRentalDays(scope: Locator, field: string, ...days: string[]): Promise<void> {
+  await scope.getByLabel(field).click();
+  const calendar = scope.page().getByTestId("rental-dates-calendar");
+  await expect(calendar).toBeVisible();
+  for (const day of days) {
+    const cell = calendar.locator(`button[data-day="${day}"]`);
+    for (let month = 0; month < 12 && (await cell.count()) === 0; month += 1) await calendar.getByRole("button", { name: "Mois suivant" }).click();
+    await cell.click();
+  }
 }

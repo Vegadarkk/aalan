@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "@/config/site";
 import { intlLocale } from "@/lib/listings/client/format";
-import { dayNumber, dayString } from "@/lib/listings/rental-availability";
+import { dayString } from "@/lib/listings/rental-availability";
 import { cn } from "@/lib/utils";
+import { monthStart, weekdayIndex } from "./calendar-grid";
 
 // Month grids of a car rental's availability (rental pack §3), Monday first, Morocco's calendar.
-// Read-only on the listing page; editable in the agency's calendar, where a first tap marks the
-// start of a period and a second tap applies it (the same day twice toggles that day alone).
+// Editable in the agency's calendar, where a first tap marks the start of a period and a second tap
+// applies it (the same day twice toggles that day alone). On the listing page, a visitor's taps pick
+// the days of a booking request instead (`range`: the period picked, pressed and outlined).
 
 export interface AvailabilityCalendarProps {
   locale: Locale;
@@ -27,21 +29,16 @@ export interface AvailabilityCalendarProps {
   onDay?: (day: number) => void;
   /** Editable: the start of a period being chosen. */
   anchor?: number | null;
+  /** Days picked for a request (listing page; null: none yet): `to` null while the end is chosen. */
+  range?: { from: number; to: number | null } | null;
+  /** Editable days stop after this one (default: `lastDay`). */
+  lastEditable?: number;
   /** Month navigation; the buttons are hidden without it. */
   onMonthOffset?: (offset: number) => void;
   maxMonthOffset?: number;
 }
 
-/** Day number of the first day of the month `offset` months after the month of `day`. */
-function monthStart(day: number, offset: number): number {
-  const [year, month] = dayString(day).split("-").map(Number) as [number, number];
-  return dayNumber(new Date(Date.UTC(year, month - 1 + offset, 1)).toISOString().slice(0, 10));
-}
-
-/** 0 = Monday ... 6 = Sunday (1970-01-01 was a Thursday). */
-const weekdayIndex = (day: number) => (((day + 3) % 7) + 7) % 7;
-
-export function AvailabilityCalendar({ locale, today, lastDay, blocked, monthOffset, months, onDay, anchor = null, onMonthOffset, maxMonthOffset = 11 }: AvailabilityCalendarProps) {
+export function AvailabilityCalendar({ locale, today, lastDay, blocked, monthOffset, months, onDay, anchor = null, range, lastEditable, onMonthOffset, maxMonthOffset = 11 }: AvailabilityCalendarProps) {
   const t = useTranslations("Rental.calendar");
   const tag = intlLocale(locale);
   const monthFormat = new Intl.DateTimeFormat(tag, { month: "long", year: "numeric", timeZone: "UTC" });
@@ -91,6 +88,9 @@ export function AvailabilityCalendar({ locale, today, lastDay, blocked, monthOff
                   const off = day < today || day > lastDay;
                   const isBlocked = blocked.has(day);
                   const status = off ? t("past") : isBlocked ? t("blocked") : t("free");
+                  const rangeEnd = range ? (range.to ?? range.from) : null;
+                  const picked = range !== undefined && range !== null && rangeEnd !== null && day >= range.from && day <= rangeEnd;
+                  const edge = picked && (day === range?.from || day === rangeEnd);
                   const cell = cn(
                     "flex aspect-square min-h-9 items-center justify-center rounded-md text-sm tabular-nums",
                     off && "text-foreground-muted/50",
@@ -98,8 +98,10 @@ export function AvailabilityCalendar({ locale, today, lastDay, blocked, monthOff
                     !off && !isBlocked && "bg-success-surface text-foreground",
                     day === today && "ring-1 ring-structure ring-inset font-semibold",
                     anchor === day && "ring-2 ring-primary ring-inset",
+                    picked && !edge && "ring-2 ring-primary/45 ring-inset",
+                    edge && "bg-primary font-semibold text-primary-foreground no-underline",
                   );
-                  if (!editable || off) {
+                  if (!editable || off || (lastEditable !== undefined && day > lastEditable)) {
                     return (
                       <span key={day} className={cell} data-day={dayString(day)} data-state={off ? "off" : isBlocked ? "blocked" : "free"}>
                         <span aria-hidden="true">{dayFormat.format(date)}</span>
@@ -111,8 +113,8 @@ export function AvailabilityCalendar({ locale, today, lastDay, blocked, monthOff
                     <button
                       key={day}
                       type="button"
-                      className={cn(cell, "cursor-pointer outline-none transition-colors hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring")}
-                      aria-pressed={isBlocked}
+                      className={cn(cell, "cursor-pointer touch-manipulation outline-none transition-colors hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring")}
+                      aria-pressed={range !== undefined ? picked : isBlocked}
                       aria-label={`${fullFormat.format(date)} : ${status}`}
                       data-day={dayString(day)}
                       data-state={isBlocked ? "blocked" : "free"}

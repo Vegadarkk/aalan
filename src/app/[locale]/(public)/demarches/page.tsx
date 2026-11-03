@@ -8,8 +8,10 @@ import { DoorMark } from "@/components/feedback/door-mark";
 import { GuideSearch, type GuideSearchEntry } from "@/components/guide/guide-search";
 import { GuideDisclaimer, OfficialLink } from "@/components/guide/official-link";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { GUIDE_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { linkDisplay } from "@/lib/guide/check";
 import { getGuideState } from "@/lib/guide/state";
 import { alternates } from "@/lib/i18n/metadata";
@@ -50,7 +52,7 @@ export default async function GuideHome({ params }: { params: Params }) {
   });
 
   return (
-    <>
+    <PageMessages locale={locale} namespaces={GUIDE_PAGE_CLIENT_NAMESPACES}>
       <section className="border-b border-border bg-surface-brand/70">
         <Container className="grid items-end gap-8 pt-10 pb-12 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
           <div className="flex max-w-2xl flex-col gap-4">
@@ -105,6 +107,6 @@ export default async function GuideHome({ params }: { params: Params }) {
           </section>
         ) : null}
       </Container>
-    </>
+    </PageMessages>
   );
 }

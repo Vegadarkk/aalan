@@ -32,8 +32,8 @@ export function HomeShortcuts({ compact = false, className }: HomeShortcutsProps
   const t = useTranslations("Home.shortcuts");
   const rental = useTranslations("Rental.home");
   const names = useTranslations("Categories");
-  const door = (href: string, Icon: typeof ShoppingBag, title: string, hint: string, testId: string) => (
-    <Link href={href} prefetch={false} data-testid={testId} className={cn(TILE, !compact && "sm:px-4 sm:py-3")}>
+  const door = (href: string, Icon: typeof ShoppingBag, title: string, hint: string, testId: string, extra?: string) => (
+    <Link href={href} prefetch={false} data-testid={testId} className={cn(TILE, !compact && "sm:px-4 sm:py-3", extra)}>
       <span className={ICON}>
         <Icon aria-hidden="true" className="size-4" />
       </span>
@@ -63,8 +63,10 @@ export function HomeShortcuts({ compact = false, className }: HomeShortcutsProps
       ) : null}
       {door(DIRECTORY_PATH, ShoppingBag, t("shops"), t("shopsHint"), "home-shops")}
       {door("/demarches", ScrollText, t("guide"), t("guideHint"), "home-guide")}
-      {/* The price list, full row width with the two others (owner, 2026-10-31); not in the map panel's tighter grid. */}
-      {compact ? null : <div className="col-span-2 sm:col-span-1">{door(PRICING_PATH, Tag, t("pricing"), t("pricingHint"), "home-pricing")}</div>}
+      {/* The price list, full row width with the two others (owner, 2026-10-31); not in the map panel's tighter grid.
+          The tile itself is the grid item, so it stretches to the row's height like the two others (a wrapper made it
+          shorter when a neighbour's hint wrapped to three lines, tablet portrait, owner 2026-11-03). */}
+      {compact ? null : door(PRICING_PATH, Tag, t("pricing"), t("pricingHint"), "home-pricing", "col-span-2 sm:col-span-1")}
     </nav>
   );
 }

@@ -5,6 +5,7 @@ import { CalendarDays, Flag, MapPin, ShieldAlert } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { Breadcrumb, landingHref } from "@/components/listing/breadcrumb";
 import { ContactBar } from "@/components/listing/contact-bar";
@@ -36,6 +37,7 @@ import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { pageLocale } from "@/i18n/params";
+import { LISTING_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
 import { alternates } from "@/lib/i18n/metadata";
@@ -261,7 +263,7 @@ export default async function ListingPage({ params }: { params: Params }) {
   ]);
 
   return (
-    <>
+    <PageMessages locale={locale} namespaces={LISTING_PAGE_CLIENT_NAMESPACES}>
       {listing.example ? null : <JsonLd data={jsonLd} />}
       {breadcrumbLd ? <JsonLd data={breadcrumbLd} /> : null}
       <Container className="flex flex-col gap-5 pt-3 pb-12 sm:pt-5 lg:pb-16">
@@ -368,7 +370,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             {jobs ? <JobNotice subcategoryId={listing.subcategoryId} attributes={listing.attributes} /> : null}
             <VehicleDossier subcategoryId={listing.subcategoryId} attributes={listing.attributes} />
             <RentalTerms subcategoryId={listing.subcategoryId} attributes={listing.attributes} locale={locale} />
-            {listing.rental ? <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} /> : null}
+            {listing.rental ? <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} requestable={contactable && datedRental(listing.subcategoryId) !== undefined} /> : null}
 
             <section aria-labelledby="description-title" className="flex flex-col gap-3">
               <h2 id="description-title" className="text-lg font-semibold">
@@ -404,6 +406,6 @@ export default async function ListingPage({ params }: { params: Params }) {
           </div>
         </div>
       </Container>
-    </>
+    </PageMessages>
   );
 }

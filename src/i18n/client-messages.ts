@@ -1,13 +1,15 @@
 import type { AbstractIntlMessages } from "next-intl";
 
-// Messages the browser receives (NextIntlClientProvider): the static public pages ship only the
-// namespaces their client components read, not the whole catalog (~80 KB of JSON in every HTML and
-// RSC payload). Server components translate on the server and need none of it. The list is kept
-// complete by tests/unit/client-messages.test.ts, which walks the client modules of the public routes.
+// Messages the browser receives (NextIntlClientProvider). Server components translate on the server
+// and need none of it; a client island reads its namespaces from the nearest provider. The public
+// layout ships the namespaces of its own islands (header, footer, consent, error boundary) and each
+// public page provides what its islands read, in a nested provider that replaces, never merges
+// (src/components/i18n/page-messages.tsx). A namespace both name travels once: React Server
+// Components serialize an object once and reference it afterwards. The lists are kept exact by
+// tests/unit/client-messages.test.ts, which walks the client modules of every public route.
 
-/** Namespaces (or dotted sub-namespaces) read by `useTranslations` in the client modules of the public pages. */
-export const PUBLIC_CLIENT_NAMESPACES = [
-  // Header, footer, error boundary and toast container.
+/** Namespaces read by the client islands of the public layout: header, footer, consent, error boundary, toasts. */
+export const LAYOUT_CLIENT_NAMESPACES = [
   "Nav",
   "Locale",
   "Theme",
@@ -17,11 +19,22 @@ export const PUBLIC_CLIENT_NAMESPACES = [
   "Consent",
   // CGU change notice under the header (signed-in members, D11).
   "CguNotice",
+  // The header's account menu and its dropdown.
   "Auth.menu",
-  // The Assistant Aalan bubble at the bottom end of every public page (owner, 2026-10-30).
-  "Help.assistant",
   "Auth.settings",
-  // Listing page islands: gallery, map, contact (the reveal errors and challenge load on demand).
+  // The Assistant Aalan bubble at the bottom end of every public page (owner, 2026-10-30); its panel
+  // loads on demand, with the shared form messages (Turnstile, API errors).
+  "Help.assistant",
+  "Auth.common",
+  "Auth.errors",
+  "Listing.errors",
+  // The header's search pill: the place field.
+  "Search.location",
+] as const;
+
+/** The listing page (annonce/[slugId]). */
+export const LISTING_PAGE_CLIENT_NAMESPACES = [
+  // Gallery, map, contact (the reveal errors and challenge load on demand), catalogue, promo.
   "ListingPage.gallery",
   "ListingPage.contact",
   "ListingPage.catalogue",
@@ -30,48 +43,110 @@ export const PUBLIC_CLIENT_NAMESPACES = [
   "ListingPage.salary",
   // "Partager" beside the favourite button (UX journeys counter-review, 8).
   "ListingPage.share",
-  "Guide.search",
   "Map",
+  // Favourite heart, price tag and promo badge, « Masquer les annonces exemples ».
+  "Favorites.button",
+  "ListingCard",
+  "Examples",
+  // Form messages (Turnstile, API errors) of the contact, offer and favourite islands.
   "Auth.common",
   "Auth.errors",
   "Listing.errors",
-  // Report button of the listing and profile pages; its dialog loads on demand (phase 5).
+  // Report button; its dialog loads on demand (phase 5).
   "Report",
-  // « Payer chez le vendeur » button and dialog of a Pro's listing and storefront (phase 7).
+  // « Payer chez le vendeur » button and dialog of a Pro's listing (phase 7).
   "SellerPayment.public",
-  // « Faire une offre » of the listing page: the button, the amount and the first-message dialog
-  // (Carte vivante lot 5). The thread's card and steps stay private.
+  // « Faire une offre »: the button, the amount and the first-message dialog (Carte vivante lot 5).
   "Offers.listing",
   "Offers.field",
   "Offers.dialog",
   "Offers.errors",
-  // Car rental availability block of the listing page (rental pack §3).
+  // Car rental availability block and its date fields (rental pack §3).
   "Rental.listing",
   "Rental.calendar",
-  // Home "Louer une voiture" module and its date fields (rental pack §4).
-  "Rental.home",
   "Rental.search",
-  // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).
-  "Storefront.fleet",
-  // Search islands shared by the home, category and listing pages (phase 4): favorite heart,
-  // À la Une badge, search bar and the place field (the header's search pill too).
+  // The ad slots' consent panel.
+  "Consent",
+] as const;
+
+/** The category landings (c/[category]/...): result cards and the example notice. */
+export const CATEGORY_PAGE_CLIENT_NAMESPACES = [
   "Favorites.button",
   "ListingCard",
+  "Examples",
+  // Form messages (API errors) of the favourite button.
+  "Auth.common",
+  "Auth.errors",
+  "Listing.errors",
+] as const;
+
+/** A Pro's storefront (boutique/[shop]). */
+export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
+  "Favorites.button",
+  "ListingCard",
+  "Examples",
+  "Auth.common",
+  "Auth.errors",
+  "Listing.errors",
+  "Report",
+  // « Payer chez le vendeur » of a Pro's storefront (phase 7).
+  "SellerPayment.public",
+  // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).
+  "Storefront.fleet",
+  "Rental.search",
+  "Rental.calendar",
+  // The ad slots' consent panel.
+  "Consent",
+] as const;
+
+/** A member's public profile (profil/[publicId]). */
+export const PROFILE_PAGE_CLIENT_NAMESPACES = ["Favorites.button", "ListingCard", "Auth.common", "Auth.errors", "Listing.errors", "Report", "Consent"] as const;
+
+/** The guide's home (demarches): its search box. */
+export const GUIDE_PAGE_CLIENT_NAMESPACES = ["Guide.search"] as const;
+
+/**
+ * The home page: result cards, the search bar, the living map (Carte vivante, lot 3, sharing the
+ * search page's map islands), the « Louer une voiture » module (rental pack §4) and the panel's
+ * legal line (cookies, language, theme).
+ */
+export const HOME_PAGE_CLIENT_NAMESPACES = [
+  "Favorites.button",
+  "ListingCard",
+  "Examples",
+  "Auth.common",
+  "Auth.errors",
+  "Listing.errors",
   "Search.bar",
   "Search.location",
-  // « Masquer les annonces exemples »: the example banner's button and the results' notice.
-  "Examples",
+  "Map",
+  "SearchMap",
+  "Rental.home",
+  "Rental.search",
+  "Rental.calendar",
+  "Consent",
+  "Locale",
+  "Theme",
 ] as const;
 
 /**
- * Added on the search page only (its own NextIntlClientProvider, on top of the public list): the
- * filters sheet reads the criteria and category labels (~30 KB), which no other public page needs.
+ * The search page: the filters sheet reads the criteria and category labels (~30 KB), which no
+ * other public page needs; the map view (Carte vivante, lot 2); the saved searches; the understood
+ * words of a typed sentence and « Utiliser ma position » (lot 4).
  */
 export const SEARCH_PAGE_CLIENT_NAMESPACES = [
+  "Favorites.button",
+  "ListingCard",
+  "Examples",
+  "Auth.common",
+  "Auth.errors",
+  "Listing.errors",
+  "Search.bar",
+  "Search.location",
+  "Map",
+  "SearchMap",
   "SearchFilters",
   "SearchPage",
-  // The map view (Carte vivante, lot 2): switch, sheet, pins, detail panel.
-  "SearchMap",
   "Criteria",
   "Categories",
   "Listing.units",
@@ -80,22 +155,20 @@ export const SEARCH_PAGE_CLIENT_NAMESPACES = [
   "SavedSearches.button",
   "SavedSearches.summary",
   "SavedSearches.dialog",
-  // Understood words of a typed sentence and « Utiliser ma position » (Carte vivante, lot 4).
   "SearchInterpret",
+  "Rental.search",
+  "Rental.calendar",
+  "Consent",
+  "Locale",
+  "Theme",
 ] as const;
 
 /**
- * Added on the home page only (its own NextIntlClientProvider): the living map (Carte vivante, lot
- * 3) shares the search page's map islands (switch, sheet, pins, detail panel).
+ * The help centre (src/app/[locale]/(public)/aide/layout.tsx): the article search box and the
+ * Assistant Joutiya widget (design phase-5 D25), and the contact page's "Signaler un contenu
+ * illicite" form (DSA art. 16) with the report dialog.
  */
-export const HOME_PAGE_CLIENT_NAMESPACES = ["SearchMap"] as const;
-
-/**
- * Added on the help centre pages only (src/app/[locale]/(public)/aide/layout.tsx): the article
- * search box and the Assistant Joutiya widget (design phase-5 D25), and the contact page's "Signaler
- * un contenu illicite" form (DSA art. 16).
- */
-export const HELP_PAGE_CLIENT_NAMESPACES = ["Help.search", "Help.assistant", "Contact.report"] as const;
+export const HELP_PAGE_CLIENT_NAMESPACES = ["Help.search", "Help.assistant", "Contact.report", "Report", "Auth.common", "Auth.errors", "Listing.errors"] as const;
 
 /** The subtrees of `messages` named by `paths` ("Auth.menu" keeps `{ Auth: { menu } }`); unknown paths are skipped. */
 export function pickMessages(messages: AbstractIntlMessages, paths: readonly string[]): AbstractIntlMessages {

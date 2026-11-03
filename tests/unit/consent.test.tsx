@@ -10,7 +10,7 @@ import { ConsentProvider } from "@/components/consent/consent-provider";
 import { applyConsentMode, consentModeState } from "@/lib/consent/consent-mode";
 import { CONSENT_MAX_AGE_S, consentCookieString, normalizeChoice, parseConsent, readConsentCookie, serializeConsent } from "@/lib/consent/cookie";
 import { isEeaUkCh, traceCountry } from "@/lib/consent/region";
-import { PUBLIC_CLIENT_NAMESPACES } from "@/i18n/client-messages";
+import { LAYOUT_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 
 // Cookie consent (phase 6, D1-D5): the stored choice, Consent Mode signals, region rule, banner.
 
@@ -108,8 +108,8 @@ describe("consent banner", () => {
 });
 
 describe("footer link", () => {
-  it("is a button that reopens the panel, on every page through the public namespaces", () => {
+  it("is a button that reopens the panel, on every page through the layout namespaces", () => {
     expect(render(<ConsentLink />)).toMatch(/^<button type="button"[^>]*>Gérer mes cookies<\/button>$/);
-    expect(PUBLIC_CLIENT_NAMESPACES).toContain("Consent");
+    expect(LAYOUT_CLIENT_NAMESPACES).toContain("Consent");
   });
 });

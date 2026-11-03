@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { ExamplesHiddenNotice } from "@/components/examples/examples-controls";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { RentalDatesBar } from "@/components/rental/rental-dates-bar";
 import { SaveSearchButton } from "@/components/saved-searches/save-search-button";
 import { ActiveFilterChips } from "@/components/search/active-filter-chips";
@@ -33,7 +33,7 @@ import { infeedPositions } from "@/config/ads";
 import { datedRental, subcategoryAllowsAds } from "@/config/categories";
 import { availablePromos, type HousePromo } from "@/config/house-promos";
 import type { Locale } from "@/config/site";
-import { PUBLIC_CLIENT_NAMESPACES, SEARCH_PAGE_CLIENT_NAMESPACES, pickMessages } from "@/i18n/client-messages";
+import { SEARCH_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { numbersLocale, pageLocale } from "@/i18n/params";
 import { searchMapConfig } from "@/lib/config/public";
 import type { PublicMapConfig } from "@/lib/config/public-types";
@@ -249,12 +249,8 @@ export default async function SearchPage({ params, searchParams }: Props) {
   const total = outcome.kind === "results" ? outcome.response.total : 0;
   const promos = availablePromos(flags);
 
-  // The public layout ships only the public client namespaces; the filters sheet and the save
-  // dialog read more (src/i18n/client-messages.ts). A nested provider replaces, never merges.
-  const messages = pickMessages(await getMessages({ locale }), [...PUBLIC_CLIENT_NAMESPACES, ...SEARCH_PAGE_CLIENT_NAMESPACES]);
-
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <PageMessages locale={locale} namespaces={SEARCH_PAGE_CLIENT_NAMESPACES}>
       <SearchNavigationProvider>
         {/* The pill holds the sentence as typed and the URL's own filters: sent again, it is read again. */}
         <HeaderSearchBridge params={interpreted ? query : applied} />
@@ -281,6 +277,6 @@ export default async function SearchPage({ params, searchParams }: Props) {
           </Container>
         )}
       </SearchNavigationProvider>
-    </NextIntlClientProvider>
+    </PageMessages>
   );
 }

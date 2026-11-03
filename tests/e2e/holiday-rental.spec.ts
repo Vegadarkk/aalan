@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
-import { BLURHASH, PASSWORD, firebase, randomId, signUpAndIn, storePhoto } from "./helpers";
+import { BLURHASH, PASSWORD, firebase, pickRentalDays, randomId, signUpAndIn, storePhoto } from "./helpers";
 
 // Seasonal rental agencies (conception §1-2) against the production build and the Firebase
 // emulators: a verified shop becomes a seasonal rental agency from /fr/pro once it ticks the
@@ -138,16 +138,36 @@ test.describe("seasonal rental agency", () => {
     await page.screenshot({ path: "test-results/holiday-search.png", fullPage: true });
 
     // A guest asks for a stay (3 nights): the host's card, "Disponible" blocks the nights.
-    const guestContext = await browser.newContext();
+    // On a touch screen (owner's tablet report, 3 Nov 2026): the nights are tapped on the listing's
+    // calendar, which opens the request on them; the keyboard then moves the departure in the
+    // dialog's own calendar and back.
+    const guestContext = await browser.newContext({ hasTouch: true });
     const guest = await guestContext.newPage();
     await signUpAndIn(guest, request, `saison-guest-${randomId(10)}@joutiya.test`, "Imane Voyageuse");
     await guest.goto(`/fr/annonce/${slugId}`);
     await expect(guest.getByTestId("visit-button")).toHaveCount(0);
-    await guest.getByTestId("rental-request-button").first().click();
+    const listingCalendar = guest.getByTestId("rental-availability");
+    await listingCalendar.locator(`button[data-day="${day(5)}"]`).tap();
+    await expect(guest.getByTestId("rental-availability-pick")).toContainText("Touchez maintenant le jour de départ.");
+    await listingCalendar.locator(`button[data-day="${day(8)}"]`).tap();
+    await expect(guest.getByTestId("rental-availability-pick")).toContainText("(3 nuits)");
+    await listingCalendar.scrollIntoViewIfNeeded();
+    await guest.screenshot({ path: "test-results/holiday-calendar-pick.png" });
+    await guest.getByTestId("rental-availability-request").tap();
     const compose = guest.getByTestId("message-dialog");
     await expect(compose.getByRole("heading", { name: /Demande de séjour/ })).toBeVisible();
-    await compose.getByLabel("Arrivée").fill(day(5));
-    await compose.getByLabel("Départ").fill(day(8));
+    await expect(compose.getByLabel("Arrivée")).toHaveAttribute("data-value", day(5));
+    await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(8));
+    await compose.getByLabel("Départ").focus();
+    await guest.keyboard.press("Enter");
+    await expect(guest.getByTestId("rental-dates-hint")).toHaveText("Touchez maintenant le jour de départ");
+    await expect(guest.getByTestId("rental-dates-calendar").locator(`button[data-day="${day(8)}"]`)).toBeFocused();
+    await guest.keyboard.press("ArrowRight");
+    await guest.keyboard.press("Enter");
+    await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(9));
+    await expect(compose.getByLabel("Départ")).toBeFocused();
+    await pickRentalDays(compose, "Départ", day(8));
+    await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(8));
     await compose.getByLabel("Précisions (facultatif)").fill("2 adultes, arrivée vers 18 h");
     await expect(compose.getByLabel("Votre message")).toHaveValue(new RegExp(`séjourner à « ${title} » du .+ au .+ \\(3 nuits\\) : 2 adultes, arrivée vers 18 h\\. Est-ce disponible \\?$`, "u"));
     await expect(compose.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });

@@ -11,6 +11,9 @@
 //       launching a second VM. Never a paid shape. --small-fallback asks for 1 OCPU and 6 GB every
 //       other attempt, which fragmented capacity may still hold; such a VM is resized to 2 OCPU and
 //       12 GB (one reboot) before launch.
+//   node scripts/oracle-vm.ts console-init
+//       writes infra/console-cloud-init.sh, the cloud-init script to paste when joutiya-vm is created
+//       by hand in the OCI console (bootstrap.sh without tunnel tokens; then `tunnels --apply`).
 //   node scripts/oracle-vm.ts status
 //       instance state, SSH tunnel connections, bootstrap progress from the serial console.
 //   node scripts/oracle-vm.ts rename [--apply]
@@ -113,7 +116,6 @@ export const BOOT_VOLUME_GB = 100;
  * The two Always Free E2.1.Micro VMs (1 GB each), kept aside for tests or another project: neutral
  * names, no user data, no Joutiya file. Boot volumes: 100 + 2 x 50 GB = the 200 GB Always Free total.
  */
-export const SPARE = { shape: "VM.Standard.E2.1.Micro", names: ["spare-micro-1", "spare-micro-2"], bootVolumeGB: 50 } as const;
 export const IMAGE = { operatingSystem: "Canonical Ubuntu", operatingSystemVersion: "24.04" } as const;
 /** OCI limit on the metadata of an instance (user_data included, base64). */
 export const MAX_METADATA_BYTES = 32_000;
@@ -476,21 +478,6 @@ export function launchDetails(input: {
   };
 }
 
-/** LaunchInstance body of the spare VMs, without their names (the Worker adds them). */
-export function spareRequest(input: { availabilityDomain: string; compartmentId: string; subnetId: string; imageId: string }): Record<string, unknown> {
-  const { freeformTags: _joutiya, ...settings } = INSTANCE_SETTINGS;
-  return {
-    availabilityDomain: input.availabilityDomain,
-    compartmentId: input.compartmentId,
-    shape: SPARE.shape,
-    sourceDetails: { sourceType: "image", imageId: input.imageId, bootVolumeSizeInGBs: SPARE.bootVolumeGB },
-    // Egress only, like joutiya-vm; reached through Run Command until another project takes it.
-    createVnicDetails: { subnetId: input.subnetId, assignPublicIp: true },
-    ...settings,
-    freeformTags: { role: "spare" },
-  };
-}
-
 /** Settings of launchDetails that `rebuild` also applies to an existing VM. */
 const INSTANCE_SETTINGS = {
   agentConfig: {
@@ -503,10 +490,10 @@ const INSTANCE_SETTINGS = {
   freeformTags: { project: "joutiya" },
 };
 
-/** Tunnel token value of a user data built for the launcher Worker: bootstrap.sh then skips the tunnels. */
+/** Tunnel token value of a user data built for the console: bootstrap.sh then skips the tunnels. */
 export const NO_TOKEN = "none";
 
-/** The subnet `create` made, found without writing anything (for `launcher`). */
+/** The subnet `create` made, found without writing anything (for `console-init`). */
 async function existingSubnet(oci: Oci, compartmentId: string): Promise<string> {
   const vcn = await findOne<Vcn>(oci, "/20160918/vcns", { compartmentId }, NAMES.vcn);
   const subnet = vcn && (await findOne<Resource>(oci, "/20160918/subnets", { compartmentId, vcnId: vcn.id }, NAMES.subnet));
@@ -588,10 +575,8 @@ async function create(oci: Oci, targets: Targets, compartmentId: string, retryMi
   console.log(`instance ${NAMES.instance} ${running.lifecycleState} (${running.id})${running.shapeConfig ? `, ${size(running.shapeConfig)}` : ""}`);
 }
 
-/** Request file of the free launcher Worker, written by `launcher` (no secret: commit it). */
-export const LAUNCHER_FILE = "workers/vm-launcher/src/launch.json";
-/** The same first boot for a joutiya-vm created by hand in the OCI console, also written by `launcher`. */
-export const CONSOLE_CLOUD_INIT_FILE = "workers/vm-launcher/console-cloud-init.sh";
+/** First boot of a VM created by hand in the OCI console, written by `console-init` (no secret: commit it). */
+export const CONSOLE_CLOUD_INIT_FILE = "infra/console-cloud-init.sh";
 
 /**
  * Cloud-init script to paste in the console's form, which base64-encodes it into the metadata: the
@@ -601,8 +586,8 @@ export function consoleCloudInit(userData: string): string {
   const text = [
     "#!/bin/bash",
     "# First boot of a joutiya-vm created in the OCI console: paste this whole file as its cloud-init",
-    "# script. It runs infra/vm/bootstrap.sh without tunnel tokens, like the launcher Worker (written by",
-    "# `node scripts/oracle-vm.ts launcher`).",
+    "# script. It runs infra/vm/bootstrap.sh without tunnel tokens; `oracle-vm.ts tunnels` adds them",
+    "# (written by `node scripts/oracle-vm.ts console-init`).",
     "set -euo pipefail",
     "umask 077",
     "base64 -d << 'JOUTIYA_BOOTSTRAP' | gunzip > /root/joutiya-bootstrap.sh",
@@ -620,37 +605,18 @@ export function consoleCloudInit(userData: string): string {
 }
 
 /**
- * `launcher`: the create request the Worker sends every minute (workers/vm-launcher), with "none"
- * for each tunnel token and both shapes, the spare VMs' request, plus the same first boot for the console. Read-only on OCI;
- * the files may lag infra/vm, since `sync` brings a new VM up to date anyway.
+ * `console-init`: the first boot of a VM created in the OCI console (same image, shape and subnet as
+ * `create`), with "none" for each tunnel token. Read-only on OCI; the file may lag infra/vm, since
+ * `sync` brings a new VM up to date anyway.
  */
-async function launcher(oci: Oci, targets: Targets, compartmentId: string): Promise<void> {
-  const subnetId = await existingSubnet(oci, compartmentId);
-  const { userData, availabilityDomain, details } = await launchPlan(oci, targets, compartmentId, subnetId, false);
-  const spareImage = pickImage(
-    await oci.call<Image[]>("GET", "iaas", `/20160918/images${query({ compartmentId, ...IMAGE, shape: SPARE.shape, sortBy: "TIMECREATED", sortOrder: "DESC" })}`),
-    "x86_64",
-  );
-  console.log(`spare    ${spareImage.displayName}`);
-  const { shapeConfig: _shape, ...request } = details(shapeForAttempt(1, false));
-  const config = {
-    tenancy: targets.shared.oracle.tenancyId,
-    region: targets.shared.oracle.homeRegion,
-    compartmentId,
-    displayName: NAMES.instance,
-    request,
-    shapes: [shapeForAttempt(1, false), SMALL_SHAPE_CONFIG],
-    spare: { names: SPARE.names, request: spareRequest({ availabilityDomain, compartmentId, subnetId, imageId: spareImage.id }) },
-  };
-  const text = `${JSON.stringify(config, null, 2)}\n`;
-  writeFileSync(join(root, LAUNCHER_FILE), text);
-  console.log(`${LAUNCHER_FILE}: ${text.length} bytes, no tunnel token; commit it, then redeploy the Worker`);
+async function consoleInit(oci: Oci, targets: Targets, compartmentId: string): Promise<void> {
+  const { userData } = await launchPlan(oci, targets, compartmentId, await existingSubnet(oci, compartmentId), false);
   const script = consoleCloudInit(userData);
   writeFileSync(join(root, CONSOLE_CLOUD_INIT_FILE), script);
-  console.log(`${CONSOLE_CLOUD_INIT_FILE}: ${script.length} bytes, for a VM created in the console`);
+  console.log(`${CONSOLE_CLOUD_INIT_FILE}: ${script.length} bytes, for a VM created in the console; commit it`);
 }
 
-/** Root script of `tunnels`: the three tunnel tokens a VM launched by the Worker lacks, then the SSH tunnel. */
+/** Root script of `tunnels`: the three tunnel tokens a VM created in the console lacks, then the SSH tunnel. */
 export function tunnelsScript(tokens: Record<TunnelName, string>): string {
   for (const [name, token] of Object.entries(tokens)) {
     if (!/^[A-Za-z0-9+/=_-]+$/.test(token) || token === NO_TOKEN) throw new Error(`token of joutiya-${name}-tunnel is not a base64 value`);
@@ -1460,12 +1426,12 @@ async function main(): Promise<void> {
   const [action, file] = args.filter((arg) => !arg.startsWith("--"));
   const retry = Number(/^--retry-minutes=(\d+)$/.exec(args.find((arg) => arg.startsWith("--retry-minutes=")) ?? "")?.[1] ?? 0);
   const smallFallback = args.includes("--small-fallback");
-  const actions = ["create", "launcher", "tunnels", "transfer", "build-staging", "rebuild", "status", "reboot", "agent", "run", "sync", "env", "search-setup", "wif", "deploy-status", "promote", "rollback", "cpu", "rename"];
+  const actions = ["create", "console-init", "tunnels", "transfer", "build-staging", "rebuild", "status", "reboot", "agent", "run", "sync", "env", "search-setup", "wif", "deploy-status", "promote", "rollback", "cpu", "rename"];
   const perEnv = action === "env" || action === "search-setup" || action === "wif";
   const argument = action === "run" || perEnv;
   if (!action || !actions.includes(action) || argument !== (file !== undefined) || (perEnv && !(DEPLOYED_ENVS as readonly string[]).includes(file ?? ""))) {
     throw new Error(
-      "usage: scripts/oracle-vm.ts <create|launcher|tunnels|transfer|build-staging [--commit=<sha>]|rebuild [--keep-disk]|status|rename|reboot|agent|sync|run <script>|env <staging|prod> --from=<file>|--sealed=<file>[,...]|search-setup <staging|prod> [--reindex=<n>]|wif <staging|prod> [--certificates=<file>]|deploy-status|promote --tag=vX.Y.Z|rollback|cpu --minutes=<n>> [--apply] [--retry-minutes=<n>] [--small-fallback]",
+      "usage: scripts/oracle-vm.ts <create|console-init|tunnels|transfer|build-staging [--commit=<sha>]|rebuild [--keep-disk]|status|rename|reboot|agent|sync|run <script>|env <staging|prod> --from=<file>|--sealed=<file>[,...]|search-setup <staging|prod> [--reindex=<n>]|wif <staging|prod> [--certificates=<file>]|deploy-status|promote --tag=vX.Y.Z|rollback|cpu --minutes=<n>> [--apply] [--retry-minutes=<n>] [--small-fallback]",
     );
   }
 
@@ -1482,7 +1448,7 @@ async function main(): Promise<void> {
   const oci = new Oci(credentials, args.includes("--apply"));
   const compartment = compartmentId as string;
   if (action === "create") await create(oci, targets, compartment, retry, smallFallback);
-  else if (action === "launcher") await launcher(oci, targets, compartment);
+  else if (action === "console-init") await consoleInit(oci, targets, compartment);
   else if (action === "tunnels") await tunnels(oci, targets, compartment);
   else if (action === "rebuild") await rebuild(oci, targets, compartment, args.includes("--keep-disk"));
   else if (action === "reboot") await reboot(oci, compartment);
@@ -1505,7 +1471,7 @@ async function main(): Promise<void> {
   else if (action === "cpu") await cpu(oci, compartment, Number(args.find((arg) => arg.startsWith("--minutes="))?.slice("--minutes=".length) ?? "NaN"));
   else if (action === "promote" || action === "rollback") await release(oci, targets, compartment, action, args.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length));
   else await status(oci, targets, compartment);
-  if (!["status", "agent", "deploy-status", "launcher", "cpu"].includes(action)) console.log(oci.apply ? "\nDone." : "\nDry run: nothing written. Add --apply to send these requests.");
+  if (!["status", "agent", "deploy-status", "console-init", "cpu"].includes(action)) console.log(oci.apply ? "\nDone." : "\nDry run: nothing written. Add --apply to send these requests.");
 }
 
 const self = fileURLToPath(import.meta.url);

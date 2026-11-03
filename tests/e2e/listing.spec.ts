@@ -403,7 +403,8 @@ test.describe("listing page", () => {
     const { slugId } = fixture.published;
     await page.goto(`/fr/annonce/${slugId}`);
     const contact = page.getByTestId("contact-bar");
-    const next = `/fr/connexion?next=${encodeURIComponent(`/fr/annonce/${slugId}`)}`;
+    // The message dialog reopens by itself once signed in (audit lot 5, zone 5 n°8): its intent rides in the fragment.
+    const next = `/fr/connexion?next=${encodeURIComponent(`/fr/annonce/${slugId}#contact=message`)}`;
     await contact.getByRole("button", { name: "Envoyer un message" }).click();
     // The seller card's copy (the phone bar's is hidden at this width).
     await expect(contact.getByText("Connectez-vous pour écrire au vendeur.", { exact: false }).first()).toBeVisible();

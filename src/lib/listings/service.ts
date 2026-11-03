@@ -406,7 +406,9 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
     // Kept as is: indexed again when published, its public page refreshed (paused and expired too).
     effects = { search: listing.status === "published" ? "upsert" : null, contentOp: { op: "listing.update", ip: actor.ip }, audit: null, revalidate: hasPublicPage(listing.status), mail: null };
     const variantsScreened = fields.variants !== undefined && !isDeepStrictEqual(screenedVariants(fields.variants), screenedVariants(listing.variants));
-    if (variantsScreened || SCREENED_FIELDS.some((field) => fields[field] !== undefined)) {
+    // A sensitive declaration added to a live listing holds it for a moderator (zone 3 audit P1-1).
+    const declared = Boolean(patch.sensitiveDeclaration && !listing.moderation.sensitiveDeclaration);
+    if (variantsScreened || declared || SCREENED_FIELDS.some((field) => fields[field] !== undefined)) {
       const result = await screenFor(next, seller, now);
       if (result.blockers.length > 0) throw invalidListing(result.blockers);
       if (result.state === "needs_review" && listing.status !== "pending_review") {

@@ -610,7 +610,7 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     title: "Riad 5 chambres dans la médina d'Essaouira",
     description: "Riad entièrement privatisé pour 10 personnes, terrasse sur les toits, petit-déjeuner inclus. À deux pas du port et des remparts.",
     price: 1500,
-    attributes: { "property-type": "villa-riad", guests: 10, bedrooms: 5, bathrooms: 5, amenities: ["terrasse", "chauffage"], "min-nights": 2, "agency-reference": "DS-S-0031" },
+    attributes: { "property-type": "villa-riad", guests: 10, bedrooms: 5, bathrooms: 5, amenities: ["terrasse", "chauffage"], "min-nights": 2, "tourism-authorization": "EXEMPLE-0031", "agency-reference": "DS-S-0031" },
     photos: ["15531322"],
   },
   {

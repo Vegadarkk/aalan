@@ -29,10 +29,13 @@ export const CRITERION_TEXT_MAX = 80;
  * Checked shapes of a free-text criterion. `onssa`: the sanitary number of a food business (ONSSA
  * approval or authorisation, decree 2-10-473 art. 13): activity letters, province code, filing
  * number and year, dot-separated ("M.07.113.20", "HFO.24.07.15"); every number of the ONSSA lists
- * matches it. Letters are upper case: the form upper-cases what is typed.
+ * matches it. Letters are upper case: the form upper-cases what is typed. `authorization`: a
+ * tourist accommodation authorisation (law 80-14 art. 5 and 30): no public register nor single
+ * format, so letters, digits and separators with at least one digit, 3 to 40 characters.
  */
 export const CRITERION_FORMATS = {
   onssa: /^[A-Z]{1,6}\.\d{1,2}\.\d{1,4}\.\d{2}$/,
+  authorization: /^(?=.*\d)[A-Z0-9][A-Z0-9 ./_-]{1,38}[A-Z0-9]$/,
 } as const;
 export type CriterionFormat = keyof typeof CRITERION_FORMATS;
 
@@ -65,6 +68,11 @@ export interface Criterion {
   showIf?: { id: string; values: readonly string[] };
   /** text: the value must match `CRITERION_FORMATS[format]` (refused as `criterion_format_<format>`). */
   format?: CriterionFormat;
+  /**
+   * Shown to every seller, required from Pros only (a holiday rental's authorisation, zone 3 audit
+   * P1-2): optional for an individual's own home (seasonal rental conception, owner 2026-10-29).
+   */
+  requiredForPro?: boolean;
 }
 
 export const CRITERION_GROUPS = ["dossier", "rental"] as const;
@@ -224,7 +232,7 @@ const FIELDS = {
   "rooms": { id: "rooms", type: "number", min: 1, max: 50 },
   "property-title": { id: "property-title", type: "select", options: ["titre-foncier", "en-cours-immatriculation", "melkia-adoul", "autre"] },
   /** Tourist accommodation authorisation (law 80-14): declared by the host, never checked by the site. */
-  "tourism-authorization": { id: "tourism-authorization", type: "text" },
+  "tourism-authorization": { id: "tourism-authorization", type: "text", format: "authorization" },
   /** Pro fields: the mandate, the agency's own reference and its fees next to the price (law 31-08 art. 3). */
   "mandate": { id: "mandate", type: "select", options: ["exclusif", "simple", "vente-directe"] },
   "agency-reference": { id: "agency-reference", type: "text" },
@@ -403,6 +411,8 @@ const RENTAL_TERMS = [
 
 const proRequired = (id: CriterionId): Criterion => ({ ...FIELDS[id], required: true, proOnly: true });
 const proOptional = (id: CriterionId): Criterion => ({ ...FIELDS[id], proOnly: true });
+/** Required from Pros, optional for individuals (both see it). */
+const requiredForPro = (id: CriterionId): Criterion => ({ ...FIELDS[id], requiredForPro: true });
 
 const TREE: readonly Category[] = [
   {
@@ -425,7 +435,7 @@ const TREE: readonly Category[] = [
       { id: "vente", categoryId: "immobilier", criteria: [required("property-type"), required("surface"), optional("rooms"), optional("bedrooms"), optional("living-rooms"), optional("bathrooms"), optional("floor"), optional("standing"), optional("property-age"), optional("property-title"), optional("furnished"), optional("amenities"), proOptional("off-plan"), proOptional("building-permit"), proOptional("delivery-year"), proRequired("mandate"), proOptional("agency-reference"), proRequired("agency-fees"), proOptional("agency-fees-amount")] },
       { id: "location", categoryId: "immobilier", priceOptional: true, priceUnit: "month", criteria: [required("property-type"), required("surface"), optional("rooms"), optional("bedrooms"), optional("living-rooms"), optional("bathrooms"), optional("floor"), required("furnished"), optional("amenities"), optional("deposit"), optional("availability"), proRequired("mandate"), proOptional("agency-reference"), proRequired("agency-fees"), proOptional("agency-fees-amount")] },
       { id: "colocation", categoryId: "immobilier", priceUnit: "month", criteria: [required("room-type"), optional("flatmates"), optional("furnished"), optional("amenities"), optional("availability")] },
-      { id: "location-vacances", categoryId: "immobilier", priceUnit: "night", criteria: [required("property-type"), required("guests"), optional("surface"), optional("bedrooms"), optional("bathrooms"), optional("amenities"), optional("min-nights"), optional("tourism-authorization"), proOptional("agency-reference")] },
+      { id: "location-vacances", categoryId: "immobilier", priceUnit: "night", criteria: [required("property-type"), required("guests"), optional("surface"), optional("bedrooms"), optional("bathrooms"), optional("amenities"), optional("min-nights"), requiredForPro("tourism-authorization"), proOptional("agency-reference")] },
     ],
   },
   {
@@ -686,9 +696,17 @@ export type CriteriaSchema = ReturnType<typeof buildCriteriaSchema>;
  */
 export type CriteriaAudience = "individual" | "pro" | "any";
 
-/** The criteria of `subcategory` a seller of `audience` fills in (the form's fields). */
+/** Whether a seller of `audience` must answer `criterion` ("any": the Pro-only and Pro-required ones stay optional). */
+export function criterionRequired(criterion: Pick<Criterion, "required" | "proOnly" | "requiredForPro">, audience: CriteriaAudience): boolean {
+  if (audience === "pro") return Boolean(criterion.required || criterion.requiredForPro);
+  return Boolean(criterion.required && !criterion.proOnly);
+}
+
+/** The criteria of `subcategory` a seller of `audience` fills in (the form's fields), `required` as it binds them. */
 export function criteriaFor(subcategory: Subcategory, audience: CriteriaAudience): readonly Criterion[] {
-  return audience === "individual" ? subcategory.criteria.filter((criterion) => !criterion.proOnly) : subcategory.criteria;
+  if (audience === "individual") return subcategory.criteria.filter((criterion) => !criterion.proOnly);
+  if (audience === "pro") return subcategory.criteria.map((criterion) => (criterion.requiredForPro ? { ...criterion, required: true } : criterion));
+  return subcategory.criteria;
 }
 
 // Every criterion is a known key whatever the audience: an individual's Pro-only value is refused
@@ -696,8 +714,8 @@ export function criteriaFor(subcategory: Subcategory, audience: CriteriaAudience
 function buildCriteriaSchema(subcategory: Subcategory, audience: CriteriaAudience) {
   const shape: Record<string, z.ZodType> = {};
   for (const criterion of subcategory.criteria) {
-    const schema = criterionSchema(criterion);
-    const required = criterion.required && (!criterion.proOnly || audience === "pro");
+    const required = criterionRequired(criterion, audience);
+    const schema = criterionSchema({ ...criterion, required });
     shape[criterion.id] = required ? schema : schema.optional();
   }
   return z.object(shape).strict();

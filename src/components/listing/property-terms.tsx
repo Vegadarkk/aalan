@@ -25,7 +25,7 @@ interface Row {
 const text = (value: unknown): string | undefined => (typeof value === "string" && value.trim() ? value.trim() : undefined);
 const integer = (value: unknown): number | undefined => (typeof value === "number" && Number.isInteger(value) ? value : undefined);
 
-export function PropertyTerms({ attributes, locale, className }: { attributes: ListingAttributes; locale: Locale; className?: string }) {
+export function PropertyTerms({ attributes, locale, holidayRental = false, className }: { attributes: ListingAttributes; locale: Locale; holidayRental?: boolean; className?: string }) {
   const t = useTranslations("ListingPage.terms");
   const rows: Row[] = [];
   const mandate = text(attributes["mandate"]);
@@ -45,6 +45,8 @@ export function PropertyTerms({ attributes, locale, className }: { attributes: L
   }
   const authorization = text(attributes["tourism-authorization"]);
   if (authorization) rows.push({ id: "authorization", label: t("authorization"), value: t("declared", { number: authorization }) });
+  // A holiday rental says when no number was declared (zone 3 audit P1-2): the guest asks for it.
+  else if (holidayRental) rows.push({ id: "authorization", label: t("authorization"), value: t("authorizationMissing") });
   if (rows.length === 0) return null;
 
   return (

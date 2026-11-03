@@ -13,6 +13,8 @@ import { useCriteriaLabels } from "../labels";
 import { useValidationMessage } from "../field-messages";
 import { STEP_FORM_ID } from "../wizard-shell";
 
+const TOURISM_AUTHORIZATION = "tourism-authorization";
+
 export function CriteriaStep({ onNext }: { onNext: () => void }) {
   const { listing, update, flush, blockers } = useWizard();
   const t = useTranslations("Listing");
@@ -74,6 +76,12 @@ export function CriteriaStep({ onNext }: { onNext: () => void }) {
       ) : (
         <>
           <p className="text-sm text-foreground-muted">{t("wizard.requiredHint")}</p>
+          {/* A holiday rental (law 80-14): required from an agency, shown on the listing as declared (zone 3 audit P1-2). */}
+          {subcategory.criteria.some((criterion) => criterion.id === TOURISM_AUTHORIZATION) ? (
+            <ErrorBanner tone="info" title={t(listing.sellerType === "pro" ? "wizard.holidayProTitle" : "wizard.holidayIndividualTitle")} className="text-sm">
+              {t(listing.sellerType === "pro" ? "wizard.holidayProBody" : "wizard.holidayIndividualBody")}
+            </ErrorBanner>
+          ) : null}
           {covered.length > 0 ? <p className="text-sm text-foreground-muted">{t("catalogue.fromVariants", { criteria: covered.map((criterion) => labels.label(criterion.id)).join(", ") })}</p> : null}
           <CriteriaFields subcategory={shown} attributes={listing.attributes} condition={listing.condition} errors={errors} onAttribute={onAttribute} onCondition={onCondition} onBlur={() => void flush()} pro={listing.sellerType === "pro"} />
           {/* A job offer abroad: the visa and ANAPEC rule, and the moderator's check before publication (Emploi frame, rule 10). */}

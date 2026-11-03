@@ -142,7 +142,7 @@ describe("assessReadiness", () => {
   it("requires every required criterion of every subcategory, and accepts a minimal valid set", () => {
     for (const category of CATEGORIES) {
       for (const subcategory of category.subcategories) {
-        const required = subcategory.criteria.filter((criterion) => criterion.required);
+        const required = subcategory.criteria.filter((criterion) => criterion.required || criterion.requiredForPro);
         const empty = codes(ready({ categoryId: category.id, subcategoryId: subcategory.id, attributes: {}, condition: "good", price: 1000 }), PRO);
         for (const criterion of required) expect(empty.get(`attributes.${criterion.id}`), `${subcategory.id}.${criterion.id}`).toEqual(["criterion_required"]);
         const attributes: Record<string, string | number | boolean | string[]> = {};
@@ -151,7 +151,7 @@ describe("assessReadiness", () => {
           else if (criterion.type === "multiselect") attributes[criterion.id] = [criterion.options![0]!];
           else if (criterion.type === "number") attributes[criterion.id] = criterion.min ?? 1;
           else if (criterion.type === "boolean") attributes[criterion.id] = true;
-          else attributes[criterion.id] = criterion.format === "onssa" ? "M.07.113.20" : "ok";
+          else attributes[criterion.id] = criterion.format === "onssa" ? "M.07.113.20" : criterion.format === "authorization" ? "AUT-123/2025" : "ok";
         }
         const filled = assessReadiness(ready({ categoryId: category.id, subcategoryId: subcategory.id, attributes, condition: "good", price: 1000 }), PRO);
         expect(filled.filter((issue) => issue.path.startsWith("attributes")), subcategory.id).toEqual([]);
@@ -166,6 +166,17 @@ describe("assessReadiness", () => {
     expect(codes(honey("HFO.24.07.15"), PRO).size).toBe(0);
     for (const bad of ["M07113", "m.07.113.20", "M.07.113.2026", "MIEL.07.113", "ABCDEFG.1.1.20"]) expect(codes(honey(bad), PRO).get("attributes.onssa-number"), bad).toEqual(["criterion_format_onssa"]);
     expect(codes(honey(""), PRO).get("attributes.onssa-number")).toEqual(["criterion_required"]);
+  });
+
+  it("requires a tourist authorisation number from a Pro holiday rental, not from an individual's own home (zone 3 audit P1-2)", () => {
+    const home = (attributes: Record<string, string | number>) => ready({ categoryId: "immobilier", subcategoryId: "location-vacances", attributes: { "property-type": "appartement", guests: 4, ...attributes }, condition: undefined, price: 600 });
+    expect(codes(home({}), PRO).get("attributes.tourism-authorization")).toEqual(["criterion_required"]);
+    expect(codes(home({ "tourism-authorization": "" }), PRO).get("attributes.tourism-authorization")).toEqual(["criterion_required"]);
+    for (const good of ["AUT-123/2025", "12345", "N.45/2024"]) expect(codes(home({ "tourism-authorization": good }), PRO).size, good).toBe(0);
+    for (const bad of ["aucune", "NON", "1", "-123"]) expect(codes(home({ "tourism-authorization": bad }), PRO).get("attributes.tourism-authorization"), bad).toEqual(["criterion_format_authorization"]);
+    expect(codes(home({})).size).toBe(0);
+    expect(codes(home({ "tourism-authorization": "AUT-123/2025" })).size).toBe(0);
+    expect(codes(home({ "tourism-authorization": "aucune" })).get("attributes.tourism-authorization")).toEqual(["criterion_format_authorization"]);
   });
 
   it("requires the condition where the subcategory says so", () => {

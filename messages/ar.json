@@ -5903,7 +5903,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "الأكثر اختياراً",
+      "recommended": "موصى به",
       "onQuote": "حسب الطلب",
       "credits": "{count, number} رصيد ظهور مشمول",
       "listings": "{count, plural, one {إعلان نشط واحد} other {# إعلانات نشطة}}",

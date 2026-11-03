@@ -146,7 +146,7 @@ export default async function PricingPage({ params }: { params: Params }) {
           />
           <Card
             Icon={Sparkles}
-            highlight={t("pros.popular")}
+            highlight={t("pros.recommended")}
             title={t("pros.business")}
             price={n("perMonth", { amount: mad(business.priceMinor.monthly) })}
             note={n("perYear", { amount: mad(business.priceMinor.yearly) })}

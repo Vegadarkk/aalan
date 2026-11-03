@@ -72,6 +72,8 @@ export const proDecisionSchema = z.discriminatedUnion("action", [
       /** Register the moderator checked the identifiers against. */
       registrySource: z.enum(PRO_REGISTRY_SOURCES),
       submittedAt: z.iso.datetime({ offset: true }),
+      /** The activity as the moderator corrected it (B13); absent keeps the one applied for. */
+      sector: z.enum(PRO_SECTORS).optional(),
     })
     .strict(),
   z
@@ -187,6 +189,8 @@ export interface ProReview {
   citySlug: string;
   /** Business sector chosen with the application (a general shop when none). */
   sector: ProSector;
+  /** The sectors the moderator may set at the verification (B13). */
+  correctableSectors: ProSector[];
   legal: Record<string, string>;
   kybc: {
     status: string;

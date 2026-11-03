@@ -68,8 +68,8 @@ describe("the shops", () => {
       { city: "agadir", count: 1 },
       { city: "rabat", count: 1 },
     ]);
-    expect(countBySector(shops)).toEqual({ general: 3, real_estate: 1, car_rental: 1, holiday_rental: 0 });
-    expect(countBySector([])).toEqual({ general: 0, real_estate: 0, car_rental: 0, holiday_rental: 0 });
+    expect(countBySector(shops)).toEqual({ general: 3, dealer: 0, real_estate: 1, car_rental: 1, holiday_rental: 0 });
+    expect(countBySector([])).toEqual({ general: 0, dealer: 0, real_estate: 0, car_rental: 0, holiday_rental: 0 });
   });
 });
 

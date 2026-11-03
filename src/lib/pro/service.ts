@@ -115,7 +115,9 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
     plan: "none",
     planSource: "none",
     quotas: listingQuotas({ type: "pro", plan: "none" }, pricing),
-    ...(agencyScope ? { sector: input.sector, sectorCommitment: { sector: input.sector, version: COMMITMENTS_VERSION, at: now } } : {}),
+    // The sector is kept for every activity but a general shop (a dealership was lost before, B13).
+    ...(input.sector !== "general" ? { sector: input.sector } : {}),
+    ...(agencyScope ? { sectorCommitment: { sector: input.sector, version: COMMITMENTS_VERSION, at: now } } : {}),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };

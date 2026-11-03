@@ -1,4 +1,4 @@
-import { Building2, Car, Store, TreePalm, type LucideIcon } from "lucide-react";
+import { Building2, Car, CarFront, Store, TreePalm, type LucideIcon } from "lucide-react";
 import type { ProSector } from "@/lib/pro/profile-schema";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const PALETTE = ["#1f5b45", "#b5652b", "#8a6a1c", "#2f4f7a", "#7a2f3a", "#3f6b2a
 
 const SECTOR_ICONS: Record<ProSector, LucideIcon> = {
   general: Store,
+  dealer: CarFront,
   real_estate: Building2,
   car_rental: Car,
   holiday_rental: TreePalm,

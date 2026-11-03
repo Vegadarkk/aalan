@@ -45,9 +45,9 @@ export const COMMITMENT_GUIDE = {
   holiday_rental: [link("immo-location-touristique"), link("immo-taxes-locales"), link("pro-obligations")],
 } as const satisfies Readonly<Record<CommitmentScope, readonly CommitmentGuideLink[]>>;
 
-/** The commitments a sector adds to the shop's own, or null for a general shop. */
+/** The commitments a sector adds to the shop's own, or null for a general shop or a dealership. */
 export function sectorCommitmentScope(sector: ProSector): CommitmentScope | null {
-  return sector === "general" ? null : sector;
+  return sector === "general" || sector === "dealer" ? null : sector;
 }
 
 /** Deep link to a procedure of the guide (its heading id on the rubric page). */

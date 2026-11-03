@@ -23,7 +23,8 @@ import type { RequestIdentity } from "@/lib/rate-limit/keys";
 import { applyVerificationEffects, hasProClaims } from "./effects";
 import { KYBC_END_RETENTION_MS } from "./kybc-retention";
 import { IllegalProTransitionError, publishesAsPro, transition } from "./lifecycle";
-import type { ProProfileDoc } from "./profile-schema";
+import { sectorCommitmentScope } from "./commitments";
+import { PRO_SECTORS, type ProProfileDoc, type ProSector } from "./profile-schema";
 import { rentalCheckReview } from "./rental-check";
 
 // KYBC review of the back office (phase 7 design §4): the queue of submitted applications, one
@@ -76,6 +77,7 @@ export async function proReview(proId: string): Promise<ProReview | null> {
     regionCode: record.regionCode,
     citySlug: record.citySlug,
     sector: record.sector ?? "general",
+    correctableSectors: correctableSectors(record),
     legal: { form, ...Object.fromEntries(Object.entries(identifiers).filter((entry): entry is [string, string] => typeof entry[1] === "string")) },
     kybc: {
       status: record.kybc.status,
@@ -108,6 +110,22 @@ export async function proReview(proId: string): Promise<ProReview | null> {
   };
 }
 
+/**
+ * The sectors staff may set at the verification (B13): a general shop or a dealership, and the
+ * agency sector whose commitments the applicant accepted. Another agency sector needs the Pro's
+ * own acceptance of its commitments, from the Pro space.
+ */
+export function correctableSectors(current: Pick<ProProfileDoc, "sector" | "sectorCommitment">): ProSector[] {
+  return PRO_SECTORS.filter((sector) => sectorCommitmentScope(sector) === null || current.sectorCommitment?.sector === sector || (current.sector ?? "general") === sector);
+}
+
+/** The stored sector after a staff correction ("general" is stored as absent). */
+function correctedSector(current: ProProfileRecord, requested: ProSector | undefined): ProSector | undefined {
+  if (requested === undefined || requested === (current.sector ?? "general")) return current.sector;
+  if (!correctableSectors(current).includes(requested)) throw new HttpError(409, "commitments_required", "the applicant has not accepted this sector's commitments");
+  return requested === "general" ? undefined : requested;
+}
+
 /** The profile after the decision: pure, so the unit tests cover every branch without Firestore. */
 export function decidedProfile(current: ProProfileRecord, input: ProDecisionInput, ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>> }): ProProfileDoc {
   if (current.kybc.status !== "submitted" || current.lifecycle !== "pending_verification") throw new HttpError(409, "conflict", "application already decided");
@@ -121,12 +139,14 @@ export function decidedProfile(current: ProProfileRecord, input: ProDecisionInpu
     throw error;
   }
   const { patch } = result;
+  const sector = input.action === "verify" ? correctedSector(current, input.sector) : current.sector;
   const kybc: ProProfileDoc["kybc"] =
     input.action === "verify"
       ? { ...doc.kybc, status: "verified", registryCheck: { source: input.registrySource, at: ctx.now, by: ctx.staffUid }, rejectReason: undefined, phoneToCheck: undefined }
       : { ...doc.kybc, status: "rejected", rejectReason: input.reason };
   return {
     ...doc,
+    sector,
     kybc,
     lifecycle: patch.lifecycle,
     plan: patch.plan,
@@ -158,7 +178,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
   const decided = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
-    if (isEffectsRerun(current, input)) return { next: current, rerun: true };
+    if (isEffectsRerun(current, input)) return { next: current, rerun: true, sectorChange: null };
     const userRef = db().collection(COLLECTIONS.users).doc(current.ownerUid);
     const userSnapshot = await tx.get(userRef);
     if (!userSnapshot.exists) throw new HttpError(409, "conflict", "owner account missing");
@@ -166,9 +186,11 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     if (input.action === "verify" && userSnapshot.get("status") !== "active") throw new HttpError(409, "account_suspended", "owner account not active");
     if (input.action === "verify" && userSnapshot.get("badges.phoneVerified") !== true) throw new HttpError(409, "phone_unverified", "owner phone not verified");
     const next = decidedProfile(current, input, { staffUid: staff.user.uid, now, launchOfferActive, pricing });
+    const before = current.sector ?? "general";
+    const after = next.sector ?? "general";
     tx.set(ref, proProfileToFirestore(next));
     if (input.action === "verify") tx.update(userRef, { type: "pro", updatedAt: Timestamp.fromDate(now) });
-    return { next, rerun: false };
+    return { next, rerun: false, sectorChange: before === after ? null : `sector ${before} -> ${after}` };
   });
   void consume("firestore.reads", decided.rerun ? 1 : 2);
   if (!decided.rerun) void consume("firestore.writes", input.action === "verify" ? 2 : 1);
@@ -182,6 +204,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     return { proId, lifecycle: decided.next.lifecycle, retagged: outcome.retagged, effectsPending: !outcome.ok };
   }
 
+  const { sectorChange } = decided;
   let effectsPending = false;
   let retagged = 0;
   if (input.action === "verify") {
@@ -195,7 +218,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     action: input.action === "verify" ? "pro.verify" : "pro.reject",
     target: { type: "pro", id: proId },
     automated: false,
-    ...(input.action === "reject" ? { reason: input.reason.slice(0, 500) } : {}),
+    ...(input.action === "reject" ? { reason: input.reason.slice(0, 500) } : sectorChange ? { reason: sectorChange } : {}),
     ip: identity.ip,
     at: now,
   });

@@ -375,8 +375,7 @@
         "copy": "نسخ الرابط",
         "copied": "تم نسخ الرابط"
       },
-      "googleError": "تعذّر تحميل زر Google. سجّل الدخول بالبريد الإلكتروني.",
-      "frenchOnly": "هذا الجزء من الموقع متاح بالفرنسية حاليًا."
+      "googleError": "تعذّر تحميل زر Google. سجّل الدخول بالبريد الإلكتروني."
     },
     "signIn": {
       "title": "تسجيل الدخول",
@@ -5903,7 +5902,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "الأكثر اختياراً",
+      "recommended": "موصى به",
       "onQuote": "حسب الطلب",
       "credits": "{count, number} رصيد ظهور مشمول",
       "listings": "{count, plural, one {إعلان نشط واحد} other {# إعلانات نشطة}}",

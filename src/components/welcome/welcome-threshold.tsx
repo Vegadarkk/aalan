@@ -35,8 +35,7 @@ export function WelcomeThreshold({ locale, texts }: { locale: Locale; texts: Wel
   const next = `/${locale}`;
   return (
     <WelcomeDialog labelledBy={TAGLINE_ID}>
-      {/* Tarifit has no Welcome texts yet: they fall back to French. */}
-      <div lang={locale === "rif" ? "fr" : undefined} className="m-auto flex w-full max-w-3xl flex-col items-center px-4 py-8 sm:py-10">
+      <div className="m-auto flex w-full max-w-3xl flex-col items-center px-4 py-8 sm:py-10">
         {/* The gate's inscription band. Steps of the entrance: .welcome-enter, globals.css. */}
         {/* Its length sizes the band on a phone: whatever the brand's name, it holds on one line (globals.css). */}
         <h2 className="welcome-crest welcome-enter" data-welcome-part="crest" style={{ "--welcome-crest-chars": texts.title.length } as CSSProperties}>

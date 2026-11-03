@@ -3,11 +3,11 @@
 export const LOCALES = ["fr", "ar", "rif"] as const;
 export type Locale = (typeof LOCALES)[number];
 /**
- * Locales offered by the language menu and the account setting. Tarifit stays out until its native
- * review (owner, decision card of 29 Oct 2026; 2 of its 4 089 strings were translated): the /rif
- * pages stay reachable by URL, with their French fallback.
+ * Locales offered by the language menu and the account setting. Tarifit (Latin script, Z9) is
+ * offered since the whole interface is translated (owner, 3 Nov 2026); its native review stays a
+ * launch gate (owner, 19 Oct 2026). Legal texts and e-mails stay French under "rif".
  */
-export const SWITCHABLE_LOCALES: readonly Locale[] = ["fr", "ar"];
+export const SWITCHABLE_LOCALES: readonly Locale[] = ["fr", "ar", "rif"];
 export const DEFAULT_LOCALE: Locale = "fr";
 
 /** Right-to-left locales: `dir="rtl"` on <html>. */

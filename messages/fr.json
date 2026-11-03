@@ -385,8 +385,7 @@
         "copy": "Copier le lien",
         "copied": "Lien copié"
       },
-      "googleError": "Le bouton Google n'a pas pu se charger. Connectez-vous avec votre adresse e-mail.",
-      "frenchOnly": "Cette partie du site est en français pour le moment."
+      "googleError": "Le bouton Google n'a pas pu se charger. Connectez-vous avec votre adresse e-mail."
     },
     "signIn": {
       "title": "Se connecter",
@@ -5913,7 +5912,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "Le plus choisi",
+      "recommended": "Recommandé",
       "onQuote": "Sur devis",
       "credits": "{count, number} crédits de visibilité inclus",
       "listings": "{count, plural, one {# annonce active} other {# annonces actives}}",

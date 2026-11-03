@@ -28,7 +28,7 @@ export default async function ChallengePage({ params, searchParams }: Props) {
   const raw = (await searchParams).next;
   const next = challengeNext(Array.isArray(raw) ? raw[0] : raw, locale);
   return (
-    <Container lang={locale === "rif" ? "fr" : undefined} className="flex max-w-xl flex-1 flex-col justify-center py-12 lg:py-20">
+    <Container className="flex max-w-xl flex-1 flex-col justify-center py-12 lg:py-20">
       <div className="flex flex-col gap-6">
         <DoorMark className="w-14" />
         <div className="flex flex-col gap-3">

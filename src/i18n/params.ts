@@ -21,11 +21,11 @@ export function localeParams<T extends Record<string, string> = Record<never, ne
 }
 
 /**
- * Locale of the translations that print numbers (ICU `#`) and of Intl dates and numbers. Tarifit
- * has no Intl data: under "rif" the runtime default formats them (en-US: "1,200 annonces",
- * "October 13, 2026", English plural rules) while the text is the French fallback (Z9). For
- * translations, only namespaces without Tarifit text (rif.json): their French catalog is then
- * exactly what the page shows. The request locale stays "rif" (routing, links).
+ * Locale of the Intl formatting of numbers, plurals (ICU `#`) and dates. Tarifit has no Intl data:
+ * under "rif" the runtime default would format them (en-US: "1,200", "October 13, 2026", English
+ * plural rules), so Tarifit pages format them as French ("1 200"). Translators that print numbers
+ * take the Tarifit text with this formatting: getNumbersTranslations (server) and
+ * useNumbersTranslations (client). The request locale stays "rif" (routing, links, messages).
  */
 export function numbersLocale(locale: Locale): Locale {
   return locale === "rif" ? "fr" : locale;

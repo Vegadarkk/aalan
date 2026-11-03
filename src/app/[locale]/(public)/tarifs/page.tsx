@@ -5,11 +5,12 @@ import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { localeParams, pageLocale } from "@/i18n/params";
 import { getPricing } from "@/lib/config/runtime";
 import { alternates } from "@/lib/i18n/metadata";
 import { PRICING_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 const WALLET_PATH = "/porte-monnaie";
 
@@ -62,7 +63,7 @@ export default async function PricingPage({ params }: { params: Params }) {
   setRequestLocale(locale);
   const [t, n, pricing] = await Promise.all([
     getTranslations({ locale, namespace: "Pricing" }),
-    getTranslations({ locale: numbersLocale(locale), namespace: "Pricing" }),
+    getNumbersTranslations({ locale, namespace: "Pricing" }),
     getPricing(),
   ]);
   const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;
@@ -146,7 +147,7 @@ export default async function PricingPage({ params }: { params: Params }) {
           />
           <Card
             Icon={Sparkles}
-            highlight={t("pros.popular")}
+            highlight={t("pros.recommended")}
             title={t("pros.business")}
             price={n("perMonth", { amount: mad(business.priceMinor.monthly) })}
             note={n("perYear", { amount: mad(business.priceMinor.yearly) })}

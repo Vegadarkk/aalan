@@ -309,7 +309,7 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     days: 10,
     title: "Kymco People S 200i gris – 2016",
     description:
-      "Zzenzegh scooter-inu Kymco People S 200i gris, tella di lḥala ishnan, 12 000 km. Top-case et pare-brise inclus. Papiers en règle. Aru-yi di la messagerie i wi yexsen ad t-izer.",
+      "Je vends mon scooter Kymco People S 200i gris, en très bon état, 12 000 km. Top-case et pare-brise inclus. Papiers en règle. Écrivez-moi par la messagerie pour le voir.",
     price: 16000,
     negotiable: true,
     condition: "very_good",
@@ -2044,9 +2044,9 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     seller: "mohand",
     city: "al-hoceima",
     days: 5,
-    title: "Tamment n tidi – lot de 2 miels du Rif (thym et crémeux)",
+    title: "Lot de 2 miels du Rif (thym et crémeux)",
     description:
-      "Tamment tazdeft n tidi, seg idurar n Arrif. Lot de 2 pots de 250 g : miel de thym ambré et miel crémeux toutes fleurs, récoltés dans les montagnes du Rif. Pots en verre fermés par un papier kraft ficelé.",
+      "Miel naturel des montagnes du Rif. Lot de 2 pots de 250 g : miel de thym ambré et miel crémeux toutes fleurs, récoltés dans les montagnes du Rif. Pots en verre fermés par un papier kraft ficelé.",
     price: 350,
     condition: "new_tagged",
     attributes: {},

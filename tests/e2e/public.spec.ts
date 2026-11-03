@@ -45,8 +45,8 @@ test.describe("public pages", () => {
     ["ar", "ar-MA", "rtl"],
     ["rif", "rif-Latn", "ltr"],
   ] as const) {
-    // French and Arabic (RTL) at phone width too; Tarifit waits for its review (audit C3-02).
-    test(`/${locale} renders with lang and dir, under a hash CSP, without violations`, { tag: locale === "rif" ? [] : ["@mobile"] }, async ({ page }) => {
+    // Every language at phone width too: Tarifit is in the language menu (owner, 3 Nov 2026).
+    test(`/${locale} renders with lang and dir, under a hash CSP, without violations`, { tag: ["@mobile"] }, async ({ page }) => {
       const violations = await watchCsp(page);
       const response = await page.goto(`/${locale}`);
       expect(response?.status()).toBe(200);

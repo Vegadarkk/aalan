@@ -31,7 +31,7 @@ import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
-import { numbersLocale, pageLocale } from "@/i18n/params";
+import { pageLocale } from "@/i18n/params";
 import { STOREFRONT_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
@@ -45,6 +45,7 @@ import { searchPath } from "@/lib/search/params";
 import { DIRECTORY_PATH } from "@/lib/search/shortcuts";
 import { shopShelves, shopSubcategoryCounts } from "@/lib/search/storefront";
 import { mediaBaseUrl } from "@/lib/storage/keys";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Storefront of a verified Pro shop (phase 7 design §4): /boutique/{slug}-{proId}. ISR like the
 // profile page; a shop whose storefront is not shown (pending, rejected, downgraded, suspended)
@@ -93,7 +94,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const locale = pageLocale(value);
   const store = await load(shop);
   if (!store) return {};
-  const t = await getTranslations({ locale: numbersLocale(locale), namespace: "Storefront.meta" });
+  const t = await getNumbersTranslations({ locale, namespace: "Storefront.meta" });
   const city = cityBySlug(store.citySlug);
   const where = city ? cityName(city, locale) : "";
   const title = t("title", { name: store.name, city: where });
@@ -119,8 +120,8 @@ export default async function StorefrontPage({ params }: { params: Params }) {
 
   const rentalAgency = store.sector === "car_rental";
   const [t, profile, seo, criteria, legal, flags, vehicles, fleet, shelves] = await Promise.all([
-    getTranslations({ locale: numbersLocale(locale), namespace: "Storefront" }),
-    getTranslations({ locale: numbersLocale(locale), namespace: "Profile" }),
+    getNumbersTranslations({ locale, namespace: "Storefront" }),
+    getNumbersTranslations({ locale, namespace: "Profile" }),
     getTranslations({ locale, namespace: "Seo" }),
     getTranslations({ locale, namespace: "Criteria" }),
     getLegalConfig(),

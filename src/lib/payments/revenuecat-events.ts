@@ -41,8 +41,10 @@ import { creditPurchase, refundedShare, refundPurchase } from "./wallet";
 //   balance freezes the wallet and flags the account. A pack withdrawn by its buyer (CGV §6) lost
 //   its unspent credits at the request: its refund debits nothing more (src/lib/payments/withdrawals.ts).
 // - a subscription event (a Pro plan billed by Stripe, design §7): the shop's subscription is
-//   synced from RevenueCat (src/lib/payments/subscriptions.ts). A CANCELLATION is a subscription's
-//   when it carries an expiration or comes from Stripe, a pack refund otherwise.
+//   synced from RevenueCat (src/lib/payments/subscriptions.ts). A CANCELLATION of a pack's product
+//   (config/pricing) is a pack refund, even with an expiration: RevenueCat Billing sends one on a
+//   consumable's refund too (sandbox test, 3 Nov 2026). Otherwise it is a subscription's when it
+//   carries an expiration or comes from Stripe, a pack refund when it does not.
 // Other event types are acknowledged and dropped. A pack paid for an account, a product or in a
 // currency we do not know is not credited and alerts (an admin refunds it from the RevenueCat
 // dashboard); its refund then ends without a debit.
@@ -348,6 +350,13 @@ async function syncSubscriptionEvent(event: BillingEventDoc, deps: ProcessDeps):
   return syncShopSubscription(account.id, { ...deps, eventId: event.eventId });
 }
 
+/** A subscription's event, unless it is the CANCELLATION of a pack's product (recorded `kind` aside). */
+async function isSubscriptionEvent(event: BillingEventDoc): Promise<boolean> {
+  if (event.kind !== "subscription") return false;
+  if (event.type !== "CANCELLATION" || event.store === "STRIPE" || !event.productId) return true;
+  return packByProductId(event.productId, await getPricing()) === undefined;
+}
+
 /** Applies a recorded event; throws BillingRetryError (or an infrastructure error) for a later attempt. */
 export async function processBillingEvent(eventId: string, deps: ProcessDeps = {}): Promise<ProcessOutcome> {
   const event = await getBillingEvent(eventId);
@@ -355,7 +364,7 @@ export async function processBillingEvent(eventId: string, deps: ProcessDeps = {
   if (event.status === "processed" || event.status === "ignored") return (event.outcome as ProcessOutcome | undefined) ?? "duplicate";
   try {
     const outcome =
-      event.type === "NON_RENEWING_PURCHASE" ? await creditPack(event, deps) : event.kind === "subscription" ? await syncSubscriptionEvent(event, deps) : await refundPack(event, deps);
+      event.type === "NON_RENEWING_PURCHASE" ? await creditPack(event, deps) : (await isSubscriptionEvent(event)) ? await syncSubscriptionEvent(event, deps) : await refundPack(event, deps);
     await updateBillingEvent(eventId, { status: IGNORED.has(outcome) ? "ignored" : "processed", outcome, attempts: event.attempts + 1, processedAt: deps.now?.() ?? new Date() });
     logger.info({ webhook: "revenuecat", eventId, type: event.type, outcome }, "billing event processed");
     return outcome;

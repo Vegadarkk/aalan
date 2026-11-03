@@ -31,6 +31,9 @@ describe("HomeShortcuts", () => {
     expect(html).not.toContain("location-voitures");
     expect(html.match(/<a /g)).toHaveLength(3);
     expect(html).toMatch(/<a data-testid="home-pricing" class="[^"]*" href="\/fr\/tarifs">/);
+    // The three tiles are the grid's own items, so they stretch to one height (tablet portrait, owner 2026-11-03).
+    expect(html).not.toContain("<div");
+    expect(html).toMatch(/<a data-testid="home-pricing" class="[^"]*col-span-2 sm:col-span-1[^"]*"/);
   });
 
   it("puts the two rental searches first in the compact map panel, phones only, without hints", () => {

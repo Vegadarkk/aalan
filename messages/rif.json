@@ -840,7 +840,9 @@
       "showPhone": "Sken uṭṭun inu deg annonce",
       "showPhoneHint": "Imsaɣen ikecmen ad ẓren uṭṭun deffir ma ad wten x « Ẓar uṭṭun ».",
       "whatsapp": "Amsawal s WhatsApp",
-      "whatsappHint": "Ad yernu taqeffalt n WhatsApp ɣer uṭṭun nnec yettwasneqden."
+      "whatsappHint": "Ad yernu taqeffalt n WhatsApp ɣer uṭṭun nnec yettwasneqden.",
+      "priceCheck": "Vérifiez le prix : {price}, c'est bien au-dessus des annonces habituelles de cette catégorie. Gardez-le s'il est juste.",
+      "priceInWords": "En toutes lettres : {words}"
     },
     "contact": {
       "messagesAlways": "Tibratin n Aalan llant kul lweqt i imsaɣen, war ma ad tsekneḍ kra n wayen inek.",
@@ -1093,6 +1095,13 @@
       "tooMany": "{count} n combinaisons : ar {max} kan. Kkes kra n lqiyam.",
       "noneOffered": "Ssumer ɣas yiwet n combinaison.",
       "fromVariants": "{criteria} : yettwaru deg variantes, deg usurif n Ssuma."
+    },
+    "numberInput": {
+      "decimal": "Nombre entier uniquement, sans virgule ni centimes.",
+      "negative": "Nombre positif uniquement.",
+      "notDigits": "Chiffres uniquement.",
+      "tooBig": "{max} maximum.",
+      "tooBigPlain": "Nombre trop grand."
     }
   },
   "Categories": {

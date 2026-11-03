@@ -126,3 +126,11 @@ describe("PriceInput", () => {
     expect(inputTag(html)).toContain(`aria-describedby="${id}-hint"`);
   });
 });
+
+describe("PriceInput plausibility note (B9)", () => {
+  it("shows the note under the box, not while an error is shown", () => {
+    expect(render({ value: 335050, warning: "Vérifiez le prix" })).toContain('data-testid="price-warning"');
+    expect(render({ value: 335050, warning: "Vérifiez le prix", error: "Erreur" })).not.toContain('data-testid="price-warning"');
+    expect(render({ value: 350 })).not.toContain('data-testid="price-warning"');
+  });
+});

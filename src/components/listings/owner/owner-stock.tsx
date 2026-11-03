@@ -6,25 +6,18 @@ import { useTranslations } from "next-intl";
 import { Dialog } from "radix-ui";
 import { toast } from "sonner";
 import { useApiErrorMessage } from "@/components/auth/form-message";
+import { IntegerBox } from "@/components/post/controls/integer-box";
 import { useVariantLabels } from "@/components/post/variant-labels";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { STOCK_MAX, isSoldOut, stockState, type ListingVariants } from "@/lib/contracts/catalog";
 import { isolate } from "@/lib/i18n/bidi";
 import { saveStock } from "@/lib/listings/client/api";
-import { parsePriceInput } from "@/lib/listings/client/format";
 import { cn } from "@/lib/utils";
 
 // "Mes annonces" row of a Pro listing (catalogue §3): its declared stock at a glance, and a dialog
 // that sets it alone (one write, no new moderation). Joutiya never counts sales: the Pro does.
 
 type Catalogue = { stock: number | null; variants: ListingVariants | null };
-
-/** Digits typed in a stock box: "" is « non suivi » (null). */
-function parseStock(text: string): number | null {
-  const parsed = parsePriceInput(text);
-  return parsed === null ? null : Math.min(parsed, STOCK_MAX);
-}
 
 export function OwnerStock({ listingId, title, catalogue: initial }: { listingId: string; title: string; catalogue: Catalogue }) {
   const t = useTranslations("MyListings.stock");
@@ -159,17 +152,6 @@ function StockDialog({ listingId, title, catalogue, onClose, onSaved }: StockDia
 
 function StockBox({ label, value, onChange }: { label: string; value: number | null; onChange: (value: number | null) => void }) {
   const t = useTranslations("MyListings.stock");
-  return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      dir="ltr"
-      autoComplete="off"
-      aria-label={label}
-      placeholder={t("untrackedShort")}
-      className="w-28 shrink-0 text-end tabular-nums"
-      value={value === null ? "" : String(value)}
-      onChange={(event) => onChange(parseStock(event.target.value))}
-    />
-  );
+  // "" is « non suivi » (null); a sign, a comma or more than STOCK_MAX is refused with its reason.
+  return <IntegerBox aria-label={label} placeholder={t("untrackedShort")} wrapperClassName="w-28 shrink-0" className="text-end" max={STOCK_MAX} value={value} onValue={onChange} />;
 }

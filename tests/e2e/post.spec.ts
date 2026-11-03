@@ -168,10 +168,24 @@ test.describe("posting wizard", () => {
     await expect(page.getByRole("img", { name: "Photo 1" })).toBeVisible();
     await next(page);
 
-    // 6. Price.
+    // 6. Price. An edit in the middle keeps the caret on its digit while the thousands re-group
+    // (B9: "350 000" used to become "31 500 002"); a comma is refused with its reason; a price far
+    // above the subcategory's range gets a non-blocking note.
     await expect(page).toHaveURL(/\/prix$/);
-    await page.getByRole("textbox", { name: /^Prix/ }).fill("1500");
-    await expect(page.getByRole("textbox", { name: /^Prix/ })).toHaveValue(/1\s500/);
+    const price = page.getByRole("textbox", { name: /^Prix/ });
+    await price.fill("350000");
+    await expect(price).toHaveValue(/^350\s000$/);
+    await price.evaluate((input: HTMLInputElement) => input.setSelectionRange(1, 1));
+    await page.keyboard.type("1");
+    await expect(price).toHaveValue(/^3\s150\s000$/);
+    expect(await price.evaluate((input: HTMLInputElement) => input.selectionStart)).toBe(3);
+    await expect(page.getByTestId("price-warning")).toBeVisible();
+    await page.keyboard.type(",");
+    await expect(price).toHaveValue(/^3\s150\s000$/);
+    await expect(page.getByText("Nombre entier uniquement, sans virgule ni centimes.")).toBeVisible();
+    await price.fill("1500");
+    await expect(price).toHaveValue(/1\s500/);
+    await expect(page.getByTestId("price-warning")).toHaveCount(0);
     await next(page);
 
     // 7. Location: the city from the combobox, the region follows.
@@ -195,6 +209,7 @@ test.describe("posting wizard", () => {
     await page.reload();
     await expect(page.getByRole("heading", { level: 2, name: title })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("1 photo", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("price-words")).toHaveText("En toutes lettres : mille cinq cents dirhams");
     await page.getByRole("checkbox", { name: /conditions générales d'utilisation/ }).check();
     const published = page.waitForResponse((response) => response.url().endsWith(`/api/listings/${listingId}/publish`) && response.request().method() === "POST");
     await page.getByRole("button", { name: "Publier l'annonce" }).click();

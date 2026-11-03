@@ -7,6 +7,7 @@ import { Dialog } from "radix-ui";
 import { toast } from "sonner";
 import { useApiErrorMessage } from "@/components/auth/form-message";
 import { ChipRadioGroup } from "@/components/post/controls/chips";
+import { IntegerBox } from "@/components/post/controls/integer-box";
 import { useVariantLabels } from "@/components/post/variant-labels";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -25,11 +26,11 @@ import {
   type PromoInput,
   type PromoKind,
 } from "@/lib/contracts/catalog";
-import type { OwnerCatalogue, OwnerListingSummary } from "@/lib/contracts/listings";
+import { PRICE_MAX, type OwnerCatalogue, type OwnerListingSummary } from "@/lib/contracts/listings";
 import { isolate } from "@/lib/i18n/bidi";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { endPromo, savePromo } from "@/lib/listings/client/api";
-import { formatPrice, intlLocale, parsePriceInput } from "@/lib/listings/client/format";
+import { formatPrice, intlLocale } from "@/lib/listings/client/format";
 import { cn } from "@/lib/utils";
 
 // "Mes annonces" row of a published or paused Pro listing (catalogue §4): its promotion at a
@@ -127,16 +128,17 @@ function PromoDialog({ listing, title, now, onClose, onChanged }: PromoDialogPro
 
   const [kind, setKind] = useState<PromoKind>("promo");
   const [mode, setMode] = useState<"percent" | "price">("percent");
-  const [percentText, setPercentText] = useState("20");
-  const [priceText, setPriceText] = useState("");
+  // Whole numbers, refused with a reason rather than rewritten (zone 3 P2-5: "100" % became 10).
+  const [percentValue, setPercentValue] = useState<number | null>(20);
+  const [fixedValue, setFixedValue] = useState<number | null>(null);
   const [startsLater, setStartsLater] = useState(waits);
   const [startText, setStartText] = useState(() => localInput(from));
   const [endText, setEndText] = useState(() => localInput(from + 7 * DAY_MS));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const percent = Math.min(parsePriceInput(percentText) ?? 0, PROMO_PERCENT_MAX);
-  const fixed = parsePriceInput(priceText);
+  const percent = percentValue ?? 0;
+  const fixed = fixedValue;
   const effectiveMode = variants ? "percent" : mode;
 
   const rows = (variants ? variants.items.map((item) => ({ key: item.key, name: names.combination(variants.axes, item.key), before: item.price ?? listing.price })) : [{ key: "", name: null, before: listing.price }]).map(
@@ -262,11 +264,11 @@ function PromoDialog({ listing, title, now, onClose, onChanged }: PromoDialogPro
 
               {effectiveMode === "percent" ? (
                 <Field label={t("percent")}>
-                  <Input type="text" inputMode="numeric" dir="ltr" autoComplete="off" className="w-28 text-end tabular-nums" value={percentText} onChange={(event) => setPercentText(event.target.value.replace(/\D/g, "").slice(0, 2))} />
+                  <IntegerBox wrapperClassName="w-28" className="text-end" max={PROMO_PERCENT_MAX} value={percentValue} onValue={setPercentValue} />
                 </Field>
               ) : (
                 <Field label={t("price")}>
-                  <Input type="text" inputMode="numeric" dir="ltr" autoComplete="off" className="w-36 text-end tabular-nums" value={priceText} onChange={(event) => setPriceText(event.target.value)} />
+                  <IntegerBox grouped wrapperClassName="w-36" className="text-end" max={PRICE_MAX} value={fixedValue} onValue={setFixedValue} />
                 </Field>
               )}
 

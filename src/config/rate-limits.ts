@@ -98,6 +98,9 @@ export const RATE_LIMITS = {
   // PUT /api/pro/me/agency and /api/pro/me/rental (1 read, 1 write, a storefront revalidation):
   // 20 per day per account, shared.
   "pro.agency.uid": { points: 20, duration: DAY, policy: "open", key: "uid" },
+  // PUT /api/pro/me/logo (UX audit lot 3): a sharp re-encode and a local image check per call.
+  // Closed: 10 per day per account.
+  "pro.logo.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
   // POST /api/pro/me/rental/check (decision 5): each document sent costs one Claude call under the
   // monthly cap. Closed: 5 per day per account.
   "pro.rental.check.uid": { points: 5, duration: DAY, policy: "closed", key: "uid" },

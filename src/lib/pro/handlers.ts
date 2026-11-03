@@ -2,10 +2,11 @@ import "server-only";
 import { requireUser } from "@/lib/auth/guards";
 import { uploadIdSchema } from "@/lib/contracts/media";
 import { pinsInputSchema, sectionsInputSchema } from "@/lib/contracts/catalog";
-import { kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
+import { LOGO_MAX_BYTES, LOGO_TYPES, kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
 import { STOCK_IMPORT_BODY_MAX_BYTES, stockImportRequestSchema } from "@/lib/contracts/stock-import";
 import { serverEnv } from "@/lib/env";
 import { HttpError, notFound } from "@/lib/http/errors";
+import { readCappedBytes } from "@/lib/http/body";
 import { readJson } from "@/lib/http/json";
 import { json, noContent } from "@/lib/http/route";
 import { assertQuotas, DEPOSIT_QUOTAS } from "@/lib/quota/gate";
@@ -13,6 +14,7 @@ import { requestIdentity } from "@/lib/rate-limit/keys";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { completeKybcUpload, deleteKybcUpload, signKybcUpload } from "./kybc-uploads";
+import { deleteLogo, updateLogo } from "./logo";
 import { submitRentalCheck } from "./rental-check";
 import { proSelf, submitApplication, updateAgency, updatePins, updateRentalAgency, updateSections, updateShopCard } from "./service";
 import { updateSocialLinks } from "./social-links";
@@ -108,6 +110,30 @@ export async function handlePins(request: Request): Promise<Response> {
   const input = await readJson(request, pinsInputSchema);
   await enforceLimit("pro.agency.uid", auth.user.uid);
   return json(await updatePins(auth, input));
+}
+
+/**
+ * PUT /api/pro/me/logo: the image itself as the body (Content-Type image/jpeg, png or webp, at
+ * most LOGO_MAX_BYTES, read capped); 10 a day, and its bytes count in the daily upload budget.
+ */
+export async function handleLogoPut(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  const type = (request.headers.get("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
+  if (!(LOGO_TYPES as readonly string[]).includes(type)) throw new HttpError(415, "unsupported_media", "logo must be sent as image/jpeg, image/png or image/webp");
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > LOGO_MAX_BYTES) throw new HttpError(413, "file_too_large", "logo too large");
+  await enforceLimit("pro.logo.uid", auth.user.uid);
+  const body = await readCappedBytes(request.body, LOGO_MAX_BYTES);
+  if (!body) throw new HttpError(413, "file_too_large", "logo too large");
+  await enforceLimit("upload.bytes.uid", auth.user.uid, Math.max(1, body.byteLength));
+  return json(await updateLogo(auth, body, type));
+}
+
+/** DELETE /api/pro/me/logo: back to the shop's emblem. */
+export async function handleLogoDelete(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  await enforceLimit("pro.agency.uid", auth.user.uid);
+  return json(await deleteLogo(auth));
 }
 
 /** PUT /api/pro/me/social: the shop's social links, shown on its storefront. */

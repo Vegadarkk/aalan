@@ -19,6 +19,7 @@ import { firstStrictIssue, type FreeTextIssue } from "@/lib/moderation/free-text
 import { saveShopCard } from "@/lib/pro/client";
 import { PRO_ADDRESS_MAX, PRO_DESCRIPTION_MAX, PRO_HOURS_NOTE_MAX, WEEKDAYS, type OpeningHours, type Weekday } from "@/lib/pro/profile-schema";
 import { cn } from "@/lib/utils";
+import { ShopLogoField } from "./shop-logo-field";
 
 // « Ma fiche boutique » in the Pro area (UX audit of the Pro shops, lot 1): what the storefront
 // shows besides the listings. Banner, presentation in French and Arabic, city, address, weekly
@@ -62,7 +63,7 @@ const websiteOk = (value: string) => {
   }
 };
 
-export function ShopCardSettings({ shop }: { shop: Pick<ProSelfView, "card" | "storefront"> }) {
+export function ShopCardSettings({ shop, onLogo }: { shop: Pick<ProSelfView, "card" | "storefront" | "name" | "sector">; onLogo?: (logo: string | null) => void }) {
   const t = useTranslations("Pro.card");
   const issues = useTranslations("FreeText");
   const [saved, setSaved] = useState<ProShopCard>(shop.card);
@@ -76,6 +77,7 @@ export function ShopCardSettings({ shop }: { shop: Pick<ProSelfView, "card" | "s
   const [showPhone, setShowPhone] = useState(saved.showPhone);
   const [whatsapp, setWhatsapp] = useState(saved.whatsapp);
   const [website, setWebsite] = useState(saved.website);
+  const [logo, setLogo] = useState(shop.card.logo);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<unknown>(null);
 
@@ -129,6 +131,15 @@ export function ShopCardSettings({ shop }: { shop: Pick<ProSelfView, "card" | "s
         </h2>
         <p className="text-sm text-foreground-muted text-pretty">{t("lead")}</p>
       </header>
+      <ShopLogoField
+        name={shop.name}
+        sector={shop.sector}
+        logo={logo}
+        onChange={(next) => {
+          setLogo(next);
+          onLogo?.(next);
+        }}
+      />
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-6">
         <BannerPicker value={bannerKey} onChange={setBannerKey} />
 

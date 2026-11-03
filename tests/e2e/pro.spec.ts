@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext, type Browser, type Page } from "@
 import { getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import sharp from "sharp";
 import { ownClientIp } from "./helpers";
 
 // Pro path of phase 7 lot 1 against the production build and the Firebase emulators (npm run
@@ -191,8 +192,20 @@ test.describe("Pro accounts", () => {
     await expect(page.getByRole("meter", { name: "Annonces en ligne" })).toBeVisible();
     await page.screenshot({ path: "test-results/pro-dashboard.png", fullPage: true });
 
+    // The storefront's link and QR code to print, and the logo (UX audit lot 3).
+    const share = page.getByTestId("shop-share");
+    await expect(share.getByTestId("shop-share-link")).toHaveText(/^http:\/\/[^/]+\/boutique\/[a-z0-9-]+-[a-hj-km-np-z2-9]{8}$/);
+    await expect(share.getByRole("img", { name: "QR code de votre vitrine" })).toBeVisible();
+    const logo = await sharp({ create: { width: 600, height: 240, channels: 4, background: { r: 181, g: 101, b: 43, alpha: 1 } } }).png().toBuffer();
+    await page.getByTestId("shop-logo").locator('input[type="file"]').setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: logo });
+    await expect(page.getByText("Logo enregistré. Votre vitrine est mise à jour.")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Changer de logo" })).toBeVisible();
+    await page.getByTestId("shop-share").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: "test-results/pro-logo-share.png", fullPage: true });
+
     await page.getByRole("link", { name: "Voir ma vitrine" }).click();
     await expect(page.getByRole("heading", { name: shopName, level: 1 })).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('img[src*="/logo-"][src$="-l.webp"]').first()).toBeVisible();
     await expect(page.getByText(/Aalan n'est pas partie à la vente/)).toBeVisible();
     await page.screenshot({ path: "test-results/pro-storefront-fr.png", fullPage: true });
     const storefront = new URL(page.url()).pathname;

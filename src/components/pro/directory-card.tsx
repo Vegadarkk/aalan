@@ -43,7 +43,7 @@ export function DirectoryCard({ shop, locale, labels, headingLevel = 3 }: { shop
         <ShopBand name={shop.name} className="-mx-5 w-auto" />
       )}
       <div className="-mt-9 flex items-end gap-4">
-        <ShopEmblem name={shop.name} sector={shop.sector} />
+        <ShopEmblem name={shop.name} sector={shop.sector} logo={shop.logo} />
         <div className="flex min-w-0 flex-col gap-1 pb-0.5">
           <Heading className="text-lg leading-tight font-semibold">
             <Link href={`/boutique/${shop.segment}`} prefetch={false} dir="auto" className="break-words after:absolute after:inset-0 after:rounded-lg">

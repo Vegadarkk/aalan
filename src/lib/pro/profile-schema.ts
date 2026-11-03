@@ -219,6 +219,7 @@ export const proProfileSchema = z
     showPhone: z.boolean().optional(),
     /** House banner of the storefront (src/config/storefront.ts), never an uploaded file. */
     bannerKey: z.enum(BANNER_KEYS).optional(),
+    /** The uploaded logo (src/lib/pro/logo.ts): `shops/{proId}/logo-{version}`, plus `-{l,s}.webp` per size. */
     logoKey: z.string().max(200).optional(),
     coverKey: z.string().max(200).optional(),
     /** Verified number, revealed under quota like an individual's (never in the HTML). */

@@ -240,6 +240,8 @@ export const PRO_API = {
   sections: "/api/pro/me/sections",
   /** PUT: the listings pinned on the storefront (« Sélection de la boutique »). */
   pins: "/api/pro/me/pins",
+  /** PUT (the image itself as the body) / DELETE: the shop's logo. */
+  logo: "/api/pro/me/logo",
   rental: "/api/pro/me/rental",
   rentalCheck: "/api/pro/me/rental/check",
   social: "/api/pro/me/social",
@@ -426,9 +428,16 @@ export interface ProShopCard {
   whatsapp: boolean;
   website: string;
   bannerKey: BannerKey;
+  /** URL of the shop's logo (512 px WebP), null while none (the emblem stands in). */
+  logo: string | null;
   phoneVerified: boolean;
 }
 export type ProShopCardResponse = { card: ProShopCard };
+
+/** The logo's upper bound as sent (UX audit lot 3): re-encoded to a few dozen KB. */
+export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+export const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export type ProLogoResponse = { logo: string | null };
 
 // Shop counters (UX audit of the Pro shops, lot 1; src/lib/stats): the view beacon of the cached
 // listing and storefront pages, and the Pro space's dashboard.

@@ -94,6 +94,7 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   // Fleet of a car rental agency's storefront, filtered by dates in place (rental pack §5).
   "Storefront.fleet",
   "Rental.search",
+  "Rental.calendar",
   // The ad slots' consent panel.
   "Consent",
 ] as const;
@@ -122,6 +123,7 @@ export const HOME_PAGE_CLIENT_NAMESPACES = [
   "SearchMap",
   "Rental.home",
   "Rental.search",
+  "Rental.calendar",
   "Consent",
   "Locale",
   "Theme",
@@ -155,6 +157,7 @@ export const SEARCH_PAGE_CLIENT_NAMESPACES = [
   "SavedSearches.dialog",
   "SearchInterpret",
   "Rental.search",
+  "Rental.calendar",
   "Consent",
   "Locale",
   "Theme",

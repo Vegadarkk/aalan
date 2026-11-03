@@ -1,4 +1,4 @@
-import { z } from "@/lib/zod";
+import { z } from "../lib/zod.ts";
 
 // Feature flags (architecture §5 `config/flags`, §10 sales gate). Live values come from Firestore
 // `config/flags` (admin-edited, journaled, 5-min server cache in src/lib/config/runtime.ts); this

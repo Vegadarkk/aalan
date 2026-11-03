@@ -5174,7 +5174,7 @@
     "yours": "Votre offre",
     "notesTitle": "Avant de vous abonner",
     "notes": {
-      "stripe": "Le paiement se fait par carte sur la page sécurisée de Stripe, en français. La TVA s'ajoute aux prix HT et figure sur chaque facture.",
+      "stripe": "Le paiement se fait par carte sur la page sécurisée de Stripe, en français. Le prix HT est le prix payé : Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
       "renewal": "L'abonnement se renouvelle automatiquement. Vous pouvez le résilier à tout moment : il court jusqu'à la fin de la période payée.",
       "credits": "Les crédits et les « À la Une » du mois ne se cumulent pas : ils sont remis à niveau chaque mois.",
       "invoices": "Vos factures portent l'ICE et les identifiants de votre boutique."
@@ -5216,7 +5216,7 @@
       "currentEnds": "Actif jusqu'au {date}, sans renouvellement.",
       "extendHint": "Un nouveau pass prolonge le vôtre de {days} jours à partir du {date}.",
       "notes": {
-        "once": "Paiement unique par carte sur la page sécurisée de Stripe. La TVA s'ajoute au prix HT et figure sur la facture.",
+        "once": "Paiement unique par carte sur la page sécurisée de Stripe. Le prix HT est le prix payé : Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
         "credits": "Les crédits offerts servent pendant le pass. Une prolongation ajoute les siens à ceux qui restent ; ils ne sont pas reportés après la fin du pass.",
         "end": "À la fin du pass, vos annonces au-delà du quota gratuit sont mises en pause, sans être supprimées. Vous êtes prévenu 7 jours et 1 jour avant.",
         "subscribe": "Vous pouvez aussi vous abonner pendant le pass : pris au moins 2 jours avant sa fin, l'abonnement n'est facturé qu'à la fin du pass ; pris plus tard, il est facturé tout de suite."
@@ -6073,7 +6073,8 @@
       "cta": "Créer ma boutique",
       "more": "Découvrir l'offre Pro",
       "unlimitedListings": "Annonces actives en illimité",
-      "stockImport": "Import du stock par fichier"
+      "stockImport": "Import du stock par fichier",
+      "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due."
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture.",
     "compare": {

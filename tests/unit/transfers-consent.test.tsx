@@ -68,8 +68,8 @@ const consent = (version?: string) => ({ consents: { cgu: { version: "2026-10", 
 
 describe("needsTransfersReconsent", () => {
   it("asks again for any version other than the current one", () => {
-    expect(TRANSFERS_CONSENT_VERSION).toBe("2026-10-19");
-    expect(needsTransfersReconsent(consent("2026-10"))).toBe(true);
+    expect(TRANSFERS_CONSENT_VERSION).toBe("2026-11-03");
+    expect(needsTransfersReconsent(consent("2026-10-19"))).toBe(true);
     expect(needsTransfersReconsent(consent(undefined))).toBe(true);
     expect(needsTransfersReconsent(consent(TRANSFERS_CONSENT_VERSION))).toBe(false);
   });

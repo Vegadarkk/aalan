@@ -67,7 +67,7 @@ export const DEFAULT_LEGAL: LegalConfig = {
   vatNumber: "FR41947788303",
   vatRegime: "franchise",
   phone: "+33 7 62 66 71 49",
-  email: "contact@joutiya.ma",
+  email: "contact@aalan.ma",
   publicationDirector: "Adil DARKAOUI DAHMANI",
   // Oracle signup maps a French account to the "Oracle Cloud Services Agreement" of Oracle France
   // SAS (cloud_csa_online_v062223_fr_eng.pdf); head office per SIRENE 335 092 318 since 2026-04-13;
@@ -96,10 +96,10 @@ export const DEFAULT_LEGAL: LegalConfig = {
       phone: "+1 650 319 8930",
     },
   ],
-  dsaContactEmail: "dsa@joutiya.ma",
+  dsaContactEmail: "dsa@aalan.ma",
   dsaContactLanguages: ["fr", "ar", "en"],
-  abuseEmail: "abuse@joutiya.ma",
-  dpoContact: "dpo@joutiya.ma",
+  abuseEmail: "abuse@aalan.ma",
+  dpoContact: "dpo@aalan.ma",
   cndpReceiptNo: "",
   consumerMediator: { name: "", url: "" },
   listingTtlDays: 60,

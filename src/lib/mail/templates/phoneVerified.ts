@@ -3,13 +3,13 @@ import { GREETING, pageUrl, renderLayout, type BuiltMail, type MailLocale, type 
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: (phone: string) => string[]; button: string; notYou: string }> = {
   fr: {
-    subject: "Ton numéro de téléphone est vérifié",
+    subject: "Votre numéro de téléphone est vérifié",
     title: "Numéro vérifié",
     body: (phone) => [
-      `Ton numéro ${phone} est maintenant vérifié sur Aalan. Tes annonces affichent le badge « Téléphone vérifié » et les acheteurs peuvent te contacter en confiance.`,
+      `Votre numéro ${phone} est maintenant vérifié sur Aalan. Vos annonces affichent le badge « Téléphone vérifié » et les acheteurs peuvent vous contacter en confiance.`,
     ],
     button: "Voir mes paramètres",
-    notYou: "Si tu n'es pas à l'origine de cette vérification, change ton mot de passe sans attendre.",
+    notYou: "Si vous n'êtes pas à l'origine de cette vérification, changez votre mot de passe sans attendre.",
   },
   ar: {
     subject: "تم التحقق من رقم هاتفك",

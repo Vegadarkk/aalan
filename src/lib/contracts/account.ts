@@ -24,7 +24,7 @@ export interface CloseAccountResponse {
   purgeAt: string;
 }
 
-export const ACCOUNT_EXPORT_FORMAT = "joutiya.account-export";
+export const ACCOUNT_EXPORT_FORMAT = "aalan.account-export";
 export const ACCOUNT_EXPORT_VERSION = 1;
 
 /** Lists of the export, each read up to its limit (Firestore Spark: 50 000 reads a day for the whole site). */

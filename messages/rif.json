@@ -432,7 +432,7 @@
         "adsense": "Lpublicité, melmi ma tebda, d ɣas s uqbal nnec i yettwafken waḥd-s.",
         "cloudflare": "Asiweḍ d uḥraz n usit, tasenqedt anti-robot (Turnstile) d IA i lweqt n lḥaǧa i usenqed n annonces (Workers AI), deg réseau nnes n marra ddunit.",
         "anthropic": "Tallalt deg usenqed n annonces, asettef n usmekti d tiẓri n urecwar, taɣuri n tegtint n agrément n win yettakran ṭumubilat, d Amallal n Aalan.",
-        "openai": "Asenqed n tɣawsiwin i lweqt n lḥaǧa.",
+        "openai": "Asenqed n tɣawsiwin i lweqt n lḥaǧa, melmi ma yebda.",
         "meta": "Tasenqedt n uṭṭun n tilifun nnec s WhatsApp.",
         "resend": "Asiweḍ n e-mails.",
         "stripe": "Axelleṣ, melmi ɣa yebdu uzenzi.",
@@ -542,7 +542,7 @@
       },
       "verification": {
         "title": "Tisenqadin",
-        "body": "Uṭṭun yettwasneqden yessehnay imsaɣen, d yeǧǧa-k ad ak-d-ssiwlen s WhatsApp.",
+        "body": "Uṭṭun yettwasneqden yessehnay imsaɣen, ad d-yban s badge deg annonces nnec.",
         "bodyClosed": "Adres n e-mail yettwasentmen tessehnay imsaɣen. Tameslayt tettɛedda s tebratin n Aalan.",
         "email": "Adres n e-mail",
         "emailVerified": "Tettwasentem",
@@ -566,7 +566,7 @@
     },
     "verifications": {
       "title": "Senqed uṭṭun inu",
-      "lead": "Uṭṭun yettwasneqden ad d-yban s badge deg annonces nnec d ad yeǧǧ amsawal s WhatsApp.",
+      "lead": "Uṭṭun yettwasneqden ad d-yban s badge deg annonces nnec.",
       "how": "Cek ad tazneḍ code zi WhatsApp nnec ɣer uṭṭun n Aalan, d xlaṣ. Aalan werǧin ad dak-d tazen tabrat : war SMS, war asiwel, war tabrat n WhatsApp.",
       "phone": "Uṭṭun n portable",
       "phoneHint": "Portable n Lmeɣrib, amedya 06 12 34 56 78 niɣ +212 6 12 34 56 78.",

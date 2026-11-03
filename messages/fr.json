@@ -442,7 +442,7 @@
         "adsense": "La publicité, quand elle sera activée, et seulement avec votre accord donné à part.",
         "cloudflare": "La diffusion et la protection du site, la vérification anti-robot (Turnstile) et l'IA de secours du contrôle des annonces (Workers AI), sur son réseau mondial.",
         "anthropic": "L'aide au contrôle des annonces, au tri des signalements et à l'examen des recours, la lecture de la décision d'agrément d'un loueur de voitures, et l'Assistant Aalan.",
-        "openai": "Le contrôle de secours des contenus.",
+        "openai": "Le contrôle de secours des contenus, seulement s'il est activé.",
         "meta": "La vérification de votre numéro de téléphone par WhatsApp.",
         "resend": "L'envoi des e-mails.",
         "stripe": "Les paiements, à l'ouverture des ventes.",
@@ -552,7 +552,7 @@
       },
       "verification": {
         "title": "Vérifications",
-        "body": "Un numéro vérifié rassure les acheteurs et vous permet d'être contacté sur WhatsApp.",
+        "body": "Un numéro vérifié rassure les acheteurs : le badge « Numéro vérifié » apparaît sur vos annonces.",
         "bodyClosed": "Une adresse e-mail confirmée rassure les acheteurs. Les échanges passent par la messagerie d'Aalan.",
         "email": "Adresse e-mail",
         "emailVerified": "Confirmée",
@@ -576,7 +576,7 @@
     },
     "verifications": {
       "title": "Vérifier mon numéro",
-      "lead": "Un numéro vérifié apparaît avec un badge sur vos annonces et permet le contact WhatsApp.",
+      "lead": "Un numéro vérifié vous donne le badge « Numéro vérifié » sur vos annonces.",
       "how": "Vous envoyez un code depuis votre propre WhatsApp au numéro d'Aalan, et c'est tout. Aalan ne vous envoie jamais de message : ni SMS, ni appel, ni message WhatsApp.",
       "phone": "Numéro de mobile",
       "phoneHint": "Mobile marocain, par exemple 06 12 34 56 78 ou +212 6 12 34 56 78.",

@@ -6,11 +6,11 @@ import { GREETING, NOT_YOU, renderLayout, type BuiltMail, type MailLocale, type 
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: string[]; button: string; reset: string }> = {
   fr: {
-    subject: "Tu as déjà un compte Aalan",
-    title: "Ton compte existe déjà",
+    subject: "Vous avez déjà un compte Aalan",
+    title: "Votre compte existe déjà",
     body: [
-      "Quelqu'un, sans doute toi, vient d'essayer de créer un compte Aalan avec cette adresse e-mail. Elle est déjà associée à un compte : il suffit de te connecter pour continuer.",
-      "Mot de passe oublié ? Tu peux en choisir un nouveau grâce au lien ci-dessous.",
+      "Quelqu'un, sans doute vous, vient d'essayer de créer un compte Aalan avec cette adresse e-mail. Elle est déjà associée à un compte : il suffit de vous connecter pour continuer.",
+      "Mot de passe oublié ? Vous pouvez en choisir un nouveau grâce au lien ci-dessous.",
     ],
     button: "Me connecter",
     reset: "Réinitialiser mon mot de passe :",

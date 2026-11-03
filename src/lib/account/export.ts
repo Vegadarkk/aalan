@@ -434,7 +434,7 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
   };
 }
 
-/** joutiya-mes-donnees-2026-10-20.json */
+/** aalan-mes-donnees-2026-10-20.json */
 export function exportFileName(now: Date): string {
   return `aalan-mes-donnees-${now.toISOString().slice(0, 10)}.json`;
 }

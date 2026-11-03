@@ -3,11 +3,11 @@ import { GREETING, NOT_YOU, renderLayout, type BuiltMail, type MailLocale, type 
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: string[]; button: string; expired: string }> = {
   fr: {
-    subject: "Confirme ton adresse e-mail",
+    subject: "Confirmez votre adresse e-mail",
     title: "Bienvenue sur Aalan",
-    body: ["Il ne reste qu'une étape : confirme ton adresse e-mail pour activer ton compte et commencer à vendre ou acheter près de chez toi."],
+    body: ["Il ne reste qu'une étape : confirmez votre adresse e-mail pour activer votre compte et commencer à vendre ou à acheter près de chez vous."],
     button: "Confirmer mon adresse",
-    expired: "Si le lien a expiré, demande un nouvel e-mail depuis la page de connexion.",
+    expired: "Si le lien a expiré, demandez un nouvel e-mail depuis la page de connexion.",
   },
   ar: {
     subject: "أكّد عنوان بريدك الإلكتروني",

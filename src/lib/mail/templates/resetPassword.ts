@@ -3,11 +3,11 @@ import { GREETING, NOT_YOU, renderLayout, type BuiltMail, type MailLocale, type 
 
 const COPY: Record<MailLocale, { subject: string; title: string; body: string[]; button: string; expired: string }> = {
   fr: {
-    subject: "Réinitialise ton mot de passe",
+    subject: "Réinitialisez votre mot de passe",
     title: "Réinitialisation du mot de passe",
-    body: ["Tu as demandé à réinitialiser le mot de passe de ton compte Aalan. Clique sur le bouton ci-dessous pour en choisir un nouveau."],
+    body: ["Vous avez demandé à réinitialiser le mot de passe de votre compte Aalan. Cliquez sur le bouton ci-dessous pour en choisir un nouveau."],
     button: "Choisir un nouveau mot de passe",
-    expired: "Si le lien a expiré, refais une demande depuis la page « Mot de passe oublié ».",
+    expired: "Si le lien a expiré, refaites une demande depuis la page « Mot de passe oublié ».",
   },
   ar: {
     subject: "أعد تعيين كلمة المرور",

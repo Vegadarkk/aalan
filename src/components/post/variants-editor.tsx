@@ -35,11 +35,13 @@ export interface VariantsEditorProps {
   stock: number | null;
   onChange: (patch: { variants: ListingVariants | null; stock: number | null }) => void;
   onBlur?: () => void;
+  /** A rental car (catalogueKind "fleet"): identical vehicles available, no variants. */
+  fleet?: boolean;
 }
 
 type Mode = "single" | "variants";
 
-export function VariantsEditor({ subcategory, price, variants, stock, onChange, onBlur }: VariantsEditorProps) {
+export function VariantsEditor({ subcategory, price, variants, stock, onChange, onBlur, fleet = false }: VariantsEditorProps) {
   const t = useTranslations("Listing.catalogue");
   const locale = useLocale() as Locale;
   const criteria = useCriteriaLabels();
@@ -88,22 +90,26 @@ export function VariantsEditor({ subcategory, price, variants, stock, onChange, 
     <section aria-labelledby={headingId} className="flex flex-col gap-4 rounded-lg border border-border p-4" onBlur={onBlur}>
       <div className="flex flex-col gap-1">
         <h3 id={headingId} className="text-base font-semibold">
-          {t("title")}
+          {t(fleet ? "fleetTitle" : "title")}
         </h3>
-        <p className="text-sm text-foreground-muted">{t("hint")}</p>
+        <p className="text-sm text-foreground-muted">{t(fleet ? "fleetHint" : "hint")}</p>
       </div>
 
-      <ChipRadioGroup
-        label={t("mode")}
-        options={[
-          { value: "single", label: t("single") },
-          { value: "variants", label: t("multiple") },
-        ]}
-        value={mode}
-        onChange={(value) => chooseMode(value as Mode)}
-      />
+      {fleet ? (
+        <SingleStock stock={stock} fleet onStock={(next) => onChange({ variants: null, stock: next })} />
+      ) : (
+        <ChipRadioGroup
+          label={t("mode")}
+          options={[
+            { value: "single", label: t("single") },
+            { value: "variants", label: t("multiple") },
+          ]}
+          value={mode}
+          onChange={(value) => chooseMode(value as Mode)}
+        />
+      )}
 
-      {mode === "single" ? (
+      {fleet ? null : mode === "single" ? (
         <SingleStock stock={stock} onStock={(next) => onChange({ variants: null, stock: next })} />
       ) : (
         <div className="flex flex-col gap-5">
@@ -178,14 +184,14 @@ export function VariantsEditor({ subcategory, price, variants, stock, onChange, 
   );
 }
 
-function SingleStock({ stock, onStock }: { stock: number | null; onStock: (stock: number | null) => void }) {
+function SingleStock({ stock, onStock, fleet = false }: { stock: number | null; onStock: (stock: number | null) => void; fleet?: boolean }) {
   const t = useTranslations("Listing.catalogue");
   const [tracked, setTracked] = useState(stock !== null);
   return (
     <div className="flex flex-col gap-3">
       <SwitchField
-        label={t("trackStock")}
-        hint={t("trackStockHint")}
+        label={t(fleet ? "fleetTrack" : "trackStock")}
+        hint={t(fleet ? "fleetTrackHint" : "trackStockHint")}
         checked={tracked}
         onCheckedChange={(checked) => {
           setTracked(checked);
@@ -193,7 +199,7 @@ function SingleStock({ stock, onStock }: { stock: number | null; onStock: (stock
         }}
       />
       {tracked ? (
-        <Field label={t("stock")} className="max-w-40">
+        <Field label={t(fleet ? "fleetStock" : "stock")} className="max-w-40">
           <IntegerBox value={stock} max={STOCK_MAX} onValue={(next) => onStock(next ?? 0)} />
         </Field>
       ) : null}

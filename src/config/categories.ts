@@ -353,6 +353,22 @@ const rental = (id: CriterionId, options: { filter?: true } = {}): Criterion => 
 export const RENTAL_SUBCATEGORY = "location-voitures";
 
 /**
+ * What a Pro's declared stock means in a subcategory (zone 3 audit P2-10): "goods" (stock and
+ * variants), "fleet" (identical rental cars available, no variants), "none" (real estate, holiday
+ * rentals, services, jobs: no stock, no variants, no "article" wording).
+ */
+export type CatalogueKind = "goods" | "fleet" | "none";
+
+const NO_CATALOGUE_CATEGORIES: ReadonlySet<string> = new Set(["immobilier", "services", "emploi"]);
+
+export function catalogueKind(subcategory: Pick<Subcategory, "id" | "categoryId" | "priceMode"> | null | undefined): CatalogueKind {
+  if (!subcategory) return "goods";
+  if (subcategory.id === RENTAL_SUBCATEGORY) return "fleet";
+  if (NO_CATALOGUE_CATEGORIES.has(subcategory.categoryId) || subcategory.priceMode) return "none";
+  return "goods";
+}
+
+/**
  * Subcategories rented by dates (rental pack §3-4, seasonal rental conception §2): the owner blocks
  * periods and a search takes the start and end dates. "day": a car, both bounds rented; "night": a
  * home, the departure day stays free. `minimum`: the criterion holding the shortest rental.

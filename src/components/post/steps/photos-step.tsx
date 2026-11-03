@@ -11,7 +11,7 @@ import { useValidationMessage } from "../field-messages";
 import { STEP_FORM_ID } from "../wizard-shell";
 
 export function PhotosStep({ onNext }: { onNext: () => void }) {
-  const { listing, photos, maxPhotos, addFiles, cropPhoto, removePhoto, retryPhoto, refreshPhoto, movePhoto, blockers, saveMode, mediaBaseUrl, listingId } = useWizard();
+  const { listing, photos, maxPhotos, addFiles, photoNotices, dismissPhotoNotices, cropPhoto, removePhoto, retryPhoto, refreshPhoto, movePhoto, blockers, saveMode, mediaBaseUrl, listingId } = useWizard();
   const t = useTranslations("Listing.photos");
   // Job ads publish without a photo (a logo is welcome): no warning, the last one may go.
   const optional = Boolean(listing.subcategoryId && subcategoryById(listing.subcategoryId)?.photosOptional);
@@ -41,6 +41,8 @@ export function PhotosStep({ onNext }: { onNext: () => void }) {
         optional={optional}
         onCrop={cropPhoto}
         largeUrlOf={largeUrlOf}
+        notices={photoNotices}
+        onDismissNotices={dismissPhotoNotices}
       />
     </form>
   );

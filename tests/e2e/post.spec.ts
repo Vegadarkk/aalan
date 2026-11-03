@@ -147,9 +147,23 @@ test.describe("posting wizard", () => {
     await page.getByRole("radiogroup", { name: /État/ }).getByRole("radio", { name: "Très bon état" }).click();
     await page.getByRole("radiogroup", { name: /Type de vélo/ }).getByRole("radio", { name: "Ville" }).click();
     await next(page);
+    await expect(page).toHaveURL(/\/titre$/);
+
+    // "Vendre" again with a draft open: a choice, never a silent resume (zone 3 P2-3).
+    await page.goto("/fr/deposer");
+    const choice = page.getByTestId("draft-choice");
+    await expect(choice.getByRole("heading", { level: 1, name: "1 brouillon vous attend" })).toBeVisible({ timeout: 15_000 });
+    await expect(choice.getByRole("button", { name: "Nouvelle annonce" })).toBeVisible();
+    await choice.getByRole("button", { name: "Reprendre le brouillon" }).click();
+    await expect(page).toHaveURL(new RegExp(`/fr/deposer/${listingId}/`));
+    await page.goto(`/fr/deposer/${listingId}/titre`);
 
     // 3. Title: saved as a draft (coalesced autosave, flushed on step change).
     await expect(page).toHaveURL(/\/titre$/);
+    // No "too short" before the first character (zone 3 P2-8): leaving the empty field says nothing.
+    await page.getByRole("textbox", { name: /Titre de l'annonce/ }).focus();
+    await page.getByRole("heading", { level: 1 }).click();
+    await expect(page.getByRole("alert").filter({ hasText: /au moins/ })).toHaveCount(0);
     await page.getByRole("textbox", { name: /Titre de l'annonce/ }).fill(title);
     await next(page);
     await expect(page.getByText("Brouillon enregistré")).toBeVisible({ timeout: 15_000 });
@@ -163,8 +177,16 @@ test.describe("posting wizard", () => {
     await expect(page).toHaveURL(/\/photos$/);
     const jpeg = await photoWithExif();
     expect((await sharp(jpeg).metadata()).exif).toBeDefined();
-    await page.locator('input[type="file"][multiple]').setInputFiles({ name: "velo.jpg", mimeType: "image/jpeg", buffer: jpeg });
+    // An SVG picked with it never becomes a tile: the list of files left out says why (zone 3 P2-7).
+    await page.locator('input[type="file"][multiple]').setInputFiles([
+      { name: "velo.jpg", mimeType: "image/jpeg", buffer: jpeg },
+      { name: "logo.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') },
+    ]);
+    await expect(page.getByTestId("photo-notices")).toContainText("« logo.svg » : format non pris en charge");
     await expect(page.getByText("Couverture", { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("1 / 10 photos")).toBeVisible();
+    await page.getByRole("button", { name: "J'ai compris" }).click();
+    await expect(page.getByTestId("photo-notices")).toHaveCount(0);
     await expect(page.getByRole("img", { name: "Photo 1" })).toBeVisible();
     await next(page);
 

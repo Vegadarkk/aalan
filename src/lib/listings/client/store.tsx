@@ -47,6 +47,28 @@ export function saveModeOf(status: ListingStatus): SaveMode {
   return status === "draft" || status === "rejected" ? "auto" : "manual";
 }
 
+/**
+ * A file that did not become a tile (zone 3 audit P2-7): refused before or during its preparation
+ * (format, unreadable, too large), refused by the server for a reason a retry cannot fix, or beyond
+ * the photo maximum. The step lists them once, then the person dismisses the list.
+ */
+export type PhotoNotice =
+  | { kind: "unsupported_media" | "decode_failed" | "file_too_large"; name: string }
+  | { kind: "rejected"; name: string; reason: UploadRejectReason }
+  | { kind: "overflow"; count: number };
+
+/** Server refusals a retry cannot fix: the tile goes, the notice says why. */
+const FINAL_REJECTIONS: ReadonlySet<UploadRejectReason> = new Set<UploadRejectReason>(["too_large", "bad_type", "decode_failed", "nsfw", "active_content"]);
+/** Local preparation failures: the file never was a photo the listing can use. */
+const LOCAL_REFUSALS = new Set(["unsupported_media", "decode_failed", "file_too_large"]);
+/** File types the picker offers; a dropped or picked SVG, GIF or PDF is refused before any tile. */
+const ACCEPTED_FILE = /^image\/(jpeg|pjpeg|png|webp|heic|heif|heic-sequence|heif-sequence|avif)$/i;
+const ACCEPTED_NAME = /\.(jpe?g|png|webp|heic|heif|avif)$/i;
+
+export function acceptsPhotoFile(file: Pick<File, "type" | "name">): boolean {
+  return file.type ? ACCEPTED_FILE.test(file.type) : ACCEPTED_NAME.test(file.name);
+}
+
 interface WizardState {
   listing: OwnerListing;
   saveState: AutosaveState;
@@ -326,6 +348,9 @@ export interface WizardContextValue extends WizardState {
   save: (options?: { reopen?: boolean }) => Promise<boolean>;
   retrySave: () => void;
   addFiles: (files: Iterable<File>) => void;
+  /** Files of the last addition that did not become a tile, and why (P2-7). */
+  photoNotices: PhotoNotice[];
+  dismissPhotoNotices: () => void;
   /** Uploads a cropped copy of a ready photo next to it; the original goes once the copy is ready. */
   cropPhoto: (key: string, file: File) => void;
   removePhoto: (key: string) => void;
@@ -400,6 +425,7 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
     publishResult: null,
     held: [],
   }));
+  const [photoNotices, setPhotoNotices] = useState<PhotoNotice[]>([]);
   const listingId = listing.id;
   const saveMode = saveModeOf(state.listing.status);
   const [autosave] = useState(() => {
@@ -548,6 +574,14 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
     [listingId, mediaBaseUrl],
   );
 
+  /** A file that cannot become a photo: its tile goes at once and the notice says why (P2-7). */
+  const dropRefused = useCallback((key: string, notice: PhotoNotice) => {
+    revokePreview(photosRef.current.find((photo) => photo.key === key));
+    photosRef.current = photosRef.current.filter((photo) => photo.key !== key);
+    dispatch({ type: "photo-remove", key });
+    setPhotoNotices((current) => [...current, notice]);
+  }, []);
+
   const startUpload = useCallback(
     (key: string, file: File) => {
       const controller = new AbortController();
@@ -603,6 +637,10 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
                   });
                   break;
                 case "rejected":
+                  if (FINAL_REJECTIONS.has(phase.reason)) {
+                    dropRefused(key, { kind: "rejected", name: file.name, reason: phase.reason });
+                    break;
+                  }
                   dispatch({
                     type: "photo-update",
                     key,
@@ -625,23 +663,34 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
           });
         } catch (error) {
           if (controller.signal.aborted || isApiError(error, "aborted")) return;
+          const code = uploadErrorCode(error);
+          if (LOCAL_REFUSALS.has(code)) {
+            dropRefused(key, { kind: code as "unsupported_media" | "decode_failed" | "file_too_large", name: file.name });
+            return;
+          }
           dispatch({
             type: "photo-update",
             key,
-            changes: { status: "failed", errorCode: uploadErrorCode(error) },
+            changes: { status: "failed", errorCode: code },
           });
         } finally {
           controllers.delete(key);
         }
       });
     },
-    [controllers, listingId, runner, upload],
+    [controllers, dropRefused, listingId, runner, upload],
   );
 
   const addFiles = useCallback(
     (files: Iterable<File>) => {
       const room = Math.max(0, maxPhotos - usedSlots(photosRef.current));
-      for (const file of Array.from(files).slice(0, room)) {
+      const all = Array.from(files);
+      const accepted = all.filter(acceptsPhotoFile);
+      // A new addition replaces the previous list of files left out.
+      const notices: PhotoNotice[] = all.filter((file) => !acceptsPhotoFile(file)).map((file) => ({ kind: "unsupported_media", name: file.name }));
+      if (accepted.length > room) notices.push({ kind: "overflow", count: accepted.length - room });
+      setPhotoNotices(notices);
+      for (const file of accepted.slice(0, room)) {
         const key = localKey();
         const previewUrl = typeof URL !== "undefined" && "createObjectURL" in URL ? URL.createObjectURL(file) : null;
         const item: PhotoItem = {
@@ -821,6 +870,7 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
   }, [settle]);
 
   const movePhoto = useCallback((key: string, to: number) => dispatch({ type: "photo-move", key, to }), []);
+  const dismissPhotoNotices = useCallback(() => setPhotoNotices([]), []);
   const setBlockers = useCallback((blockers: FieldIssue[]) => dispatch({ type: "blockers", blockers }), []);
   const setPublished = useCallback((result: PublishListingResponse) => dispatch({ type: "published", result }), []);
 
@@ -841,6 +891,8 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
       save: saveNow,
       retrySave,
       addFiles,
+      photoNotices,
+      dismissPhotoNotices,
       cropPhoto,
       removePhoto,
       retryPhoto,
@@ -862,6 +914,8 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
       saveNow,
       retrySave,
       addFiles,
+      photoNotices,
+      dismissPhotoNotices,
       cropPhoto,
       removePhoto,
       retryPhoto,

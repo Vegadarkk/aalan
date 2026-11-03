@@ -3,7 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
-import { subcategoryById } from "@/config/categories";
+import { catalogueKind, subcategoryById } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import { formatPrice } from "@/lib/listings/client/format";
 import { useWizard } from "@/lib/listings/client/store";
@@ -25,7 +25,9 @@ export function PriceStep({ onNext }: { onNext: () => void }) {
   const issues = useMemo(() => stepIssues("prix", listing), [listing]);
   const blocker = blockers.find((issue) => issue.path === "price" || issue.path === "isDonation");
   const issue = blocker ?? (attempted ? issues[0] : undefined);
-  const error = issue ? message(issue.code) : undefined;
+  // No "ou cochez « Je donne cet objet »" where giving is not offered (real estate, rentals: P2-10).
+  const error = issue ? message(issue.code === "price_required" && !subcategory?.donationAllowed ? "price_required_amount" : issue.code) : undefined;
+  const kind = catalogueKind(subcategory);
   const unit = subcategory?.priceUnit ? ` ${t(`per.${subcategory.priceUnit}`)}` : "";
   const warning = !listing.isDonation && listing.price !== null && priceLooksHigh(listing.price, listing.categoryId, listing.subcategoryId) ? t("priceCheck", { price: `${formatPrice(listing.price, locale)}${unit}` }) : undefined;
   const catalogueBlockers = blockers.filter((item) => item.path === "stock" || item.path.startsWith("variants"));
@@ -56,9 +58,11 @@ export function PriceStep({ onNext }: { onNext: () => void }) {
         warning={warning}
         onBlur={() => void flush()}
       />
-      {/* Pro catalogue (owner decision 5: Pros only): no stock nor variants on a donation. */}
-      {subcategory && listing.sellerType === "pro" && !listing.isDonation ? (
+      {/* Pro catalogue (owner decision 5: Pros only): no stock nor variants on a donation, nor on real
+          estate, services or jobs; a rental car declares its available vehicles only (P2-10). */}
+      {subcategory && listing.sellerType === "pro" && !listing.isDonation && kind !== "none" ? (
         <VariantsEditor
+          fleet={kind === "fleet"}
           subcategory={subcategory}
           price={listing.price}
           variants={listing.variants}

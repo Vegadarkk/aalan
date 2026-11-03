@@ -10,7 +10,8 @@ import { z } from "@/lib/zod";
 import { Button } from "@/components/ui/button";
 import { KhatamLoader } from "@/components/ui/khatam-loader";
 import { Link } from "@/i18n/navigation";
-import { apiPost, isApiError, setSession } from "@/lib/auth/client";
+import { apiPost, isApiError, safeNextPath, setSession } from "@/lib/auth/client";
+import { splitNextPath } from "@/lib/auth/next-path";
 import { AUTH_API, passwordSchema, type ActionResponse, type SessionSummary } from "@/lib/contracts/auth";
 import { markWelcomeSeen, queueDoorOpening } from "@/lib/welcome/flags";
 import { FormMessage, useApiErrorMessage, useFieldMessage } from "./form-message";
@@ -43,7 +44,7 @@ function readMode(value: string | null): Mode | null {
 export function ActionView({ nonce }: { nonce?: string }) {
   const params = useSearchParams();
   // Read once: the URL is cleaned right after, so the search params must not be re-read.
-  const [{ mode, oobCode }] = useState(() => ({ mode: readMode(params.get("mode")), oobCode: params.get("oobCode") }));
+  const [{ mode, oobCode, next }] = useState(() => ({ mode: readMode(params.get("mode")), oobCode: params.get("oobCode"), next: safeNextPath(params.get("next")) }));
   const t = useTranslations("Auth.action");
   const [state, setState] = useState<State>(() => (mode && oobCode ? { kind: "working" } : { kind: "missing" }));
   const started = useRef(false);
@@ -116,7 +117,9 @@ export function ActionView({ nonce }: { nonce?: string }) {
         actions={
           state.session ? (
             <>
-              <Button asChild>
+              {/* Back to the page the sign-up started from, first (audit zone 5 n°8, Z1-13). */}
+              {next ? <ResumeLink next={next} label={t("goBack")} /> : null}
+              <Button asChild variant={next ? "outline" : undefined}>
                 <Link href="/parametres">{t("goSettings")}</Link>
               </Button>
               <Button asChild variant="outline">
@@ -128,7 +131,7 @@ export function ActionView({ nonce }: { nonce?: string }) {
             </>
           ) : (
             <Button asChild>
-              <Link href="/connexion">{t("goSignIn")}</Link>
+              <Link href={next ? { pathname: "/connexion", query: { next } } : "/connexion"}>{t("goSignIn")}</Link>
             </Button>
           )
         }
@@ -248,5 +251,17 @@ function ResetPasswordForm({ oobCode, email, onDone }: { oobCode: string; email:
         {t("resetSubmit")}
       </Button>
     </form>
+  );
+}
+
+/** The page a sign-up started from, in its own language. */
+function ResumeLink({ next, label }: { next: string; label: string }) {
+  const target = splitNextPath(next);
+  return (
+    <Button asChild>
+      <Link href={target.pathname} locale={target.locale ?? undefined} data-testid="action-resume">
+        {label}
+      </Link>
+    </Button>
   );
 }

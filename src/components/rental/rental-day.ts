@@ -29,6 +29,37 @@ export function fragmentDates(hash: string): { from: string; to: string } | null
   return from && to ? { from, to } : null;
 }
 
+/** Fragment key of the contact the visitor started before signing in (audit L4-03, zone 5 n°8). */
+export const CONTACT_FRAGMENT_KEY = "contact";
+
+/**
+ * The fragment a sign-in link sends back to: the action the visitor chose (a message, the dates of
+ * a rental, a visit, an offer) and the days already picked, so the listing page reopens that dialog
+ * on them once signed in instead of starting over.
+ */
+export function contactFragment(hash: string, intent: string): string {
+  const dates = fragmentDates(hash);
+  const query = new URLSearchParams();
+  if (dates) {
+    query.set("du", dates.from);
+    query.set("au", dates.to);
+  }
+  query.set(CONTACT_FRAGMENT_KEY, intent);
+  return `#${query.toString()}`;
+}
+
+/** The contact to reopen, read from the fragment; null when there is none. */
+export function pendingContact(hash: string): string | null {
+  return new URLSearchParams(hash.replace(/^#/, "")).get(CONTACT_FRAGMENT_KEY) || null;
+}
+
+/** Drops the contact key from the address bar (the days stay): reopened once, not on every reload. */
+export function clearPendingContact(): void {
+  const { pathname, search, hash } = window.location;
+  const dates = fragmentDates(hash);
+  window.history.replaceState(window.history.state, "", `${pathname}${search}${dates ? rentalFragment(dates) : ""}`);
+}
+
 /** Window event of the listing page: its calendar asks the contact bar for a request on these days. */
 export const RENTAL_DATES_EVENT = "aalan:rental-dates";
 

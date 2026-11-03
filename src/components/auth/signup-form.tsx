@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MailCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import type { z } from "@/lib/zod";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { Locale } from "@/config/site";
-import { apiPost, isApiError } from "@/lib/auth/client";
+import { apiPost, isApiError, safeNextPath } from "@/lib/auth/client";
 import { AUTH_API, signupSchema, type SignupInput, type SignupResponse } from "@/lib/contracts/auth";
 import { ConsentFields } from "./consent-fields";
 import { FormMessage, useApiErrorMessage, useFieldMessage } from "./form-message";
@@ -28,6 +29,7 @@ type SignupForm = z.input<typeof signupSchema>;
 
 export function SignupForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: string }) {
   const t = useTranslations("Auth.signUp");
+  const params = useSearchParams();
   const c = useTranslations("Auth.common");
   const locale = useLocale() as Locale;
   const fieldMessage = useFieldMessage();
@@ -57,7 +59,9 @@ export function SignupForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: str
   async function onValid(values: SignupInput) {
     setServerError(undefined);
     try {
-      await apiPost<SignupResponse>(AUTH_API.signup, values);
+      // The page the visitor came from rides in the verification link (audit zone 5 n°8).
+      const next = safeNextPath(params.get("next"));
+      await apiPost<SignupResponse>(AUTH_API.signup, next ? { ...values, next } : values);
       setSentTo(values.email);
     } catch (error) {
       // Tokens are single use: the next attempt needs a fresh one.

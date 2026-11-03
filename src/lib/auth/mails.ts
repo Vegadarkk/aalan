@@ -15,12 +15,12 @@ interface Recipient {
 const hourBucket = () => Math.floor(Date.now() / 3_600_000);
 
 /** Verification link of a pending account; one mail per account and hour at most (queue dedupe). */
-export async function sendVerificationMail(input: Recipient & { uid: string }): Promise<void> {
+export async function sendVerificationMail(input: Recipient & { uid: string; next?: string }): Promise<void> {
   await sendMail({
     template: "verifyEmail",
     locale: input.locale,
     to: input.email,
-    data: { displayName: input.displayName, actionLink: actionLinkRequest(input.locale, "verifyEmail") },
+    data: { displayName: input.displayName, actionLink: actionLinkRequest(input.locale, "verifyEmail", input.next) },
     priority: "security",
     idempotencyKey: `verify-${input.uid}-${hourBucket()}`,
   });

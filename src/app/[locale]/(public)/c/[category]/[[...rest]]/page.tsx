@@ -18,7 +18,7 @@ import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/
 import { Link } from "@/i18n/navigation";
 import { pageLocale } from "@/i18n/params";
 import { CATEGORY_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
-import { alternates } from "@/lib/i18n/metadata";
+import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { SEARCH_PATH, searchQueryObject } from "@/lib/search/params";
 import { cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title,
     description,
     alternates: alternates(locale, path),
-    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description },
+    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description, images: DEFAULT_OG_IMAGES },
     twitter: { card: "summary", title, description },
     // Thin pages stay reachable and pass their links on, out of the index (D15).
     ...(data.verdict === "noindex" ? { robots: { index: false, follow: true } } : {}),

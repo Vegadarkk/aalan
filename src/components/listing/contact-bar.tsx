@@ -7,7 +7,7 @@ import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, Me
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
-import { RENTAL_DATES_EVENT } from "@/components/rental/rental-day";
+import { RENTAL_DATES_EVENT, clearPendingContact, contactFragment, fragmentDates, pendingContact } from "@/components/rental/rental-day";
 import { Button } from "@/components/ui/button";
 import type { RentalUnit } from "@/config/categories";
 import { getPathname, Link } from "@/i18n/navigation";
@@ -250,6 +250,32 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     return () => window.removeEventListener(RENTAL_DATES_EVENT, listener);
   }, []);
 
+  /**
+   * Back from the sign-in page (audit L4-03, zone 5 n°8): the dialog the visitor had opened comes
+   * back by itself, on the days already picked, once the session is known. Only the intents this
+   * listing offers; the key leaves the address bar so a reload does not reopen it.
+   */
+  const resumeContact = useEffectEvent(() => {
+    const pending = pendingContact(window.location.hash);
+    if (!pending) return;
+    clearPendingContact();
+    const offered: Record<ComposeIntent, boolean> = { message: true, rental: Boolean(rental), visit, test_drive: testDrive, offer: offer !== null };
+    const wanted = (Object.keys(offered) as ComposeIntent[]).find((candidate) => candidate === pending && offered[candidate]);
+    if (!wanted) return;
+    if (wanted === "rental") {
+      const dates = fragmentDates(window.location.hash);
+      setDatesKey(dates ? `${dates.from}_${dates.to}` : "");
+    }
+    void openComposer(wanted);
+  });
+  const signedIn = status === "ready" && session !== null;
+  useEffect(() => {
+    if (!signedIn || own) return;
+    // After the commit, and once (a strict-mode remount clears the first timer).
+    const timer = window.setTimeout(resumeContact, 0);
+    return () => window.clearTimeout(timer);
+  }, [signedIn, own]);
+
   if (own) {
     return (
       <div data-testid="contact-bar" className="flex flex-col gap-3 rounded-md bg-surface-muted p-4">
@@ -356,11 +382,12 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       </Button>
     ) : null;
 
-  const signIn = (body: string) => (
+  // Shown only after a click (never server rendered): the fragment of this very page is known.
+  const signIn = (body: string, resume?: ComposeIntent) => (
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-3 text-sm">
       <p className="text-pretty">{body}</p>
       <Button asChild variant="structure" className="self-start">
-        <Link href={{ pathname: "/connexion", query: { next } }}>
+        <Link href={{ pathname: "/connexion", query: { next: resume ? `${next}${contactFragment(window.location.hash, resume)}` : next } }}>
           <LogIn aria-hidden="true" />
           {t("signIn")}
         </Link>
@@ -374,7 +401,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
         <RevealChallenge failed={state.failed} onToken={(token) => void reveal(token)} />
       ) : null
     ) : compose === "signin" ? (
-      signIn(intent === "visit" ? t("signInVisit") : intent === "rental" ? t(stay ? "home.signInRental" : "signInRental") : intent === "offer" ? offers("signIn") : t("signInMessage"))
+      signIn(intent === "visit" ? t("signInVisit") : intent === "rental" ? t(stay ? "home.signInRental" : "signInRental") : intent === "offer" ? offers("signIn") : t("signInMessage"), intent)
     ) : state.kind === "signin" ? (
       signIn(t("signInBody"))
     ) : state.kind === "error" ? (

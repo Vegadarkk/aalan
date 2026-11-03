@@ -5,8 +5,11 @@ import { LOCALES, type Locale } from "@/config/site";
 
 const LOCALE_PREFIX = new RegExp(`^/(${LOCALES.join("|")})(?=/|\\?|#|$)`);
 
-/** Where a sign-in lands when `next` is absent or refused. */
-export const DEFAULT_AFTER_SIGN_IN = "/parametres";
+/**
+ * Where a sign-in lands when `next` is absent or refused: the home page, not the settings (audit
+ * zone 5 n°9: a seller signing in to read 14 messages landed on « Mes paramètres »).
+ */
+export const DEFAULT_AFTER_SIGN_IN = "/";
 
 /**
  * A `?next=` value is followed only when it is a same-origin relative path: exactly one leading
@@ -34,7 +37,7 @@ export function splitNextPath(next: string): NextTarget {
   return { locale: match[1] as Locale, pathname: rest.startsWith("/") ? rest : `/${rest}` };
 }
 
-/** The page a signed-in person goes to: the safe `next` (its own locale honoured) or the settings page. */
+/** The page a signed-in person goes to: the safe `next` (its own locale honoured) or the home page. */
 export function afterSignInTarget(next: string | string[] | null | undefined): NextTarget {
   const safe = safeNextPath(Array.isArray(next) ? next[0] : next);
   return safe ? splitNextPath(safe) : { locale: null, pathname: DEFAULT_AFTER_SIGN_IN };

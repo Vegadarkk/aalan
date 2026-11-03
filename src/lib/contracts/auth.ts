@@ -1,6 +1,7 @@
 import { z } from "@/lib/zod";
 import { LEGAL_VERSIONS } from "@/config/legal-versions";
 import { LOCALES } from "@/config/site";
+import { safeNextPath } from "@/lib/auth/next-path";
 import { PASSWORD_MAX, PASSWORD_MIN } from "./endpoints";
 
 // Shared client/server contracts of the authentication API (phase 2). Imported by the forms
@@ -61,6 +62,15 @@ export const signupSchema = z
     locale: localeSchema,
     consents: consentsSchema,
     turnstileToken: turnstileTokenSchema,
+    /**
+     * The page the visitor signed up from (`?next=` of the sign-up page): carried in the
+     * verification link, so the confirmed address leads back to it (audit zone 5 n°8, Z1-13).
+     */
+    next: z
+      .string()
+      .max(300)
+      .refine((value) => safeNextPath(value) !== null)
+      .optional(),
   })
   .strict();
 export type SignupInput = z.infer<typeof signupSchema>;

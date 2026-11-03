@@ -41,7 +41,7 @@ import { pageLocale } from "@/i18n/params";
 import { LISTING_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
-import { alternates } from "@/lib/i18n/metadata";
+import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { isSoldOut, isVariantCriterion, priceRange } from "@/lib/contracts/catalog";
 import { getLegalConfig } from "@/lib/legal/config";
 import { formatDate, formatPrice } from "@/lib/listings/client/format";
@@ -151,7 +151,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title,
     description,
     alternates: alternates(locale, path),
-    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description, images },
+    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description, images: images ?? DEFAULT_OG_IMAGES },
     twitter: { card: images ? "summary_large_image" : "summary", title, description, images: images?.map((image) => image.url) },
     // Paused, sold and expired pages stay reachable for buyers who saved them, not for search engines;
     // example listings are not offers.

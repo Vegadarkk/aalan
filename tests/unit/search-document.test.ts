@@ -167,6 +167,11 @@ describe("toSearchDocument", () => {
     expect(toSearchDocument(listing(), NOW)).not.toHaveProperty("isExample");
   });
 
+  it("keeps the cover photo's variants, so cards can stop at m (B15)", () => {
+    const photos = [{ id: "photo-1", w: 1067, h: 1600, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj", hash: "0123456789abcdef", variants: ["l", "m", "s"] as ("l" | "m" | "s")[] }];
+    expect(toSearchDocument(listing({ photos }), NOW)?.photo).toEqual({ id: "photo-1", w: 1067, h: 1600, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj", variants: ["l", "m", "s"] });
+  });
+
   it("indexes a listing without photo", () => {
     const doc = toSearchDocument(listing({ photos: [] }), NOW)!;
     expect(doc).toMatchObject({ hasPhoto: false, photoCount: 0 });

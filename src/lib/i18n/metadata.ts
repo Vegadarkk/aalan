@@ -27,6 +27,13 @@ export function alternates(locale: Locale, path = ""): Metadata["alternates"] {
  */
 export const DARK_READER_LOCK: Metadata["other"] = { "darkreader-lock": "true" };
 
+/**
+ * Share image of the pages without a photo of their own (audit zone 8 P1, zone 2 L2: WhatsApp and
+ * Facebook showed no picture). A page that sets `openGraph` replaces the root one whole, so it
+ * repeats these images. Rendered by scripts/brand-assets.ts.
+ */
+export const DEFAULT_OG_IMAGES = [{ url: "/brand/og-default.png", width: 1200, height: 630, alt: SITE_NAME }];
+
 export async function rootMetadata(locale: Locale): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "Metadata" });
   return {
@@ -35,9 +42,13 @@ export async function rootMetadata(locale: Locale): Promise<Metadata> {
     description: t("description"),
     applicationName: SITE_NAME,
     alternates: alternates(locale),
-    icons: { icon: "/brand/aalan-icon.svg" },
+    icons: {
+      icon: [{ url: "/brand/aalan-icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "48x48" }],
+      apple: "/brand/apple-touch-icon.png",
+    },
+    manifest: "/manifest.webmanifest",
     formatDetection: { telephone: false, email: false, address: false },
-    openGraph: { siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), type: "website" },
+    openGraph: { siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), type: "website", images: DEFAULT_OG_IMAGES },
     other: DARK_READER_LOCK,
   };
 }

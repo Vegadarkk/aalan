@@ -2,6 +2,7 @@ import type { Condition } from "@/config/categories";
 import type { CardFacts } from "@/lib/listings/card-facts";
 import type { CardPromo, PromoKind } from "@/lib/contracts/catalog-core";
 import type { ListingAttributes } from "@/lib/contracts/listings";
+import type { PhotoVariant } from "@/lib/contracts/photo-variants";
 import type { SearchParams, SearchSort } from "./params";
 
 // Search contracts (phase 4, design §3). Client-safe types: the engine adapters
@@ -16,6 +17,8 @@ export interface SearchPhoto {
   w: number;
   h: number;
   blurhash: string;
+  /** Variants stored for the photo (src/lib/search/photo.ts); absent: the legacy `s` + `l`. */
+  variants?: PhotoVariant[];
 }
 
 /**

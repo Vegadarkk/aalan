@@ -10,10 +10,10 @@ import type { RentalUnit } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import type { RentalAvailability } from "@/lib/contracts/listings";
 import { formatDate } from "@/lib/listings/client/format";
-import { RENTAL_AHEAD_DAYS, RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, blockedSet, dayString, isFresh, moroccoToday, occupiedDays, rentalDuration } from "@/lib/listings/rental-availability";
+import { RENTAL_AHEAD_DAYS, RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, blockedSet, dayNumber, dayString, isFresh, moroccoToday, occupiedDays, rentalDuration } from "@/lib/listings/rental-availability";
 import { cn } from "@/lib/utils";
 import { AvailabilityCalendar } from "./availability-calendar";
-import { formatRentalDay, requestRentalDates } from "./rental-day";
+import { formatRentalDay, fragmentDates, requestRentalDates } from "./rental-day";
 
 // The listing page's availability block (rental pack §3; a holiday home: seasonal rental conception
 // §2, its nights): this month and the next, as declared by the agency or the host. The page is cached (ISR), so the days are drawn in the browser, on today's date.
@@ -29,11 +29,28 @@ interface Range {
   to: number | null;
 }
 
+/** The days of a `#du=…&au=…` fragment as day numbers; null when absent or not real days. */
+function addressRange(hash: string): Range | null {
+  const dates = fragmentDates(hash);
+  if (!dates) return null;
+  const from = dayNumber(dates.from);
+  const to = dayNumber(dates.to);
+  return Number.isNaN(from) || Number.isNaN(to) ? null : { from, to };
+}
+
+/** The bounds of a tap (onDay): a start within the request's horizon, at most the search's length. */
+function withinBounds(range: Range, today: number, gap: number): boolean {
+  return range.to !== null && range.from >= today && range.from <= today + RENTAL_SEARCH_AHEAD_DAYS && range.to >= range.from + gap && range.to - range.from <= RENTAL_SEARCH_DAYS_MAX;
+}
+
 export function ListingAvailability({ rental, locale, unit = "day", requestable = false, example = false }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit; requestable?: boolean; example?: boolean }) {
   const t = useTranslations("Rental.listing");
   const hydrated = useHydrated();
   const [monthOffset, setMonthOffset] = useState(0);
-  const [range, setRange] = useState<Range | null>(null);
+  const [picked, setRange] = useState<Range | null>(null);
+  // The days of the address (a search by dates, or back from the sign-in page: audit L4-03) start
+  // picked. Read in the browser only and used once hydrated (the server renders a skeleton).
+  const [fromAddress] = useState<Range | null>(() => (typeof window === "undefined" ? null : addressRange(window.location.hash)));
   // Server and hydration render a skeleton; the browser's clock then draws the days.
   const [clock] = useState(() => Date.now());
   const now = hydrated ? clock : null;
@@ -41,6 +58,7 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
   const today = now === null ? 0 : moroccoToday(now);
   const nights = unit === "night";
   const gap = nights ? 1 : 0;
+  const range = picked ?? (now !== null && (requestable || example) && fromAddress && withinBounds(fromAddress, today, gap) ? fromAddress : null);
   const blocked = blockedSet(rental.unavailable);
   const text = <K extends "updatedOn" | "stale" | "never" | "note" | "pickHint" | "pickEnd" | "picked" | "pickedBlocked">(key: K) => (nights ? (`home.${key}` as const) : key);
   const dates = range && range.to !== null ? { from: dayString(range.from), to: dayString(range.to) } : null;

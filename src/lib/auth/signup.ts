@@ -98,7 +98,7 @@ async function signup(request: Request): Promise<Response> {
     if (isEmailTaken(error)) return existingAccountAnswer(flow, error.uid, input.email, input.locale);
     throw error;
   }
-  await sendVerificationMail({ uid, email: input.email, displayName: input.displayName, locale: input.locale });
+  await sendVerificationMail({ uid, email: input.email, displayName: input.displayName, locale: input.locale, ...(input.next ? { next: input.next } : {}) });
   await logConnection({ uid, event: "signup", ip: flow.identity.ip });
   await uniformDuration(flow);
   return respond(flow, VERIFICATION_SENT, { status: 202 });

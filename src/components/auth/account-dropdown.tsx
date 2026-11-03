@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BadgeCheck, BellRing, CarFront, CircleHelp, Heart, House, LogOut, Mail, MessageSquare, Scale, ScrollText, Settings, ShoppingBag, Star, Store, Tag, Wallet } from "lucide-react";
+import { BellRing, CarFront, CircleHelp, Heart, House, LogOut, Mail, MessageSquare, Scale, ScrollText, Settings, ShoppingBag, Star, Store, Tag, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DropdownMenu } from "radix-ui";
 import { toast } from "sonner";
@@ -51,8 +51,11 @@ export default function AccountDropdown({ session, name, triggerClassName, child
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
+          collisionPadding={8}
           className={cn(
-            "z-50 min-w-56 rounded-md border border-border bg-surface p-1 shadow-lg shadow-bab-950/10",
+            // Never taller than the room under the header (audit zone 1 Z1-01, B10): the list scrolls
+            // and the sign-out row stays pinned at its foot, reachable on any phone.
+            "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-56 overflow-y-auto overscroll-contain rounded-md border border-border bg-surface p-1 pb-0 shadow-lg shadow-bab-950/10",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           )}
         >
@@ -133,16 +136,11 @@ export default function AccountDropdown({ session, name, triggerClassName, child
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
+          {/* Vérifications is reached from Mes paramètres (its phone row), not from here (Z1-01: fewer entries). */}
           <DropdownMenu.Item asChild>
             <Link href="/parametres" className={item}>
               <Settings aria-hidden="true" />
               {t("settings")}
-            </Link>
-          </DropdownMenu.Item>
-          <DropdownMenu.Item asChild>
-            <Link href="/verifications" className={item}>
-              <BadgeCheck aria-hidden="true" />
-              {t("verifications")}
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild>
@@ -179,11 +177,13 @@ export default function AccountDropdown({ session, name, triggerClassName, child
           </DropdownMenu.Item>
           {/* Below md the header has no language pill: the other languages sit here. */}
           <LocaleMenuItems itemClassName={item} className="md:hidden" />
-          <DropdownMenu.Separator className="my-1 h-px bg-border" />
-          <DropdownMenu.Item className={item} onSelect={() => void onSignOut()}>
-            <LogOut aria-hidden="true" />
-            {t("signOut")}
-          </DropdownMenu.Item>
+          <div className="sticky bottom-0 -mx-1 bg-surface px-1 pb-1">
+            <DropdownMenu.Separator className="mb-1 h-px bg-border" />
+            <DropdownMenu.Item className={item} onSelect={() => void onSignOut()} data-testid="account-sign-out">
+              <LogOut aria-hidden="true" />
+              {t("signOut")}
+            </DropdownMenu.Item>
+          </div>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

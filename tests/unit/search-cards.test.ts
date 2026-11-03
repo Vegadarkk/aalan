@@ -28,6 +28,12 @@ function doc(overrides: Partial<CardDocument> = {}): CardDocument {
 }
 
 describe("toSearchCard", () => {
+  it("keeps the photo's known variants only (B15)", () => {
+    const photo = { id: "ph1", w: 1067, h: 1600, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" };
+    expect(toSearchCard(doc({ photo: { ...photo, variants: ["l", "m", "s"] } }), NOW).photo).toEqual({ ...photo, variants: ["l", "m", "s"] });
+    expect(toSearchCard(doc({ photo: { ...photo, variants: ["x"] as unknown as ["s"] } }), NOW).photo).toEqual(photo);
+  });
+
   it("maps every card field", () => {
     expect(toSearchCard(doc(), NOW)).toEqual({
       id: "abcd2345",

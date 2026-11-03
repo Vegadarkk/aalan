@@ -464,10 +464,12 @@ describe("metadata", () => {
     expect(metadata.robots).toEqual({ index: false, follow: true });
   });
 
-  it("has no OG image without photo, and Tarifit stays out of the hreflang cluster", async () => {
+  it("shares the brand image without photo, and Tarifit stays out of the hreflang cluster", async () => {
     repo.getListing.mockResolvedValue(record("published", { photos: [] }));
     const metadata = await generateMetadata(params(SLUG_ID, "rif"));
-    expect(metadata.openGraph?.images).toBeUndefined();
+    // The default share image (audit zone 8 P1), with the small card on X.
+    expect(metadata.openGraph?.images).toEqual([{ url: "/brand/og-default.png", width: 1200, height: 630, alt: "Aalan" }]);
+    expect(metadata.twitter).toMatchObject({ card: "summary" });
     expect(metadata.alternates).toEqual({ canonical: `/rif/annonce/${SLUG_ID}` });
   });
 });

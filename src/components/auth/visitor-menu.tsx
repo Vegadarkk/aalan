@@ -41,8 +41,10 @@ export default function VisitorMenu({ signInHref, triggerClassName, label, child
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
+          collisionPadding={8}
           className={cn(
-            "z-50 min-w-64 rounded-md border border-border bg-surface p-1 shadow-lg shadow-bab-950/10",
+            // Scrolls when taller than the room under the header (audit zone 1 Z1-01, B10).
+            "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-64 overflow-y-auto overscroll-contain rounded-md border border-border bg-surface p-1 shadow-lg shadow-bab-950/10",
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           )}
         >

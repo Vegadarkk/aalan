@@ -143,7 +143,9 @@ test.describe("account", () => {
     await page.getByLabel("Adresse e-mail").fill(email);
     await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
     await page.getByRole("button", { name: "Se connecter" }).click();
-    await expect(page).toHaveURL(/\/fr\/parametres$/, { timeout: 15_000 });
+    // No ?next=: the home page (audit zone 5 n°9), then the settings show the account.
+    await expect(page).toHaveURL(/\/fr$/, { timeout: 15_000 });
+    await page.goto("/fr/parametres");
     await expect(page.getByLabel("Nom affiché")).toHaveValue("Yasmine B.", { timeout: 15_000 });
   });
 
@@ -174,7 +176,7 @@ test.describe("account", () => {
     const { email } = await createVerifiedAccount(page, request, "revoked");
     await page.goto("/fr/connexion");
     await signIn(page, email, PASSWORD);
-    await expect(page).toHaveURL(/\/fr\/parametres$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/fr$/, { timeout: 15_000 });
     const me = (await (await page.request.get("/api/auth/me")).json()) as { session: { uid: string } | null };
     expect(me.session).not.toBeNull();
 
@@ -229,8 +231,7 @@ test.describe("account", () => {
     await expect(page).toHaveURL(/\/fr\/connexion/);
 
     await signIn(page, email, NEW_PASSWORD);
-    await expect(page).toHaveURL(/\/fr\/parametres$/, { timeout: 15_000 });
-    await expect(page.getByRole("heading", { level: 1, name: "Mes paramètres" })).toBeVisible();
+    await expect(page).toHaveURL(/\/fr$/, { timeout: 15_000 });
   });
 
   test("asks for Turnstile after three wrong passwords, then signs in with its token", async ({ page, request }) => {
@@ -259,7 +260,7 @@ test.describe("account", () => {
     expect(((await challenge.json()) as { status: string }).status).toBe("turnstile_required");
     await expect(page.getByText("Encore une vérification")).toBeVisible();
     // The form resubmits by itself once the widget hands it a token; the widget is gone with the page.
-    await expect(page).toHaveURL(/\/fr\/parametres$/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/fr$/, { timeout: 20_000 });
   });
 
   test("?next= brings the person back where they were", async ({ page, request }) => {
@@ -276,7 +277,7 @@ test.describe("account", () => {
     await page.goto("/fr/connexion?next=%2Ffr%2Fverifications");
     await expect(page).toHaveURL(/\/fr\/verifications$/);
     await page.goto("/fr/connexion?next=%2F%2Fevil.example%2F");
-    await expect(page).toHaveURL(/\/fr\/parametres$/);
+    await expect(page).toHaveURL(/\/fr$/);
     await page.goto("/fr/inscription?next=%2Ffr%2Fverifications");
     await expect(page).toHaveURL(/\/fr\/verifications$/);
 
@@ -294,7 +295,8 @@ test.describe("account", () => {
     const { email } = await createVerifiedAccount(page, request, "close");
     await page.goto("/fr/connexion");
     await signIn(page, email, PASSWORD);
-    await expect(page).toHaveURL(/\/fr\/parametres$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/fr$/, { timeout: 15_000 });
+    await page.goto("/fr/parametres");
 
     // The export: a JSON file named after the day, with the account's own data.
     const downloading = page.waitForEvent("download");

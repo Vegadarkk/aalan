@@ -52,7 +52,7 @@ describe("afterSignInTarget", () => {
   it("follows a safe next and falls back to the settings page", () => {
     expect(afterSignInTarget("/fr/verifications")).toEqual({ locale: "fr", pathname: "/verifications" });
     expect(afterSignInTarget(["/ar/deposer", "/fr"])).toEqual({ locale: "ar", pathname: "/deposer" });
-    expect(afterSignInTarget("//evil.example")).toEqual({ locale: null, pathname: "/parametres" });
-    expect(afterSignInTarget(undefined)).toEqual({ locale: null, pathname: "/parametres" });
+    expect(afterSignInTarget("//evil.example")).toEqual({ locale: null, pathname: "/" });
+    expect(afterSignInTarget(undefined)).toEqual({ locale: null, pathname: "/" });
   });
 });

@@ -5902,7 +5902,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "Win xtaren aṭas",
+      "recommended": "Recommandé",
       "onQuote": "S devis",
       "credits": "{count, number} n crédits n tbanit dg-s",
       "listings": "{count, plural, one {# n annonce texdem} other {# n annonces xedment}}",

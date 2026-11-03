@@ -6,7 +6,7 @@ import { isHomePathname, queueDoorOpening, takeQueuedDoor, welcomeAfterSignIn } 
 import { DUST_COUNT, projectMote, scatterMotes } from "@/lib/welcome/dust";
 import { DOOR_DURATION_MS, doorSteps, LEAF_OPEN_DEG, LEAF_STOP_DEG, MIN_PUSH_SCALE, PUSH_DELAY_MS, pushScale, REDUCED_FADE_MS, reducedSteps, stepsEnd } from "@/lib/welcome/motion";
 import { doorTilt, MAX_TILT_DEG } from "@/lib/welcome/tilt";
-import { GLINT_SPOTS, glintBox, glintPause, insideArch, pickGlint, TILES } from "@/lib/welcome/glints";
+import { pickWave, TILES, TILES_BOX, waveGeometry, wavePause } from "@/lib/welcome/glints";
 import { CSRF_COOKIE } from "@/lib/security/cookies";
 import { CRAWLER_AGENT, DOOR_FALLBACK_MS, HOME_PATH, SIGNED_IN_COOKIE, WELCOME_SCRIPT } from "@/lib/welcome/script";
 
@@ -280,57 +280,41 @@ describe("door timeline", () => {
   });
 });
 
-describe("glints on the gate's tiles", () => {
-  it("sit on the tiles, clear of the arch, its edges and the plinth", async () => {
+describe("waves of light on the gate's tiles", () => {
+  it("cover the tiles inside the frame's inner line", async () => {
     const { ALFIZ } = await import("@/components/welcome/door-scene");
     expect(TILES).toEqual({ x: ALFIZ.x + 4, y: ALFIZ.y + 4, width: ALFIZ.width - 8, height: ALFIZ.height - 4 });
-    expect(GLINT_SPOTS.length).toBeGreaterThan(60);
-    for (const spot of GLINT_SPOTS) {
-      expect(insideArch(spot, 3)).toBe(false);
-      expect(spot.x).toBeGreaterThan(TILES.x);
-      expect(spot.x).toBeLessThan(TILES.x + TILES.width);
-      expect(spot.y).toBeGreaterThan(TILES.y);
-      expect(spot.y).toBeLessThan(414.16 - 4);
-    }
-    // Both sides of the arch and the band above it.
-    expect(GLINT_SPOTS.some((spot) => spot.x < 160 && spot.y > 300)).toBe(true);
-    expect(GLINT_SPOTS.some((spot) => spot.x > 352 && spot.y > 300)).toBe(true);
-    expect(GLINT_SPOTS.some((spot) => spot.y < 62)).toBe(true);
+    expect(TILES_BOX).toEqual({ left: "-9.167%", top: "-2.073%", width: "118.333%", height: "94.819%" });
   });
 
-  it("knows the arch: apex, springing, jambs and doorway", () => {
-    expect(insideArch({ x: 256, y: 64 })).toBe(true);
-    expect(insideArch({ x: 256, y: 60 })).toBe(false);
-    expect(insideArch({ x: 145, y: 200 })).toBe(true);
-    expect(insideArch({ x: 138, y: 200 })).toBe(false);
-    expect(insideArch({ x: 161, y: 380 })).toBe(true);
-    expect(insideArch({ x: 158, y: 380 })).toBe(false);
-    expect(insideArch({ x: 256, y: 300 })).toBe(true);
-  });
-
-  it("spread out and never repeat a recent spot", () => {
-    let seed = 7;
+  it("vary in angle, direction, width, strength and pace, within bounds", () => {
+    let seed = 11;
     const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-    const recent: { x: number; y: number }[] = [];
+    const seen = { left: 0, right: 0, up: 0, down: 0 };
     for (let turn = 0; turn < 200; turn++) {
-      const showing = recent.slice(-2);
-      const glint = pickGlint(showing, recent, random);
-      expect(glint).not.toBeNull();
-      if (!glint) return;
-      for (const other of showing) expect(Math.hypot(glint.x - other.x, glint.y - other.y)).toBeGreaterThanOrEqual(48);
-      expect(recent.slice(-6).some((other) => other.x === glint.x && other.y === glint.y)).toBe(false);
-      expect(glint.scale).toBeGreaterThanOrEqual(0.8);
-      expect(glint.scale).toBeLessThanOrEqual(1.2);
-      expect(glint.duration).toBeGreaterThanOrEqual(1100);
-      recent.push({ x: glint.x, y: glint.y });
-      const pause = glintPause(random);
-      expect(pause).toBeGreaterThanOrEqual(120);
-      expect(pause).toBeLessThanOrEqual(2350);
+      const wave = pickWave(random);
+      expect(Math.abs(wave.angle)).toBeGreaterThanOrEqual(18);
+      expect(Math.abs(wave.angle)).toBeLessThanOrEqual(42);
+      expect(wave.width).toBeGreaterThanOrEqual(0.32);
+      expect(wave.width).toBeLessThanOrEqual(0.54);
+      expect(wave.strength).toBeGreaterThanOrEqual(0.7);
+      expect(wave.duration).toBeGreaterThanOrEqual(1900);
+      expect(wave.duration).toBeLessThanOrEqual(3000);
+      seen[wave.direction > 0 ? "right" : "left"]++;
+      seen[wave.angle > 0 ? "up" : "down"]++;
+      const pause = wavePause(random);
+      expect(pause).toBeGreaterThanOrEqual(1600);
+      expect(pause).toBeLessThanOrEqual(5000);
     }
-    expect(new Set(recent.map((spot) => `${spot.x},${spot.y}`)).size).toBeGreaterThan(40);
+    for (const count of Object.values(seen)) expect(count).toBeGreaterThan(60);
   });
 
-  it("places a glint's box in the door's box", () => {
-    expect(glintBox({ x: 256, y: 249 }, 10)).toEqual({ left: "45.833%", top: "47.409%", width: "8.333%", height: "5.181%" });
+  it("start and end fully outside the tiles", () => {
+    const wave = { angle: 30, direction: 1 as const, width: 0.4, strength: 1, duration: 2000 };
+    const { band, travel } = waveGeometry(wave, 300, 400);
+    expect(band.width).toBeCloseTo(120);
+    // As long as the diagonal, and moved half of it plus half its own width each way.
+    expect(band.height).toBeGreaterThanOrEqual(500);
+    expect(travel).toBeCloseTo(250 + 60);
   });
 });

@@ -492,7 +492,7 @@ html[data-welcome]:has(#main:target) .welcome {
   stroke: var(--color-gold-100);
   stroke-width: 0.9;
 }
-/* The tiles where a random glint catches them (glint-layer.ts): warm gilding, not white. */
+/* The tiles as a wave of light crosses them (glint-layer.ts): warm, bright gilding. */
 .welcome-khatam-glint path {
   fill: none;
   stroke: var(--color-gold-200);
@@ -502,30 +502,25 @@ html[data-welcome]:has(#main:target) .welcome {
   transform-box: fill-box;
   transform-origin: center;
 }
-/* Random glints on the tiles while the screen waits (glint-layer.ts): boxes placed in the door's box,
-   faded and turned by their opacity and transform. Gone once the door opens, and under reduced motion. */
+/* Waves of light over the tiles while the screen waits (glint-layer.ts): the tiles' box clips a band,
+   soft at its edges, with a warm glow; inside it, the gilding brighter. Moved by transforms only. */
 .welcome-glints {
   position: absolute;
-  inset: 0;
+  overflow: hidden;
   pointer-events: none;
 }
-.welcome-glints svg {
+.welcome-glint-band {
   position: absolute;
   opacity: 0;
-  will-change: opacity, transform;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-gold-300) 22%, transparent) 50%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 38%, #000 62%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 38%, #000 62%, transparent);
+  will-change: transform, opacity;
 }
-.welcome-glint-flare {
-  overflow: visible;
-  fill: var(--color-cream-50);
-}
-/* The flare's halo: gilding catching the light, not a white spark (a gradient, no filter). */
-.welcome-glint-halo-core {
-  stop-color: var(--color-gold-100);
-  stop-opacity: 0.85;
-}
-.welcome-glint-halo-edge {
-  stop-color: var(--color-gold-300);
-  stop-opacity: 0;
+.welcome-glint-band svg {
+  position: absolute;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 html[data-welcome~="open"] .welcome-glints,
 html[data-welcome~="door"] .welcome-glints {

@@ -17,7 +17,7 @@ import { playGlints } from "./glint-layer";
 // click, tap or Escape skips to a short fade. At the end the state goes, focus moves to #main.
 // Issue #199: on the screen, the door leans a little towards a mouse pointer (never on touch or with
 // reduced motion); while the door opens, dust floats in its light over the threshold. Owner, 3 Nov
-// 2026: while the screen waits, light catches the gate's gilded tiles at random spots (never with
+// 2026: while the screen waits, waves of light glide over the gate's gilded tiles (never with
 // reduced motion).
 
 type Phase = "pending" | "screen" | "door" | "opening" | "closing" | "done";
@@ -198,7 +198,7 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     };
   }, [done]);
 
-  // Glints on the tiles while the screen waits; they stop when the door opens.
+  // Waves of light on the tiles while the screen waits; they stop when the door opens.
   useEffect(() => {
     const layer = root.current?.querySelector<HTMLElement>("[data-welcome-glints]");
     if (!layer || done || phase.current !== "screen") return;
@@ -206,7 +206,7 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     if (!motion.matches) return;
     const stop = playGlints(layer);
     stopGlints.current = stop;
-    // Reduced motion turned on meanwhile: no more glints (CSS hides the layer at once).
+    // Reduced motion turned on meanwhile: no more waves (CSS hides the layer at once).
     motion.addEventListener("change", stop, { once: true });
     return () => {
       motion.removeEventListener("change", stop);

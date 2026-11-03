@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input";
 import { criterionById, type Subcategory } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import { STOCK_MAX, VARIANT_ITEMS_MAX, VARIANT_LABEL_MAX, VARIANT_VALUES_MAX, isVariantCriterion, type ListingVariants, type VariantAxis, type VariantAxisId, type VariantItem } from "@/lib/contracts/catalog";
-import { currencyLabel, groupDigits, parsePriceInput } from "@/lib/listings/client/format";
+import { currencyLabel, groupDigits } from "@/lib/listings/client/format";
 import { PRICE_MAX } from "@/lib/listings/client/validation";
 import { cleanValue, combinationCount, hasValue, nextFreeAxis, rebuildItems, remainingAxes, variantsPatch } from "@/lib/listings/client/variants";
 import { cn } from "@/lib/utils";
 import { ChipCheckboxGroup, ChipRadioGroup } from "./controls/chips";
+import { IntegerBox } from "./controls/integer-box";
 import { Select } from "./controls/select";
 import { SwitchField } from "./controls/switch";
 import { useCriteriaLabels } from "./labels";
@@ -37,12 +38,6 @@ export interface VariantsEditorProps {
 }
 
 type Mode = "single" | "variants";
-
-/** Digits only, bounded: "" clears. */
-function parseCount(text: string, max: number): number | undefined {
-  const parsed = parsePriceInput(text);
-  return parsed === null ? undefined : Math.min(parsed, max);
-}
 
 export function VariantsEditor({ subcategory, price, variants, stock, onChange, onBlur }: VariantsEditorProps) {
   const t = useTranslations("Listing.catalogue");
@@ -199,7 +194,7 @@ function SingleStock({ stock, onStock }: { stock: number | null; onStock: (stock
       />
       {tracked ? (
         <Field label={t("stock")} className="max-w-40">
-          <Input type="text" inputMode="numeric" dir="ltr" autoComplete="off" className="tabular-nums" value={stock === null ? "" : String(stock)} onChange={(event) => onStock(parseCount(event.target.value, STOCK_MAX) ?? 0)} />
+          <IntegerBox value={stock} max={STOCK_MAX} onValue={(next) => onStock(next ?? 0)} />
         </Field>
       ) : null}
     </div>
@@ -341,33 +336,17 @@ function CombinationRow({ name, item, offered, price, locale, onOffered, onItem 
         <div className="grid grid-cols-3 gap-2 sm:contents">
           <label className="flex flex-col gap-1 text-xs text-foreground-muted sm:text-sm">
             <span className="sm:sr-only">{t("stock")}</span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              dir="ltr"
-              autoComplete="off"
-              className="tabular-nums"
-              aria-label={`${t("stock")} ${name}`}
-              placeholder={t("untracked")}
-              value={item.stock === undefined ? "" : String(item.stock)}
-              onChange={(event) => set({ stock: parseCount(event.target.value, STOCK_MAX) })}
-            />
+            <IntegerBox aria-label={`${t("stock")} ${name}`} placeholder={t("untracked")} max={STOCK_MAX} value={item.stock} onValue={(next) => set({ stock: next ?? undefined })} />
           </label>
           <label className="flex flex-col gap-1 text-xs text-foreground-muted sm:text-sm">
             <span className="sm:sr-only">{t("price", { currency: currencyLabel(locale) })}</span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              dir="ltr"
-              autoComplete="off"
-              className="tabular-nums"
+            <IntegerBox
+              grouped
               aria-label={`${t("price", { currency: currencyLabel(locale) })} ${name}`}
               placeholder={price === null ? "" : groupDigits(String(price))}
-              value={item.price === undefined ? "" : groupDigits(String(item.price))}
-              onChange={(event) => {
-                const next = parseCount(event.target.value, PRICE_MAX);
-                set({ price: next === 0 ? undefined : next });
-              }}
+              max={PRICE_MAX}
+              value={item.price}
+              onValue={(next) => set({ price: next === null || next === 0 ? undefined : next })}
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-foreground-muted sm:text-sm">

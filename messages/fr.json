@@ -850,7 +850,9 @@
       "showPhone": "Afficher mon numéro sur l'annonce",
       "showPhoneHint": "Les acheteurs connectés voient le numéro après avoir cliqué sur « Voir le numéro ».",
       "whatsapp": "Contact par WhatsApp",
-      "whatsappHint": "Ajoute un bouton WhatsApp vers votre numéro vérifié."
+      "whatsappHint": "Ajoute un bouton WhatsApp vers votre numéro vérifié.",
+      "priceCheck": "Vérifiez le prix : {price}, c'est bien au-dessus des annonces habituelles de cette catégorie. Gardez-le s'il est juste.",
+      "priceInWords": "En toutes lettres : {words}"
     },
     "contact": {
       "messagesAlways": "La messagerie Aalan est toujours disponible pour les acheteurs, sans rien afficher de personnel.",
@@ -1103,6 +1105,13 @@
       "tooMany": "{count} combinaisons : {max} au plus. Retirez des valeurs.",
       "noneOffered": "Proposez au moins une combinaison.",
       "fromVariants": "{criteria} : indiqué par les variantes, à l'étape Prix."
+    },
+    "numberInput": {
+      "decimal": "Nombre entier uniquement, sans virgule ni centimes.",
+      "negative": "Nombre positif uniquement.",
+      "notDigits": "Chiffres uniquement.",
+      "tooBig": "{max} maximum.",
+      "tooBigPlain": "Nombre trop grand."
     }
   },
   "Categories": {

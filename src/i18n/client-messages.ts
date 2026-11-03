@@ -144,7 +144,8 @@ export const HOME_PAGE_CLIENT_NAMESPACES = [
 /**
  * The search page: the filters sheet reads the criteria and category labels (~30 KB), which no
  * other public page needs; the map view (Carte vivante, lot 2); the saved searches; the understood
- * words of a typed sentence and « Utiliser ma position » (lot 4).
+ * words of a typed sentence and « Utiliser ma position » (lot 4); the refused-keystroke messages of
+ * the number boxes (Listing.numberInput).
  */
 export const SEARCH_PAGE_CLIENT_NAMESPACES = [
   "Favorites.button",
@@ -164,6 +165,7 @@ export const SEARCH_PAGE_CLIENT_NAMESPACES = [
   "Listing.units",
   "Listing.wizard",
   "Listing.fields",
+  "Listing.numberInput",
   "SavedSearches.button",
   "SavedSearches.summary",
   "SavedSearches.dialog",

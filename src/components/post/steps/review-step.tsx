@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { CircleAlert, ImageOff, MapPin, MessageSquare, Phone, ShieldAlert, Tag } from "lucide-react";
+import { CircleAlert, ImageOff, MapPin, MessageSquare, Phone, ShieldAlert, Tag, TriangleAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { InlineError } from "@/components/feedback/inline-error";
@@ -17,6 +17,7 @@ import { isApiError } from "@/lib/auth/client";
 import { SENSITIVE_DECLARATION_KINDS, type FieldIssue, type PublishListingResponse, type SensitiveDeclarationKind, type WizardStep } from "@/lib/contracts/listings";
 import { publishListing } from "@/lib/listings/client/api";
 import { formatPrice } from "@/lib/listings/client/format";
+import { arabicAmountWords, frenchAmountWords, priceLooksHigh } from "@/lib/listings/price-sense";
 import { needsRealEstateAttestation } from "@/lib/listings/real-estate";
 import { blockersOf, useWizard } from "@/lib/listings/client/store";
 import { allIssues, stepOfPath } from "@/lib/listings/client/validation";
@@ -223,6 +224,18 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
                 {subcategory?.priceUnit && listing.price !== null && !listing.isDonation ? <span className="text-sm text-foreground-muted">{t(`fields.per.${subcategory.priceUnit}`)}</span> : null}
                 {listing.priceNegotiable && !listing.isDonation ? <Badge variant="neutral">{t("review.negotiable")}</Badge> : null}
               </p>
+              {/* The amount in words and the plausibility note (B9): a mistyped price shows here before it goes live. */}
+              {listing.price !== null && listing.price > 0 && !listing.isDonation ? (
+                <p data-testid="price-words" className="mt-1 text-sm text-foreground-muted text-pretty">
+                  {t("fields.priceInWords", { words: `${locale === "ar" ? arabicAmountWords(listing.price) : frenchAmountWords(listing.price)}${subcategory?.priceUnit ? ` ${t(`fields.per.${subcategory.priceUnit}`)}` : ""}` })}
+                </p>
+              ) : null}
+              {listing.price !== null && !listing.isDonation && priceLooksHigh(listing.price, listing.categoryId, listing.subcategoryId) ? (
+                <p data-testid="price-warning" className="mt-2 flex items-start gap-2 rounded-md border border-warning/30 bg-warning-surface px-3 py-2 text-sm text-pretty">
+                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+                  <span>{t("fields.priceCheck", { price: `${formatPrice(listing.price, locale)}${subcategory?.priceUnit ? ` ${t(`fields.per.${subcategory.priceUnit}`)}` : ""}` })}</span>
+                </p>
+              ) : null}
             </Section>
           )}
           <Section onEdit={() => onEdit("lieu")} label={t("review.editStep", { step: stepLabel("lieu") })}>

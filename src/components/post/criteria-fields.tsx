@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CarFront, ChevronDown, ClipboardCheck, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
@@ -8,8 +8,10 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { CONDITIONS, CRITERION_GROUPS, CRITERION_TEXT_MAX, criteriaFor, criterionApplies, type Condition, type Criterion, type CriterionFormat, type CriterionGroup, type Subcategory } from "@/config/categories";
 import type { ListingAttributes } from "@/lib/contracts/listings";
+import type { IntegerIssue } from "@/lib/listings/client/integer-input";
 import { cn } from "@/lib/utils";
 import { ChipCheckboxGroup, ChipRadioGroup } from "./controls/chips";
+import { useIntegerField, useIntegerNoticeMessage } from "./controls/integer-field";
 import { Select } from "./controls/select";
 import { SwitchField } from "./controls/switch";
 import { useCriteriaLabels } from "./labels";
@@ -201,11 +203,7 @@ function CriterionField({ criterion, value, error, label, optionLabel, unit, opt
       );
     }
     case "number":
-      return (
-        <Field label={label} hint={required ? undefined : optionalLabel} error={error} required={required}>
-          <NumberInput value={typeof value === "number" ? value : undefined} min={criterion.min} max={criterion.max} unit={unit} onChange={onChange} />
-        </Field>
-      );
+      return <NumberCriterion criterion={criterion} value={typeof value === "number" ? value : undefined} error={error} label={label} unit={unit} optionalLabel={optionalLabel} onChange={onChange} />;
     case "boolean":
       return <SwitchField label={label} checked={value === true} onCheckedChange={(checked) => onChange(checked)} className="border-b border-border pb-3" />;
     case "text":
@@ -222,12 +220,36 @@ function CriterionField({ criterion, value, error, label, optionLabel, unit, opt
   }
 }
 
+interface NumberCriterionProps {
+  criterion: Criterion;
+  value: number | undefined;
+  error?: string;
+  label: string;
+  unit?: string;
+  optionalLabel: string;
+  onChange: (value: AttributeValue | undefined) => void;
+}
+
+/** A numeric criterion: a refused keystroke (comma, sign, letter, over the maximum) says why (zone 3 P2-5). */
+function NumberCriterion({ criterion, value, error, label, unit, optionalLabel, onChange }: NumberCriterionProps) {
+  const required = Boolean(criterion.required);
+  const [notice, setNotice] = useState<IntegerIssue | null>(null);
+  const noticeMessage = useIntegerNoticeMessage();
+  return (
+    <Field label={label} hint={required ? undefined : optionalLabel} error={noticeMessage(notice, criterion.max) ?? error} required={required}>
+      <NumberInput value={value} min={criterion.min} max={criterion.max} unit={unit} onChange={onChange} onNotice={setNotice} />
+    </Field>
+  );
+}
+
 interface NumberInputProps {
   value: number | undefined;
   min?: number;
   max?: number;
   unit?: string;
   onChange: (value: number | undefined) => void;
+  /** Why the last keystroke was refused (null once a keystroke is taken); absent, the refusal is silent. */
+  onNotice?: (issue: IntegerIssue | null) => void;
   id?: string;
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
@@ -235,30 +257,32 @@ interface NumberInputProps {
 }
 
 /** Integer input (numeric keypad) with the unit as a suffix; negatives only when the minimum allows them. */
-export function NumberInput({ value, min, max, unit, onChange, ...aria }: NumberInputProps) {
+export function NumberInput({ value, min, max, unit, onChange, onNotice, ...aria }: NumberInputProps) {
   const allowNegative = min !== undefined && min < 0;
+  const input = useRef<HTMLInputElement>(null);
+  const field = useIntegerField(input, { value, onChange: (next) => onChange(next ?? undefined), max, allowNegative });
+  const reported = useRef<IntegerIssue | null>(null);
+  useEffect(() => {
+    if (reported.current === field.notice) return;
+    reported.current = field.notice;
+    onNotice?.(field.notice);
+  }, [field.notice, onNotice]);
   // The whole field is LTR (digits, then the unit at the end): with an RTL wrapper the unit's end-3
   // would sit on the left, over the digits of the LTR input.
   return (
     <div className="relative" dir="ltr">
       <Input
+        ref={input}
         type="text"
         inputMode={allowNegative ? "text" : "numeric"}
         autoComplete="off"
-        value={value === undefined ? "" : String(value)}
+        value={field.value}
         min={min}
         max={max}
         dir="ltr"
         className={cn("text-start tabular-nums", unit && "pe-14")}
-        onChange={(event) => {
-          const raw = event.target.value.replace(allowNegative ? /[^\d-]/g : /\D/g, "");
-          if (raw === "" || raw === "-") {
-            onChange(undefined);
-            return;
-          }
-          const parsed = Number(raw);
-          onChange(Number.isFinite(parsed) ? parsed : undefined);
-        }}
+        onChange={field.onChange}
+        onBlur={field.onBlur}
         {...aria}
       />
       {unit ? (

@@ -7,6 +7,7 @@ import { isVisibleAccount, storefrontSegment } from "@/lib/listings/public";
 import { storefrontShown } from "@/lib/pro/lifecycle";
 import { consume } from "@/lib/quota";
 import { assertQuotas, PUBLIC_READ_QUOTAS } from "@/lib/quota/gate";
+import { shopLogoUrl } from "./logo-url";
 import { excerptOf, type DirectoryShop } from "./directory-view";
 
 // The shops listed by /boutiques: every Pro profile whose storefront is shown (`storefrontShown`:
@@ -48,6 +49,7 @@ function toShop(profile: ProProfileRecord, owner: UserRecord): DirectoryShop {
     ownerPublicId: owner.publicId,
     listings: owner.stats.activeListings,
     ...(profile.bannerKey ? { bannerKey: profile.bannerKey } : {}),
+    ...(profile.logoKey && !profile.example ? { logo: shopLogoUrl(profile.logoKey, "s") ?? undefined } : {}),
   };
 }
 

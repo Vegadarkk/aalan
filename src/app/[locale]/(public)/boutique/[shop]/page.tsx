@@ -228,7 +228,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
             <StorefrontBanner bannerKey={store.bannerKey} id={store.proId} />
           </div>
         <header data-testid="storefront-header" className="threshold flex flex-col items-center gap-5 rounded-b-lg bg-structure px-6 pt-0 pb-9 text-center text-structure-foreground sm:flex-row sm:items-end sm:gap-7 sm:px-10 sm:text-start">
-          <ShopEmblem name={store.name} sector={store.sector ?? "general"} size="lg" className="-mt-10 sm:-mt-8" />
+          <ShopEmblem name={store.name} sector={store.sector ?? "general"} logo={store.logo} size="lg" className="-mt-10 sm:-mt-8" />
           <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
             <p className="text-sm text-structure-foreground/80">{label}</p>
             <h1 dir="auto" className="text-3xl font-semibold text-balance break-words sm:text-4xl">

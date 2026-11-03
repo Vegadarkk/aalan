@@ -106,7 +106,7 @@ export default async function PricingPage({ params }: { params: Params }) {
     { key: "stats", label: t("compare.rows.stats"), cells: every(true) },
     { key: "stock", label: t("compare.rows.stock"), cells: columns.map((column) => importsStock(column.plan)) },
     { key: "commitment", label: t("compare.rows.commitment"), cells: columns.map((column) => column.commitment) },
-    { key: "logo", label: t("compare.rows.logo"), cells: every("soon") },
+    { key: "logo", label: t("compare.rows.logo"), cells: every(true) },
   ];
   const marks = { yes: t("compare.yes"), no: t("compare.no"), soon: t("compare.soon") };
   return (

@@ -4209,6 +4209,33 @@
       "unavailable": "Les statistiques sont momentanément indisponibles. Réessayez plus tard.",
       "note": "Mis à jour chaque nuit, jusqu'au {date} inclus. Une visite compte une fois par personne et par jour ; « Messages reçus » compte les nouvelles conversations.",
       "noteLoading": "Mis à jour chaque nuit."
+    },
+    "share": {
+      "title": "Partager ma boutique",
+      "lead": "Le lien et le QR code de votre vitrine, à mettre sur votre devanture, vos cartes de visite, vos flyers ou vos réseaux.",
+      "copy": "Copier le lien",
+      "copied": "Lien copié",
+      "downloadPng": "Télécharger le QR code (PNG)",
+      "downloadSvg": "Version SVG pour l'imprimeur",
+      "printHint": "Imprimez-le sur fond blanc, au moins 2 cm de côté. Il ouvre votre vitrine dans la langue du téléphone du client.",
+      "qrAlt": "QR code de votre vitrine"
+    },
+    "logo": {
+      "label": "Logo de la boutique",
+      "hint": "JPEG, PNG ou WebP, 2 Mo au plus. Un logo carré ou sur fond transparent rend le mieux. Il s'affiche sur votre vitrine et dans l'annuaire des boutiques.",
+      "choose": "Ajouter un logo",
+      "replace": "Changer de logo",
+      "remove": "Retirer",
+      "saved": "Logo enregistré. Votre vitrine est mise à jour.",
+      "removed": "Logo retiré.",
+      "errors": {
+        "file_too_large": "Ce fichier dépasse 2 Mo, ou l'image est trop grande. Envoyez une version plus légère.",
+        "unsupported_media": "Ce fichier n'est pas une image JPEG, PNG ou WebP lisible.",
+        "image_refused": "Cette image a été refusée par notre contrôle automatique (CGU §7). Elle n'a pas été publiée. Si c'est une erreur, contactez-nous.",
+        "storage_full": "L'envoi d'images est suspendu pour quelques heures. Réessayez plus tard.",
+        "rate_limited": "Trop de changements de logo aujourd'hui. Réessayez demain.",
+        "failed": "Le logo n'a pas pu être enregistré. Réessayez."
+      }
     }
   },
   "Messaging": {
@@ -6058,7 +6085,7 @@
       "yes": "Inclus",
       "no": "Non inclus",
       "soon": "Bientôt",
-      "note": "« Bientôt » : annoncé, pas encore disponible ; le prix ne change pas à son arrivée. Les crédits inclus sont mensuels pour les abonnements et valables pour la durée du Pass.",
+      "note": "Les crédits inclus sont mensuels pour les abonnements et valables pour la durée du Pass.",
       "rows": {
         "listings": "Annonces actives",
         "photos": "Photos par annonce",
@@ -6069,7 +6096,7 @@
         "stats": "Statistiques : visites, vues, messages, numéros affichés",
         "stock": "Import du stock par fichier",
         "commitment": "Durée",
-        "logo": "Logo de la boutique"
+        "logo": "Logo de la boutique et QR code à imprimer"
       }
     }
   },

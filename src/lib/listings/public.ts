@@ -25,6 +25,7 @@ import { rentalAvailabilityOf } from "./availability";
 import { cardFactsField, cardFactsOf, type CardFacts } from "./card-facts";
 import { promoView } from "./promo";
 import { buildSlugId, parseSlugId } from "./ids";
+import { shopLogoUrl } from "@/lib/pro/logo-url";
 
 // Public reads (design §4 public.ts): the listing page by its `{slug}-{id}` segment and the
 // seller's profile by publicId. No uid leaves these functions' return values except inside the
@@ -419,6 +420,8 @@ export interface PublicStorefront {
   contact: { phone: boolean; whatsapp: boolean };
   /** « Sélection de la boutique » (UX audit lot 3): its pinned listings still published, in order. */
   pinned: PublicListingCard[];
+  /** URL of the shop's logo (512 px), null while none (the emblem stands in). */
+  logo: string | null;
 }
 
 /** The pinned listings still published by the shop: from the page already read, else one read each. */
@@ -470,6 +473,7 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
     bannerKey: profile.bannerKey ?? DEFAULT_BANNER,
     contact: profile.example || !user.badges.phoneVerified ? { phone: false, whatsapp: false } : { phone: profile.showPhone === true, whatsapp: profile.whatsapp },
     pinned: profile.example ? [] : await pinnedCards(profile.proId, profile.pinned ?? [], seller.listings),
+    logo: profile.example ? null : shopLogoUrl(profile.logoKey, "l"),
   };
 }
 

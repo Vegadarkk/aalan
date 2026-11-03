@@ -25,6 +25,7 @@ import { RentalSetup } from "@/components/rental/rental-setup";
 import { AgencySettings } from "./agency-settings";
 import { ShopEmblem } from "./shop-emblem";
 import { ShopCardSettings } from "./shop-card-settings";
+import { ShopShare } from "./shop-share";
 import { ShopStats } from "./shop-stats";
 import { importsStock } from "@/lib/contracts/stock-import";
 import { SectionsSettings } from "./sections-settings";
@@ -225,6 +226,8 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
   // The role is read from the session cookie: a shop verified since the last sign-in publishes as Pro only after a new one.
   const staleRole = publishesAsPro(lifecycle) && session !== null && session.role !== "pro";
   const canPublish = publishesAsPro(lifecycle) && plan !== "none" && !staleRole;
+  // The header follows the logo set below at once.
+  const [logo, setLogo] = useState(shop.card.logo);
 
   async function signInAgain() {
     await signOut();
@@ -235,7 +238,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
     <div className="flex flex-col gap-8">
       <section className="threshold flex flex-col gap-4 rounded-lg bg-structure px-6 pt-6 pb-7 text-structure-foreground sm:flex-row sm:items-center sm:gap-5">
         {/* The emblem of its storefront and directory card (UX audit of the Pro shops, B8). */}
-        <ShopEmblem name={shop.name} sector={shop.sector} />
+        <ShopEmblem name={shop.name} sector={shop.sector} logo={logo} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 dir="auto" className="truncate text-2xl font-semibold">
             {shop.name}
@@ -357,7 +360,9 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
 
       {/* The storefront's card first: what a buyer sees besides the listings (UX audit lot 1). */}
-      {canPublish ? <ShopCardSettings shop={shop} /> : null}
+      {canPublish ? <ShopCardSettings shop={shop} onLogo={setLogo} /> : null}
+      {/* The storefront's link and QR code to print (UX audit lot 3). */}
+      {canPublish && shop.storefront && !suspended ? <ShopShare storefront={shop.storefront} /> : null}
       {suspended ? null : <AgencySettings shop={shop} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
       {canPublish && shop.sector !== "car_rental" ? <SectionsSettings shop={shop} /> : null}

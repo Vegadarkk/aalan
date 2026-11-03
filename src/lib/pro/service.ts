@@ -24,6 +24,7 @@ import { consume } from "@/lib/quota";
 import { COMMITMENTS_VERSION, sectorCommitmentScope } from "./commitments";
 import { iceFormatOk, KYBC_NOTICE_VERSION } from "./kybc";
 import { publishesAsPro, storefrontShown, transition } from "./lifecycle";
+import { shopLogoUrl } from "./logo-url";
 import type { ProProfileDoc } from "./profile-schema";
 import { rentalCheckView } from "./rental-check-rules";
 import { socialView } from "./social-links-rules";
@@ -193,6 +194,7 @@ export function shopCard(profile: ProProfileRecord, phoneVerified: boolean): Pro
     whatsapp: profile.whatsapp,
     website: profile.website ?? "",
     bannerKey: profile.bannerKey ?? DEFAULT_BANNER,
+    logo: shopLogoUrl(profile.logoKey, "l"),
     phoneVerified,
   };
 }

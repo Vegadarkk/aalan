@@ -121,6 +121,13 @@ export function apiPut<T>(path: string, body: unknown): Promise<T> {
   return request<T>(path, { method: "PUT", headers: mutationHeaders(true), body: JSON.stringify(body ?? {}) });
 }
 
+/** PUT a file as the raw body (a shop logo), typed by its own Content-Type. */
+export function apiPutFile<T>(path: string, file: Blob): Promise<T> {
+  const headers = mutationHeaders(false);
+  headers["content-type"] = file.type;
+  return request<T>(path, { method: "PUT", headers, body: file });
+}
+
 /** DELETE; a 204 answer resolves to undefined. */
 export function apiDelete<T = void>(path: string): Promise<T> {
   return request<T>(path, { method: "DELETE", headers: mutationHeaders(false) });

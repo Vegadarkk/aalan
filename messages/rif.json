@@ -4199,6 +4199,33 @@
       "unavailable": "Tisisniyin war llint ura. Ɛawed ticki.",
       "note": "Ttwasnefnint yal tameddit, ar {date}. Tarzeft tettwaḥseb yiwet n tikkelt i yal yiwen deg wass; « Tibratin i d-yewḍen » ḥesbent timeslayin timaynutin.",
       "noteLoading": "Ttwasnefnint yal tameddit."
+    },
+    "share": {
+      "title": "Bḍu taḥanut inu",
+      "lead": "Asaɣ d QR code n tfrent nnec, ad ten-tegeḍ deg tewwurt n tḥanut, deg tkarḍiwin, deg yeflayeṛ niɣ deg yiẓeḍwan nnec.",
+      "copy": "Nqel asaɣ",
+      "copied": "Asaɣ yettwanqel",
+      "downloadPng": "Ssader QR code (PNG)",
+      "downloadSvg": "SVG i umeṭbeε",
+      "printHint": "Ṭbeɛ-it x lqaɛ amellal, 2 cm niɣ ktar. Ad yerzem tafrent nnec s tutlayt n tilifun n umsaɣ.",
+      "qrAlt": "QR code n tfrent nnec"
+    },
+    "logo": {
+      "label": "Alugu n tḥanut",
+      "hint": "JPEG, PNG niɣ WebP, 2 Mo ɣas. Alugu amkuẓ niɣ s lqaɛ transparent ad yili yifen. Ad d-yban deg tfrent nnec d tebdart n tḥuna.",
+      "choose": "Rnu alugu",
+      "replace": "Beddel alugu",
+      "remove": "Kkes",
+      "saved": "Alugu yettwaḥrez. Tafrent nnec tettwabeddel.",
+      "removed": "Alugu yettwakkes.",
+      "errors": {
+        "file_too_large": "Afaylu-a yugar 2 Mo, niɣ tawlaft meqqaṛ aṭas. Azen tawlaft tamectuḥt.",
+        "unsupported_media": "Afaylu-a mači d tawlaft JPEG, PNG niɣ WebP yettwaɣran.",
+        "image_refused": "Asenqed nneɣ awurman yugi tawlaft-a (CGU §7). War tettwasufeɣ ca. Mala d tuccḍa, aru-aneɣ.",
+        "storage_full": "Tuzna n twlafin tbedd i kra n tsaɛtin. Ɛreḍ tikkelt nniḍen ar zdeffer.",
+        "rate_limited": "Aṭas n ubeddel n alugu ass-a. Ɛreḍ azekka.",
+        "failed": "Alugu war yettwaḥrez ca. Ɛreḍ tikkelt nniḍen."
+      }
     }
   },
   "Messaging": {
@@ -6048,7 +6075,7 @@
       "yes": "Yella",
       "no": "Ur yelli",
       "soon": "Qrib",
-      "note": "« Qrib »: yettwabeggen, ur d-yewḍ ɛad; ssuma ur tettbeddil xmi ɣa d-yaweḍ. Ikrediyen yellan d iwayyuren deg yimuttiyen, ttwasneqden deg tallit n Pass.",
+      "note": "Ikrediyen yellan d iwayyuren deg yimuttiyen, ttwasneqden deg tallit n Pass.",
       "rows": {
         "listings": "Annonces yeddren",
         "photos": "Tugniwin i kul annonce",
@@ -6059,7 +6086,7 @@
         "stats": "Tidaddanin: tirzefin, tiẓri, tibratin, uṭṭunen i d-yebanen",
         "stock": "Asekcem n stock s ufaylu",
         "commitment": "Tallit",
-        "logo": "Alugu n tfrent"
+        "logo": "Alugu n tfrent d QR code i uṭbaɛ"
       }
     }
   },

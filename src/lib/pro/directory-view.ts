@@ -27,6 +27,8 @@ export interface DirectoryShop {
   listings: number;
   /** The house banner the shop picked (UX audit lot 1); none: the band of its name's hue. */
   bannerKey?: BannerKey;
+  /** URL of the shop's logo (160 px), when it uploaded one. */
+  logo?: string;
 }
 
 export interface DirectoryFilter {

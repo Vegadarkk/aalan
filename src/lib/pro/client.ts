@@ -1,8 +1,8 @@
-import { ApiError, apiDelete, apiGet, apiPost, apiPut, uploadToPresignedUrl, type UploadProgress } from "@/lib/auth/client";
+import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiPutFile, uploadToPresignedUrl, type UploadProgress } from "@/lib/auth/client";
 import { KYBC_DECLARED_TYPES, MAX_UPLOAD_BYTES, type KybcDeclaredType } from "@/lib/contracts/media";
 import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse } from "@/lib/contracts/catalog";
 import { STOCK_API, type StockImportMode, type StockImportResponse, type StockListResponse } from "@/lib/contracts/stock-import";
-import { PRO_API, type KybcCompleteResponse, type KybcSignInput, type KybcSignResponse, type RentalCheckResponse, type ProAgencyInput, type ProAgencyResponse, type ProRentalInput, type ProRentalResponse, type ProSocialInput, type ProSocialResponse, type ProApplyInput, type ProApplyResponse, type ProMeResponse, type ProShopCardInput, type ProShopCardResponse } from "@/lib/contracts/pro";
+import { PRO_API, type KybcCompleteResponse, type KybcSignInput, type KybcSignResponse, type RentalCheckResponse, type ProAgencyInput, type ProAgencyResponse, type ProRentalInput, type ProRentalResponse, type ProSocialInput, type ProSocialResponse, type ProApplyInput, type ProApplyResponse, type ProMeResponse, type ProShopCardInput, type ProShopCardResponse, type ProLogoResponse } from "@/lib/contracts/pro";
 
 // Browser side of /api/pro/** (phase 7 design §4): the Pro area state, one KYBC piece end to end
 // (sign, PUT to the presigned URL with progress, complete), the application, the car rental
@@ -15,6 +15,8 @@ export const saveSections = (input: SectionsInput) => apiPut<SectionsResponse>(P
 export const savePins = (input: PinsInput) => apiPut<PinsResponse>(PRO_API.pins, input);
 export const saveRentalAgency = (input: ProRentalInput) => apiPut<ProRentalResponse>(PRO_API.rental, input);
 export const saveSocialLinks = (input: ProSocialInput) => apiPut<ProSocialResponse>(PRO_API.social, input);
+export const saveLogo = (file: Blob) => apiPutFile<ProLogoResponse>(PRO_API.logo, file);
+export const removeLogo = () => apiDelete<ProLogoResponse>(PRO_API.logo);
 export const saveShopCard = (input: ProShopCardInput) => apiPut<ProShopCardResponse>(PRO_API.card, input);
 
 /** Sends the licence decision (a piece uploaded with `use: "agrement"`) for its check (decision 5). */

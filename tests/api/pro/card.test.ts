@@ -82,11 +82,11 @@ describe("PUT /api/pro/me", () => {
     const proId = await shop(owner);
     const set = await put(owner, { ...CARD, address: `  ${CARD.address}  ` });
     expect(set.status).toBe(200);
-    expect(set.body.card).toEqual({ ...CARD, phoneVerified: false });
+    expect(set.body.card).toEqual({ ...CARD, logo: null, phoneVerified: false });
     const profile = await getProProfile(proId);
     expect(profile).toMatchObject({ citySlug: "fes", regionCode: "03", address: CARD.address, bannerKey: "dunes", website: CARD.website, descriptionAr: CARD.descriptionAr });
     const read = await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
-    expect(read.body.shop?.card).toEqual({ ...CARD, phoneVerified: false });
+    expect(read.body.shop?.card).toEqual({ ...CARD, logo: null, phoneVerified: false });
 
     const store = await getPublicStorefront(proId);
     expect(store).toMatchObject({ address: CARD.address, hours: CARD.hours, website: CARD.website, bannerKey: "dunes", descriptionAr: CARD.descriptionAr, contact: { phone: false, whatsapp: false } });

@@ -122,6 +122,8 @@ export type ErrorCode =
   | "payment_link_invalid"
   /** A shop's social link refused (details: SocialLinkIssueDetails). Messages: Pro.social.problems. */
   | "social_link_invalid"
+  /** A shop logo refused by the automated image check (422, UX audit lot 3). Messages: Pro.logo. */
+  | "image_refused"
   /** The seller information (law 31-08) and the terms are needed to turn the button on. */
   | "payment_info_required"
   /** The shop's button is off now (state, suspension, host withdrawn). */

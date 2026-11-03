@@ -41,6 +41,8 @@ export type TemplateId =
   // Pro plans (phase 7, lot 4b): the end of the launch offer, notices then downgrade (design D3).
   | "launchOfferNotice"
   | "passNotice"
+  // Credit packs (phase 7): acknowledgement of a withdrawal on a durable medium (CGV §6).
+  | "withdrawalReceipt"
   | "sellerPaymentNotice"
   // Pro social links (2026-10-29): hidden or restored by a moderator.
   | "socialLinksNotice"
@@ -115,6 +117,8 @@ export interface TemplateData {
    * src/config/report-reasons.ts), target delay in hours, reception date (ISO). `displayName` is
    * null for a visitor who gave no name (P0); `urgent` adds the emergency numbers.
    */
+  /** Withdrawal from a credit pack (CGV §6): receipt, ISO dates, credits and the refund in minor units. */
+  withdrawalReceipt: { displayName: string | null; receipt: string; requestedAt: string; packCredits: number; removedCredits: number; refundMinor: number; currency: string; refundBy: string };
   reportReceived: { displayName: string | null; reportId: string; targetType: "listing" | "user" | "message" | "pro" | "review"; reasonId: string; slaHours: number; receivedAt: string; urgent: boolean };
   /** Statement of reasons of a restrictive decision (art. 17 DSA), with the signed appeal link (null: authority order). */
   decisionNotice: {

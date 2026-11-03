@@ -9,7 +9,7 @@ import { headroom } from "@/lib/quota";
 import { stripeRequest, type StripeParam } from "./stripe-api";
 
 // The sales of a period, as the tax exports read them (phase 7 design §8): packs from `orders`
-// (B2C, sold on RevenueCat's page; a refund is a line of its own on its date) and Pro plans from
+// (B2C, sold on RevenueCat's page; a refund, whole or partial, is a line of its own on its date) and Pro plans from
 // the invoices Stripe marked paid in the period (B2B). Amounts in minor units of the currency
 // charged; a pack's price includes Moroccan VAT for a Moroccan buyer, an EUR pack carries none
 // (French franchise). Periods are calendar months or quarters in a report's time zone. Plus Stripe's balance
@@ -97,7 +97,7 @@ export function orderGrossMinor(order: Pick<OrderRecord, "amountMinor" | "packId
   return order.amountMinor ?? (pack ? pack.priceMinor * order.quantity : order.credits.paid * 100);
 }
 
-function packLines(order: OrderRecord, pricing: PricingConfig, period: Period): SaleLine[] {
+export function packLines(order: OrderRecord, pricing: PricingConfig, period: Period): SaleLine[] {
   const grossMinor = orderGrossMinor(order, pricing);
   const rate = order.taxJurisdiction === "MA" ? MA_VAT_RATE : 0;
   const base = {
@@ -114,8 +114,10 @@ function packLines(order: OrderRecord, pricing: PricingConfig, period: Period): 
   const inPeriod = (at: Date) => at >= period.from && at < period.to;
   if (inPeriod(order.purchasedAt)) lines.push({ ...base, at: order.purchasedAt, movement: "sale", grossMinor, ...splitIncluded(grossMinor, rate) });
   if (order.status === "refunded" && order.refundedAt && inPeriod(order.refundedAt)) {
-    const split = splitIncluded(grossMinor, rate);
-    lines.push({ ...base, at: order.refundedAt, movement: "refund", grossMinor: -grossMinor, netMinor: -split.netMinor, vatMinor: -split.vatMinor });
+    // A partial refund (a withdrawal's paid share, a partial chargeback) is a line of its own amount.
+    const refundedMinor = Math.min(order.refundedMinor ?? grossMinor, grossMinor);
+    const split = splitIncluded(refundedMinor, rate);
+    lines.push({ ...base, at: order.refundedAt, movement: "refund", grossMinor: -refundedMinor, netMinor: -split.netMinor, vatMinor: -split.vatMinor });
   }
   return lines;
 }

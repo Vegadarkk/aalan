@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_WALLET, WalletError, creditPurchase, grantPlanPeriod, refundPurchase, reverseRefund, spendOption, type WalletState } from "@/lib/payments/wallet";
+import { EMPTY_WALLET, WalletError, creditPurchase, grantPlanPeriod, refundedShare, refundPurchase, reverseRefund, spendOption, splitUnspent, unspentOfPack, withdrawPurchase, type WalletState } from "@/lib/payments/wallet";
 
 // Credits wallet arithmetic (architecture §5, §8): plan credits first, À la Une allowance, refunds
 // of spent packs to a negative frozen balance, monthly grant reset.
@@ -70,5 +70,42 @@ describe("plan period grant", () => {
     const { wallet: w, ledger } = grantPlanPeriod(wallet({ balance: 12, planCredits: 7, featuredAllowance: 1 }), { credits: 100, featured: 4 });
     expect(w).toEqual({ balance: 12, frozen: false, planCredits: 100, featuredAllowance: 4 });
     expect(ledger).toMatchObject({ reason: "plan_grant", delta: 0, planCreditsDelta: 93, featuredAllowanceDelta: 3, balanceAfter: 12 });
+  });
+});
+
+describe("partial refunds and withdrawals", () => {
+  const pack = { paid: 100, bonus: 10 };
+  const held = (id: string, day: number, removed = 0) => ({ id, credits: pack, removed, purchasedAt: new Date(Date.UTC(2027, 0, day)) });
+
+  it("takes back the share of the pack matching the amount refunded", () => {
+    expect(refundedShare(pack, 10_000, undefined)).toEqual(pack);
+    expect(refundedShare(pack, 10_000, 10_000)).toEqual(pack);
+    expect(refundedShare(pack, 10_000, 12_000)).toEqual(pack);
+    expect(refundedShare(pack, 10_000, 5_000)).toEqual({ paid: 50, bonus: 5 });
+    expect(refundedShare(pack, 10_000, 0)).toEqual({ paid: 0, bonus: 0 });
+  });
+
+  it("finds a pack's unspent credits with purchases spent oldest first", () => {
+    const a = held("a", 1);
+    const b = held("b", 2);
+    expect(unspentOfPack(220, a, [a, b])).toBe(110);
+    expect(unspentOfPack(150, a, [a, b])).toBe(40);
+    expect(unspentOfPack(150, b, [a, b])).toBe(110);
+    expect(unspentOfPack(70, a, [a, b])).toBe(0);
+    expect(unspentOfPack(-5, b, [a, b])).toBe(0);
+    // A later pack already withdrawn holds only what it kept.
+    expect(unspentOfPack(40, a, [a, held("b", 2, 70)])).toBe(0);
+    expect(unspentOfPack(60, a, [a, held("b", 2, 70)])).toBe(20);
+  });
+
+  it("splits unspent credits like the pack and removes them without going negative", () => {
+    expect(splitUnspent(pack, 90)).toEqual({ paid: 82, bonus: 8 });
+    expect(splitUnspent(pack, 110)).toEqual(pack);
+    expect(splitUnspent(pack, 0)).toEqual({ paid: 0, bonus: 0 });
+    expect(splitUnspent({ paid: 30, bonus: 0 }, 12)).toEqual({ paid: 12, bonus: 0 });
+    const { wallet, ledger } = withdrawPurchase({ ...EMPTY_WALLET, balance: 90 }, { paid: 82, bonus: 8 });
+    expect(wallet.balance).toBe(0);
+    expect(ledger).toMatchObject({ reason: "withdrawal", delta: -90, paidPart: -82, bonusPart: -8, balanceAfter: 0 });
+    expect(() => withdrawPurchase({ ...EMPTY_WALLET, balance: 10 }, { paid: 20, bonus: 0 })).toThrow(WalletError);
   });
 });

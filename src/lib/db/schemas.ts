@@ -966,7 +966,7 @@ export const walletSchema = z
   .strict();
 export type WalletDoc = z.infer<typeof walletSchema>;
 
-export const LEDGER_REASONS = ["purchase", "option", "plan_grant", "refund", "refund_reversed", "admin_adjust"] as const satisfies readonly LedgerReason[];
+export const LEDGER_REASONS = ["purchase", "option", "plan_grant", "refund", "refund_reversed", "withdrawal", "admin_adjust"] as const satisfies readonly LedgerReason[];
 
 /**
  * wallets/{accountId}/ledger/{entryId}: append-only. Ids are deterministic (idempotency):
@@ -1086,6 +1086,31 @@ export const orderSchema = z
     consent: z.object({ version: z.string().min(1).max(20), at: ts }).strict().optional(),
     eventId: z.string().min(1).max(128),
     refundEventId: z.string().min(1).max(128).optional(),
+    /** Amount refunded (minor units), when less than the price or known; absent: the whole price. */
+    refundedMinor: z.number().int().min(0).max(1_000_000_000).optional(),
+    /** Credits taken back by the refund or the withdrawal (absent on older orders: the whole pack). */
+    refundedCredits: z.object({ paid: z.number().int().min(0).max(1_000_000), bonus: z.number().int().min(0).max(1_000_000) }).strict().optional(),
+    /**
+     * A consumer's withdrawal (CGV §6, online form): the unspent credits were removed at `requestedAt`;
+     * the paid share (`refundMinor`) is refunded by an admin in Stripe within 14 days, then `refunded`.
+     */
+    withdrawal: z
+      .object({
+        receipt: z.string().regex(/^R-[0-9]{8}-[A-Z0-9]{6}$/),
+        status: z.enum(["requested", "refunded"]),
+        requestedAt: ts,
+        requestedBy: uid,
+        credits: z.object({ paid: z.number().int().min(0).max(1_000_000), bonus: z.number().int().min(0).max(1_000_000) }).strict(),
+        refundMinor: z.number().int().min(0).max(1_000_000_000),
+        /** Text version of the withdrawal statement shown on the form. */
+        statementVersion: z.string().min(1).max(20),
+        refundedAt: ts.optional(),
+        refundedBy: z.string().min(1).max(128).optional(),
+        /** Stripe refund id (re_...) an admin recorded, if any. */
+        stripeRefundId: z.string().regex(/^(re|pyr)_[A-Za-z0-9]{1,100}$/).optional(),
+      })
+      .strict()
+      .optional(),
     purchasedAt: ts,
     refundedAt: ts.optional(),
     createdAt: ts,

@@ -21,7 +21,7 @@ describe("pack grid", () => {
       ["mad_200", 20_000, 200, 30],
       ["mad_500", 50_000, 500, 100],
     ]);
-    expect(packByProductId("joutiya_credits_200_mad")?.id).toBe("mad_200");
+    expect(packByProductId("aalan_credits_200_mad")?.id).toBe("mad_200");
     expect(packByProductId("unknown")).toBeUndefined();
   });
 
@@ -30,7 +30,7 @@ describe("pack grid", () => {
     expect(resolvePricingConfig({ packs: [pack, { ...pack, productId: "other" }] }).errors.length).toBeGreaterThan(0);
     expect(resolvePricingConfig({ packs: [pack, { ...pack, id: "other" }] }).errors.length).toBeGreaterThan(0);
     expect(resolvePricingConfig({ packs: [{ ...pack, priceMinor: 800 }] }).errors.length).toBeGreaterThan(0);
-    const eur = { ...pack, id: "eur_10", currency: "EUR" as const, priceMinor: 1_000, productId: "joutiya_credits_10_eur", packageId: "credits_10_eur" };
+    const eur = { ...pack, id: "eur_10", currency: "EUR" as const, priceMinor: 1_000, productId: "aalan_credits_10_eur", packageId: "credits_10_eur" };
     expect(resolvePricingConfig({ packs: [pack, eur] }).config.packs).toHaveLength(2);
   });
 });
@@ -100,9 +100,9 @@ describe("RevenueCat API v2 purchases", () => {
   it("reads a product's store identifier, the one the webhooks and config/pricing use", async () => {
     const fetchImpl = vi.fn(async (url: URL | RequestInfo) => {
       expect(String(url)).toBe("https://api.revenuecat.com/v2/projects/proj1/products/prod1");
-      return reply(200, { object: "product", id: "prod1", store_identifier: "joutiya_credits_100_mad", type: "one_time" });
+      return reply(200, { object: "product", id: "prod1", store_identifier: "aalan_credits_100_mad", type: "one_time" });
     }) as unknown as typeof fetch;
-    expect(await productStoreIdentifier("prod1", fetchImpl)).toBe("joutiya_credits_100_mad");
+    expect(await productStoreIdentifier("prod1", fetchImpl)).toBe("aalan_credits_100_mad");
     await expect(productStoreIdentifier("prod1", (async () => reply(403, {})) as unknown as typeof fetch)).rejects.toMatchObject({ retryable: false, status: 403 });
     await expect(productStoreIdentifier("prod1", (async () => reply(200, { id: "prod1" })) as unknown as typeof fetch)).rejects.toThrow(/unexpected body/);
   });

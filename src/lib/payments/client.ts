@@ -11,6 +11,8 @@ import {
   type PacksResponse,
   type SubscriptionResponse,
   type WalletResponse,
+  type WithdrawalReceiptView,
+  type WithdrawalsResponse,
 } from "@/lib/contracts/payments";
 
 // Browser side of the credits wallet, the paid options, the credit packs and the Pro plans
@@ -40,3 +42,8 @@ export const checkoutPass = (pass: string, locale: Locale) => apiPost<BillingRed
 export const openBillingPortal = (locale: Locale) => apiPost<BillingRedirectResponse>(PAYMENTS_API.portal, { locale });
 
 export const loadInvoices = () => apiGet<InvoicesResponse>(PAYMENTS_API.invoices);
+
+export const loadWithdrawals = () => apiGet<WithdrawalsResponse>(PAYMENTS_API.withdrawals);
+
+/** Withdraws from one pack; the answer is the receipt (also e-mailed in `locale`). */
+export const requestWithdrawal = (orderId: string, locale: Locale) => apiPost<WithdrawalReceiptView>(PAYMENTS_API.withdrawals, { orderId, confirm: true, locale });

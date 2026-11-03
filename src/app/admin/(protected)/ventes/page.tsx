@@ -6,9 +6,12 @@ import { getBillingThresholds } from "@/lib/payments/thresholds";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "../../_lib/moderation-format";
 import { ExportForm } from "../../_components/export-form";
+import { WithdrawalsAdmin } from "../../_components/withdrawals-admin";
+import { pendingWithdrawals } from "@/lib/payments/withdrawals";
 
 // Sales and tax (phase 7 design §8), admins only: the year's tax thresholds as the nightly job
-// counted them, and the CSV exports for the DGI, URSSAF and the e-reporting.
+// counted them, the withdrawals from credit packs waiting for their refund (CGV §6), and the CSV
+// exports for the DGI, URSSAF and the e-reporting.
 
 export const metadata: Metadata = { title: "Ventes et fiscalité" };
 export const dynamic = "force-dynamic";
@@ -52,7 +55,7 @@ function lastPeriods(now: Date): { lastMonth: string; lastQuarter: string } {
 export default async function SalesPage() {
   await requirePageStaff(["admin"]);
   const now = new Date();
-  const thresholds = await getBillingThresholds(now, true);
+  const [thresholds, withdrawals] = await Promise.all([getBillingThresholds(now, true), pendingWithdrawals()]);
   const current = thresholds?.year === now.getUTCFullYear() ? thresholds : null;
   const lastYearReached = (current?.previousYearEuB2cEurMinor ?? 0) >= EU_B2C_THRESHOLD_EUR * 100;
   return (
@@ -88,6 +91,7 @@ export default async function SalesPage() {
           />
         </div>
       </section>
+      <WithdrawalsAdmin initial={withdrawals} nowMs={now.getTime()} />
       <ExportForm {...lastPeriods(now)} />
     </>
   );

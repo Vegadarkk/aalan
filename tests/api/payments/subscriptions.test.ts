@@ -207,7 +207,7 @@ function rcSubscription(extra: Partial<RevenueCatSubscription> = {}): RevenueCat
 async function rcDeliver(type: string, appUserId: string) {
   const envelope = {
     api_version: "1.0",
-    event: { id: randomUUID(), type, environment: "SANDBOX", app_user_id: appUserId, original_app_user_id: appUserId, product_id: "joutiya_business_monthly", store: "STRIPE", event_timestamp_ms: Date.now() },
+    event: { id: randomUUID(), type, environment: "SANDBOX", app_user_id: appUserId, original_app_user_id: appUserId, product_id: "aalan_business_monthly", store: "STRIPE", event_timestamp_ms: Date.now() },
   };
   const t = Math.floor(Date.now() / 1000);
   const signature = expectedSignature(RC_SECRET, t, JSON.stringify(envelope));

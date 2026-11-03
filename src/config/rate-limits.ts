@@ -111,6 +111,8 @@ export const RATE_LIMITS = {
   // Closed: it leads to a charge. 20 per day per account, 60 per hour per IP.
   "billing.checkout.uid": { points: 20, duration: DAY, policy: "closed", key: "uid" },
   "billing.checkout.ip": { points: 60, duration: HOUR, policy: "closed", key: "ip" },
+  // Withdrawal from a credit pack (CGV §6): one per pack, a few per day is plenty.
+  "billing.withdrawal.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
   // PUT /api/pro/me/payment (« Payer chez le vendeur »): the owner's settings, 3 reads and 1 write
   // plus an alert mail when the link changes. 20 per day per account.
   "pro.payment.uid": { points: 20, duration: DAY, policy: "open", key: "uid" },

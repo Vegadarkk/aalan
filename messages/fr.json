@@ -5913,7 +5913,7 @@
       "essentiel": "Essentiel",
       "business": "Business",
       "premium": "Premium",
-      "popular": "Le plus choisi",
+      "recommended": "Recommandé",
       "onQuote": "Sur devis",
       "credits": "{count, number} crédits de visibilité inclus",
       "listings": "{count, plural, one {# annonce active} other {# annonces actives}}",

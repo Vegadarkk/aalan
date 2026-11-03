@@ -193,6 +193,22 @@ test.describe("seasonal rental agency", () => {
     const availability = page.getByTestId("rental-availability");
     await expect(availability.locator(`[data-day="${day(7)}"]`)).toHaveAttribute("data-state", "blocked");
     await expect(availability.locator(`[data-day="${day(8)}"]`)).not.toHaveAttribute("data-state", "blocked");
+
+    // An example listing (staging's demo, never contactable): its calendar picks nights too, by
+    // touch, and says no request can go (owner's iPad test of 3 Nov 2026).
+    const listings = getFirestore(firebase()).collection("listings");
+    const source = (await listings.where("slugId", "==", slugId).limit(1).get()).docs[0]!;
+    const exampleId = randomId(8);
+    const exampleSlugId = `appartement-exemple-agadir-${exampleId}`;
+    await listings.doc(exampleId).set({ ...source.data(), slugId: exampleSlugId, example: true, rental: { unavailable: [], updatedAt: new Date() } });
+    await guest.goto(`/fr/annonce/${exampleSlugId}`);
+    const exampleCalendar = guest.getByTestId("rental-availability");
+    await exampleCalendar.locator(`button[data-day="${day(5)}"]`).tap();
+    await exampleCalendar.locator(`button[data-day="${day(7)}"]`).tap();
+    const examplePick = guest.getByTestId("rental-availability-pick");
+    await expect(examplePick).toContainText("(2 nuits)");
+    await expect(examplePick).toContainText("Annonce exemple : aucune demande ne peut être envoyée.");
+    await expect(guest.getByTestId("rental-availability-request")).toHaveCount(0);
     await guestContext.close();
   });
 });

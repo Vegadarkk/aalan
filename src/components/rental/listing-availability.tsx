@@ -20,14 +20,16 @@ import { formatRentalDay, requestRentalDates } from "./rental-day";
 // With `requestable` (the contact bar offers a booking request), a tap on a day starts the period
 // and a second tap ends it; "Demander ces dates" opens the request on them (owner's report of
 // 3 Nov 2026: the calendar looked like a picker and did nothing on a tablet). The same bounds as
-// the request itself: a start within 180 days, at most 60 days, one night at least for a stay.
+// the request itself: a start within 180 days, at most 60 days, one night at least for a stay. An
+// example listing (never contactable) picks days the same way and says no request can go (the
+// owner tried the calendar on the staging examples: 3 Nov 2026).
 
 interface Range {
   from: number;
   to: number | null;
 }
 
-export function ListingAvailability({ rental, locale, unit = "day", requestable = false }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit; requestable?: boolean }) {
+export function ListingAvailability({ rental, locale, unit = "day", requestable = false, example = false }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit; requestable?: boolean; example?: boolean }) {
   const t = useTranslations("Rental.listing");
   const hydrated = useHydrated();
   const [monthOffset, setMonthOffset] = useState(0);
@@ -42,6 +44,7 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
   const blocked = blockedSet(rental.unavailable);
   const text = <K extends "updatedOn" | "stale" | "never" | "note" | "pickHint" | "pickEnd" | "picked" | "pickedBlocked">(key: K) => (nights ? (`home.${key}` as const) : key);
   const dates = range && range.to !== null ? { from: dayString(range.from), to: dayString(range.to) } : null;
+  const selectable = requestable || example;
   const crossesBlocked = dates !== null && occupiedDays(dates, unit).some((day) => blocked.has(day));
 
   function onDay(day: number) {
@@ -75,9 +78,9 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
             months={2}
             onMonthOffset={setMonthOffset}
             maxMonthOffset={10}
-            {...(requestable ? { onDay, range, lastEditable: today + RENTAL_SEARCH_AHEAD_DAYS + RENTAL_SEARCH_DAYS_MAX } : {})}
+            {...(selectable ? { onDay, range, lastEditable: today + RENTAL_SEARCH_AHEAD_DAYS + RENTAL_SEARCH_DAYS_MAX } : {})}
           />
-          {requestable ? (
+          {selectable ? (
             <div className="flex flex-col gap-3 rounded-md bg-surface-muted p-3 sm:flex-row sm:items-center sm:justify-between" data-testid="rental-availability-pick">
               <div className="flex min-w-0 flex-col gap-1">
                 <p role="status" className="text-sm font-medium text-pretty">
@@ -92,7 +95,8 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
                   <Button type="button" variant="ghost" size="sm" onClick={() => setRange(null)}>
                     {t("clear")}
                   </Button>
-                  {dates ? (
+                  {dates && !requestable ? <p className="self-center text-xs text-foreground-muted">{t("exampleNoRequest")}</p> : null}
+                  {dates && requestable ? (
                     <Button type="button" variant="structure" size="sm" data-testid="rental-availability-request" onClick={() => requestRentalDates(dates)}>
                       <Send aria-hidden="true" />
                       {t("request")}

@@ -6,6 +6,7 @@ import { ExamplesHiddenNotice } from "@/components/examples/examples-controls";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Container } from "@/components/layout/container";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { JsonLd } from "@/components/listing/json-ld";
 import { FeaturedRow, withoutFeatured } from "@/components/search/featured-row";
 import { ResultsGrid } from "@/components/search/results-grid";
@@ -16,6 +17,7 @@ import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
+import { CATEGORY_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { alternates } from "@/lib/i18n/metadata";
 import { SEARCH_PATH, searchQueryObject } from "@/lib/search/params";
 import { cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
@@ -139,7 +141,7 @@ export default async function CategoryLandingPage({ params }: { params: Params }
   const seeLabel = total === 1 ? t("seeOne") : t("seeAll", { count: total });
 
   return (
-    <>
+    <PageMessages locale={locale} namespaces={CATEGORY_PAGE_CLIENT_NAMESPACES}>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <Container className="flex flex-col gap-8 pt-3 pb-12 sm:pt-5 lg:gap-10 lg:pb-16">
         <div className="flex flex-col gap-4">
@@ -197,6 +199,6 @@ export default async function CategoryLandingPage({ params }: { params: Params }
 
         {cities.length > 0 ? <CityLinks id="landing-cities" links={cities} locale={locale} title={target.city ? t("nearbyTitle", { scope }) : t("citiesTitle", { scope })} /> : null}
       </Container>
-    </>
+    </PageMessages>
   );
 }

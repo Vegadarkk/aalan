@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import type * as NextNavigation from "next/navigation";
@@ -18,6 +19,9 @@ const mocks = vi.hoisted(() => ({
   enforceSearchLimit: vi.fn<(request: Request) => Promise<{ passGranted: boolean }>>(),
   requestHeaders: { "user-agent": "vitest", "cf-connecting-ip": "203.0.113.7" },
 }));
+// The page's own message provider is an async server component (src/components/i18n/page-messages.tsx,
+// kept exact by client-messages.test.ts): the provider of this test carries the whole catalog.
+vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/search/service", () => ({ runSearch: mocks.runSearch, NOT_EXAMPLE: { not: { field: "isExample", op: "eq", value: true } } }));
 vi.mock("@/lib/search/limits", () => ({ enforceSearchLimit: mocks.enforceSearchLimit }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers(mocks.requestHeaders) }));

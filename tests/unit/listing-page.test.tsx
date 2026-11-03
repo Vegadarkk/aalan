@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -20,6 +21,9 @@ const repo = vi.hoisted(() => ({
   getListing: vi.fn<(id: string) => Promise<ListingRecord | null>>(),
   getUserRecord: vi.fn<(uid: string) => Promise<UserRecord | null>>(),
 }));
+// The page's own message provider is an async server component (src/components/i18n/page-messages.tsx,
+// kept exact by client-messages.test.ts): the provider of this test carries the whole catalog.
+vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/db/repositories/listings", () => ({ getListing: repo.getListing, listPublishedByOwner: vi.fn() }));
 vi.mock("@/lib/db/repositories/profiles", () => ({ findUserByPublicId: vi.fn(), getUserRecord: repo.getUserRecord }));
 vi.mock("@/lib/quota", async (importOriginal) => ({ ...(await importOriginal<typeof Quota>()), consume: vi.fn(), firstDegraded: vi.fn(async () => null) }));

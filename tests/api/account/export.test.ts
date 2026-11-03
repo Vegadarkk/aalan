@@ -189,7 +189,7 @@ describe("GET /api/account/export: the file", () => {
     expect(result.header("x-content-type-options")).toBe("nosniff");
 
     const file = result.body;
-    expect(file).toMatchObject({ format: "joutiya.account-export", truncated: {} });
+    expect(file).toMatchObject({ format: "aalan.account-export", truncated: {} });
     expect(file.about.length).toBeGreaterThan(0);
     expect(file.profile).toMatchObject({ displayName: "Salma Exportée", status: "active" });
     expect(file.account).toMatchObject({ email: me.email, providers: ["password"], consents: { marketing: false } });

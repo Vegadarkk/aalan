@@ -2937,6 +2937,16 @@
       "reauthTitle": "Reconnectez-vous pour changer ce lien",
       "reauthBody": "Par sécurité, un nouveau lien de paiement demande une connexion de moins de dix minutes.",
       "reauth": "Me reconnecter"
+    },
+    "pin": {
+      "add": "Épingler sur ma vitrine",
+      "remove": "Retirer de la sélection",
+      "addOf": "Épingler sur ma vitrine : {title}",
+      "removeOf": "Retirer de la sélection : {title}",
+      "added": "Annonce épinglée en tête de votre vitrine.",
+      "removed": "Annonce retirée de la sélection.",
+      "full": "Sélection complète ({max, number} annonces)",
+      "position": "Sélection de la boutique, {index, number} sur {max, number}"
     }
   },
   "Map": {
@@ -4896,7 +4906,19 @@
         "sun": "Dimanche"
       }
     },
-    "contact": "Contacter la boutique"
+    "contact": "Contacter la boutique",
+    "follow": {
+      "follow": "Suivre",
+      "followed": "Suivie",
+      "searchName": "Boutique {name}",
+      "done": "Boutique suivie : vous recevrez ses nouvelles annonces par e-mail.",
+      "manage": "Mes recherches",
+      "limit": "Vous avez atteint le nombre maximum de recherches enregistrées. Supprimez-en une dans « Mes recherches ».",
+      "failed": "Impossible de suivre la boutique pour le moment. Réessayez."
+    },
+    "pinned": {
+      "title": "Sélection de la boutique"
+    }
   },
   "Options": {
     "title": "Mettre en avant « {title} »",

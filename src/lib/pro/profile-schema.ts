@@ -4,7 +4,7 @@ import { PRO_PLANS, listingQuotasSchema } from "@/config/pricing";
 import { AIRPORT_IDS } from "@/config/airports";
 import { PAYMENT_URL_MAX } from "@/config/seller-payments";
 import { SOCIAL_HANDLE_MAX, SOCIAL_NETWORKS } from "@/config/social-links";
-import { shopSectionsSchema } from "@/lib/contracts/catalog";
+import { shopPinsSchema, shopSectionsSchema } from "@/lib/contracts/catalog";
 import { sellerInfoInputSchema } from "@/lib/contracts/seller-payment";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
 import { BANNER_KEYS } from "@/config/storefront";
@@ -262,6 +262,8 @@ export const proProfileSchema = z
     agency: z.object({ feeSchedule: z.string().trim().max(AGENCY_FEE_SCHEDULE_MAX) }).strict().optional(),
     /** Sections of the storefront (catalogue §5), in display order. */
     sections: shopSectionsSchema.optional(),
+    /** « Sélection de la boutique » (UX audit lot 3): listings pinned above the storefront grid, in order. */
+    pinned: shopPinsSchema.optional(),
     /** Car rental agency settings, set by the owner (PUT /api/pro/me/rental). */
     rental: rentalAgencySchema.optional(),
     /** Check of the licence decision (POST /api/pro/me/rental/check, then the agent queue or a moderator). */

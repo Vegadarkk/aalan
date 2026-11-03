@@ -85,7 +85,7 @@ export function SellerReviews({
             </ul>
             <p className="text-xs text-pretty text-foreground-muted">
               {t("verifiedHint")}{" "}
-              <Link href="/legal/avis-utilisateurs#verification" prefetch={false} className="font-medium text-link underline underline-offset-2">
+              <Link href="/legal/avis-utilisateurs#verification" prefetch={false} className="relative font-medium text-link underline underline-offset-2 after:absolute after:inset-x-0 after:-inset-y-3">
                 {t("rules")}
               </Link>
             </p>
@@ -104,7 +104,7 @@ export function SellerReviews({
             <p className="font-medium">{t("emptyTitle")}</p>
             <p className="text-sm text-pretty text-foreground-muted">
               {t("emptyBody", { name: isolate(sellerName) })}{" "}
-              <Link href="/legal/avis-utilisateurs#verification" prefetch={false} className="font-medium text-link underline underline-offset-2">
+              <Link href="/legal/avis-utilisateurs#verification" prefetch={false} className="relative font-medium text-link underline underline-offset-2 after:absolute after:inset-x-0 after:-inset-y-3">
                 {t("rules")}
               </Link>
             </p>

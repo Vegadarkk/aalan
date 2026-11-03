@@ -2927,6 +2927,16 @@
       "reauthTitle": "Kcem tikkelt nniḍen ḥima ad tbeddleḍ asaɣ-a",
       "reauthBody": "I taɣellist, asaɣ amaynu n udfaɛ ixs tukcimt n ddaw n 10 n tesdidin.",
       "reauth": "Kcem tikkelt nniḍen"
+    },
+    "pin": {
+      "add": "Ṣemmeṛ deg tfrent inu",
+      "remove": "Kkes-it zeg ustay",
+      "addOf": "Ṣemmeṛ deg tfrent inu: {title}",
+      "removeOf": "Kkes-it zeg ustay: {title}",
+      "added": "Tawennaḍt tettwaṣemmeṛ deg yixef n tfrent-nnek.",
+      "removed": "Tawennaḍt tettwakkes zeg ustay.",
+      "full": "Astay yeččur ({max, number} n twennaḍin)",
+      "position": "Astay n tfrent, {index, number} zeg {max, number}"
     }
   },
   "Map": {
@@ -4886,7 +4896,19 @@
         "sun": "Lḥed"
       }
     },
-    "contact": "Ssiwel i tḥanut"
+    "contact": "Ssiwel i tḥanut",
+    "follow": {
+      "follow": "Ḍfeṛ",
+      "followed": "Tettwaḍfeṛ",
+      "searchName": "Tafrent {name}",
+      "done": "Tḍefṛeḍ tafrent-a: ad ak-d-awḍent tiwennaḍin-s timaynutin s imayl.",
+      "manage": "Tirzzutin inu",
+      "limit": "Tewweḍḍ ar umeṭṭiq n tirzzutin i d-teḥḍiḍ. Kkes yiwet deg « Tirzzutin inu ».",
+      "failed": "Ur tezmireḍ ad tḍefṛeḍ tafrent-a tura. Ɛreḍ tikkelt nniḍen."
+    },
+    "pinned": {
+      "title": "Astay n tfrent"
+    }
   },
   "Options": {
     "title": "Ssbeyyen « {title} »",

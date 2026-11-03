@@ -1,7 +1,7 @@
 import "server-only";
 import { requireUser } from "@/lib/auth/guards";
 import { uploadIdSchema } from "@/lib/contracts/media";
-import { sectionsInputSchema } from "@/lib/contracts/catalog";
+import { pinsInputSchema, sectionsInputSchema } from "@/lib/contracts/catalog";
 import { kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
 import { STOCK_IMPORT_BODY_MAX_BYTES, stockImportRequestSchema } from "@/lib/contracts/stock-import";
 import { serverEnv } from "@/lib/env";
@@ -14,7 +14,7 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { completeKybcUpload, deleteKybcUpload, signKybcUpload } from "./kybc-uploads";
 import { submitRentalCheck } from "./rental-check";
-import { proSelf, submitApplication, updateAgency, updateRentalAgency, updateSections, updateShopCard } from "./service";
+import { proSelf, submitApplication, updateAgency, updatePins, updateRentalAgency, updateSections, updateShopCard } from "./service";
 import { updateSocialLinks } from "./social-links";
 import { importStock, stockList } from "./stock-import/service";
 import { readShopStats } from "./stats";
@@ -100,6 +100,14 @@ export async function handleSections(request: Request): Promise<Response> {
   const input = await readJson(request, sectionsInputSchema);
   await enforceLimit("pro.agency.uid", auth.user.uid);
   return json(await updateSections(auth, input));
+}
+
+/** PUT /api/pro/me/pins: the listings pinned on the storefront (UX audit lot 3). */
+export async function handlePins(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  const input = await readJson(request, pinsInputSchema);
+  await enforceLimit("pro.agency.uid", auth.user.uid);
+  return json(await updatePins(auth, input));
 }
 
 /** PUT /api/pro/me/social: the shop's social links, shown on its storefront. */

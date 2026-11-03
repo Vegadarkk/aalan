@@ -220,7 +220,7 @@ function Preview({ result }: { result: StockImportResponse }) {
         </p>
       ) : null}
       <label className="flex w-fit items-center gap-2 text-sm">
-        <input type="checkbox" checked={errorsOnly} onChange={(event) => setErrorsOnly(event.target.checked)} className="size-4 accent-structure" />
+        <input type="checkbox" checked={errorsOnly} onChange={(event) => setErrorsOnly(event.target.checked)} className="size-5 accent-structure" />
         {t("preview.errorsOnly")}
       </label>
       <div className="overflow-x-auto rounded-lg border border-border">

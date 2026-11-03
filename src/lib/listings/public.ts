@@ -7,7 +7,7 @@ import type { ListingAttributes, ListingStatus, RentalAvailability } from "@/lib
 import type { PhotoVariant } from "@/lib/contracts/photo-variants";
 import type { RatingSummary, ReviewPage } from "@/lib/contracts/reviews";
 import { COLLECTIONS, type UserDoc } from "@/lib/db/schemas";
-import { getListing, listPublishedByOwner, type ListingRecord } from "@/lib/db/repositories/listings";
+import { getListing, getListings, listPublishedByOwner, type ListingRecord } from "@/lib/db/repositories/listings";
 import { findUserByPublicId, getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { getSellerPayments } from "@/lib/config/runtime";
 import type { PublicShopPayment } from "@/lib/contracts/seller-payment";
@@ -417,6 +417,21 @@ export interface PublicStorefront {
   bannerKey: BannerKey;
   /** The verified number can be revealed (POST /api/shops/{proId}/phone), and opens WhatsApp. */
   contact: { phone: boolean; whatsapp: boolean };
+  /** « Sélection de la boutique » (UX audit lot 3): its pinned listings still published, in order. */
+  pinned: PublicListingCard[];
+}
+
+/** The pinned listings still published by the shop: from the page already read, else one read each. */
+async function pinnedCards(proId: string, ids: readonly string[], shown: readonly PublicListingCard[]): Promise<PublicListingCard[]> {
+  if (ids.length === 0) return [];
+  const known = new Map(shown.map((card) => [card.id, card]));
+  const missing = ids.filter((id) => !known.has(id));
+  for (const record of await getListings(missing)) {
+    if (record.proId !== proId || record.status !== "published" || record.moderation.hiddenBy) continue;
+    const card = toPublicCard(record);
+    if (card) known.set(card.id, card);
+  }
+  return ids.flatMap((id) => known.get(id) ?? []);
 }
 
 /**
@@ -432,6 +447,7 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
   const user = await getUserRecord(profile.ownerUid);
   if (!user || !isVisibleAccount(user) || user.status === "suspended") return null;
   const payment = profile.sellerPayment ? publicShopPayment(profile, await getSellerPayments(), new Date()) : null;
+  const seller = await profileView(user, limit);
   return {
     payment,
     proId: profile.proId,
@@ -443,7 +459,7 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
     feeSchedule: profile.sector === "real_estate" ? (profile.agency?.feeSchedule ?? "") : "",
     rental: profile.sector === "car_rental" ? (profile.rental ?? null) : null,
     rentalCheckedAt: profile.sector === "car_rental" ? checkedOn(profile) : null,
-    seller: await profileView(user, limit),
+    seller,
     example: profile.example === true,
     sections: profile.sections ?? [],
     social: profile.example ? [] : publicSocialLinks(profile.social),
@@ -453,6 +469,7 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
     website: profile.example ? null : (profile.website ?? null),
     bannerKey: profile.bannerKey ?? DEFAULT_BANNER,
     contact: profile.example || !user.badges.phoneVerified ? { phone: false, whatsapp: false } : { phone: profile.showPhone === true, whatsapp: profile.whatsapp },
+    pinned: profile.example ? [] : await pinnedCards(profile.proId, profile.pinned ?? [], seller.listings),
   };
 }
 

@@ -2,6 +2,7 @@ import { z } from "@/lib/zod";
 import { CRITERION_TEXT_MAX, criterionById } from "@/config/categories";
 import { PROMO_KINDS, VARIANT_KEY_SEPARATOR, itemAvailable, variantKey } from "./catalog-core";
 import { refKey } from "./stock-import";
+import { LISTING_ID_PATTERN } from "@/lib/listings/ids";
 
 // Shop catalogue of a Pro listing (lot 4, design phase-7/catalogue-boutique.md §2-3): variants on
 // one or two axes (size, colour, a free axis such as « Contenance »), a declared stock, per
@@ -248,6 +249,18 @@ export const sectionsInputSchema = z
   .strict();
 export type SectionsInput = z.infer<typeof sectionsInputSchema>;
 export type SectionsResponse = { sections: ShopSection[] };
+
+/** « Sélection de la boutique » (UX audit of the Pro shops, lot 3): listings pinned above the storefront grid. */
+export const SHOP_PINS_MAX = 4;
+export const shopPinsSchema = z
+  .array(z.string().regex(LISTING_ID_PATTERN))
+  .max(SHOP_PINS_MAX)
+  .refine((ids) => new Set(ids).size === ids.length, { message: "duplicate listing" });
+
+/** `PUT /api/pro/me/pins`: the pinned listings replaced whole, in display order. */
+export const pinsInputSchema = z.object({ listingIds: shopPinsSchema }).strict();
+export type PinsInput = z.infer<typeof pinsInputSchema>;
+export type PinsResponse = { pinned: string[] };
 
 /** `PUT /api/listings/{id}/section`: the listing's section, null to take it out. */
 export const sectionUpdateSchema = z.object({ sectionId: sectionIdSchema.nullable() }).strict();

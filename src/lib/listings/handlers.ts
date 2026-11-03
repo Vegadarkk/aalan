@@ -6,6 +6,7 @@ import { FLEET_MAX, OWNER_LIST_BUCKETS, createListingSchema, fleetSaveSchema, li
 import { turnstileTokenSchema } from "@/lib/contracts/auth";
 import { promoInputSchema, sectionUpdateSchema, stockUpdateSchema } from "@/lib/contracts/catalog";
 import { listingPaymentLinkInputSchema } from "@/lib/contracts/seller-payment";
+import { publishesAsPro } from "@/lib/pro/lifecycle";
 import { paymentShown } from "@/lib/pro/seller-payment-rules";
 import { getListing, listOwnerListings } from "@/lib/db/repositories/listings";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
@@ -88,6 +89,8 @@ export async function handleMine(request: Request): Promise<Response> {
     salesOpen: (await getFlags()).salesEnabled,
     ...(sections.length > 0 ? { sections } : {}),
     ...(paymentReady ? { paymentReady } : {}),
+    // The pins of « Mes annonces » rows (UX audit lot 3), for a shop that publishes.
+    ...(owned && publishesAsPro(owned.lifecycle) ? { pinned: owned.pinned ?? [] } : {}),
   };
   return json(body);
 }

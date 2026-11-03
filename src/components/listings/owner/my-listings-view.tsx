@@ -17,6 +17,7 @@ import { usePublicConfig } from "@/lib/config/client";
 import type { ShopSection } from "@/lib/contracts/catalog";
 import { MAX_DRAFTS, OWNER_LIST_BUCKETS, type OwnerListBucket, type OwnerListing, type OwnerListingSummary } from "@/lib/contracts/listings";
 import { deleteListing, listMine, listingAction, type OwnerAction } from "@/lib/listings/client/api";
+import { savePins } from "@/lib/pro/client";
 import { wizardPath } from "@/lib/listings/client/routes";
 import { blockersOf } from "@/lib/listings/client/store";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,8 @@ export function MyListingsView() {
   const [salesOpen, setSalesOpen] = useState(false);
   const [sections, setSections] = useState<ShopSection[]>([]);
   const [paymentReady, setPaymentReady] = useState(false);
+  // « Sélection de la boutique » (UX audit lot 3): null off a shop.
+  const [pinned, setPinned] = useState<string[] | null>(null);
   // Answers that arrive out of order: only the latest request of a bucket is kept.
   const requests = useRef<Partial<Record<OwnerListBucket, number>>>({});
   const tabRefs = useRef<Partial<Record<OwnerListBucket, HTMLButtonElement | null>>>({});
@@ -102,12 +105,23 @@ export function MyListingsView() {
   const [edges, setEdges] = useState<Edges>({ start: false, end: false });
   const revealed = useRef(false);
 
+  const onPin = useCallback(
+    async (id: string, pin: boolean) => {
+      const current = pinned ?? [];
+      const next = pin ? [...current.filter((entry) => entry !== id), id] : current.filter((entry) => entry !== id);
+      const result = await savePins({ listingIds: next });
+      setPinned(result.pinned);
+    },
+    [pinned],
+  );
+
   const load = useCallback(async (bucket: OwnerListBucket) => {
     const request = (requests.current[bucket] ?? 0) + 1;
     requests.current[bucket] = request;
     try {
-      const { listings, salesOpen: open, sections: shelves, paymentReady: ready } = await listMine(bucket);
+      const { listings, salesOpen: open, sections: shelves, paymentReady: ready, pinned: pins } = await listMine(bucket);
       if (requests.current[bucket] !== request) return;
+      setPinned(pins ?? null);
       setSalesOpen(open);
       setSections(shelves ?? []);
       setPaymentReady(ready === true);
@@ -350,7 +364,7 @@ export function MyListingsView() {
             ) : null}
             <ul className={cn("flex flex-col divide-y divide-border transition-opacity duration-200", current.refreshing && "opacity-80")} aria-busy={busyId !== null || current.refreshing || undefined}>
               {current.listings.map((listing) => (
-                <OwnerListingCard key={listing.id} listing={listing} mediaBaseUrl={mediaBaseUrl} busy={busyId === listing.id} salesOpen={salesOpen} onAction={(action) => onAction(listing.id, action)} onDelete={() => onDelete(listing.id)} onChanged={onChanged} sections={sections} paymentReady={paymentReady} />
+                <OwnerListingCard key={listing.id} listing={listing} mediaBaseUrl={mediaBaseUrl} busy={busyId === listing.id} salesOpen={salesOpen} onAction={(action) => onAction(listing.id, action)} onDelete={() => onDelete(listing.id)} onChanged={onChanged} sections={sections} paymentReady={paymentReady} {...(pinned ? { pins: { pinned, onPin } } : {})} />
               ))}
             </ul>
           </>

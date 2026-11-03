@@ -1,7 +1,7 @@
 import { Fragment, cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { BadgeCheck, CalendarDays, Flag, MapPin } from "lucide-react";
+import { BadgeCheck, CalendarDays, Flag, MapPin, Pin } from "lucide-react";
 import { ContactBar } from "@/components/listing/contact-bar";
 import { ViewBeacon } from "@/components/stats/view-beacon";
 import { ShareButton } from "@/components/listing/share-button";
@@ -23,6 +23,7 @@ import { ShopEmblem } from "@/components/pro/shop-emblem";
 import { ShopPracticalInfo } from "@/components/pro/shop-practical-info";
 import { StorefrontBanner } from "@/components/profile/storefront-banner";
 import { SocialLinks } from "@/components/pro/social-links";
+import { FollowShopButton } from "@/components/storefront/follow-shop-button";
 import { StorefrontTabs } from "@/components/storefront/storefront-tabs";
 import { LandingBreadcrumb } from "@/components/seo/landing";
 import { ReportButton } from "@/components/report/report-button";
@@ -31,6 +32,7 @@ import { SellerReviews } from "@/components/reviews/seller-reviews";
 import { Button } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { ExampleBanner } from "@/components/listing/example-banner";
+import { JsonLd } from "@/components/listing/json-ld";
 import { RENTAL_SUBCATEGORY, criterionById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName } from "@/config/regions";
@@ -49,6 +51,7 @@ import type { RentalFleetView } from "@/lib/search/rental-fleet-view";
 import { searchPath } from "@/lib/search/params";
 import { DIRECTORY_PATH } from "@/lib/search/shortcuts";
 import { shopShelves, shopSubcategoryCounts } from "@/lib/search/storefront";
+import { breadcrumbJsonLd, storefrontJsonLd } from "@/lib/seo/jsonld";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
 
@@ -162,6 +165,30 @@ export default async function StorefrontPage({ params }: { params: Params }) {
     </div>
   );
 
+  // Structured data (UX audit lot 3): the business and its breadcrumb; none for an example shop.
+  const pageUrl = `${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`;
+  const shopLd = store.example
+    ? null
+    : storefrontJsonLd({
+        name: store.name,
+        sector: store.sector ?? "general",
+        url: pageUrl,
+        description: about,
+        cityName: city ? cityName(city, locale) : "",
+        address: store.address,
+        hours: store.hours,
+        website: store.website,
+        sameAs: store.social.map((link) => link.href),
+        rating: seller.rating,
+      });
+  const crumbLd = store.example
+    ? null
+    : breadcrumbJsonLd([
+        { name: seo("home"), url: `${CANONICAL_ORIGIN}/${locale}` },
+        { name: t("directory"), url: `${CANONICAL_ORIGIN}/${locale}${DIRECTORY_PATH}` },
+        { name: store.name },
+      ]);
+
   const allListings = (
     <>
       {listings.length > 0 ? (
@@ -190,6 +217,8 @@ export default async function StorefrontPage({ params }: { params: Params }) {
 
   return (
     <PageMessages locale={locale} namespaces={STOREFRONT_PAGE_CLIENT_NAMESPACES}>
+      {shopLd ? <JsonLd data={shopLd} /> : null}
+      {crumbLd ? <JsonLd data={crumbLd} /> : null}
       <Container className="flex flex-col gap-10 py-8 lg:gap-12 lg:py-12">
         {/* Back to the directory of shops (owner's choice of 30 Oct 2026), the way the category landings lead home. */}
         <LandingBreadcrumb steps={[{ label: seo("home"), href: "/" }, { label: t("directory"), href: DIRECTORY_PATH }, { label: store.name }]} className="-mb-4 lg:-mb-6" />
@@ -221,7 +250,8 @@ export default async function StorefrontPage({ params }: { params: Params }) {
             {/* Positive actions in the header (UX audit of the Pro shops, B2): the report dialog stays at
                 the foot of the page, linked from the shop card below (DSA art. 16(1)). */}
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <ShareButton url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`} title={store.name} className="border-structure-foreground/30" />
+              {store.example ? null : <FollowShopButton shopPublicId={seller.publicId} shopName={store.name} className="border-structure-foreground/30" />}
+              <ShareButton url={pageUrl} title={store.name} className="border-structure-foreground/30" />
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-featured px-3 py-1 text-sm font-medium text-featured-foreground sm:ms-auto sm:self-start sm:mt-6">
@@ -273,6 +303,23 @@ export default async function StorefrontPage({ params }: { params: Params }) {
         {store.rental ? <RentalBranches rental={store.rental} locale={locale} /> : null}
 
         {vehicles ? <DealerStock stock={vehicles} shop={seller.publicId} /> : null}
+
+        {/* « Sélection de la boutique » (UX audit lot 3): up to 4 listings the shop pins from « Mes annonces ». */}
+        {store.pinned.length > 0 ? (
+          <section aria-labelledby="storefront-pinned" data-testid="storefront-pinned" className="flex flex-col gap-5 rounded-lg border border-featured/40 bg-featured/5 p-4 sm:p-5">
+            <h2 id="storefront-pinned" className="flex items-center gap-2 text-xl font-semibold">
+              <Pin className="size-5 shrink-0 text-structure dark:text-gold-300" aria-hidden="true" />
+              {t("pinned.title")}
+            </h2>
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-4 lg:grid-cols-4">
+              {store.pinned.map((listing) => (
+                <li key={listing.id} className="min-w-0">
+                  <ListingCard listing={listing} mediaBaseUrl={media} locale={locale} action={<FavoriteButton listingId={listing.id} />} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {fleet && listings.length === 0 ? null : (
           <section aria-labelledby="storefront-listings" className="flex flex-col gap-6">

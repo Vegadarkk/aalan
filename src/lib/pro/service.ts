@@ -3,13 +3,13 @@ import { randomInt } from "node:crypto";
 import { launchOfferOpen, listingQuotas } from "@/config/pricing";
 import type { AuthContext } from "@/lib/auth/guards";
 import { getAbuseRules, getFlags, getPricing } from "@/lib/config/runtime";
-import type { SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
+import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
 import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
 import { cityBySlug } from "@/config/regions";
 import { DEFAULT_BANNER } from "@/config/storefront";
 import { db } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { countActive } from "@/lib/db/repositories/listings";
+import { countActive, getListings } from "@/lib/db/repositories/listings";
 import { getProProfile, proProfileFromSnapshot, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { COLLECTIONS, type UserDoc } from "@/lib/db/schemas";
 import { getUploads } from "@/lib/db/repositories/uploads";
@@ -303,6 +303,27 @@ export async function updateSections(auth: AuthContext, input: SectionsInput, no
   void consume("firestore.writes", 1);
   if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
   return { sections };
+}
+
+/**
+ * PUT /api/pro/me/pins (UX audit of the Pro shops, lot 3): the listings pinned above the storefront
+ * grid, replaced whole in display order. Each must be one of the shop's published listings (one
+ * read each, at most 4); the storefront drops any that later stops being published.
+ */
+export async function updatePins(auth: AuthContext, input: PinsInput, now = new Date()): Promise<PinsResponse> {
+  const profile = await ownedPublishingShop(auth);
+  const listings = new Map((await getListings(input.listingIds)).map((listing) => [listing.id, listing]));
+  input.listingIds.forEach((id, index) => {
+    const listing = listings.get(id);
+    if (!listing || listing.proId !== profile.proId || listing.status !== "published") {
+      throw new HttpError(422, "invalid_body", "pinned listing is not a published listing of the shop", { details: [{ path: `listingIds.${index}`, code: "pin_unavailable" }] });
+    }
+  });
+  await proProfileRef(profile.proId).update({ pinned: input.listingIds.length > 0 ? input.listingIds : FieldValue.delete(), updatedAt: Timestamp.fromDate(now) });
+  void consume("firestore.reads", 1);
+  void consume("firestore.writes", 1);
+  if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
+  return { pinned: input.listingIds };
 }
 
 /** The owner's shop, verified and publishing (not suspended), from the session claims; else 409/403. */

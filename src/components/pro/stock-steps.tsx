@@ -230,18 +230,18 @@ export function PublishStep({ stock, nonce, onDone }: { stock: readonly StockLis
         <>
           <p className="text-sm">{t("drafts", { ready: ready.length, missing: drafts.length - ready.length })}</p>
           <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-structure" />
+            <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-0.5 size-5 shrink-0 accent-structure" />
             <span className="text-pretty">{t.rich("rules", { cgu: legal("cgu"), interdits: legal("objets-interdits") })}</span>
           </label>
           {realEstate ? (
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={declared} onChange={(event) => setDeclared(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-structure" />
+              <input type="checkbox" checked={declared} onChange={(event) => setDeclared(event.target.checked)} className="mt-0.5 size-5 shrink-0 accent-structure" />
               <span className="text-pretty">{t("realEstate", { brand: SITE_NAME })}</span>
             </label>
           ) : null}
           {rental ? (
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={rentalDeclared} onChange={(event) => setRentalDeclared(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-structure" />
+              <input type="checkbox" checked={rentalDeclared} onChange={(event) => setRentalDeclared(event.target.checked)} className="mt-0.5 size-5 shrink-0 accent-structure" />
               <span className="text-pretty">{t("rental", { brand: SITE_NAME })}</span>
             </label>
           ) : null}

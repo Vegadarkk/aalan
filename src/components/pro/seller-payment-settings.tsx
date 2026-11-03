@@ -205,7 +205,7 @@ function Settings({ data, onSaved }: { data: SellerPaymentView; onSaved: (data: 
             <Input type="url" inputMode="url" dir="ltr" autoComplete="off" spellCheck={false} placeholder="https://" value={draft.url} onChange={(event) => setDraft((current) => ({ ...current, url: event.target.value }))} maxLength={500} />
           </Field>
           <label className="flex cursor-pointer items-start gap-3 text-sm text-pretty">
-            <input type="checkbox" checked={draft.cashOnDelivery} onChange={(event) => setDraft((current) => ({ ...current, cashOnDelivery: event.target.checked }))} className="mt-0.5 size-4 shrink-0 accent-primary" />
+            <input type="checkbox" checked={draft.cashOnDelivery} onChange={(event) => setDraft((current) => ({ ...current, cashOnDelivery: event.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-primary" />
             <span>
               <span className="font-medium">{t("cash.label")}</span>
               <span className="block text-foreground-muted">{t("cash.hint")}</span>
@@ -232,7 +232,7 @@ function Settings({ data, onSaved }: { data: SellerPaymentView; onSaved: (data: 
 
         <div className="flex flex-col gap-2">
           <label className="flex cursor-pointer items-start gap-3 text-sm text-pretty">
-            <input type="checkbox" checked={draft.terms} aria-invalid={termsMissing ? true : undefined} onChange={(event) => setDraft((current) => ({ ...current, terms: event.target.checked }))} className="mt-0.5 size-4 shrink-0 accent-primary" />
+            <input type="checkbox" checked={draft.terms} aria-invalid={termsMissing ? true : undefined} onChange={(event) => setDraft((current) => ({ ...current, terms: event.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-primary" />
             <span>{t("terms", { site: SITE_NAME })}</span>
           </label>
           {termsMissing ? <InlineError>{t("termsRequired")}</InlineError> : null}

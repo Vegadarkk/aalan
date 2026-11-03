@@ -157,6 +157,12 @@ export function Footer({ publisher }: { publisher: string }) {
               </Link>
             </li>
             <li>
+              {/* The shop guide of the help centre (UX audit of the Pro shops, lot 3). */}
+              <Link href="/aide/reussir-sa-boutique" prefetch={false} className={linkClass}>
+                {t("shopGuide")}
+              </Link>
+            </li>
+            <li>
               <Link href="/demarches" className={linkClass}>
                 {t("guide")}
               </Link>

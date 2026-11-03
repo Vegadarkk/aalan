@@ -161,7 +161,8 @@
     "becomePro": "Devenir Pro",
     "createShop": "Créer ma boutique",
     "post": "Déposer une annonce",
-    "wallet": "Porte-monnaie"
+    "wallet": "Porte-monnaie",
+    "shopGuide": "Réussir sa boutique"
   },
   "Legal": {
     "provisionalTitle": "Version provisoire",
@@ -210,7 +211,10 @@
       "favoris": "Mes favoris",
       "recherches": "Mes recherches",
       "messages": "Mes messages",
-      "recours": "Décisions et recours"
+      "recours": "Décisions et recours",
+      "espacePro": "Mon espace Pro",
+      "boutiques": "Annuaire des boutiques",
+      "tarifs": "Tarifs"
     },
     "assistant": {
       "open": "Poser une question à l'Assistant",
@@ -6044,7 +6048,30 @@
       "unlimitedListings": "Annonces actives en illimité",
       "stockImport": "Import du stock par fichier"
     },
-    "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture."
+    "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture.",
+    "compare": {
+      "title": "Ce que vous obtenez dès le premier jour",
+      "feature": "Inclus",
+      "unlimited": "Illimité",
+      "monthlyOrYearly": "Mensuel ou annuel",
+      "days": "{days, number} jours, sans reconduction",
+      "yes": "Inclus",
+      "no": "Non inclus",
+      "soon": "Bientôt",
+      "note": "« Bientôt » : annoncé, pas encore disponible ; le prix ne change pas à son arrivée. Les crédits inclus sont mensuels pour les abonnements et valables pour la durée du Pass.",
+      "rows": {
+        "listings": "Annonces actives",
+        "photos": "Photos par annonce",
+        "credits": "Crédits de visibilité inclus",
+        "featured": "Annonces À la Une incluses (7 jours)",
+        "storefront": "Vitrine vérifiée : fiche FR/AR, horaires, bannière, rayons, sélection épinglée",
+        "contact": "Messages et numéro depuis la vitrine, « Suivre la boutique »",
+        "stats": "Statistiques : visites, vues, messages, numéros affichés",
+        "stock": "Import du stock par fichier",
+        "commitment": "Durée",
+        "logo": "Logo de la boutique"
+      }
+    }
   },
   "Withdrawal": {
     "metaTitle": "Rétractation d'un achat de crédits",

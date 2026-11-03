@@ -8,7 +8,7 @@ import { useExamplesHidden } from "@/components/examples/use-examples";
 import { useSearchNavigation } from "../search-navigation";
 import { JOB_SEEKER_SUBCATEGORY, type MapListing } from "./map-listings";
 import { SHEET_SNAPS, type SheetSnap } from "./sheet";
-import { browserViewContext, initialView, mapPossible, rememberView, viewKey, type SearchMapVariant, type SearchView } from "./view-mode";
+import { DESKTOP_QUERY, browserViewContext, initialView, mapPossible, rememberView, viewKey, type SearchMapVariant, type SearchView } from "./view-mode";
 
 export type { SearchMapVariant } from "./view-mode";
 
@@ -18,7 +18,7 @@ export type { SearchMapVariant } from "./view-mode";
 // the list panel folded or not, the height of the phone sheet. The CSS reads it from data attributes
 // (globals.css, `search-map`).
 
-export const DESKTOP_QUERY = "(min-width: 64rem)";
+export { DESKTOP_QUERY };
 
 interface SearchMapState {
   variant: SearchMapVariant;

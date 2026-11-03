@@ -148,7 +148,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   {featuredRows.length > 0 ? (
                     <section aria-labelledby="home-featured-rows" data-testid="home-featured-rows" className="flex flex-col gap-1">
                       <FeaturedHeading id="home-featured-rows" className="px-2" />
-                      <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={2} label={own("featuredRows")} />
+                      <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={own("featuredRows")} />
                     </section>
                   ) : null}
                   {recentRows.length > 0 ? (
@@ -157,7 +157,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         {t("recent.title")}
                       </h2>
                       <ExamplesHiddenNotice className="px-2" />
-                      <ResultRows listings={recentRows} cards={cards} renderAction={rowFavorite} priorityCount={featuredRows.length > 0 ? 0 : 2} label={t("recent.title")} />
+                      <ResultRows listings={recentRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={t("recent.title")} />
                     </section>
                   ) : null}
                   <Button asChild variant="outline" className="mx-2">

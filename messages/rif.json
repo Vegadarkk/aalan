@@ -5474,6 +5474,7 @@
       "pickedBlocked": "Lmudda-a ɣar-s ussan war yellin: agence ad dak-tini min tezmer ad dak-tefk.",
       "request": "Ssuter ussan-a",
       "clear": "Kkes",
+      "exampleNoRequest": "Annonce n umedya: war tzemmreḍ ad tazneḍ ca n usuter.",
       "home": {
         "updatedOn": "Ttwarun s bab n annonce, ttwasbedden deg {date}.",
         "stale": "Ad yettwasentem ma yella d bab n annonce (abeddel aneggaru deg {date}).",

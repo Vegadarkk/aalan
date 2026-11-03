@@ -94,6 +94,33 @@ CPU pendant le n° 2 (moyenne par minute, `load/sampler-read.sh`) :
 au n° 3 (+17 %) et 13 le 30 octobre. Le web utilise toute sa limite (1,4 cœur sur 1,5) ; chaque page
 réussie coûte environ 145 ms de CPU sous charge, contre 170 au n° 3.
 
+## 3 novembre 2026 (n° 5, après l'optimisation du rendu)
+
+- Staging au commit `8d447a1`, qui contient l'optimisation du rendu (#280 : 64 à 50 ms de CPU par
+  page en profil local, pages identiques). Mêmes limites que la production, 5 001 documents
+  Firestore et 50 192 dans l'index.
+- Un passage à 09:23 UTC (run 41610656700), CPU mesuré pendant. Règle Cloudflare, limites et jeu de
+  données défaits après (index revenu à 192).
+
+| Scénario | Demandé | Envoyé | Réussi | Médiane | p95 | Seuil |
+| --- | --- | --- | --- | --- | --- | --- |
+| Pages hors cache | 40/s pendant 3 min | 3 500 | 64,8 % | 14,1 s | 20,1 s | p95 < 500 ms, échecs < 1 % |
+| Recherches | 50/s pendant 3 min | 8 892 | 97,5 % | 119 ms | 917 ms | p95 < 300 ms, échecs < 1 % |
+| Accueil en cache (chauffe) | 5/s pendant 1 min | environ 300 | non vérifié | 170 ms | 1,16 s | aucun |
+
+3 817 itérations ne sont pas parties.
+
+| Minute | Phase | VM (2 cœurs) | web | Meilisearch | cloudflared |
+| --- | --- | --- | --- | --- | --- |
+| 2 | chauffe puis pages | 32 % | 0,45 | 0,03 | 0,06 |
+| 3-5 | pages | 88-91 % | 1,32-1,44 | 0,17-0,20 | 0,09-0,11 |
+| 6-8 | recherches | 34-45 % | 0,27-0,38 | 0,23-0,30 | 0,07-0,08 |
+| pic | | | 1,56 | 0,36 | 0,21 |
+
+**Verdict : échec.** Environ **12,6 pages réussies par seconde** (2 267 en 3 minutes), contre 9,9
+au n° 4 (+27 %). Chaque page réussie coûte environ 110 ms de CPU sous charge, contre 145 au n° 4.
+Les recherches s'améliorent aussi (p95 de 2,82 s à 917 ms, 2,5 % d'échecs contre 4,2 %).
+
 ## Lecture
 
 - Le 30 octobre, le rendu des pages hors cache sature à environ **13 pages réussies par seconde** (2 400 en
@@ -136,6 +163,11 @@ réussie coûte environ 145 ms de CPU sous charge, contre 170 au n° 3.
   environ 37 ms de CPU par page sous charge, soit quatre fois moins qu'aujourd'hui et moins que le
   rendu du 30 octobre (55 ms hors charge) : déduction, l'objectif de la spec n'est pas atteignable sur
   la VM gratuite sans changer la façon de rendre les pages.
+- N° 5 : le gain du profil (-22 %) se retrouve sous charge (-24 % de CPU par page réussie). Il
+  reste trois fois trop de CPU pour 40 pages/s hors cache. Les 219 recherches en échec viennent,
+  par déduction, du même chevauchement qu'au n° 4 : la phase de recherche démarre pendant que les
+  pages en retard finissent (jusqu'à 60 s), sur le même processus web ; seules, les recherches
+  restent à 0,3 cœur de web et 119 ms de médiane. Pas de passage de recherche seul pour le prouver.
 
 ## Seuil de bascule
 
@@ -143,14 +175,14 @@ La production met les pages publiques anonymes en cache chez Cloudflare (`infra/
 TTL de l'origine) et en ISR : seuls les premiers passages et les revalidations arrivent au rendu.
 Seuil retenu, en attendant un nouveau test : préparer la bascule (ou les améliorations ci-dessous)
 quand les pages rendues par l'origine (HTML en `MISS` ou `EXPIRED` dans Cloudflare) dépassent
-**6 par seconde** en pointe, environ 60 % de la saturation mesurée le 2 novembre (n° 4 : 9,9 pages/s ;
-le seuil était de 5 après le n° 3 et de 8 après le 30 octobre). Estimation, à refaire après chaque changement du rendu.
+**7 par seconde** en pointe, environ 60 % de la saturation mesurée le 3 novembre (n° 5 : 12,6 pages/s ;
+le seuil était de 6 après le n° 4, 5 après le n° 3 et 8 après le 30 octobre). Estimation, à refaire après chaque changement du rendu.
 
 ## Pistes avant un nouveau test
 
 1. ~~Deux processus web~~ : fait (#232), la capacité de rendu suit, mais le gain est mangé par le coût
    par page (n° 3).
-2. Guide des prix en cache par comparables et zone, plus seulement par annonce ; pages catégorie et
-   ville en cache entre langues.
+2. ~~Guide des prix en cache par comparables et zone, plus seulement par annonce ; pages catégorie et
+   ville en cache entre langues~~ : fait (#280), avec les autres allègements du rendu (n° 5).
 3. Profiler un rendu (`--cpu-prof` sur le staging) : environ 170 ms de CPU par page au 31 octobre,
    80 ms au 30. Fait le 2 novembre (voir « Lecture ») : le pied de page, allégé (#250).

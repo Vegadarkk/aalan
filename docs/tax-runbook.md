@@ -216,6 +216,10 @@ indiqué. Le fil qui t'y accompagne donne la ligne exacte. Aucune valeur ne pass
 Sur le staging, avec la sandbox Stripe et le projet RevenueCat du staging (événements `SANDBOX` seulement). Chaque
 test note l'heure, l'identifiant de l'événement et le résultat dans le fil qui les mène.
 
+Avant les tests : les prix Stripe de la sandbox et `salesEnabled` s'écrivent dans le Firestore du staging avec
+`node scripts/runtime-config.ts staging pricing <fichier.json>` puis `... staging flags <fichier.json>` (essai à
+blanc, puis `--apply`). Le script refuse d'ouvrir les ventes en production.
+
 - [ ] **Achat d'un pack** par le lien de paiement (carte de test `4242 4242 4242 4242`) : crédits versés une fois,
       commande `paid`, consentement enregistré, reçu RevenueCat.
 - [ ] **Abonnement Pro** par Stripe Checkout, puis **renouvellement** : Stripe ne raccourcit pas les périodes en

@@ -1,5 +1,5 @@
-import { z } from "@/lib/zod";
-import { DEFAULT_LEGAL, type LegalConfig } from "@/config/legal";
+import { z } from "../lib/zod.ts";
+import { DEFAULT_LEGAL, type LegalConfig } from "./legal.ts";
 
 // Quotas per seller type and Pro plan (architecture §8, design D5), option prices and credit packs
 // (phase 7 design §5, §6). Live values will come from Firestore `config/pricing` (admin-edited, journaled); this

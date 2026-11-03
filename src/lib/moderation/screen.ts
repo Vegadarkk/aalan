@@ -4,6 +4,7 @@ import type { ModerationFlag } from "@/lib/contracts/listings";
 import { findContacts } from "@/lib/moderation/contacts";
 import { quotesCreditWithoutApr } from "@/lib/moderation/credit";
 import { rentalReviewReasons } from "./rental";
+import { findOffsitePayment, spellsPhoneNumber } from "./scam";
 import { findPhoneNumbers } from "@/lib/moderation/phones";
 import { containsProhibited } from "@/lib/moderation/prohibited";
 import { DEFAULT_RISK_RULES, decideState, riskScore, sortFlags } from "@/lib/moderation/risk";
@@ -149,6 +150,15 @@ export function screenListing(input: ScreenInput, ctx: ScreenContext): ScreenRes
       // Dagger words are expected in the adults-only subcategory: noted for the moderator, no flag.
       if (!(adultsOnly && group === "weapons")) flags.add("prohibited_soft");
       note(`prohibited soft:${group} in ${field.path}`);
+    }
+    // Scam signals (audit zone 7 P2-1, B5): a moderator sees them before the listing goes public.
+    for (const term of findOffsitePayment(field.text)) {
+      flags.add("offsite_payment");
+      note(`offsite payment "${term}" in ${field.path}`);
+    }
+    if (spellsPhoneNumber(field.text)) {
+      flags.add("phone_in_words");
+      note(`phone number spelled out in ${field.path}`);
     }
     const sensitive = detectSensitiveDetailed(field.text);
     if (sensitive.length > 0) {

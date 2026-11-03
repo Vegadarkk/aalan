@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ErrorBanner } from "@/components/feedback/error-banner";
+import { InlineError } from "@/components/feedback/inline-error";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { inputClassName } from "@/components/ui/input";
@@ -32,6 +33,9 @@ const MESSAGES: Record<string, string> = {
 };
 
 type Choice = "approve" | "reject";
+
+/** From this risk score an approval asks the moderator to confirm the signals were checked (audit zone 7 P2-2, B5). */
+export const CONFIRM_APPROVAL_SCORE = 80;
 
 /**
  * What approving does, in the moderator's words (lifecycle `approvalOutcome`): a publication or a
@@ -74,17 +78,25 @@ interface ModerationDecisionFormProps {
   approval: ApprovalOutcome;
   /** Current expiry (ISO), quoted when an approved edit keeps it. */
   expiresAt: string | null;
+  /** Highest risk score of the hold and of the latest screening. */
+  riskScore: number;
 }
 
-/** Approve or reject a held listing; one explicit submit whose label names the outcome. */
-export function ModerationDecisionForm({ listingId, version, approval, expiresAt }: ModerationDecisionFormProps) {
+/**
+ * Approve or reject a held listing; one explicit submit whose label names the outcome. Nothing is
+ * chosen beforehand (a held listing was held for a reason), and a high-risk approval needs a
+ * confirmation box (audit zone 7 P2-2, synthesis B5).
+ */
+export function ModerationDecisionForm({ listingId, version, approval, expiresAt, riskScore }: ModerationDecisionFormProps) {
   const router = useRouter();
   const groupId = useId();
-  const [choice, setChoice] = useState<Choice>("approve");
+  const [choice, setChoice] = useState<Choice | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const highRisk = riskScore >= CONFIRM_APPROVAL_SCORE;
   const [reason, setReason] = useState<RejectReasonCode | "">("");
   const [details, setDetails] = useState("");
   const [note, setNote] = useState("");
-  const [fieldError, setFieldError] = useState<{ reason?: string; details?: string }>({});
+  const [fieldError, setFieldError] = useState<{ choice?: string; reason?: string; details?: string; confirm?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const approveText = approveCopy(approval, expiresAt);
@@ -94,6 +106,14 @@ export function ModerationDecisionForm({ listingId, version, approval, expiresAt
   ];
 
   function validate(): ModerationDecisionRequest | null {
+    if (choice === null) {
+      setFieldError({ choice: "Choisissez d'abord de publier ou de refuser l'annonce." });
+      return null;
+    }
+    if (choice === "approve" && highRisk && !confirmed) {
+      setFieldError({ confirm: "Cochez la case pour confirmer la publication d'une annonce à risque élevé." });
+      return null;
+    }
     if (choice === "approve") return { action: "approve", version, ...(note.trim() ? { note: note.trim() } : {}) };
     if (!reason) {
       setFieldError({ reason: "Choisissez le motif du refus." });
@@ -139,7 +159,17 @@ export function ModerationDecisionForm({ listingId, version, approval, expiresAt
               choice === option.value ? (option.value === "approve" ? "border-structure bg-structure/5" : "border-danger bg-danger-surface") : "border-border hover:border-border-strong",
             )}
           >
-            <input type="radio" name="decision" value={option.value} checked={choice === option.value} onChange={() => setChoice(option.value)} className="mt-1 size-4 accent-current" />
+            <input
+              type="radio"
+              name="decision"
+              value={option.value}
+              checked={choice === option.value}
+              onChange={() => {
+                setChoice(option.value);
+                setFieldError({});
+              }}
+              className="mt-1 size-4 accent-current"
+            />
             <span className="flex flex-col gap-0.5">
               <span className="font-medium">{option.label}</span>
               <span className="text-sm text-foreground-muted">{option.description}</span>
@@ -147,11 +177,25 @@ export function ModerationDecisionForm({ listingId, version, approval, expiresAt
           </label>
         ))}
       </div>
+      {fieldError.choice ? <InlineError>{fieldError.choice}</InlineError> : null}
 
-      {choice === "approve" ? (
+      {choice === null ? null : choice === "approve" ? (
+        <>
+          {highRisk ? (
+            <div className="flex flex-col gap-1.5 rounded-md border border-warning bg-warning-surface p-3">
+              <label className="flex cursor-pointer items-start gap-3 text-sm">
+                <input type="checkbox" name="confirm" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} aria-invalid={fieldError.confirm ? true : undefined} className="mt-0.5 size-4 shrink-0 accent-current" />
+                <span>
+                  Score de risque {riskScore} sur 100 : j&apos;ai vérifié chaque signal et le contenu de l&apos;annonce, la publication est justifiée.
+                </span>
+              </label>
+              {fieldError.confirm ? <InlineError>{fieldError.confirm}</InlineError> : null}
+            </div>
+          ) : null}
         <Field label="Note interne" hint="Gardée dans le dossier de la décision, jamais envoyée au vendeur.">
           <textarea name="note" rows={2} maxLength={DECISION_TEXT_MAX} value={note} onChange={(event) => setNote(event.target.value)} className={cn(inputClassName, "h-auto min-h-16 py-2")} />
         </Field>
+        </>
       ) : (
         <>
           <Field label="Motif" required error={fieldError.reason}>
@@ -176,8 +220,8 @@ export function ModerationDecisionForm({ listingId, version, approval, expiresAt
       )}
 
       {error ? <ErrorBanner title={error} /> : null}
-      <Button type="submit" variant={choice === "approve" ? "structure" : "danger"} loading={loading}>
-        {choice === "approve" ? approveText.submit : REJECT.submit}
+      <Button type="submit" variant={choice === "reject" ? "danger" : "structure"} loading={loading} disabled={choice === null}>
+        {choice === null ? "Choisissez une décision" : choice === "approve" ? approveText.submit : REJECT.submit}
       </Button>
     </form>
   );

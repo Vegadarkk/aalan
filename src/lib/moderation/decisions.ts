@@ -151,6 +151,8 @@ export const FLAG_LABELS: Record<ModerationFlag, string> = {
   rental_review: "Location à vérifier",
   promo_check: "Promotion de plus de 70 %",
   work_abroad: "Emploi à l'étranger",
+  offsite_payment: "Paiement hors plateforme",
+  phone_in_words: "Numéro écrit en lettres",
 };
 
 export const DECISION_TEXT_MAX = 500;

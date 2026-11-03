@@ -26,6 +26,8 @@ const FLAGS: Record<MailLocale, Record<string, string>> = {
     rental_review: "location de véhicule à vérifier : location avec chauffeur, pièce d'identité ou chèque en blanc demandé en garantie, ou véhicule au-delà de l'âge limite des flottes de location",
     promo_check: "promotion de plus de 70 % : un modérateur vérifie le prix de départ avant la remise en ligne",
     work_abroad: "offre d'emploi à l'étranger : un modérateur vérifie les mentions du visa du ministère chargé du Travail et de l'agence de recrutement avant la mise en ligne",
+    offsite_payment: "paiement demandé par un réseau de transfert d'argent ou avant l'envoi de l'article : un modérateur vérifie l'annonce avant sa mise en ligne",
+    phone_in_words: "numéro de téléphone écrit en toutes lettres : le contact passe par la messagerie Aalan, un modérateur vérifie l'annonce avant sa mise en ligne",
   },
   ar: {
     prohibited_kw: "ذكر غرض أو خدمة ممنوعة على Aalan",
@@ -45,6 +47,8 @@ const FLAGS: Record<MailLocale, Record<string, string>> = {
     rental_review: "كراء سيارة يحتاج إلى مراجعة: كراء مع سائق، أو طلب وثيقة هوية أو شيك على بياض كضمان، أو سيارة تجاوزت السن المسموح بها لأساطيل الكراء",
     promo_check: "تخفيض يفوق 70 %: يتحقق مشرف من الثمن الأصلي قبل إعادة النشر",
     work_abroad: "عرض عمل في الخارج: يتحقق مشرف من ذكر تأشيرة الوزارة المكلفة بالشغل ووكالة التشغيل قبل النشر",
+    offsite_payment: "دفع مطلوب عبر شبكة لتحويل الأموال أو قبل إرسال المنتوج: يراجع مشرف الإعلان قبل نشره",
+    phone_in_words: "رقم هاتف مكتوب بالحروف: يتم التواصل عبر رسائل Aalan، ويراجع مشرف الإعلان قبل نشره",
   },
 };
 

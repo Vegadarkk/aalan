@@ -121,6 +121,37 @@ réussie coûte environ 145 ms de CPU sous charge, contre 170 au n° 3.
 au n° 4 (+27 %). Chaque page réussie coûte environ 110 ms de CPU sous charge, contre 145 au n° 4.
 Les recherches s'améliorent aussi (p95 de 2,82 s à 917 ms, 2,5 % d'échecs contre 4,2 %).
 
+## 3 novembre 2026 (n° 6, après la deuxième passe sur le rendu)
+
+- Staging au commit `9c16a92` (#288 : traductions envoyées par page, empreintes CSP calculées sur
+  les octets, cache des formats de traduction partagé ; 37 à 33 ms de CPU par page en profil local,
+  pages identiques). Mêmes limites que la production, 5 001 documents Firestore et 50 192 dans
+  l'index.
+- Un passage à 13:59 UTC (run 41649297362), CPU mesuré pendant. Règle Cloudflare, limites et jeu de
+  données défaits après (index revenu à 192).
+
+| Scénario | Demandé | Envoyé | Réussi | Médiane | p95 | Seuil |
+| --- | --- | --- | --- | --- | --- | --- |
+| Pages hors cache | 40/s pendant 3 min | 3 830 | 66,1 % | 14,7 s | 18,8 s | p95 < 500 ms, échecs < 1 % |
+| Recherches | 50/s pendant 3 min | 8 871 | 96,8 % | 159 ms | 1,50 s | p95 < 300 ms, échecs < 1 % |
+| Accueil en cache (chauffe) | 5/s pendant 1 min | environ 300 | non vérifié | 174 ms | 452 ms | aucun |
+
+3 501 itérations ne sont pas parties.
+
+| Minute | Phase | VM (2 cœurs) | web | Meilisearch | cloudflared |
+| --- | --- | --- | --- | --- | --- |
+| 3 | chauffe puis pages | 55 % | 0,86 | 0,08 | 0,07 |
+| 4-5 | pages | 91 % | 1,37-1,40 | 0,18-0,20 | 0,10 |
+| 6 | fin des pages, recherches | 73 % | 0,98 | 0,25 | 0,11 |
+| 7-8 | recherches | 41-43 % | 0,34-0,37 | 0,30 | 0,08 |
+| pic | | | 1,59 | 0,33 | 0,17 |
+
+**Verdict : échec.** Environ **14,1 pages réussies par seconde** (2 532 en 3 minutes), contre 12,6
+au n° 5 (+12 %) et 9,9 au n° 4. Chaque page réussie coûte environ 99 ms de CPU sous charge, contre
+110 au n° 5. Les recherches reculent un peu (p95 de 917 ms à 1,50 s, 3,2 % d'échecs contre 2,5 %) ;
+une partie des échecs sont des connexions coupées entre k6 et Cloudflare (`connection reset by
+peer`) pendant la phase de recherche, cause non établie.
+
 ## Lecture
 
 - Le 30 octobre, le rendu des pages hors cache sature à environ **13 pages réussies par seconde** (2 400 en
@@ -168,6 +199,11 @@ Les recherches s'améliorent aussi (p95 de 2,82 s à 917 ms, 2,5 % d'échecs con
   par déduction, du même chevauchement qu'au n° 4 : la phase de recherche démarre pendant que les
   pages en retard finissent (jusqu'à 60 s), sur le même processus web ; seules, les recherches
   restent à 0,3 cœur de web et 119 ms de médiane. Pas de passage de recherche seul pour le prouver.
+- N° 6 : le gain du profil (-11 %) se retrouve sous charge (-10 % de CPU par page réussie). À
+  sortie identique, il ne reste que des gains marginaux : le coût suit la taille de ce que React
+  sérialise et rend par page. Atteindre 40 pages/s demanderait de changer ce qui est rendu (cartes
+  plus légères, annuaire du pied de page hors du flux React) ou le modèle (cache plus long en
+  bordure, rendu en flux), ou plus de CPU : décision du propriétaire.
 
 ## Seuil de bascule
 
@@ -175,8 +211,8 @@ La production met les pages publiques anonymes en cache chez Cloudflare (`infra/
 TTL de l'origine) et en ISR : seuls les premiers passages et les revalidations arrivent au rendu.
 Seuil retenu, en attendant un nouveau test : préparer la bascule (ou les améliorations ci-dessous)
 quand les pages rendues par l'origine (HTML en `MISS` ou `EXPIRED` dans Cloudflare) dépassent
-**7 par seconde** en pointe, environ 60 % de la saturation mesurée le 3 novembre (n° 5 : 12,6 pages/s ;
-le seuil était de 6 après le n° 4, 5 après le n° 3 et 8 après le 30 octobre). Estimation, à refaire après chaque changement du rendu.
+**8 par seconde** en pointe, environ 60 % de la saturation mesurée le 3 novembre (n° 6 : 14,1 pages/s ;
+le seuil était de 7 après le n° 5, 6 après le n° 4, 5 après le n° 3 et 8 après le 30 octobre). Estimation, à refaire après chaque changement du rendu.
 
 ## Pistes avant un nouveau test
 

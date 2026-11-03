@@ -42,7 +42,7 @@ const restKeyOf = (rest: string[] | undefined) => (rest ?? []).join("/");
 const load = cache(async (restKey: string) => {
   const filter = parseDirectorySegments(restKey ? restKey.split("/") : []);
   if (!filter) return null;
-  return { filter, shops: await directoryShops() };
+  return { filter, shops: await directoryShops(Date.now(), { fresh: true }) };
 });
 
 /** The translator and the H1 of a filter: "Agences immobilières à Casablanca". */

@@ -51,14 +51,15 @@ function toShop(profile: ProProfileRecord, owner: UserRecord): DirectoryShop {
   };
 }
 
-/** One process-wide copy for 5 minutes, the ISR period: the directory (3 locales, its filter
- *  pages) and the home page's row share it instead of each reading every shop again. */
+/** One process-wide copy for 5 minutes, the ISR period: the home page's row and the shop names of
+ *  listing cards share it instead of each reading every shop again. The directory reads afresh
+ *  (`fresh`), as before, and refreshes the copy: a new shop is listed on its next render. */
 const SHARED_TTL_MS = 5 * 60_000;
 let shared: { at: number; shops: Promise<DirectoryShop[]> } | null = null;
 
 /** listDirectoryShops through the shared copy; a failed read is not kept. */
-export function directoryShops(now = Date.now()): Promise<DirectoryShop[]> {
-  if (shared && now - shared.at < SHARED_TTL_MS) return shared.shops;
+export function directoryShops(now = Date.now(), options: { fresh?: boolean } = {}): Promise<DirectoryShop[]> {
+  if (!options.fresh && shared && now - shared.at < SHARED_TTL_MS) return shared.shops;
   const entry = { at: now, shops: listDirectoryShops() };
   shared = entry;
   entry.shops.catch(() => {

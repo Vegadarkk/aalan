@@ -7,7 +7,8 @@ import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { useNumbersTranslations } from "@/i18n/numbers";
 import { intlLocale } from "@/lib/listings/client/format";
-import type { PublicSeller } from "@/lib/listings/public";
+import type { PublicSeller, PublicShopRef } from "@/lib/listings/public";
+import { ShopEmblem } from "@/components/pro/shop-emblem";
 import { cn } from "@/lib/utils";
 
 // The seller block of the listing page (art. 6(3) DSA: who offers the item is always shown) and the
@@ -72,13 +73,14 @@ export interface SellerCardProps {
   locale: Locale;
   /** Contact actions (the client island), under the identity. */
   children?: ReactNode;
-  /** The shop's /boutique segment: a Pro's name and listings lead to its storefront (UX journeys, 6). */
-  storefront?: string | null;
+  /** The Pro's shop: its name and listings lead to its storefront (UX journeys, 6), under its emblem (UX audit B8). */
+  storefront?: PublicShopRef | null;
   className?: string;
 }
 
-export function SellerCard({ seller, fallbackName, fallbackType, locale, children, storefront = null, className }: SellerCardProps) {
+export function SellerCard({ seller, fallbackName, fallbackType, locale, children, storefront: shop = null, className }: SellerCardProps) {
   const t = useNumbersTranslations("ListingPage.seller");
+  const storefront = shop?.segment ?? null;
   const name = seller?.displayName ?? fallbackName;
   const type = seller?.sellerType ?? fallbackType;
   const city = seller?.citySlug ? cityBySlug(seller.citySlug) : undefined;
@@ -86,7 +88,7 @@ export function SellerCard({ seller, fallbackName, fallbackType, locale, childre
   return (
     <section data-testid="seller-card" aria-labelledby="seller-name" className={cn("flex flex-col gap-5 rounded-lg border border-border bg-surface p-5", className)}>
       <div className="flex items-start gap-4">
-        <SellerAvatar name={name} />
+        {shop ? <ShopEmblem name={shop.name} sector={shop.sector} /> : <SellerAvatar name={name} />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-xs text-foreground-muted">{type === "pro" ? t("roleBusiness") : t("roleIndividual")}</p>
           <h2 id="seller-name" className="flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight">

@@ -5921,7 +5921,7 @@
     "choose": "اختر الباقة المعنية.",
     "confirmRequired": "ضع علامة على تصريح التراجع لإرساله.",
     "receiptTitle": "تم استلام طلب التراجع",
-    "receiptNumber": "إشعار بالاستلام رقم {receipt}",
+    "receiptNumber": "إشعار بالاستلام رقم <num>{receipt}</num>",
     "receiptAt": "تم الاستلام في {date}",
     "receiptRemoved": "{count, plural, one {سحب نقطة واحدة غير مستعملة} other {سحب # نقطة غير مستعملة}} من أصل {total}",
     "receiptRefund": "يسترجع {amount, number} {currency} في أجل أقصاه {date}",

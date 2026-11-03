@@ -31,6 +31,9 @@ const WITHDRAWAL_ERRORS = ["withdrawal_not_consumer", "withdrawal_exists", "with
 
 const major = (minor: number) => Math.round(minor) / 100;
 
+/** Keeps a receipt number on one line (it would break at its hyphens). */
+const nowrap = (chunks: React.ReactNode) => <span className="whitespace-nowrap">{chunks}</span>;
+
 export function WithdrawalView() {
   const t = useNumbersTranslations("Withdrawal");
   const apiMessage = useApiErrorMessage();
@@ -207,11 +210,11 @@ export function WithdrawalView() {
               </h2>
               <ol className="flex flex-col divide-y divide-border border-y border-border">
                 {data.receipts.map((item) => (
-                  <li key={item.receipt} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1 py-3.5">
-                    <span className="font-medium tabular-nums">{t("receiptNumber", { receipt: item.receipt })}</span>
-                    <Badge variant={item.status === "refunded" ? "success" : "warning"}>{item.status === "refunded" ? t("statusRefunded") : t("statusRequested")}</Badge>
+                  <li key={item.receipt} className="grid grid-cols-1 items-baseline gap-x-4 gap-y-1 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <span className="font-medium tabular-nums">{t.rich("receiptNumber", { receipt: item.receipt, num: nowrap })}</span>
+                    <Badge variant={item.status === "refunded" ? "success" : "warning"} className="justify-self-start sm:justify-self-end">{item.status === "refunded" ? t("statusRefunded") : t("statusRequested")}</Badge>
                     <span className="text-sm text-foreground-muted">{t("receiptAt", { date: date(item.requestedAt, true) })}</span>
-                    <span className="text-end text-sm text-foreground-muted tabular-nums">
+                    <span className="text-sm text-foreground-muted tabular-nums sm:text-end">
                       {item.refundedAt
                         ? t("receiptRefunded", { amount: major(item.refundMinor), currency: item.currency, date: date(item.refundedAt) })
                         : t("receiptRefund", { amount: major(item.refundMinor), currency: item.currency, date: date(item.refundBy) })}
@@ -238,12 +241,14 @@ function PackRow({ pack, selected, onSelect, date }: { pack: WithdrawablePackVie
       )}
     >
       <input type="radio" name="withdrawal-pack" value={pack.orderId} checked={selected} onChange={onSelect} className="mt-1 size-4 shrink-0 accent-primary" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="font-medium">{t("packLabel", { credits: pack.packCredits, date: date(pack.purchasedAt) })}</span>
-        <span className="text-sm text-foreground-muted">{t("until", { date: date(pack.until) })}</span>
-        <span className={cn("text-sm", empty ? "text-foreground-muted" : "font-medium")}>{empty ? t("removableNone") : t("removable", { count: pack.removableCredits })}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="font-medium">{t("packLabel", { credits: pack.packCredits, date: date(pack.purchasedAt) })}</span>
+          <span className="text-sm text-foreground-muted">{t("until", { date: date(pack.until) })}</span>
+          <span className={cn("text-sm", empty ? "text-foreground-muted" : "font-medium")}>{empty ? t("removableNone") : t("removable", { count: pack.removableCredits })}</span>
+        </span>
+        {!empty ? <span className="text-sm font-semibold tabular-nums sm:shrink-0 sm:text-end">{t("refund", { amount: major(pack.refundMinor), currency: pack.currency })}</span> : null}
       </span>
-      {!empty ? <span className="shrink-0 text-end text-sm font-semibold tabular-nums">{t("refund", { amount: major(pack.refundMinor), currency: pack.currency })}</span> : null}
     </label>
   );
 }
@@ -263,7 +268,7 @@ function ReceiptCard({ ref, receipt, date }: { ref: React.Ref<HTMLElement>; rece
         </Button>
       </div>
       <div className="flex flex-col gap-1.5 text-pretty">
-        <p className="text-lg font-semibold tabular-nums">{t("receiptNumber", { receipt: receipt.receipt })}</p>
+        <p className="text-lg font-semibold tabular-nums">{t.rich("receiptNumber", { receipt: receipt.receipt, num: nowrap })}</p>
         <p>{t("receiptAt", { date: date(receipt.requestedAt, true) })}</p>
         <p>{t("receiptRemoved", { count: receipt.removedCredits, total: receipt.packCredits })}</p>
         <p className="font-medium">{t("receiptRefund", { amount: major(receipt.refundMinor), currency: receipt.currency, date: date(receipt.refundBy) })}</p>

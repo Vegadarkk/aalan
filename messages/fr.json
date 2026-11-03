@@ -5931,7 +5931,7 @@
     "choose": "Choisissez le pack concerné.",
     "confirmRequired": "Cochez la déclaration de rétractation pour l'envoyer.",
     "receiptTitle": "Rétractation reçue",
-    "receiptNumber": "Accusé de réception n° {receipt}",
+    "receiptNumber": "Accusé de réception n° <num>{receipt}</num>",
     "receiptAt": "Reçue le {date}",
     "receiptRemoved": "{count, plural, one {# crédit non utilisé retiré} other {# crédits non utilisés retirés}} sur {total}",
     "receiptRefund": "{amount, number} {currency} remboursés au plus tard le {date}",

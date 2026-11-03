@@ -33,6 +33,8 @@ export default defineConfig({
       TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
       LOG_LEVEL: "silent",
+      // Hermetic: a key leaked from the shell would make the Stripe steps call the real API.
+      STRIPE_SECRET_KEY: "",
       // google-auth-library would probe the GCE metadata server through the proxy (noise only).
       METADATA_SERVER_DETECTION: "none",
     },

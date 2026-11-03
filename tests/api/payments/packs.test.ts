@@ -281,6 +281,21 @@ describe("RevenueCat webhook", () => {
     expect((await getWallet(buyer.uid))?.balance).toBe(-100);
   });
 
+  it("refunds a pack whose CANCELLATION carries an expiration, as RevenueCat Billing sends it", async () => {
+    const buyer = await member();
+    const appUserId = await checkoutOf(buyer);
+    const transactionId = `txn_${randomUUID()}`;
+    store.purchases = [owned(transactionId)];
+    expect((await deliver(rcEvent("NON_RENEWING_PURCHASE", appUserId, transactionId))).status).toBe(200);
+
+    store.purchases = [owned(transactionId, "refunded")];
+    const refund = rcEvent("CANCELLATION", appUserId, transactionId, { cancel_reason: "CUSTOMER_SUPPORT", price_in_purchased_currency: 0, expiration_at_ms: Date.now() });
+    expect((await deliver(refund)).status).toBe(200);
+    expect((await billingEventRef(refund.event.id).get()).data()).toMatchObject({ kind: "subscription", status: "processed", outcome: "refunded" });
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: 0, frozen: false });
+    expect(await getOrder(transactionId)).toMatchObject({ status: "refunded", refundEventId: refund.event.id });
+  });
+
   it("keeps a purchase refunded before it was processed without crediting it", async () => {
     const buyer = await member();
     const appUserId = await checkoutOf(buyer);

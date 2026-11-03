@@ -65,8 +65,8 @@ type Cell = string | boolean | "soon";
 function Mark({ value, labels }: { value: Cell; labels: { yes: string; no: string; soon: string } }) {
   if (value === "soon") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-foreground-muted">
-        <Clock className="size-3.5" aria-hidden="true" />
+      <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-xs font-medium sm:px-2 text-foreground-muted">
+        <Clock className="size-3.5 max-sm:hidden" aria-hidden="true" />
         {labels.soon}
       </span>
     );
@@ -202,14 +202,14 @@ export default async function PricingPage({ params }: { params: Params }) {
             {t("compare.title")}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table aria-labelledby="pricing-compare" data-testid="pricing-compare" className="w-full min-w-[34rem] border-collapse text-sm">
+            <table aria-labelledby="pricing-compare" data-testid="pricing-compare" className="w-full min-w-[21rem] border-collapse text-xs sm:text-sm">
               <thead className="bg-surface-muted">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-start font-medium text-foreground-muted">
+                  <th scope="col" className="w-2/5 px-2 py-3 text-start font-medium text-foreground-muted sm:w-auto sm:px-4">
                     {t("compare.feature")}
                   </th>
                   {columns.map((column) => (
-                    <th key={column.key} scope="col" className="px-4 py-3 text-center font-semibold">
+                    <th key={column.key} scope="col" className="px-1.5 py-3 text-center font-semibold sm:px-4">
                       {column.title}
                     </th>
                   ))}
@@ -218,11 +218,11 @@ export default async function PricingPage({ params }: { params: Params }) {
               <tbody className="divide-y divide-border">
                 {rows.map((row) => (
                   <tr key={row.key}>
-                    <th scope="row" className="px-4 py-3 text-start font-normal">
+                    <th scope="row" className="px-2 py-3 text-start font-normal sm:px-4">
                       {row.label}
                     </th>
                     {row.cells.map((cell, index) => (
-                      <td key={columns[index]?.key ?? index} className="px-4 py-3 text-center">
+                      <td key={columns[index]?.key ?? index} className="px-1.5 py-3 text-center sm:px-4">
                         <Mark value={cell} labels={marks} />
                       </td>
                     ))}

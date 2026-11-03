@@ -6044,7 +6044,7 @@
       "feature": "المتضمَّن",
       "unlimited": "غير محدود",
       "monthlyOrYearly": "شهري أو سنوي",
-      "days": "{days, number} يوما، دون تجديد",
+      "days": "{days, number} يوما",
       "yes": "متضمَّن",
       "no": "غير متضمَّن",
       "soon": "قريبا",

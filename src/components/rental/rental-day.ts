@@ -11,6 +11,11 @@ export function formatRentalDay(day: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
 }
 
+/** "5 nov." of a "YYYY-MM-DD" day (a narrow field). */
+export function formatShortDay(day: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
+}
+
 /** `#du=…&au=…` of the searched days. */
 export function rentalFragment(dates: { from: string; to: string }): string {
   return `#du=${dates.from}&au=${dates.to}`;
@@ -22,4 +27,17 @@ export function fragmentDates(hash: string): { from: string; to: string } | null
   const from = query.get("du");
   const to = query.get("au");
   return from && to ? { from, to } : null;
+}
+
+/** Window event of the listing page: its calendar asks the contact bar for a request on these days. */
+export const RENTAL_DATES_EVENT = "aalan:rental-dates";
+
+/**
+ * The days picked on the listing page's calendar: into the fragment, where the request dialog reads
+ * them, then the contact bar opens that dialog (it listens for RENTAL_DATES_EVENT).
+ */
+export function requestRentalDates(dates: { from: string; to: string }): void {
+  const { pathname, search } = window.location;
+  window.history.replaceState(window.history.state, "", `${pathname}${search}${rentalFragment(dates)}`);
+  window.dispatchEvent(new CustomEvent(RENTAL_DATES_EVENT, { detail: dates }));
 }

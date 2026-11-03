@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { getFirestore } from "firebase-admin/firestore";
 import sharp from "sharp";
-import { PASSWORD, firebase, randomId, signUpAndIn } from "./helpers";
+import { PASSWORD, firebase, pickRentalDays, randomId, signUpAndIn } from "./helpers";
 
 // Car rental listing by a Pro agency (rental pack, design location-voitures/location-voitures.md §2)
 // against the production build and the emulators: a verified agency (seeded, the application is
@@ -254,18 +254,16 @@ test.describe("Car rental", () => {
       const card = fleet.getByTestId("fleet-card").filter({ hasText: title });
       await expect(fleet.locator('[data-class="berline"]')).toContainText(title);
       await expect(card).not.toHaveAttribute("data-status");
-      await fleet.getByLabel("Départ").fill(day(4));
-      await fleet.getByLabel("Retour").fill(day(6));
+      await pickRentalDays(fleet, "Départ", day(4), day(6));
       await expect(card).toHaveAttribute("data-status", "blocked");
       await expect(fleet.getByTestId("rental-fleet-summary")).toContainText("Aucun véhicule libre à ces dates");
       // Days 3 to 5 and 10 are blocked: free from day 6 to day 9, not up to day 11.
-      await fleet.getByLabel("Départ").fill(day(6));
-      await fleet.getByLabel("Retour").fill(day(9));
+      await pickRentalDays(fleet, "Départ", day(6), day(9));
       await expect(card).toHaveAttribute("data-status", "free");
       await expect(card).toContainText("pour 3 jours");
       await expect(fleet.getByTestId("rental-fleet-summary")).toHaveText("Libres à ces dates : 1 véhicule");
       await page.screenshot({ path: "test-results/rental-storefront.png", fullPage: true });
-      await fleet.getByLabel("Retour").fill(day(11));
+      await pickRentalDays(fleet, "Retour", day(11));
       await expect(card).toHaveAttribute("data-status", "blocked");
       await page.setViewportSize({ width: 390, height: 844 });
       await page.screenshot({ path: "test-results/rental-storefront-mobile.png", fullPage: true });
@@ -281,8 +279,8 @@ test.describe("Car rental", () => {
       await expect(renter).toHaveURL(new RegExp(`#du=${day(6)}&au=${day(9)}$`));
       await renter.getByTestId("rental-request-button").click();
       const compose = renter.getByTestId("message-dialog");
-      await expect(compose.getByLabel("Départ")).toHaveValue(day(6));
-      await expect(compose.getByLabel("Retour")).toHaveValue(day(9));
+      await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(6));
+      await expect(compose.getByLabel("Retour")).toHaveAttribute("data-value", day(9));
       await compose.getByLabel("Lieu de remise (facultatif)").fill("Aéroport Marrakech-Ménara");
       await expect(compose.getByLabel("Votre message")).toHaveValue(/du .+ au .+ \(3 jours\), remise à Aéroport Marrakech-Ménara\. Est-ce disponible \?$/u);
       await expect(compose.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });

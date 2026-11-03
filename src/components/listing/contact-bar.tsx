@@ -1,12 +1,13 @@
 "use client";
 
-import { useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useEffectEvent, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, Phone, RotateCw, Settings2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
+import { RENTAL_DATES_EVENT } from "@/components/rental/rental-day";
 import { Button } from "@/components/ui/button";
 import type { RentalUnit } from "@/config/categories";
 import { getPathname, Link } from "@/i18n/navigation";
@@ -230,6 +231,19 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     }
   }
 
+  /** Days picked on the listing page's calendar (they are in the fragment): a fresh request dialog on them. */
+  const [datesKey, setDatesKey] = useState("");
+  const onRentalDates = useEffectEvent((dates: { from: string; to: string }) => {
+    if (!rental || own) return;
+    setDatesKey(`${dates.from}_${dates.to}`);
+    void openComposer("rental");
+  });
+  useEffect(() => {
+    const listener = (event: Event) => onRentalDates((event as CustomEvent<{ from: string; to: string }>).detail);
+    window.addEventListener(RENTAL_DATES_EVENT, listener);
+    return () => window.removeEventListener(RENTAL_DATES_EVENT, listener);
+  }, []);
+
   if (own) {
     return (
       <div data-testid="contact-bar" className="flex flex-col gap-3 rounded-md bg-surface-muted p-4">
@@ -438,7 +452,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       {composeMounted ? (
         <MessageDialog
           // A fresh form per intent (the visit request comes with its own draft) and per picked combination.
-          key={`${intent}:${variant ?? ""}`}
+          key={`${intent}:${variant ?? ""}:${intent === "rental" ? datesKey : ""}`}
           intent={intent === "visit" || intent === "rental" || intent === "offer" ? intent : "message"}
           offerPrice={offer?.price}
           rentalUnit={rental}

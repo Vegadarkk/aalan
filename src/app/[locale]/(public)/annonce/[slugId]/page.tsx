@@ -370,7 +370,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             {jobs ? <JobNotice subcategoryId={listing.subcategoryId} attributes={listing.attributes} /> : null}
             <VehicleDossier subcategoryId={listing.subcategoryId} attributes={listing.attributes} />
             <RentalTerms subcategoryId={listing.subcategoryId} attributes={listing.attributes} locale={locale} />
-            {listing.rental ? <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} /> : null}
+            {listing.rental ? <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} requestable={contactable && datedRental(listing.subcategoryId) !== undefined} /> : null}
 
             <section aria-labelledby="description-title" className="flex flex-col gap-3">
               <h2 id="description-title" className="text-lg font-semibold">

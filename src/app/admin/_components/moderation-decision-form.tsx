@@ -19,6 +19,7 @@ import {
 import type { ApprovalOutcome } from "@/lib/listings/lifecycle";
 import { cn } from "@/lib/utils";
 import { adminFetch, errorMessage } from "./api-client";
+import { formatMorocco } from "../_lib/moderation-format";
 
 export const MODERATION_API = "/api/admin/moderation";
 
@@ -31,8 +32,6 @@ const MESSAGES: Record<string, string> = {
 };
 
 type Choice = "approve" | "reject";
-
-const day = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "Africa/Casablanca" });
 
 /**
  * What approving does, in the moderator's words (lifecycle `approvalOutcome`): a publication or a
@@ -47,7 +46,7 @@ function approveCopy(approval: ApprovalOutcome, expiresAt: string | null): { lab
     case "published":
       return {
         label: "Valider la modification",
-        description: `Modification d'une annonce en ligne : elle y revient avec ses dates${expiresAt ? ` (fin le ${day.format(new Date(expiresAt))})` : ""} ; le vendeur est prévenu.`,
+        description: `Modification d'une annonce en ligne : elle y revient avec ses dates${expiresAt ? ` (fin le ${formatMorocco(expiresAt, "longDate")})` : ""} ; le vendeur est prévenu.`,
         submit: "Valider et remettre en ligne",
       };
     case "paused":

@@ -12,6 +12,7 @@ import { serverEnv } from "@/lib/env";
 import { moderationReview, type ModerationReview, type ModerationReviewPhoto } from "@/lib/listings/moderation-actions";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { staffPhotoSources, usesStaffPhotos } from "../../../_lib/staff-photos";
+import { formatMorocco } from "../../../_lib/moderation-format";
 import { ModerationDecisionForm } from "../../../_components/moderation-decision-form";
 import { catalogLabels, formatPrice, waitingFor } from "../../../_components/moderation-labels";
 import { FlagBadges, HOLD_LABEL } from "../../../_components/moderation-queue";
@@ -22,9 +23,6 @@ import { Facts, Panel } from "../../../_components/panel";
 // the signals that held it, the seller's track record, and the decision form while it is pending.
 
 export const metadata: Metadata = { title: "Vérifier une annonce" };
-
-const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" });
-const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Africa/Casablanca" });
 
 const ACTION_LABEL: Record<ModerationDecisionDoc["action"], string> = {
   remove: "Refus ou retrait",
@@ -119,7 +117,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
           <Badge variant={pending ? "warning" : listing.status === "published" ? "success" : "neutral"}>{labels.status(listing.status)}</Badge>
         </div>
         <p className="text-sm text-foreground-muted">
-          {review.approval ? `${HOLD_LABEL[review.approval.kind]}. ` : null}Référence {listing.id}. Créée le {date.format(new Date(listing.createdAt))}, dernière modification{" "}
+          {review.approval ? `${HOLD_LABEL[review.approval.kind]}. ` : null}Référence {listing.id}. Créée le {formatMorocco(listing.createdAt, "date")}, dernière modification{" "}
           <time dateTime={listing.updatedAt}>{waitingFor(listing.updatedAt)}</time>.
         </p>
       </div>
@@ -185,7 +183,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
             ) : null}
             {moderation.lastDecision ? (
               <p className="text-sm text-foreground-muted">
-                {ACTION_LABEL[moderation.lastDecision.action]} ({moderation.lastDecision.automated ? "automatique" : "modérateur"}) le {dateTime.format(new Date(moderation.lastDecision.createdAt))} : {moderation.lastDecision.facts}
+                {ACTION_LABEL[moderation.lastDecision.action]} ({moderation.lastDecision.automated ? "automatique" : "modérateur"}) le {formatMorocco(moderation.lastDecision.createdAt)} : {moderation.lastDecision.facts}
               </p>
             ) : null}
           </Panel>
@@ -196,7 +194,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
             <Panel title="Décision">
               <p className="text-sm text-foreground-muted">
                 Cette annonce n&apos;attend plus de décision ({labels.status(listing.status).toLowerCase()}
-                {moderation.reviewedAt ? `, vérifiée le ${dateTime.format(new Date(moderation.reviewedAt))}` : ""}).
+                {moderation.reviewedAt ? `, vérifiée le ${formatMorocco(moderation.reviewedAt)}` : ""}).
               </p>
             </Panel>
           )}
@@ -230,7 +228,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
                         <span className="text-foreground-muted"> ({decision.automated ? "automatique" : "modérateur"})</span>
                       </span>
                       <time dateTime={decision.createdAt} className="shrink-0 text-foreground-muted tabular-nums">
-                        {date.format(new Date(decision.createdAt))}
+                        {formatMorocco(decision.createdAt, "date")}
                       </time>
                     </li>
                   ))}

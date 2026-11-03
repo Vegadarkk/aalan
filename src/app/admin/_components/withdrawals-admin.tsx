@@ -9,14 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PAYMENTS_API, type AdminWithdrawalView } from "@/lib/contracts/payments";
 import { adminFetch, errorMessage } from "./api-client";
+import { formatMorocco } from "../_lib/moderation-format";
 
 // Withdrawals from credit packs (CGV §6) waiting for their refund: the unspent credits already left
 // the buyer's wallet. RevenueCat refunds whole purchases only, so the admin refunds the amount shown
 // as a partial refund of the payment in Stripe, then marks it refunded here (Stripe refund id optional).
 
 const MESSAGES: Record<string, string> = { invalid_body: "Identifiant de remboursement Stripe invalide (re_…)." };
-const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" });
-const day = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Africa/Casablanca" });
 
 /** `nowMs`: the page's render time (the "late" mark: less than 3 days left). */
 export function WithdrawalsAdmin({ initial, nowMs }: { initial: AdminWithdrawalView[]; nowMs: number }) {
@@ -65,10 +64,10 @@ export function WithdrawalsAdmin({ initial, nowMs }: { initial: AdminWithdrawalV
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {item.receipt}
                     {item.environment === "SANDBOX" ? <Badge variant="neutral">Test</Badge> : null}
-                    <Badge variant={late ? "danger" : "warning"}>Avant le {day.format(new Date(item.refundBy))}</Badge>
+                    <Badge variant={late ? "danger" : "warning"}>Avant le {formatMorocco(item.refundBy, "date")}</Badge>
                   </span>
                   <span className="text-foreground-muted">
-                    Demandée le {dateTime.format(new Date(item.requestedAt))} · {item.removedCredits} crédits retirés · pack {item.packId}
+                    Demandée le {formatMorocco(item.requestedAt)} · {item.removedCredits} crédits retirés · pack {item.packId}
                   </span>
                   <span className="break-all text-foreground-muted">Commande {item.orderId} · compte {item.accountId}</span>
                   <span className="text-base font-semibold tabular-nums">

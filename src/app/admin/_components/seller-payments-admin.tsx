@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SELLER_PAYMENT_API, type SellerPaymentsAdminView } from "@/lib/contracts/seller-payment";
 import { adminFetch, errorMessage } from "./api-client";
+import { formatMorocco } from "../_lib/moderation-format";
 
 // « Payer chez le vendeur » in the back office (design phase-7/boutique-temporaire.md §2): the hosts
 // an admin has checked belong to a licensed payment provider, and the links waiting for a host's
@@ -15,7 +16,6 @@ import { adminFetch, errorMessage } from "./api-client";
 // the links of that host and tells their owners why. Taking a host off the list hides its buttons.
 
 const MESSAGES: Record<string, string> = { invalid_body: "Liste invalide : un nom de domaine par ligne (ex. paiement.banque.ma), sans https:// ni chemin." };
-const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" });
 
 export function SellerPaymentsAdmin({ initial }: { initial: SellerPaymentsAdminView }) {
   const router = useRouter();
@@ -87,7 +87,7 @@ export function SellerPaymentsAdmin({ initial }: { initial: SellerPaymentsAdminV
                       <span className="break-all font-mono text-foreground-muted" dir="ltr">
                         {item.url}
                       </span>
-                      <span className="text-foreground-muted">depuis le {dateTime.format(new Date(item.since))}</span>
+                      <span className="text-foreground-muted">depuis le {formatMorocco(item.since)}</span>
                     </li>
                   ))}
                 </ul>

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/layout/logo";
 import { Badge } from "@/components/ui/badge";
 import type { StaffRole } from "@/lib/db/repositories/staff";
+import { TIME_ZONE_LABEL } from "../_lib/moderation-format";
 import { AdminNav } from "./admin-nav";
 import { LogoutButton } from "./logout-button";
 
@@ -46,6 +47,9 @@ export function AdminShell({ email, role, children }: AdminShellProps) {
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">{children}</main>
+      <footer className="mx-auto w-full max-w-7xl px-4 pb-6 text-xs text-foreground-muted sm:px-6">
+        Toutes les dates et heures du back-office sont en {TIME_ZONE_LABEL} (Africa/Casablanca), saisies comprises.
+      </footer>
     </div>
   );
 }

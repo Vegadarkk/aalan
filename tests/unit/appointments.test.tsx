@@ -8,7 +8,7 @@ import { AppointmentEventItem } from "@/components/appointments/appointment-even
 import { GRID_MINUTES, SlotPicker, firstOpenDay, timeOff } from "@/components/appointments/slot-picker";
 import { previewText } from "@/components/messages/inbox";
 import { requestedKind } from "@/components/messages/thread-view";
-import { appointmentIcs } from "@/lib/appointments/ics";
+import { appointmentIcs, moroccoFloating } from "@/lib/appointments/ics";
 import { isActive, nextReminderAt, slotsProblem } from "@/lib/appointments/rules";
 import { nextStep } from "@/lib/appointments/service";
 import { moroccoClock, moroccoTime, nextDays } from "@/lib/appointments/time";
@@ -184,14 +184,23 @@ describe("step machine", () => {
 });
 
 describe(".ics", () => {
-  it("is one event in UTC with an alarm two hours before", () => {
-    const ics = appointmentIcs({ id: "abcdefghijkl", slot: { start: Date.UTC(2026, 10, 5, 13, 30), minutes: 30 }, title: "Visite avec Salma, Aalan", description: "Appartement; Maârif", place: "Agence", url: "https://joutiya.ma/fr/messages/x", now: NOW });
-    expect(ics).toContain("DTSTART:20261105T133000Z\r\n");
-    expect(ics).toContain("DTEND:20261105T140000Z\r\n");
+  it("is one event in floating Morocco time with an alarm two hours before", () => {
+    const ics = appointmentIcs({ id: "abcdefghijkl", slot: { start: Date.UTC(2026, 10, 5, 13, 30), minutes: 30 }, title: "Visite avec Salma, Aalan", description: "Appartement; Maârif", place: "Agence", url: "https://aalan.ma/fr/messages/x", now: NOW });
+    // Morocco is UTC+0 since 20 Sept 2026: wall clock 13:30, no Z and no TZID (a phone with stale
+    // zone data cannot shift it).
+    expect(ics).toContain("DTSTART:20261105T133000\r\n");
+    expect(ics).toContain("DTEND:20261105T140000\r\n");
+    expect(ics).not.toContain("TZID");
+    expect(ics).toMatch(/DTSTAMP:\d{8}T\d{6}Z\r\n/);
     expect(ics).toContain("SUMMARY:Visite avec Salma\\, Aalan\r\n");
     expect(ics).toContain("DESCRIPTION:Appartement\\; Maârif\r\n");
     expect(ics).toContain("TRIGGER:-PT2H");
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
+  });
+
+  it("uses Africa/Casablanca (UTC+1) before Morocco's switch to UTC", () => {
+    expect(moroccoFloating(Date.UTC(2026, 5, 1, 9, 0))).toBe("20260601T100000");
+    expect(moroccoFloating(Date.UTC(2026, 10, 5, 23, 59, 30))).toBe("20261105T235930");
   });
 });
 

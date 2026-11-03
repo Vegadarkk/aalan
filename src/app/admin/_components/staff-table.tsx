@@ -1,9 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import type { StaffMember } from "@/lib/auth/staff";
+import { formatMorocco } from "../_lib/moderation-format";
 import { ROLE_LABEL } from "./admin-shell";
 import { RevokeButton } from "./revoke-button";
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
 interface StaffTableProps {
   members: StaffMember[];
@@ -51,13 +50,13 @@ export function StaffTable({ members, selfUid }: StaffTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   {revoked ? (
-                    <Badge variant="danger">Révoqué le {dateFormat.format(new Date(member.revokedAt!))}</Badge>
+                    <Badge variant="danger">Révoqué le {formatMorocco(member.revokedAt!, "date")}</Badge>
                   ) : (
                     <Badge variant="success">Actif</Badge>
                   )}
                 </td>
                 <td className="px-4 py-3 tabular-nums">
-                  <time dateTime={member.createdAt}>{dateFormat.format(new Date(member.createdAt))}</time>
+                  <time dateTime={member.createdAt}>{formatMorocco(member.createdAt, "date")}</time>
                   <span className="block text-xs text-foreground-muted">{member.invitedBy === "script" ? "par le script d'amorçage" : "sur invitation"}</span>
                 </td>
                 <td className="px-4 py-3 text-end">{self || revoked ? null : <RevokeButton uid={member.uid} name={member.displayName} />}</td>

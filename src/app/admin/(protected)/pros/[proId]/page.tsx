@@ -17,6 +17,7 @@ import { ProPhoneCheckForm } from "../../../_components/pro-phone-check-form";
 import { RentalCheckDecisionForm } from "../../../_components/rental-check-decision-form";
 import { ShopPaymentPanel } from "../../../_components/shop-payment-panel";
 import { ShopSocialPanel } from "../../../_components/shop-social-panel";
+import { formatMorocco } from "../../../_lib/moderation-format";
 
 // Review of one Pro application (phase 7 design §4): the shop, the legal identifiers to check
 // against the registry, the KYBC pieces (each opening is journaled), the applicant's account, the
@@ -25,9 +26,6 @@ import { ShopSocialPanel } from "../../../_components/shop-social-panel";
 // the moderator's decision when the check left it in doubt.
 
 export const metadata: Metadata = { title: "Vérifier une demande Pro" };
-
-const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Casablanca" });
-const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "Africa/Casablanca" });
 
 const PIECE_TYPE: Record<string, string> = { "application/pdf": "PDF", "image/jpeg": "Image JPEG", "image/png": "Image PNG" };
 const REGISTRY_LABEL: Record<string, string> = { ompic: "OMPIC", directinfo: "DirectInfo", odco: "ODCo" };
@@ -95,7 +93,7 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
         </h1>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge variant={pending ? "warning" : review.lifecycle === "rejected" ? "danger" : "success"}>{LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle}</Badge>
-          {review.kybc.submittedAt ? <span className="text-foreground-muted">Envoyée le {dateTime.format(new Date(review.kybc.submittedAt))}</span> : null}
+          {review.kybc.submittedAt ? <span className="text-foreground-muted">Envoyée le {formatMorocco(review.kybc.submittedAt)}</span> : null}
           {review.effectsPending ? <Badge variant="danger">Effets de la validation en attente</Badge> : null}
         </div>
       </div>
@@ -184,7 +182,7 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
                   ["Nom affiché", <span key="owner" dir="auto">{owner.displayName}</span>],
                   ["Profil", <span key="public" className="font-mono" dir="ltr">{owner.publicId}</span>],
                   ["Compte", owner.status === "active" ? "Actif" : owner.status],
-                  ["Inscrit le", date.format(new Date(owner.createdAt))],
+                  ["Inscrit le", formatMorocco(owner.createdAt, "date")],
                   ["E-mail", owner.emailVerified ? "Vérifié" : "Non vérifié"],
                   ["Téléphone", phoneVerified ? "Vérifié" : "Non vérifié"],
                 ]}
@@ -206,7 +204,7 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
               ) : null}
               {check ? (
                 <p className="rounded-md bg-surface-muted p-3 text-sm">
-                  Dernier appel le {dateTime.format(new Date(check.at))} au <span dir="ltr">{displayPhone(check.phone)}</span> : {PHONE_OUTCOME_LABEL[check.outcome] ?? check.outcome}.
+                  Dernier appel le {formatMorocco(check.at)} au <span dir="ltr">{displayPhone(check.phone)}</span> : {PHONE_OUTCOME_LABEL[check.outcome] ?? check.outcome}.
                   {check.note ? <span className="mt-1 block text-foreground-muted" dir="auto">{check.note}</span> : null}
                 </p>
               ) : null}
@@ -243,8 +241,8 @@ function RentalCheckPanel({ proId, check, ice }: { proId: string; check: NonNull
         <Badge variant={CHECK_VARIANT[check.status] ?? "warning"}>{RENTAL_CHECK_STATUS_LABEL[check.status] ?? check.status}</Badge>
       </div>
       <p className="text-sm text-foreground-muted">
-        Envoyé le {dateTime.format(new Date(check.submittedAt))}.
-        {check.checkedAt ? ` ${check.method === "ai" ? "Contrôlé par la lecture IA" : "Décidé par un modérateur"} le ${dateTime.format(new Date(check.checkedAt))}.` : ""}
+        Envoyé le {formatMorocco(check.submittedAt)}.
+        {check.checkedAt ? ` ${check.method === "ai" ? "Contrôlé par la lecture IA" : "Décidé par un modérateur"} le ${formatMorocco(check.checkedAt)}.` : ""}
       </p>
       <Facts
         rows={[

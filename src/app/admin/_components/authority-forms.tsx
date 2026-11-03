@@ -17,7 +17,7 @@ import {
   type CreateAuthorityResponse,
 } from "@/lib/decisions/contracts";
 import { cn } from "@/lib/utils";
-import { COUNTRY_LABEL, KIND_LABEL } from "../_lib/moderation-format";
+import { COUNTRY_LABEL, KIND_LABEL, TIME_ZONE_LABEL, moroccoLocalToIso } from "../_lib/moderation-format";
 import { ADMIN_API, adminFetch, errorMessage } from "./api-client";
 
 // Authority requests register (design D17, admin only): record a request (holds, freezes, and for
@@ -39,13 +39,6 @@ const FIELD_MESSAGES: Record<string, string> = {
   reasonId: "Une injonction de retrait demande un motif ; les autres demandes n'en ont pas.",
 };
 
-/** A datetime-local value (the browser's time) as an ISO instant, or undefined when empty or invalid. */
-export function localToIso(value: string): string | undefined {
-  if (!value) return undefined;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
-}
-
 const textarea = cn(inputClassName, "h-auto min-h-20 py-2");
 
 export function AuthorityCreateForm() {
@@ -60,7 +53,7 @@ export function AuthorityCreateForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const dueAt = localToIso(values.dueAt);
+    const dueAt = moroccoLocalToIso(values.dueAt);
     const body = {
       authority: values.authority.trim(),
       country: values.country,
@@ -71,7 +64,7 @@ export function AuthorityCreateForm() {
         .map((line) => line.trim())
         .filter(Boolean),
       identityCheck: { method: values.method.trim() },
-      receivedAt: localToIso(values.receivedAt) ?? "",
+      receivedAt: moroccoLocalToIso(values.receivedAt) ?? "",
       ...(dueAt ? { dueAt } : {}),
       ...(removal && values.reasonId ? { reasonId: values.reasonId } : {}),
       ...(removal && !values.notify ? { notifyAffected: false } : {}),
@@ -128,10 +121,10 @@ export function AuthorityCreateForm() {
         <Field label="Fondement juridique" required error={problems["legalBasis"]}>
           <input name="legalBasis" value={values.legalBasis} onChange={set("legalBasis")} maxLength={500} className={inputClassName} />
         </Field>
-        <Field label="Reçue le" required error={problems["receivedAt"]} hint="Heure de votre navigateur.">
+        <Field label="Reçue le" required error={problems["receivedAt"]} hint={`Date et heure de réception, en ${TIME_ZONE_LABEL}.`}>
           <input type="datetime-local" name="receivedAt" value={values.receivedAt} onChange={set("receivedAt")} className={inputClassName} />
         </Field>
-        <Field label="Échéance" error={problems["dueAt"]} hint="Une injonction terroriste (TCO) se traite dans l'heure.">
+        <Field label="Échéance" error={problems["dueAt"]} hint={`En ${TIME_ZONE_LABEL}. Une injonction terroriste (TCO) se traite dans l'heure.`}>
           <input type="datetime-local" name="dueAt" value={values.dueAt} onChange={set("dueAt")} className={inputClassName} />
         </Field>
       </div>

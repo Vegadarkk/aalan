@@ -361,13 +361,13 @@ test.describe("account", () => {
     expect(fresh).not.toBe(nonce);
   });
 
-  test("/rif/connexion is consistently French, with a notice", async ({ page }) => {
+  test("/rif/connexion is in Tarifit, left to right", async ({ page }) => {
     await page.goto("/rif/connexion");
     await expect(page.locator("html")).toHaveAttribute("lang", "rif-Latn");
-    await expect(page.getByText("Cette partie du site est en français pour le moment.")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: "Se connecter" })).toBeVisible();
-    await expect(page.getByLabel("Adresse e-mail")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+    await expect(page.getByRole("heading", { level: 1, name: "Kcem" })).toBeVisible();
+    await expect(page.getByLabel("Adres n e-mail")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Kcem", exact: true })).toBeVisible();
   });
 
   test("/ar/connexion renders right to left", async ({ page }) => {

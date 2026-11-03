@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { Container } from "@/components/layout/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WizardStart } from "@/components/post/start";
@@ -31,9 +30,7 @@ export default async function PostPage({ params }: Props) {
   if (parsed.invalid) notFound();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    // Tarifit: the account pages are French until a native review (see FrenchOnlyNotice).
-    <Container lang={locale === "rif" ? "fr" : undefined} className="max-w-4xl py-8 lg:py-12">
-      <FrenchOnlyNotice className="mb-8" />
+    <Container className="max-w-4xl py-8 lg:py-12">
       {parsed.id ? (
         // Keyed: another listing id is a fresh wizard (state, autosave, uploads).
         <PostWizard key={parsed.id} listingId={parsed.id} nonce={nonce} />

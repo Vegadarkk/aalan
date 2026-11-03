@@ -23,7 +23,7 @@ import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, LOCALE_TAGS, SITE_NAME, type Locale } from "@/config/site";
 import { STOREFRONT_LISTINGS } from "@/config/storefront";
 import { Link } from "@/i18n/navigation";
-import { numbersLocale, pageLocale } from "@/i18n/params";
+import { pageLocale } from "@/i18n/params";
 import { PROFILE_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
@@ -31,6 +31,7 @@ import { alternates } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
 import { getPublicProfile, profilePath } from "@/lib/listings/public";
 import { mediaBaseUrl } from "@/lib/storage/keys";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Public profile of a seller (§5: /profil/{publicId}, never a uid), their storefront (vitrine-avis
 // §1): house banner, who they are, their "about" text and their listings online, sorted and
@@ -53,7 +54,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const locale = pageLocale(value);
   const profile = await load(publicId);
   if (!profile) return {};
-  const t = await getTranslations({ locale: numbersLocale(locale), namespace: "Profile.meta" });
+  const t = await getNumbersTranslations({ locale, namespace: "Profile.meta" });
   const title = t("title", { name: profile.displayName });
   const description = t("description", { name: profile.displayName, count: profile.publishedCount, date: formatMemberSince(profile.memberSince, locale) });
   const path = `/profil/${profile.publicId}`;
@@ -75,7 +76,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
   if (!profile) notFound();
 
   const [t, categories, legal, flags] = await Promise.all([
-    getTranslations({ locale: numbersLocale(locale), namespace: "Profile" }),
+    getNumbersTranslations({ locale, namespace: "Profile" }),
     getTranslations({ locale, namespace: "Categories" }),
     getLegalConfig(),
     getFlags(),

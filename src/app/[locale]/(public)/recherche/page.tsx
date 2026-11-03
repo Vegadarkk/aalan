@@ -34,7 +34,7 @@ import { datedRental, subcategoryAllowsAds } from "@/config/categories";
 import { availablePromos, type HousePromo } from "@/config/house-promos";
 import type { Locale } from "@/config/site";
 import { SEARCH_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
-import { numbersLocale, pageLocale } from "@/i18n/params";
+import { pageLocale } from "@/i18n/params";
 import { searchMapConfig } from "@/lib/config/public";
 import type { PublicMapConfig } from "@/lib/config/public-types";
 import { getFlags } from "@/lib/config/runtime";
@@ -44,6 +44,7 @@ import { parseSearchParams, SEARCH_MAX_TOTAL_HITS, SEARCH_PATH, searchPath } fro
 import type { SearchCard, SearchResponse } from "@/lib/search/types";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { loadSearch, pageRequest, searchPageTitle } from "./search-state";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Search results (design §2 L3b, D2, D6-D8, D13), map first (Carte vivante, lot 2). Dynamic: the
 // query string is the whole state, rendered on the server from the engine; the filters only
@@ -242,7 +243,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   const applied = outcome.kind === "results" ? outcome.response.params : searched;
   // The count prints a number: Tarifit pages format it as French (no Intl data for "rif").
   const [t, title, translators] = await Promise.all([
-    getTranslations({ locale: numbersLocale(locale), namespace: "SearchPage" }),
+    getNumbersTranslations({ locale, namespace: "SearchPage" }),
     searchPageTitle(locale, applied),
     resultsTranslators(locale),
   ]);

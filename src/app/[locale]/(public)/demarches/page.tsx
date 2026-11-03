@@ -16,6 +16,7 @@ import { linkDisplay } from "@/lib/guide/check";
 import { getGuideState } from "@/lib/guide/state";
 import { alternates } from "@/lib/i18n/metadata";
 import { cn } from "@/lib/utils";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Admin procedures guide home, its own section /demarches (design guide-demarches G1, owner choice
 // 28 Oct): the rubrics by visitor profile and the portals for every procedure. ISR, one hour: the
@@ -40,7 +41,7 @@ export default async function GuideHome({ params }: { params: Params }) {
   const [t, count, state] = await Promise.all([
     getTranslations({ locale, namespace: "Guide" }),
     // Prints a number: Tarifit pages format it as French (no Intl data for "rif").
-    getTranslations({ locale: numbersLocale(locale), namespace: "Guide" }),
+    getNumbersTranslations({ locale, namespace: "Guide" }),
     getGuideState(),
   ]);
   const date = new Intl.DateTimeFormat(LOCALE_TAGS[numbersLocale(locale)], { dateStyle: "long", timeZone: "Africa/Casablanca" });

@@ -47,7 +47,7 @@ describe("LegalPage", () => {
   it("shows the French text with a note on the Tarifit site and for pages without an Arabic text", async () => {
     const rif = await html("rif", page("cgu", "fr"));
     expect(rif).toContain('lang="fr" dir="ltr"');
-    expect(rif).toContain("Un résumé en tarifit");
+    expect(rif).toContain("Aḍris-a s tefransist kan");
     const cgv = await html("ar", page("cgv", "fr"), { language: "fr", provisional: true });
     expect(cgv).toContain("هذا النص متوفر بالفرنسية فقط");
     expect(cgv).toContain("نسخة مؤقتة");

@@ -12,13 +12,14 @@ import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { ShopBand, ShopEmblem } from "@/components/pro/shop-emblem";
-import { numbersLocale, pageLocale } from "@/i18n/params";
+import { pageLocale } from "@/i18n/params";
 import { alternates } from "@/lib/i18n/metadata";
 import { listDirectoryShops } from "@/lib/pro/directory";
 import { DIRECTORY_CITY_CHIPS, countByCity, countBySector, directoryPath, filterShops, parseDirectorySegments, sortShops, type DirectoryFilter } from "@/lib/pro/directory-view";
 import { PRO_SECTORS } from "@/lib/pro/profile-schema";
 import { PRO_LANDING_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
+import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // The directory of verified shops and agencies (owner's choice of 30 Oct 2026, UX journeys
 // counter-review): /boutiques, /boutiques/ville/{city}, /boutiques/activite/{activity} and both.
@@ -47,7 +48,7 @@ const load = cache(async (restKey: string) => {
 
 /** The translator and the H1 of a filter: "Agences immobilières à Casablanca". */
 async function directoryLabels(locale: Locale, filter: DirectoryFilter) {
-  const t = await getTranslations({ locale: numbersLocale(locale), namespace: "Directory" });
+  const t = await getNumbersTranslations({ locale, namespace: "Directory" });
   const cityRecord = filter.city ? cityBySlug(filter.city) : undefined;
   const city = cityRecord ? cityName(cityRecord, locale) : undefined;
   const sector = filter.sector ? t(`sectors.${filter.sector}`) : undefined;

@@ -388,14 +388,14 @@ test.describe("listing page", () => {
     await expect(dialog).toContainText("الصورة 1 من 2");
   });
 
-  test("Tarifit: the French fallback, numbers and plurals formatted in French on the server and in the browser", async ({ page }) => {
+  test("Tarifit: the Tarifit text, numbers and plurals formatted in French on the server and in the browser", async ({ page }) => {
     await page.goto(`/rif/annonce/${fixture.published.slugId}`);
     await expect(page.getByRole("heading", { level: 1, name: fixture.published.title })).toBeVisible();
-    // Server component (seller card) and client island (gallery), both through useNumbersTranslations.
-    await expect(page.getByTestId("seller-card")).toContainText(/\d+ annonces? en ligne/);
-    await expect(page.getByTestId("gallery")).toHaveAttribute("aria-label", "Photos de l'annonce, 2 photos");
-    await page.getByRole("button", { name: "Agrandir la photo" }).first().click();
-    await expect(page.getByRole("dialog", { name: fixture.published.title })).toContainText("Photo 1 sur 2");
+    // Server component (seller card) and client island (gallery), both through the numbers translators.
+    await expect(page.getByTestId("seller-card")).toContainText(/\d+ n annonces? yeddren/);
+    await expect(page.getByTestId("gallery")).toHaveAttribute("aria-label", "Tiwlafin n annonce, 2 n twlafin");
+    await page.getByRole("button", { name: "Semɣer tawlaft" }).first().click();
+    await expect(page.getByRole("dialog", { name: fixture.published.title })).toContainText("Tawlaft 1 zi 2");
     await expect(page.getByRole("heading", { name: ERROR_TITLE })).toHaveCount(0);
   });
 

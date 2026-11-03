@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
-import { FrenchOnlyNotice } from "@/components/auth/french-only-notice";
 import { TransfersReconsent } from "@/components/auth/transfers-reconsent";
 import { Container } from "@/components/layout/container";
 import { redirect } from "@/i18n/navigation";
@@ -37,9 +36,7 @@ export default async function AccountLayout({ children, params }: { children: Re
   if (await needsGate(user.uid)) {
     const legal = await getLegalConfig();
     return (
-      // Tarifit: the account pages are French until a native review (see FrenchOnlyNotice).
-      <Container lang={locale === "rif" ? "fr" : undefined} className="max-w-2xl py-10 lg:py-14">
-        <FrenchOnlyNotice className="mb-8" />
+      <Container className="max-w-2xl py-10 lg:py-14">
         <TransfersReconsent dpo={legal.dpoContact} />
       </Container>
     );

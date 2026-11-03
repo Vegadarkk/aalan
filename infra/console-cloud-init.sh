@@ -1,7 +1,7 @@
 #!/bin/bash
 # First boot of a joutiya-vm created in the OCI console: paste this whole file as its cloud-init
-# script. It runs infra/vm/bootstrap.sh without tunnel tokens, like the launcher Worker (written by
-# `node scripts/oracle-vm.ts launcher`).
+# script. It runs infra/vm/bootstrap.sh without tunnel tokens; `oracle-vm.ts tunnels` adds them
+# (written by `node scripts/oracle-vm.ts console-init`).
 set -euo pipefail
 umask 077
 base64 -d << 'JOUTIYA_BOOTSTRAP' | gunzip > /root/joutiya-bootstrap.sh

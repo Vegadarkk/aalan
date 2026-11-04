@@ -39,6 +39,11 @@ export const ACCOUNT_API = {
   storefront: "/api/account/storefront",
   /** GET -> NotificationSettings; POST NotificationSettingsInput -> NotificationSettings (audit B2). */
   notifications: "/api/account/notifications",
+  /**
+   * POST EmailChangeInput -> EmailChangeResponse (a confirmation link to the new address, Z1-10);
+   * DELETE -> EmailChangeResponse (the pending change cancelled).
+   */
+  email: "/api/account/email",
 } as const;
 
 export const LISTING_API = {

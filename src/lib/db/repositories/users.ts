@@ -299,6 +299,43 @@ export async function deleteAccountDocuments(uid: string): Promise<void> {
   });
 }
 
+/** The pending change of address (Z1-10) of users/{uid}/private/account; null removes it. */
+export async function setEmailChange(uid: string, pending: { newEmail: string; requestedAt: Date; expiresAt: Date } | null): Promise<void> {
+  await privateRef(uid).update({ emailChange: pending ?? FieldValue.delete() });
+  void consume("firestore.writes", 1);
+}
+
+/**
+ * Moves the account to its confirmed new address (Z1-10), in one transaction: the new emailIndex
+ * entry is created (EmailTakenError when another account holds it: nothing written), the private
+ * document takes the address, its hash and loses the pending change, and the old entry goes while
+ * it still points at this uid. The Auth record is updated by the caller.
+ */
+export async function moveAccountEmail(uid: string, newEmail: string, now = new Date()): Promise<void> {
+  const email = newEmail.trim().toLowerCase();
+  const newHash = emailNormHash(email);
+  await db().runTransaction(async (tx) => {
+    const [account, target] = await Promise.all([tx.get(privateRef(uid)), tx.get(emailRef(newHash))]);
+    void consume("firestore.reads", 2);
+    if (!account.exists) throw new HttpError(409, "conflict", "account documents missing");
+    if (target.exists && String(target.get("uid")) !== uid) throw new EmailTakenError(String(target.get("uid")));
+    const oldHash: unknown = account.get("emailNormHash");
+    const old = typeof oldHash === "string" && oldHash && oldHash !== newHash ? await tx.get(emailRef(oldHash)) : null;
+    if (old) void consume("firestore.reads", 1);
+    let writes = 1;
+    if (!target.exists) {
+      tx.create(emailRef(newHash), emailIndexSchema.parse({ uid, createdAt: now }));
+      writes += 1;
+    }
+    tx.update(privateRef(uid), { email, emailNormHash: newHash, emailChange: FieldValue.delete() });
+    if (old?.exists && String(old.get("uid")) === uid) {
+      tx.delete(old.ref);
+      void consume("firestore.deletes", 1);
+    }
+    void consume("firestore.writes", writes);
+  });
+}
+
 /** Translates a repository failure into the API answer (never reveals the other account). */
 export function isEmailTaken(error: unknown): error is EmailTakenError {
   return error instanceof EmailTakenError;

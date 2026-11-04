@@ -21,7 +21,7 @@
 // R2 rights), and this part sends its CORS preflights, which need no token.
 // loadtest --on puts a temporary skip rule first in the WAF custom rules (load test of staging,
 // D17: no edge rate limit, managed rules, Browser Integrity Check or Security Level for requests
-// to staging carrying x-joutiya-loadtest = AALAN_LOADTEST_BYPASS_SECRET, never printed);
+// to staging carrying x-aalan-loadtest = AALAN_LOADTEST_BYPASS_SECRET, never printed);
 // loadtest --off puts waf-rules.json back. zone --check reports the rule as drift while it is on.
 // An existing A, AAAA or CNAME record on a tunnel hostname is only replaced with --replace-dns, and
 // a hostname guarded by Access gets its DNS record only once its Access application exists.
@@ -109,7 +109,7 @@ export function webhookBypass(targets: Targets): string {
   return `${siteHost(targets, "staging")}/api/webhooks/*`;
 }
 export const LOADTEST_RULE_REF = "loadtest_skip";
-export const LOADTEST_HEADER = "x-joutiya-loadtest";
+export const LOADTEST_HEADER = "x-aalan-loadtest";
 
 /** The temporary skip rule of the load test of `host` (staging). The secret is checked first: it goes into an expression. */
 export function loadtestRule(secret: string, host: string): Rule {

@@ -3,12 +3,12 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { serverEnv } from "@/lib/env";
 
 // Load test bypass (phase 6, D17): k6 sends 40 pages and 50 searches a second from one runner IP,
-// far over the per-IP limits. A request whose x-joutiya-loadtest header equals
+// far over the per-IP limits. A request whose x-aalan-loadtest header equals
 // LOADTEST_BYPASS_SECRET skips the page and search limiters, in staging only: the variable is
 // refused at startup in production, and it is set on the VM for the test and removed after
 // (docs/lancement/charge-procedure.md). The Cloudflare side is a temporary Skip rule on the same header.
 
-export const LOADTEST_HEADER = "x-joutiya-loadtest";
+export const LOADTEST_HEADER = "x-aalan-loadtest";
 
 const digest = (value: string): Buffer => createHash("sha256").update(value).digest();
 

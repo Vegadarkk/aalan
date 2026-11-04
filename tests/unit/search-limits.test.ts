@@ -75,7 +75,7 @@ describe("enforceSearchLimit", () => {
     resetServerEnv();
     try {
       const who = client();
-      for (let i = 0; i < RATE_LIMITS["search.device.minute"].points + 5; i += 1) await enforceSearchLimit(request(who, { "x-joutiya-loadtest": secret }));
+      for (let i = 0; i < RATE_LIMITS["search.device.minute"].points + 5; i += 1) await enforceSearchLimit(request(who, { "x-aalan-loadtest": secret }));
       expect(vi.mocked(consumeLimit)).not.toHaveBeenCalled();
       expect(mocks.verify).not.toHaveBeenCalled();
     } finally {

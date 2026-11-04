@@ -91,9 +91,9 @@
         "dsn": "https://d6aa7e09b2945a669af0b118e1203e27@o4512265655746560.ingest.de.sentry.io/4512265664725072"
       },
       "r2": {
-        "quarantine": "joutiya-staging-quarantine",
-        "media": "joutiya-staging-media",
-        "private": "joutiya-staging-private"
+        "quarantine": "aalan-staging-quarantine",
+        "media": "aalan-staging-media",
+        "private": "aalan-staging-private"
       },
       "whatsapp": {
         "wabaId": null,
@@ -107,7 +107,7 @@
         "site": "staging.aalan.ma",
         "www": null,
         "admin": "admin-staging.aalan.ma",
-        "media": "media-staging.joutiya.ma"
+        "media": "media-staging.aalan.ma"
       }
     },
     "prod": {

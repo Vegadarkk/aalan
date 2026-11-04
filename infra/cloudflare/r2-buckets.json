@@ -7,7 +7,7 @@
       "cors": [{ "AllowedOrigins": ["https://aalan.ma", "https://www.aalan.ma"], "AllowedMethods": ["PUT"], "AllowedHeaders": ["Content-Type"], "MaxAgeSeconds": 3600 }],
       "lifecycle": [{ "name": "delete-after-1-day", "prefix": "", "deleteAfterDays": 1 }]
     },
-    "joutiya-staging-quarantine": {
+    "aalan-staging-quarantine": {
       "cors": [{ "AllowedOrigins": ["https://staging.joutiya.ma", "https://staging.aalan.ma"], "AllowedMethods": ["PUT"], "AllowedHeaders": ["Content-Type"], "MaxAgeSeconds": 3600 }],
       "lifecycle": [{ "name": "delete-after-1-day", "prefix": "", "deleteAfterDays": 1 }]
     },
@@ -17,13 +17,13 @@
     "aalan-prod-media": {
       "cors": [{ "AllowedOrigins": ["https://aalan.ma", "https://www.aalan.ma"], "AllowedMethods": ["GET", "HEAD"], "AllowedHeaders": ["Range"], "ExposeHeaders": ["ETag", "Content-Range", "Content-Length"], "MaxAgeSeconds": 3600 }]
     },
-    "joutiya-staging-media": {
+    "aalan-staging-media": {
       "cors": [{ "AllowedOrigins": ["https://staging.joutiya.ma", "https://staging.aalan.ma"], "AllowedMethods": ["GET", "HEAD"], "AllowedHeaders": ["Range"], "ExposeHeaders": ["ETag", "Content-Range", "Content-Length"], "MaxAgeSeconds": 3600 }]
     },
     "aalan-prod-private": {
       "lifecycle": [{ "name": "delete-backups-after-98-days", "prefix": "backups/", "deleteAfterDays": 98 }]
     },
-    "joutiya-staging-private": {
+    "aalan-staging-private": {
       "lifecycle": [{ "name": "delete-backups-after-98-days", "prefix": "backups/", "deleteAfterDays": 98 }]
     },
     "joutiya-dev-private": {

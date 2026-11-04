@@ -157,6 +157,34 @@ au n° 5 (+12 %) et 9,9 au n° 4. Chaque page réussie coûte environ 99 ms de C
 une partie des échecs sont des connexions coupées entre k6 et Cloudflare (`connection reset by
 peer`) pendant la phase de recherche, cause non établie.
 
+## 4 novembre 2026 (n° 7, recherche seule)
+
+- Staging au commit `657f126` (lot 7 de l'audit de la recherche inclus, #346). Mêmes limites que la
+  production, 50 000 documents ajoutés à l'index seul (50 202 au total, aucune écriture Firestore),
+  retirés après (index revenu à 202).
+- Générateur `scripts/load-search.ts` lancé dans le conteneur worker, vers `web:3000` : l'origine
+  seule, sans Cloudflare ni tunnel. Requêtes du jeu de données, une adresse `cf-connecting-ip`
+  différente par requête, limiteurs actifs. Procédure : « Recherche seule » de
+  `charge-procedure.md`.
+
+| Débit demandé | Durée | Envoyé | Réussi | Médiane | p95 | p99 | Seuil p95 < 300 ms |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 50/s | 3 min | 9 000 | 100 % | 12 ms | 51 ms | 78 ms | tenu |
+| 100/s | 1 min | 6 000 | 100 % | 18 ms | 234 ms | 691 ms | tenu |
+| 150/s | 1 min | 8 347 (653 non partis) | 85,9 % (1 179 réponses 503) | 1,64 s | 2,48 s | 4,14 s | échec |
+
+p95 par tranche de 10 s : à 50/s, 229 ms la première (démarrage à froid) puis 50 à 53 ms ; à 100/s,
+710 ms la première puis 124 à 190 ms.
+
+| Débit | VM (2 cœurs) | web | Meilisearch | worker (générateur) |
+| --- | --- | --- | --- | --- |
+| 50/s | 40-45 % | 0,34-0,42 | 0,30 | 0,05-0,07 |
+| 100/s | 79 % | 0,75 (pic 0,93) | 0,59 (pic 0,65) | 0,11 |
+
+**Verdict : objectif tenu à l'origine.** 50 recherches/s donnent un p95 de 51 ms, six fois sous le
+seuil. La saturation arrive entre 100 et 150 recherches/s : à 100/s le web approche 1 cœur (son fil
+JavaScript) et la VM dépasse 70 %.
+
 ## Lecture
 
 - Le 30 octobre, le rendu des pages hors cache sature à environ **13 pages réussies par seconde** (2 400 en
@@ -209,6 +237,12 @@ peer`) pendant la phase de recherche, cause non établie.
   sérialise et rend par page. Atteindre 40 pages/s demanderait de changer ce qui est rendu (cartes
   plus légères, annuaire du pied de page hors du flux React) ou le modèle (cache plus long en
   bordure, rendu en flux), ou plus de CPU : décision du propriétaire.
+- N° 7 : seule, la recherche tient l'objectif avec une large marge (p95 51 ms à 50/s, 234 ms à
+  100/s). Les p95 de 917 ms à 1,50 s des n° 4 à 6 ne viennent donc pas de la recherche elle-même,
+  mais de son chevauchement avec les pages en retard sur le même processus web, et du trajet runner
+  GitHub (États-Unis), Cloudflare puis tunnel, que ce passage ne mesure pas (déduction : les deux
+  causes ne sont pas séparées). Aucun correctif de la recherche n'est nécessaire ; la capacité de
+  recherche suit celle du fil JavaScript du web, environ 100 recherches/s.
 
 ## Seuil de bascule
 

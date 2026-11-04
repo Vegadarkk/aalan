@@ -5146,6 +5146,7 @@
     "failed": "Le porte-monnaie n'a pas pu être chargé.",
     "retry": "Réessayer",
     "unit": "1 crédit = 1 DH TTC",
+    "unitShop": "1 crédit = 1 DH HT",
     "balance": "Crédits achetés",
     "plan": "Crédits de votre offre",
     "planUntil": "Valables jusqu'au {date}, non cumulables",

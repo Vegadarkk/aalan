@@ -404,7 +404,11 @@
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
       "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
       "sessionEndedSuspended": "Tukcimt nnec tekmel: amiḍan nnec yettwaḥbes ar {date} (tasaɛt n Lmeɣrib).",
-      "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s."
+      "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s.",
+      "sessionEndedProValidated": "Taḥanut nnec tettwaqbel: ɛawed kcem ḥima ad teldiḍ tallunt nnec Pro.",
+      "sessionEndedProValidatedBody": "Tukcimt nnec tettwabeddel ḥima ad yeddu ubeddel-a deg umiḍan nnec.",
+      "sessionEndedChanged": "Tukcimt nnec tettwabeddel ḥima ad yeddu ca n ubeddel deg umiḍan nnec.",
+      "sessionEndedChangedBody": "Ɛawed kcem ḥima ad tkemmleḍ."
     },
     "signUp": {
       "title": "Snulfu amiḍan",

@@ -4,7 +4,7 @@ import type * as NextNavigation from "next/navigation";
 import { AppealQueue } from "@/app/admin/_components/appeal-queue";
 import { reasonSummary, ReportQueue, targetName } from "@/app/admin/_components/report-queue";
 import { startClock } from "@/app/admin/_components/sla-timer";
-import { formatSpan, orderByUrgency, slaState } from "@/app/admin/_lib/moderation-format";
+import { actionTone, formatDateTime, formatSpan, orderByUrgency, slaState } from "@/app/admin/_lib/moderation-format";
 import type { AppealQueueItem } from "@/lib/decisions/contracts";
 import type { ReportQueueGroup, ReportQueueItem } from "@/lib/reports/admin";
 
@@ -57,6 +57,16 @@ const text = (html: string) =>
 /** Target keys in the rendered order. */
 const order = (html: string) => [...html.matchAll(/data-target="([^"]+)"/g)].map((match) => match[1]);
 
+describe("decision measures in a list (zone 7 audit P4)", () => {
+  it("keeps 'Aucune mesure' quiet, never in a sanction's tone", () => {
+    expect(actionTone("no_action")).toBe("neutral");
+    expect(actionTone("restore")).toBe("success");
+    expect(actionTone("warn")).toBe("warning");
+    for (const action of ["remove", "restrict_visibility", "suspend_account", "ban", "demote"]) expect(actionTone(action)).toBe("danger");
+    expect(actionTone("unknown")).toBe("neutral");
+  });
+});
+
 describe("SLA arithmetic", () => {
   it("formats spans rounded down", () => {
     expect(formatSpan(30_000)).toBe("moins d'1 min");
@@ -108,6 +118,9 @@ describe("report queue", () => {
     const content = text(html);
     expect(content).toContain("Reste 40 min");
     expect(content).toContain("Reste 30 min");
+    // The absolute due date next to the time left (zone 7 audit P4).
+    expect(content).toContain(`Échéance ${formatDateTime(at(40 * MINUTE))}`);
+    expect(html).toContain(`<time dateTime="${at(40 * MINUTE)}">`);
     expect(content).toContain("2 signalements");
     expect(content).toContain("Signal fort : signalant fiable");
     expect(content).toContain("Masqué en attente");

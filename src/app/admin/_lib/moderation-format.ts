@@ -69,7 +69,18 @@ export const ACTION_LABEL: Record<DecisionView["action"], string> = {
   demote: "Rétrogradation",
 };
 
-export const REPORTER_LABEL = { account: "Membre", visitor: "Visiteur", system: "Système", authority: "Autorité" } as const;
+/**
+ * Badge tone of a decision's measure in a list (zone 7 audit P4): "Aucune mesure" stays quiet so
+ * it never reads as a sanction, a restoration is green, a warning ochre, the other measures red.
+ */
+export function actionTone(action: string): "neutral" | "success" | "warning" | "danger" {
+  if (action === "no_action") return "neutral";
+  if (action === "restore") return "success";
+  if (action === "warn") return "warning";
+  return action in ACTION_LABEL ? "danger" : "neutral";
+}
+
+export const REPORTER_LABEL ={ account: "Membre", visitor: "Visiteur", system: "Système", authority: "Autorité" } as const;
 export const SIGNAL_LABEL: Record<string, string> = {
   trusted: "Signalant fiable",
   multi: "Plusieurs signalants",

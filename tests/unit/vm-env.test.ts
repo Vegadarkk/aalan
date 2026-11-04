@@ -12,6 +12,7 @@ import {
   VM_GENERATED,
   appEnvNames,
   derivedValues,
+  mediaZoneId,
   envPayload,
   envScripts,
   namesScript,
@@ -79,12 +80,23 @@ describe("app.env names", () => {
       GOOGLE_CLOUD_PROJECT: "aalan-staging",
       TURNSTILE_SITE_KEY: "0x4AAAAAAFYY7P8KeaWCGihV",
       MEDIA_BASE_URL: "https://media-staging.joutiya.ma",
+      // The media host's zone (joutiya.ma) for the edge purge of deleted photos.
+      CF_MEDIA_ZONE_ID: targets.shared.cloudflare.zoneId,
     });
     // search-setup writes it with the keys: alone, it would stop the first start.
     expect(staging.MEILI_URL).toBeUndefined();
     const prod = derivedValues("prod", targets);
     expect(prod).toMatchObject({ SITE_URL: "https://joutiya.ma", ADMIN_HOST: "admin.joutiya.ma", MEDIA_BASE_URL: "https://media.joutiya.ma" });
     expect(prod.CSP_REPORT_ONLY).toBeUndefined();
+    expect(prod.CF_MEDIA_ZONE_ID).toBe(targets.shared.cloudflare.zoneId);
+  });
+
+  it("derives the media zone from the host, and none outside the project zones", () => {
+    const shared = targets.shared.cloudflare;
+    expect(mediaZoneId("media.aalan.ma", targets)).toBe(shared.aalanZoneId);
+    expect(mediaZoneId("media.joutiya.ma", targets)).toBe(shared.zoneId);
+    expect(mediaZoneId("media.example.com", targets)).toBeNull();
+    expect(mediaZoneId(null, targets)).toBeNull();
   });
 });
 

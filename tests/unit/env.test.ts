@@ -40,6 +40,8 @@ const deployed: Record<string, string> = {
   R2_BUCKET_PRIVATE: "joutiya-staging-private",
   MEDIA_BASE_URL: "https://media-staging.joutiya.ma",
   BACKUP_AGE_RECIPIENT: "age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+  CF_MEDIA_PURGE_TOKEN: "fake-purge-token",
+  CF_MEDIA_ZONE_ID: "0123456789abcdef0123456789abcdef",
   MEILI_URL: "http://meilisearch:7700",
   MEILI_SEARCH_KEY: "search-key-placeholder",
   MEILI_INDEX_KEY: "index-key-placeholder",

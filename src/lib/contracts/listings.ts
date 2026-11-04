@@ -239,6 +239,8 @@ export interface OwnerPhoto {
   w?: number;
   h?: number;
   blurhash?: string;
+  /** dHash of a ready photo (absent on old photos): the wizard warns of the same photo twice. */
+  hash?: string;
   rejectReason?: UploadRejectReason;
   /** Faces found on a ready photo (absent: none or unchecked): the wizard proposes a crop. */
   faces?: number;

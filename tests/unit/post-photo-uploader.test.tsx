@@ -105,3 +105,37 @@ describe("PhotoUploader faces", () => {
     expect(html).toContain(ar.Listing.photos.faces.body);
   });
 });
+
+describe("PhotoUploader photo notes (zone 3 audit P3-2)", () => {
+  const ready = (key: string, w: number, h: number, hash?: string): PhotoItem => ({
+    key,
+    uploadId: key,
+    status: "ready",
+    progress: 1,
+    previewUrl: null,
+    photo: { id: `${key}xxxxxxxx`, w, h, blurhash: "LEHV6nWB2yk8", ...(hash ? { hash } : {}) },
+  });
+
+  it("warns of a tiny photo and of the same photo twice, on the tile and in one banner", () => {
+    const html = render([ready("a", 1600, 1200, "0123456789abcdef"), ready("b", 50, 50), ready("c", 1600, 1200, "0123456789abcdef")]);
+    expect(html).toContain('data-testid="photo-checks"');
+    expect(html.match(/data-testid="photo-check"/g)).toHaveLength(2);
+    const plain = text(html);
+    expect(plain).toContain("Photo 2 : petite (50 × 50 px)");
+    expect(plain).toContain("Photo 3 : identique à la photo 1.");
+    expect(plain).toContain(fr.Listing.photos.checks.body);
+    expect(plain).toContain(fr.Listing.photos.checks.tileSame);
+    expect(plain).toContain(fr.Listing.photos.checks.tileSmall);
+  });
+
+  it("says nothing for photos of a useful size", () => {
+    const html = render([ready("a", 1600, 1200, "0123456789abcdef"), ready("b", 1200, 1600, "fedcba9876543210")]);
+    expect(html).not.toContain("photo-check");
+  });
+
+  it("says it in Arabic too", () => {
+    const plain = text(render([ready("a", 50, 50)], "ar"));
+    expect(plain).toContain(ar.Listing.photos.checks.tileSmall);
+    expect(plain).toContain(ar.Listing.photos.checks.body);
+  });
+});

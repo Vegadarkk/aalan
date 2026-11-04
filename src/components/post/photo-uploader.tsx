@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
-import { Camera, ChevronLeft, ChevronRight, Crop, ImagePlus, RefreshCw, RotateCcw, ScanFace, Star, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Copy, Crop, ImagePlus, RefreshCw, RotateCcw, ScanFace, Shrink, Star, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { useNumbersTranslations } from "@/i18n/numbers";
 import { blurhashDataUrl } from "@/lib/listings/client/blurhash";
+import { MIN_USEFUL_EDGE_PX, photoWarnings, type PhotoWarning } from "@/lib/listings/client/photo-checks";
 import { ACCEPTED_INPUT_TYPES } from "@/lib/listings/client/prepare-image";
 import { isPhotoBusy, usedSlots, type PhotoItem, type PhotoNotice } from "@/lib/listings/client/store";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,8 @@ import { PhotoCropDialog } from "./photo-crop-dialog";
 // accepts camera capture on phones (OS camera app: no getUserMedia, which Permissions-Policy
 // denies). Moves are announced to screen readers and keep the focus on the moved photo. A ready
 // photo where the local check found a face says so and offers a crop (PhotoCropDialog); kept as
-// is, it sends the listing to a moderator before publication (CGU §7).
+// is, it sends the listing to a moderator before publication (CGU §7). A photo too small to look
+// sharp, or the same photo twice, gets a note that never blocks (zone 3 audit P3-2).
 
 interface PhotoUploaderProps {
   photos: PhotoItem[];
@@ -68,6 +70,7 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
   const cropIndex = photos.findIndex((item) => item.key === cropKey);
   const cropItem = photos[cropIndex];
   const withFaces = photos.filter((item) => hasFaces(item)).length;
+  const warnings = photoWarnings(photos);
 
   // The moved tile changed place in the DOM: give the focus back to the control that moved it.
   useEffect(() => {
@@ -147,6 +150,21 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
           {t(onCrop ? "faces.body" : "faces.bodyNoCrop", { count: withFaces })}
         </ErrorBanner>
       ) : null}
+      {warnings.size > 0 ? (
+        <ErrorBanner tone="warning" title={t("checks.title", { count: warnings.size })}>
+          <ul data-testid="photo-checks" className="flex list-disc flex-col gap-0.5 ps-4">
+            {photos.flatMap((item, index) => {
+              const warning = warnings.get(item.key);
+              if (!warning) return [];
+              const lines: ReactNode[] = [];
+              if (warning.sameAs) lines.push(<li key={`${item.key}-same`}>{t("checks.same", { index: index + 1, other: warning.sameAs })}</li>);
+              if (warning.small) lines.push(<li key={`${item.key}-small`}>{t("checks.small", { index: index + 1, width: warning.small.w, height: warning.small.h, min: MIN_USEFUL_EDGE_PX })}</li>);
+              return lines;
+            })}
+          </ul>
+          <p className="mt-1">{t("checks.body")}</p>
+        </ErrorBanner>
+      ) : null}
 
       <ul ref={list} aria-label={t("list")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {photos.map((item, index) => (
@@ -187,6 +205,7 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
               onRefresh={onRefresh}
               onMove={move}
               onCrop={onCrop ? setCropKey : undefined}
+              warning={warnings.get(item.key)}
             />
           </li>
         ))}
@@ -275,9 +294,11 @@ interface PhotoTileProps {
   onRefresh: (key: string) => void;
   onMove: (key: string, to: number, action: FocusTarget["action"]) => void;
   onCrop?: (key: string) => void;
+  /** Non-blocking note of a ready photo: too small, or the same as an earlier one (P3-2). */
+  warning?: PhotoWarning;
 }
 
-function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry, onRefresh, onMove, onCrop }: PhotoTileProps) {
+function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry, onRefresh, onMove, onCrop, warning }: PhotoTileProps) {
   const t = useNumbersTranslations("Listing.photos");
   const errors = useTranslations("Listing.errors");
   const n = index + 1;
@@ -328,6 +349,12 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
           <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 px-2.5 py-1.5 text-xs font-medium text-cream-100" data-testid="photo-face">
             <ScanFace className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" />
             {t("faces.tile")}
+          </span>
+        ) : warning && !busy ? (
+          // The face strip goes first (it changes the publication); the banner above lists every note.
+          <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 px-2.5 py-1.5 text-xs font-medium text-cream-100" data-testid="photo-check">
+            {warning.sameAs ? <Copy className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" /> : <Shrink className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" />}
+            {t(warning.sameAs ? "checks.tileSame" : "checks.tileSmall")}
           </span>
         ) : null}
         {busy || item.removing ? (

@@ -975,6 +975,14 @@
         "tile": "Yella wudem",
         "crop": "Gzem tawlaft {index}"
       },
+      "checks": {
+        "title": "{count, plural, one {# n twlaft i usenqed} other {# n twlafin i usenqed}}",
+        "small": "Tawlaft {index} : tamezyant ({width} × {height} px), war tetban mliḥ x annonce. Xtar tawlaft s {min} px ula d drus x yal tama.",
+        "same": "Tawlaft {index} : am tawlaft {other}. Kkes-tt mala tarniḍ-tt snat n twal.",
+        "body": "Tzemmreḍ ad tent-teǧǧeḍ : annonce ad teffeɣ ula s nitenti.",
+        "tileSmall": "Tawlaft tamezyant",
+        "tileSame": "Tella yakan"
+      },
       "crop": {
         "title": "Gzem tawlaft {index}",
         "description": "Ejj tiɣawsa deg cadre d ejj udmawen berra. Tawlaft yettwagezmen ad tbeddel tin n tazwara.",

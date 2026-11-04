@@ -985,6 +985,14 @@
         "tile": "Visage détecté",
         "crop": "Recadrer la photo {index}"
       },
+      "checks": {
+        "title": "{count, plural, one {Une photo à vérifier} other {# photos à vérifier}}",
+        "small": "Photo {index} : petite ({width} × {height} px), elle paraîtra floue sur l'annonce. Préférez une photo d'au moins {min} px de côté.",
+        "same": "Photo {index} : identique à la photo {other}. Retirez-la si vous l'avez ajoutée deux fois.",
+        "body": "Vous pouvez les garder : ces remarques n'empêchent pas la publication.",
+        "tileSmall": "Petite photo",
+        "tileSame": "Déjà ajoutée"
+      },
       "crop": {
         "title": "Recadrer la photo {index}",
         "description": "Gardez l'objet dans le cadre et laissez les visages en dehors. La photo recadrée remplace l'originale.",

@@ -5896,8 +5896,13 @@
       "tooMany": "على الأكثر {max} فترة لكل مسكن: اجمع الليالي المتقاربة.",
       "saved": "تم حفظ الجدول لـ {count, plural, one {# مسكن} other {# مسكن}}.",
       "confirmed": "تم تأكيد التوفر لـ {count, plural, one {# مسكن} other {# مسكن}}.",
-      "partial": "{count, plural, one {لم يُحفظ # مسكن: أُعيد تحميل الجدول، أعد تعديله.} other {لم تُحفظ # مساكن: أُعيد تحميل الجدول، أعد تعديلاتها.}}"
-    }
+      "partial": "{count, plural, one {لم يُحفظ # مسكن: أُعيد تحميل الجدول، أعد تعديله.} other {لم تُحفظ # مساكن: أُعيد تحميل الجدول، أعد تعديلاتها.}}",
+      "icsEvent": "{title}: محجوز",
+      "icsName": "جدول المساكن {site}"
+    },
+    "export": "تصدير المفكرة (.ics)",
+    "icsEvent": "{title}: غير متوفر",
+    "icsName": "جدول الأسطول {site}"
   },
   "RentalAgency": {
     "title": "وكالة الكراء",
@@ -6094,8 +6099,11 @@
         "confirmAccept": "هل تؤكد لـ{name} أن المسكن متاح لهذه الإقامة؟",
         "confirmDecline": "هل تجيب {name} بأن المسكن غير متاح لهذه الإقامة؟",
         "notePlaceholderAccept": "مثال: الوصول ممكن ابتداءً من الساعة الثالثة بعد الزوال، والمفاتيح في انتظاركم.",
-        "notePlaceholderDecline": "مثال: متاح بالأحرى من 20 إلى 24، أو مسكن آخر في نفس التواريخ."
-      }
+        "notePlaceholderDecline": "مثال: متاح بالأحرى من 20 إلى 24، أو مسكن آخر في نفس التواريخ.",
+        "icsTitle": "إقامة: {title}، {name} ({site})"
+      },
+      "addToCalendar": "إضافة إلى مفكرتي",
+      "icsTitle": "كراء: {title}، {name} ({site})"
     },
     "event": {
       "period": "من {from} إلى {to}",

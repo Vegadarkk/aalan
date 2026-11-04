@@ -5896,8 +5896,13 @@
       "tooMany": "Ar {max} n lmuddat i yal axxam: smun iḍan iqerben.",
       "saved": "Planning yettwaḥraz i {count, plural, one {# n uxxam} other {# n ixxamen}}.",
       "confirmed": "Ussan ixwan ttwasentmen i {count, plural, one {# n uxxam} other {# n ixxamen}}.",
-      "partial": "{count, plural, one {# n uxxam war yettwaḥraz ca: planning yuɣal yettwaɛemmar, ɛawed abeddel nnes.} other {# n ixxamen war ttwaḥrazen ca: planning yuɣal yettwaɛemmar, ɛawed ibeddlen nsen.}}"
-    }
+      "partial": "{count, plural, one {# n uxxam war yettwaḥraz ca: planning yuɣal yettwaɛemmar, ɛawed abeddel nnes.} other {# n ixxamen war ttwaḥrazen ca: planning yuɣal yettwaɛemmar, ɛawed ibeddlen nsen.}}",
+      "icsEvent": "{title}: yettwaḥjez",
+      "icsName": "Planning n ixxamen {site}"
+    },
+    "export": "Ssufeɣ agenda (.ics)",
+    "icsEvent": "{title}: war yelli",
+    "icsName": "Planning n ṭumubilat {site}"
   },
   "RentalAgency": {
     "title": "Agence inu n ukra",
@@ -6094,8 +6099,11 @@
         "confirmAccept": "Ad tsentmeḍ i {name} belli axxam yella i uqqimi-a?",
         "confirmDecline": "Ad tarreḍ i {name} belli axxam war yelli i uqqimi-a?",
         "notePlaceholderAccept": "Amedya: tudfa tzemmer zi 15 h, tisura ttrajunt-awen din.",
-        "notePlaceholderDecline": "Amedya: yexwa zi 20 ar 24, niɣ axxam nniḍen deg wussan-a."
-      }
+        "notePlaceholderDecline": "Amedya: yexwa zi 20 ar 24, niɣ axxam nniḍen deg wussan-a.",
+        "icsTitle": "Aqqim: {title}, {name} ({site})"
+      },
+      "addToCalendar": "Rnu ɣer agenda inu",
+      "icsTitle": "Akray: {title}, {name} ({site})"
     },
     "event": {
       "period": "zi {from} ar {to}",

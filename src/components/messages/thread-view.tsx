@@ -542,6 +542,7 @@ export function ThreadView({ cid }: { cid: string }) {
             now={now}
             onChange={onRentalRequest}
             onNote={send}
+            listingTitle={conversation.listing.title}
             onPickup={
               conversation.appointment && isActive(conversation.appointment, now)
                 ? undefined

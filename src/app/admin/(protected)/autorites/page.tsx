@@ -65,7 +65,7 @@ export default async function AuthoritiesPage({ searchParams }: { searchParams: 
       {page.items.length === 0 ? (
         <EmptyState title="Aucune demande">Les demandes reçues des autorités sont enregistrées ici, avec la vérification de l&apos;identité du demandeur.</EmptyState>
       ) : (
-        <div role="region" aria-label="Demandes" tabIndex={0} className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <div role="region" aria-label="Demandes" tabIndex={0} className="relative overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[48rem] text-sm">
             <thead className="bg-surface-muted text-foreground-muted">
               <tr>

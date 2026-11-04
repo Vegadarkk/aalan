@@ -328,6 +328,11 @@ export const proProfileSchema = z
      * a later listing with one of them is not held for that reason again.
      */
     sanitaryNumbers: z.array(z.string().regex(CRITERION_FORMATS.onssa)).max(SANITARY_NUMBERS_MAX).optional(),
+    /** Staff notes on the shop (back office, zone 7 audit P2-10), newest first, the last 20 kept. */
+    staffNotes: z
+      .array(z.object({ at: ts, by: uid, byName: z.string().min(1).max(120), text: z.string().min(1).max(500) }).strict())
+      .max(20)
+      .optional(),
     /** Derived from config/pricing for `plan`. */
     quotas: listingQuotasSchema,
     /**

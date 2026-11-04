@@ -9,7 +9,8 @@ import { slotEnd } from "./rules";
 // no TZID. A meeting in Morocco happens at 10:00 on the spot whatever the phone's time zone data
 // says (audit zone 5 n°10: a phone with stale data showed a UTC time one hour late). DTSTAMP stays UTC.
 
-const stamp = (at: number) => new Date(at).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+/** A UTC DATE-TIME (DTSTAMP). */
+export const icsStamp = (at: number) => new Date(at).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 
 /** Morocco's wall clock at `at` as an iCalendar floating DATE-TIME (YYYYMMDDTHHMMSS). */
 export function moroccoFloating(at: number): string {
@@ -28,7 +29,7 @@ export function moroccoFloating(at: number): string {
 }
 
 /** RFC 5545 TEXT escaping, then folding at 75 octets is left to the readers (all accept long lines). */
-const text = (value: string) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+export const icsText = (value: string) => value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 
 export interface IcsInput {
   id: string;
@@ -49,17 +50,17 @@ export function appointmentIcs(input: IcsInput): string {
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${input.id}@${SITE_NAME.toLowerCase()}.ma`,
-    `DTSTAMP:${stamp(input.now ?? Date.now())}`,
+    `DTSTAMP:${icsStamp(input.now ?? Date.now())}`,
     `DTSTART:${moroccoFloating(input.slot.start)}`,
     `DTEND:${moroccoFloating(slotEnd(input.slot))}`,
-    `SUMMARY:${text(input.title)}`,
-    `DESCRIPTION:${text(input.description)}`,
-    ...(input.place ? [`LOCATION:${text(input.place)}`] : []),
+    `SUMMARY:${icsText(input.title)}`,
+    `DESCRIPTION:${icsText(input.description)}`,
+    ...(input.place ? [`LOCATION:${icsText(input.place)}`] : []),
     `URL:${input.url}`,
     "BEGIN:VALARM",
     "ACTION:DISPLAY",
     "TRIGGER:-PT2H",
-    `DESCRIPTION:${text(input.title)}`,
+    `DESCRIPTION:${icsText(input.title)}`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useId, useState } from "react";
-import { BedDouble, CalendarCheck, CalendarRange, CalendarX, CarFront, History, KeyRound, MapPin, NotebookPen, Package, ShieldCheck, Users } from "lucide-react";
+import { BedDouble, CalendarCheck, CalendarPlus, CalendarRange, CalendarX, CarFront, History, KeyRound, MapPin, NotebookPen, Package, ShieldCheck, Users } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { InlineError } from "@/components/feedback/inline-error";
@@ -15,7 +15,9 @@ import { URL_MARKER } from "@/lib/contracts/messaging";
 import { rentalRequestOpen, type RentalRequestAction, type RentalRequestResponse, type RentalRequestView } from "@/lib/contracts/rental-requests";
 import { isolate } from "@/lib/i18n/bidi";
 import { moroccoToday, rentalDuration } from "@/lib/listings/rental-availability";
+import { downloadIcs } from "@/lib/appointments/ics";
 import { postRentalRequestAction } from "@/lib/rental-requests/client";
+import { rentalIcs } from "@/lib/rental-requests/ics";
 import { cn } from "@/lib/utils";
 import { formatRentalDay } from "./rental-day";
 
@@ -32,7 +34,7 @@ import { formatRentalDay } from "./rental-day";
 const ERROR_KEYS = ["rental_request_changed", "rental_request_past", "rental_request_unavailable", "place_payment_details"] as const;
 
 /** Texts of a stay (RentalRequest.card.home), the car rental's otherwise. */
-type HomeKey = "period" | "pickup" | "waiting" | "requestedTheirs" | "block" | "blockHint" | "blockFailed" | "planning" | "blockedNote" | "safety" | "pickupAppointment" | "notePlaceholderAccept" | "notePlaceholderDecline" | "confirmAccept" | "confirmDecline";
+type HomeKey = "period" | "pickup" | "waiting" | "requestedTheirs" | "block" | "blockHint" | "blockFailed" | "planning" | "blockedNote" | "safety" | "pickupAppointment" | "notePlaceholderAccept" | "notePlaceholderDecline" | "confirmAccept" | "confirmDecline" | "icsTitle";
 export const rentalCardKey = <K extends HomeKey>(key: K, unit: RentalRequestView["unit"]) => (unit === "night" ? (`home.${key}` as const) : key);
 
 export function useRentalRequestErrorMessage(): (error: unknown) => string {
@@ -61,12 +63,14 @@ export interface RentalRequestCardProps {
   onPickup?: () => void;
   /** Sends the agency's word with its answer as a message of the thread; resolves false when it failed. */
   onNote?: (text: string) => Promise<boolean>;
+  /** The listing's title, named in the calendar event of an accepted rental. */
+  listingTitle?: string;
 }
 
 /** The agency's word with its answer: a message of the thread, so the composer's limit. */
 export const RENTAL_NOTE_MAX = 500;
 
-export function RentalRequestCard({ cid, request, counterpartName, writable, now, onChange, onPickup, onNote }: RentalRequestCardProps) {
+export function RentalRequestCard({ cid, request, counterpartName, writable, now, onChange, onPickup, onNote, listingTitle = "" }: RentalRequestCardProps) {
   const t = useTranslations("RentalRequest.card");
   const locale = useLocale() as Locale;
   const id = useId();
@@ -100,6 +104,14 @@ export function RentalRequestCard({ cid, request, counterpartName, writable, now
     } finally {
       setBusy(null);
     }
+  }
+
+  /** The accepted rental as an all-day event of the user's calendar (.ics, audit zone 4). */
+  function addToCalendar() {
+    const title = t(k("icsTitle"), { title: listingTitle, name: counterpartName, site: SITE_NAME });
+    const url = `${window.location.origin}${window.location.pathname}`;
+    const description = [listingTitle, request.pickup?.split(URL_MARKER).join(t("maskedLink")), url].filter(Boolean).join("\n");
+    downloadIcs(rentalIcs([{ uid: `rental-${request.id}`, from: request.from, to: request.to, title, description, url, alarm: true }]), `${SITE_NAME.toLowerCase()}-${stay ? "sejour" : "location"}`);
   }
 
   const period = (
@@ -164,12 +176,18 @@ export function RentalRequestCard({ cid, request, counterpartName, writable, now
             </Button>
           </div>
         ) : null}
-        {writable && onPickup ? (
-          <Button type="button" variant="outline" size="sm" className="self-start max-sm:h-11" onClick={onPickup} data-testid="rental-request-pickup">
-            {stay ? <KeyRound aria-hidden="true" /> : <Package aria-hidden="true" />}
-            {t(k("pickupAppointment"))}
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" className="max-sm:h-11" onClick={addToCalendar} data-testid="rental-request-ics">
+            <CalendarPlus aria-hidden="true" />
+            {t("addToCalendar")}
           </Button>
-        ) : null}
+          {writable && onPickup ? (
+            <Button type="button" variant="outline" size="sm" className="max-sm:h-11" onClick={onPickup} data-testid="rental-request-pickup">
+              {stay ? <KeyRound aria-hidden="true" /> : <Package aria-hidden="true" />}
+              {t(k("pickupAppointment"))}
+            </Button>
+          ) : null}
+        </div>
         {safety}
       </section>
     );

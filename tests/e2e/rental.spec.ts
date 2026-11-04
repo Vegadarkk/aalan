@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { getFirestore } from "firebase-admin/firestore";
 import sharp from "sharp";
@@ -236,6 +237,12 @@ test.describe("Car rental", () => {
       await expect(page.getByTestId("fleet-savebar")).toBeHidden();
       await page.getByTestId("fleet-confirm").click();
       await expect(page.getByText("Disponibilités confirmées pour 1 véhicule.")).toBeVisible();
+      // The saved blocked days as a .ics file of the agency's calendar.
+      const [fleetIcs] = await Promise.all([page.waitForEvent("download"), page.getByTestId("fleet-export").click()]);
+      expect(fleetIcs.suggestedFilename()).toBe("aalan-flotte.ics");
+      const fleetEvents = await readFile((await fleetIcs.path())!, "utf8");
+      expect(fleetEvents).toContain(`DTSTART;VALUE=DATE:${day(10).replaceAll("-", "")}`);
+      expect(fleetEvents).toContain("X-WR-CALNAME:Planning de flotte Aalan");
       await page.reload();
       await expect(page.getByTestId("fleet-row").filter({ hasText: title }).locator(`button[data-day="${day(10)}"]`)).toHaveAttribute("data-state", "blocked");
       await page.setViewportSize({ width: 390, height: 844 });
@@ -306,6 +313,11 @@ test.describe("Car rental", () => {
       await expect(requestCard).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
       await expect(requestCard).toContainText("Dates bloquées sur l'annonce.");
       await expect(page.getByTestId("thread")).toContainText("Le véhicule sera prêt à 9 h.", { timeout: 15_000 });
+      // The rental goes to the agency's calendar as an all-day event (.ics).
+      const [rentalIcs] = await Promise.all([page.waitForEvent("download"), requestCard.getByTestId("rental-request-ics").click()]);
+      expect(rentalIcs.suggestedFilename()).toBe("aalan-location.ics");
+      const rentalEvent = await readFile((await rentalIcs.path())!, "utf8");
+      expect(rentalEvent).toContain(`DTSTART;VALUE=DATE:${day(6).replaceAll("-", "")}`);
       // The hand-over opens on the pick-up day (audit L4-08).
       await requestCard.getByTestId("rental-request-pickup").click();
       const handover = page.getByTestId("appointment-dialog");

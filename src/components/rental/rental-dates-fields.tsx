@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { CalendarDays } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Popover } from "radix-ui";
@@ -16,7 +16,7 @@ import { formatRentalDay, formatShortDay } from "./rental-day";
 // Pick-up and return days of a car rental search (rental pack §4), Morocco's calendar: a pick-up
 // from today to 180 days ahead and a return up to 60 days later (the same day counts as one day). A
 // home (`unit` "night", seasonal rental conception §2): arrival and departure, one night at least.
-// Both fields open one calendar (RangeCalendar): the first tap sets the start, the second the end,
+// Both fields open one calendar (RangeCalendar, two months on a wide screen): the first tap sets the start, the second the end,
 // and a tap before the start starts over. The fields used to be native date inputs, which iPadOS
 // Safari would not let the owner fill (report of 3 Nov 2026); the calendar works the same with a
 // finger, a mouse or the keyboard, and dresses like the other fields. A GET form gets hidden inputs.
@@ -25,6 +25,17 @@ type Phase = "from" | "to";
 
 /** About the calendar popover's height (6 weeks), with its margin. */
 const CALENDAR_HEIGHT = 460;
+
+/** Tailwind `md`: two months side by side from here (audit L4-21), one on a phone. */
+const WIDE_QUERY = "(min-width: 48rem)";
+
+function subscribeWide(onChange: () => void): () => void {
+  const query = window.matchMedia(WIDE_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+const useWide = () => useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE_QUERY).matches, () => false);
 
 export interface RentalDatesFieldsProps {
   value: Partial<RentalDates>;
@@ -45,6 +56,7 @@ export function RentalDatesFields({ value, onChange, className, names, inputClas
   const buttons = { from: useRef<HTMLButtonElement>(null), to: useRef<HTMLButtonElement>(null) };
   const [today] = useState(() => moroccoToday(Date.now()));
   const [phase, setPhase] = useState<Phase | null>(null);
+  const months = useWide() ? 2 : 1;
   /** The field focused again once the calendar closes. */
   const last = useRef<Phase>("from");
   const nights = unit === "night";
@@ -143,7 +155,7 @@ export function RentalDatesFields({ value, onChange, className, names, inputClas
           sideOffset={6}
           collisionPadding={16}
           data-testid="rental-dates-calendar"
-          className="z-[60] flex max-h-(--radix-popover-content-available-height) w-[min(21rem,calc(100vw-2rem))] flex-col overflow-y-auto overscroll-contain gap-3 rounded-lg border border-border bg-surface p-3 text-foreground shadow-lg shadow-bab-950/15 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="z-[60] flex max-h-(--radix-popover-content-available-height) w-[min(21rem,calc(100vw-2rem))] flex-col md:w-[40rem] overflow-y-auto overscroll-contain gap-3 rounded-lg border border-border bg-surface p-3 text-foreground shadow-lg shadow-bab-950/15 outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           onOpenAutoFocus={(event) => {
             // The day in the tab order, not the first button: once the popover's focus scope is up
             // (inside a dialog, the dialog's scope would take an earlier focus back).
@@ -164,7 +176,7 @@ export function RentalDatesFields({ value, onChange, className, names, inputClas
           </p>
           {picking !== null ? (
             <RangeCalendar
-              key={picking}
+              key={`${picking}-${months}`}
               locale={locale}
               today={today}
               from={from}
@@ -178,6 +190,7 @@ export function RentalDatesFields({ value, onChange, className, names, inputClas
               fromLabel={label("from")}
               toLabel={label("to")}
               autoFocus
+              months={months}
             />
           ) : null}
           {value.from || value.to ? (

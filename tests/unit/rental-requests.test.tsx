@@ -10,6 +10,7 @@ import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/ren
 import { RentalRequestBanner, shownRentalRequest } from "@/components/rental/rental-request-banner";
 import { rentalEstimate } from "@/components/rental/listing-availability";
 import { RentalRequestEventItem } from "@/components/rental/rental-request-event";
+import { RangeCalendar } from "@/components/rental/range-calendar";
 import { agencyRequests, RENTAL_UPCOMING_DAYS } from "@/components/rental/rental-requests-panel";
 import { HolidayAgencyCard } from "@/components/rental/rental-storefront";
 import { RentalGuide } from "@/components/listing/rental-guide";
@@ -28,6 +29,7 @@ import {
 import type { RentalRequestDoc } from "@/lib/db/schemas";
 import { HttpError } from "@/lib/http/errors";
 import { dayNumber, dayString } from "@/lib/listings/rental-availability";
+import { rentalIcs } from "@/lib/rental-requests/ics";
 import { nextRentalHistory, nextRentalStep, requestedPeriod } from "@/lib/rental-requests/service";
 import { RENTAL_GUESTS_MAX, RENTAL_HISTORY_MAX } from "@/lib/rental-requests/rules";
 import { SEARCH_QUERY_KEYS } from "@/lib/search/params";
@@ -213,6 +215,9 @@ describe("thread", () => {
     const accepted = card(view({ requestedByMe: true, status: "accepted" }));
     expect(accepted).toContain("⁨Youssef⁩ confirme la disponibilité");
     expect(accepted).toContain('data-testid="rental-request-pickup"');
+    expect(accepted).toContain('data-testid="rental-request-ics"');
+    expect(accepted).toContain("Ajouter à mon agenda");
+    expect(mine).not.toContain('data-testid="rental-request-ics"');
     expect(card(view({ status: "accepted", blocked: true }))).toContain("Dates bloquées sur l&#x27;annonce.");
     expect(card(view({ status: "accepted" }), { pickup: false })).not.toContain('data-testid="rental-request-pickup"');
     expect(card(view({ status: "declined" }))).toBe("");
@@ -349,5 +354,55 @@ describe("an agency's requests and holiday settings (audit L4-02, L4-06)", () =>
     expect(tips).toContain("confirmation écrite de l'annonceur");
     expect(tips).not.toContain("titre foncier");
     expect(render(<SafetyTips variant="carRental" />).replaceAll("&#x27;", "'")).toContain("signé le contrat de l'agence");
+  });
+});
+
+describe("rental .ics (audit zone 4)", () => {
+  it("writes all-day events whose end is the day after the last day", () => {
+    const ics = rentalIcs([{ uid: "rental-AbCd", from: "2026-11-07", to: "2026-11-09", title: "Location : Dacia Logan, Youssef (Aalan)", description: "Gare; 10h", alarm: true }], { name: "Planning", now: NOW });
+    expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
+    expect(ics).toContain("X-WR-CALNAME:Planning\r\n");
+    expect(ics).toContain("UID:rental-AbCd@aalan.ma\r\n");
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261107\r\n");
+    expect(ics).toContain("DTEND;VALUE=DATE:20261110\r\n");
+    expect(ics).toContain("SUMMARY:Location : Dacia Logan\\, Youssef (Aalan)\r\n");
+    expect(ics).toContain("DESCRIPTION:Gare\\; 10h\r\n");
+    expect(ics).toContain("TRIGGER:-PT6H");
+    expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
+  });
+
+  it("crosses a year and skips periods that are not days in order", () => {
+    const ics = rentalIcs([
+      { uid: "a", from: "2026-12-31", to: "2026-12-31", title: "A" },
+      { uid: "b", from: "2026-12-05", to: "2026-12-01", title: "B" },
+      { uid: "c", from: "2026-02-30", to: "2026-03-01", title: "C" },
+    ]);
+    expect(ics).toContain("DTEND;VALUE=DATE:20270101\r\n");
+    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(1);
+    expect(ics).not.toContain("VALARM");
+  });
+});
+
+describe("range calendar (audit L4-21)", () => {
+  const calendar = (months: 1 | 2, initialFocus = TODAY) =>
+    render(<RangeCalendar locale="fr" today={TODAY} from={null} to={null} isEnabled={() => true} initialFocus={initialFocus} firstDay={TODAY} lastDay={TODAY + 240} onPick={() => {}} fromLabel="Départ" toLabel="Retour" months={months} />);
+
+  it("shows one month on a phone and two side by side on a wide screen", () => {
+    expect(calendar(1).match(/role="grid"/g)).toHaveLength(1);
+    const two = calendar(2);
+    expect(two.match(/role="grid"/g)).toHaveLength(2);
+    expect(two).toContain("novembre 2026");
+    expect(two).toContain("décembre 2026");
+    // One day in the tab order across both months, one pair of month arrows.
+    expect(two.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(two.match(/Mois suivant/g)).toHaveLength(1);
+  });
+
+  it("ends on the last day's month instead of showing a month past it", () => {
+    const last = calendar(2, TODAY + 240);
+    // The last day is 2 July 2027: June and July, not July and August.
+    expect(last).toContain("juin 2027");
+    expect(last).toContain("juillet 2027");
+    expect(last).not.toContain("août 2027");
   });
 });

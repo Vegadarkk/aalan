@@ -5906,8 +5906,13 @@
       "tooMany": "Au plus {max} périodes par logement : regroupez des nuits proches.",
       "saved": "Planning enregistré pour {count, plural, one {# logement} other {# logements}}.",
       "confirmed": "Disponibilités confirmées pour {count, plural, one {# logement} other {# logements}}.",
-      "partial": "{count, plural, one {# logement n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# logements n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}"
-    }
+      "partial": "{count, plural, one {# logement n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# logements n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}",
+      "icsEvent": "{title} : réservé",
+      "icsName": "Planning des logements {site}"
+    },
+    "export": "Exporter l'agenda (.ics)",
+    "icsEvent": "{title} : indisponible",
+    "icsName": "Planning de flotte {site}"
   },
   "RentalAgency": {
     "title": "Mon agence de location",
@@ -6104,8 +6109,11 @@
         "confirmAccept": "Confirmer à {name} que le logement est disponible pour ce séjour ?",
         "confirmDecline": "Répondre à {name} que le logement n'est pas disponible pour ce séjour ?",
         "notePlaceholderAccept": "Ex. : arrivée possible à partir de 15 h, les clés vous attendent sur place.",
-        "notePlaceholderDecline": "Ex. : libre plutôt du 20 au 24, ou un autre logement aux mêmes dates."
-      }
+        "notePlaceholderDecline": "Ex. : libre plutôt du 20 au 24, ou un autre logement aux mêmes dates.",
+        "icsTitle": "Séjour : {title}, {name} ({site})"
+      },
+      "addToCalendar": "Ajouter à mon agenda",
+      "icsTitle": "Location : {title}, {name} ({site})"
     },
     "event": {
       "period": "du {from} au {to}",

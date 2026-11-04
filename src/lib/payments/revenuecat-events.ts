@@ -17,7 +17,7 @@ import {
   updateBillingEvent,
 } from "@/lib/db/repositories/billing";
 import { getWalletTx, recordWalletOperationTx, walletStateAt } from "@/lib/db/repositories/wallets";
-import type { BillingEventDoc, BillingEventSource } from "@/lib/db/schemas";
+import type { BillingEventDoc, BillingEventSource, OrderDoc } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
 import { z } from "@/lib/zod";
@@ -28,7 +28,7 @@ import { syncShopSubscription, type SyncDeps, type SyncOutcome } from "./subscri
 import { euPacksOpen, getBillingThresholds } from "./thresholds";
 import { orderGrossMinor } from "./sales";
 import { closeWithdrawal } from "./withdrawals";
-import { creditPurchase, refundedShare, refundPurchase } from "./wallet";
+import { creditPurchase, refundedShare, refundPurchase, reverseRefund, type PackCredits } from "./wallet";
 
 // RevenueCat events of the credit packs (phase 7 design §6). The webhook records each
 // authenticated event once (billingEvents/revenuecat_{id}) and hands it to the "billing" queue;
@@ -39,7 +39,12 @@ import { creditPurchase, refundedShare, refundPurchase } from "./wallet";
 //   refunded, the ledger `refund_*` debits the pack's credits even if spent (all of them, or the
 //   share of the price refunded when the event carries a smaller negative amount); a negative
 //   balance freezes the wallet and flags the account. A pack withdrawn by its buyer (CGV §6) lost
-//   its unspent credits at the request: its refund debits nothing more (src/lib/payments/withdrawals.ts).
+//   its unspent credits at the request: its refund for the withdrawal's share debits nothing more
+//   (src/lib/payments/withdrawals.ts). A chargeback (cancel_reason CHARGEBACK) takes back the whole
+//   pack, spent credits included, whatever a refund or a withdrawal took before (audit P-6); a
+//   second take-back has its ledger line `dispute_{event}`.
+// - REFUND_REVERSED of a pack, or the nightly reconciliation finding a refunded order's purchase
+//   owned again (a dispute won, audit P-5): the refunded credits come back (`reversal_{event}`).
 // - a subscription event (a Pro plan billed by Stripe, design §7): the shop's subscription is
 //   synced from RevenueCat (src/lib/payments/subscriptions.ts). A CANCELLATION of a pack's product
 //   (config/pricing) is a pack refund, even with an expiration: RevenueCat Billing sends one on a
@@ -91,6 +96,7 @@ export type ReceiveOutcome = "unreadable" | "wrong_environment" | "ignored_type"
 export type ProcessOutcome =
   | "credited"
   | "refunded"
+  | "reversed"
   | "already_refunded"
   | "never_credited"
   | "duplicate"
@@ -270,6 +276,11 @@ async function creditPack(event: BillingEventDoc, deps: ProcessDeps): Promise<Pr
   return outcome;
 }
 
+/** Credits of `target` beyond `already` (both split paid/bonus), never negative. */
+function beyond(target: PackCredits, already: PackCredits): PackCredits {
+  return { paid: Math.max(0, target.paid - already.paid), bonus: Math.max(0, target.bonus - already.bonus) };
+}
+
 async function refundPack(event: BillingEventDoc, deps: ProcessDeps): Promise<ProcessOutcome> {
   const { transactionId, appUserId } = event;
   if (!transactionId || !appUserId) return lost(event, "missing_transaction");
@@ -278,51 +289,76 @@ async function refundPack(event: BillingEventDoc, deps: ProcessDeps): Promise<Pr
   if (purchase.status !== "refunded") throw new BillingRetryError("refund not visible in RevenueCat yet");
   const now = deps.now?.() ?? new Date();
   const pricing = await getPricing();
-  // RevenueCat sends a refund's price as a negative amount; a smaller one than the price is a partial refund.
-  const refundedMinor = event.amountMinor !== undefined && event.amountMinor < 0 ? -event.amountMinor : undefined;
+  // RevenueCat sends a refund's price as a negative amount; a smaller one than the price is a partial
+  // refund. A chargeback takes the whole price back, whatever was refunded before (audit P-6).
+  const chargeback = event.cancelReason === "CHARGEBACK";
+  const eventMinor = event.amountMinor !== undefined && event.amountMinor < 0 ? -event.amountMinor : undefined;
 
   const result = await db().runTransaction(async (tx) => {
     const order = await getOrderTx(tx, transactionId);
     if (!order) return { outcome: "missing" as const };
-    if (order.status === "refunded") return { outcome: "duplicate" as const };
-    if (order.withdrawal) {
-      // The unspent credits left at the request: the refund only closes the withdrawal.
-      setOrderTx(tx, transactionId, closeWithdrawal(order, { at: now, by: "system", refundEventId: event.eventId, ...(refundedMinor !== undefined ? { refundedMinor } : {}) }));
-      return { outcome: "refunded" as const, negative: false, accountId: order.accountId, balance: null, withdrawal: order.withdrawal, refundedMinor };
-    }
     const grossMinor = orderGrossMinor(order, pricing);
-    const credits = refundedShare(order.credits, grossMinor, refundedMinor);
-    const partial = refundedMinor !== undefined && refundedMinor < grossMinor;
+    const withdrawal = order.withdrawal;
+    if (order.status === "refunded" && !chargeback) return { outcome: "duplicate" as const };
+    // What this event refunds: the whole price for a chargeback; for a withdrawal, its share when unknown.
+    const refundedMinor = chargeback ? grossMinor : eventMinor ?? (withdrawal ? withdrawal.refundMinor : undefined);
+    // Credits already taken back: by an earlier refund, or by the withdrawal at its request.
+    const already: PackCredits = order.status === "refunded" ? (order.refundedCredits ?? order.credits) : withdrawal ? withdrawal.credits : { paid: 0, bonus: 0 };
+    // A withdrawal's refund debits nothing more (an excess is alerted below); a chargeback, the spent credits too.
+    const covered = withdrawal && !chargeback ? already : refundedShare(order.credits, grossMinor, refundedMinor);
+    const credits = beyond(covered, already);
+    const debit = credits.paid + credits.bonus > 0;
+    if (order.status === "refunded" && !debit) return { outcome: "duplicate" as const };
+
+    const base = withdrawal && order.status !== "refunded" ? closeWithdrawal(order, { at: now, by: "system", refundEventId: event.eventId, ...(refundedMinor !== undefined ? { refundedMinor } : {}) }) : order;
+    const next: OrderDoc = {
+      ...base,
+      status: "refunded",
+      refundEventId: base.status === "refunded" && base.refundEventId ? base.refundEventId : event.eventId,
+      refundedAt: base.status === "refunded" && base.refundedAt ? base.refundedAt : now,
+      refundedCredits: { paid: already.paid + credits.paid, bonus: already.bonus + credits.bonus },
+      updatedAt: now,
+    };
+    if (refundedMinor !== undefined && refundedMinor < grossMinor) next.refundedMinor = refundedMinor;
+    else if (withdrawal && refundedMinor !== undefined) next.refundedMinor = refundedMinor;
+    else delete next.refundedMinor;
+    if (!debit) {
+      setOrderTx(tx, transactionId, next);
+      return { outcome: "refunded" as const, negative: false, accountId: order.accountId, balance: null, withdrawal, refundedMinor, debited: false };
+    }
+
+    // A transaction reads everything before its first write.
     const before = await getWalletTx(tx, order.accountId);
     const account = await getBillingAccountTx(tx, order.accountId);
+    setOrderTx(tx, transactionId, next);
     const { wallet, ledger } = refundPurchase(walletStateAt(before, now), credits);
-    recordWalletOperationTx(tx, order.accountId, `refund_${ledgerKey(transactionId)}`, {
+    // A second take-back of the same order (a chargeback after a refund or a withdrawal) has its own ledger line.
+    const entryId = order.status === "refunded" || withdrawal ? `dispute_${ledgerKey(event.eventId)}` : `refund_${ledgerKey(transactionId)}`;
+    recordWalletOperationTx(tx, order.accountId, entryId, {
       before,
       state: wallet,
       ledger,
       entry: { price: credits.paid, refs: { orderId: orderId(transactionId) }, taxJurisdiction: order.taxJurisdiction, actorUid: "system", at: now },
       now,
     });
-    setOrderTx(tx, transactionId, {
-      ...order,
-      status: "refunded",
-      refundEventId: event.eventId,
-      refundedAt: now,
-      ...(partial ? { refundedMinor } : {}),
-      refundedCredits: credits,
-      updatedAt: now,
-    });
     const negative = wallet.balance < 0;
     if (negative && account) setBillingAccountTx(tx, order.accountId, { ...account, flaggedAt: now, updatedAt: now });
-    return { outcome: "refunded" as const, negative, accountId: order.accountId, balance: wallet.balance, withdrawal: undefined, refundedMinor };
+    return { outcome: "refunded" as const, negative, accountId: order.accountId, balance: wallet.balance, withdrawal, refundedMinor, debited: true };
   });
 
-  if (result.outcome === "refunded" && result.withdrawal && result.refundedMinor !== undefined && result.refundedMinor > result.withdrawal.refundMinor) {
+  if (result.outcome === "refunded" && result.withdrawal && !result.debited && result.refundedMinor !== undefined && result.refundedMinor > result.withdrawal.refundMinor) {
     // The whole purchase was refunded from RevenueCat instead of the withdrawal's share from Stripe.
     await alert({
       severity: "P2",
       title: `Rétractation remboursée au-delà de sa part (${result.withdrawal.receipt})`,
       body: `Commande ${orderId(transactionId)} : ${result.refundedMinor / 100} remboursés pour ${result.withdrawal.refundMinor / 100} dus (crédits non utilisés). Les crédits déjà utilisés ne sont pas repris : vérifier dans Stripe.`,
+    });
+  }
+  if (result.outcome === "refunded" && result.withdrawal && result.debited) {
+    await alert({
+      severity: "P2",
+      title: `Litige après une rétractation (${result.withdrawal.receipt})`,
+      body: `Commande ${orderId(transactionId)} : le prix entier est repris par le litige pour ${result.withdrawal.refundMinor / 100} dus. Les crédits déjà utilisés sont débités (solde ${result.balance}).`,
     });
   }
 
@@ -350,11 +386,54 @@ async function syncSubscriptionEvent(event: BillingEventDoc, deps: ProcessDeps):
   return syncShopSubscription(account.id, { ...deps, eventId: event.eventId });
 }
 
-/** A subscription's event, unless it is the CANCELLATION of a pack's product (recorded `kind` aside). */
+/**
+ * A refund taken back (a dispute won, audit P-5): once RevenueCat shows the purchase owned again,
+ * the credits the refund debited come back (the wallet unfreezes at >= 0) and the order is paid.
+ * A withdrawn order stays as the buyer asked.
+ */
+async function reversePack(event: BillingEventDoc, deps: ProcessDeps): Promise<ProcessOutcome> {
+  const { transactionId, appUserId } = event;
+  if (!transactionId || !appUserId) return lost(event, "missing_transaction");
+  const purchase = await purchaseOf({ ...event, transactionId, appUserId }, deps);
+  if (purchase.status !== "owned") throw new BillingRetryError("reversal not visible in RevenueCat yet");
+  const now = deps.now?.() ?? new Date();
+  const result = await db().runTransaction(async (tx) => {
+    const order = await getOrderTx(tx, transactionId);
+    if (!order || order.status !== "refunded" || order.withdrawal) return { outcome: "duplicate" as const };
+    const credits = order.refundedCredits ?? order.credits;
+    const before = await getWalletTx(tx, order.accountId);
+    const { wallet, ledger } = reverseRefund(walletStateAt(before, now), credits);
+    recordWalletOperationTx(tx, order.accountId, `reversal_${ledgerKey(event.eventId)}`, {
+      before,
+      state: wallet,
+      ledger,
+      entry: { price: credits.paid, refs: { orderId: orderId(transactionId) }, taxJurisdiction: order.taxJurisdiction, actorUid: "system", at: now },
+      now,
+    });
+    const { refundEventId: _event, refundedAt: _at, refundedMinor: _minor, refundedCredits: _credits, ...paid } = order;
+    setOrderTx(tx, transactionId, { ...paid, status: "paid", updatedAt: now });
+    return { outcome: "reversed" as const, accountId: order.accountId, balance: wallet.balance, frozen: wallet.frozen };
+  });
+  if (result.outcome === "reversed") {
+    await alert({
+      severity: "P2",
+      title: `Remboursement annulé, crédits rendus (${result.accountId})`,
+      body: `Commande ${orderId(transactionId)} : le remboursement ou le litige a été annulé dans RevenueCat. Solde ${result.balance} crédits${result.frozen ? ", porte-monnaie encore gelé" : ""}.`,
+    });
+  }
+  return result.outcome;
+}
+
+/** A pack's product (config/pricing), as RevenueCat names it in an event. */
+async function isPackProduct(productId: string | undefined): Promise<boolean> {
+  return productId !== undefined && packByProductId(productId, await getPricing()) !== undefined;
+}
+
+/** A subscription's event, unless it is the CANCELLATION or REFUND_REVERSED of a pack's product (recorded `kind` aside). */
 async function isSubscriptionEvent(event: BillingEventDoc): Promise<boolean> {
   if (event.kind !== "subscription") return false;
-  if (event.type !== "CANCELLATION" || event.store === "STRIPE" || !event.productId) return true;
-  return packByProductId(event.productId, await getPricing()) === undefined;
+  if ((event.type !== "CANCELLATION" && event.type !== "REFUND_REVERSED") || event.store === "STRIPE") return true;
+  return !(await isPackProduct(event.productId));
 }
 
 /** Applies a recorded event; throws BillingRetryError (or an infrastructure error) for a later attempt. */
@@ -364,7 +443,11 @@ export async function processBillingEvent(eventId: string, deps: ProcessDeps = {
   if (event.status === "processed" || event.status === "ignored") return (event.outcome as ProcessOutcome | undefined) ?? "duplicate";
   try {
     const outcome =
-      event.type === "NON_RENEWING_PURCHASE" ? await creditPack(event, deps) : (await isSubscriptionEvent(event)) ? await syncSubscriptionEvent(event, deps) : await refundPack(event, deps);
+      event.type === "NON_RENEWING_PURCHASE" ? await creditPack(event, deps) : (await isSubscriptionEvent(event))
+          ? await syncSubscriptionEvent(event, deps)
+          : event.type === "REFUND_REVERSED"
+            ? await reversePack(event, deps)
+            : await refundPack(event, deps);
     await updateBillingEvent(eventId, { status: IGNORED.has(outcome) ? "ignored" : "processed", outcome, attempts: event.attempts + 1, processedAt: deps.now?.() ?? new Date() });
     logger.info({ webhook: "revenuecat", eventId, type: event.type, outcome }, "billing event processed");
     return outcome;

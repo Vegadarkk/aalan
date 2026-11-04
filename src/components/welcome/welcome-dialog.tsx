@@ -67,9 +67,12 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     window.clearTimeout(litTimer.current);
     stopDust.current();
     stopGlints.current();
+    // Focus moves before the state goes: the dialog holds it until now, and removing the state hides
+    // the dialog. A focused element that stops being rendered gets Chromium's focus fixup, which can
+    // land after #main took the focus and silently drop it (no blur): the page then has no focus.
+    if (focus) focusMain();
     document.documentElement.removeAttribute(WELCOME_ATTRIBUTE);
     setDone(true);
-    if (focus) focusMain();
   }, []);
 
   const open = useCallback(() => {

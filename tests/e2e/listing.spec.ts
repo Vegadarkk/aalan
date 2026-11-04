@@ -232,9 +232,15 @@ test.describe("listing page", () => {
     await expect(page.getByTestId("criteria-grid")).toContainText("Très bon état");
     await expect(page.getByTestId("listing-description")).toContainText("pneus neufs.");
     await expect(page.getByRole("navigation", { name: "Fil d'Ariane" })).toContainText("Vélos");
-    // Beside the favourite: "Partager" (the share sheet on a phone, the link copied elsewhere); the report
-    // control within reach of the contact (UX journeys counter-review, 8) opens the form itself (zone 3 audit P3-6).
-    await expect(page.getByTestId("share-button")).toHaveText(/Partager|Copier le lien/);
+    // Beside the favourite: "Partager", a menu with WhatsApp first (audit §7); the report control
+    // within reach of the contact (UX journeys counter-review, 8) opens the form itself (zone 3 audit P3-6).
+    await expect(page.getByTestId("share-button")).toHaveText("Partager");
+    await page.getByTestId("share-button").click();
+    const shareMenu = page.getByTestId("share-menu");
+    await expect(shareMenu.getByRole("menuitem", { name: "WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.*%2Fannonce%2F/);
+    await expect(shareMenu.getByRole("menuitem", { name: "Copier le lien" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(shareMenu).toBeHidden();
     await expect(page.getByRole("complementary", { name: "Vendeur et contact" }).getByRole("button", { name: "Signaler l'annonce" })).toHaveAttribute("aria-haspopup", "dialog");
     // The phone bar (hidden from lg, so on the phone project only): the message, the listing's own
     // action (an offer here) and the number as an icon.

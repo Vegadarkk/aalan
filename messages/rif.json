@@ -3152,7 +3152,11 @@
     "share": {
       "share": "Bḍu",
       "copyLink": "Nqel asaɣ",
-      "copied": "Asaɣ yettwanqel"
+      "copied": "Asaɣ yettwanqel",
+      "whatsapp": "WhatsApp",
+      "facebook": "Facebook",
+      "email": "E-mail",
+      "more": "Tisnasin nniḍen…"
     },
     "place": "{place}, {region}",
     "publishedOn": "Tettwassufeɣ deg {date}",

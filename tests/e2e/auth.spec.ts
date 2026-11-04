@@ -174,7 +174,8 @@ test.describe("account", () => {
     await expect(page.getByText("Le nom doit faire au moins 2 caractères.")).toBeVisible();
     await expect(page.getByText("Entrez une adresse e-mail valide.")).toBeVisible();
     await expect(page.getByText(/au moins 8 caractères\./)).toBeVisible();
-    await expect(page.getByText("Cette case est obligatoire pour continuer.")).toHaveCount(2);
+    // Only the CGU box is required (the transfers box is gone, audit B2).
+    await expect(page.getByText("Cette case est obligatoire pour continuer.")).toHaveCount(1);
     // Focus lands on the first invalid field.
     await expect(page.getByLabel("Nom affiché")).toBeFocused();
   });

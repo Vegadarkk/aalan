@@ -6,6 +6,7 @@ import { InlineError } from "@/components/feedback/inline-error";
 import { catalogueKind, subcategoryById } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import { formatPrice } from "@/lib/listings/client/format";
+import { readToDiscuss, rememberToDiscuss } from "@/lib/listings/client/price-choice";
 import { useWizard } from "@/lib/listings/client/store";
 import { stepIssues } from "@/lib/listings/client/validation";
 import { attributesWithoutAxes } from "@/lib/listings/client/variants";
@@ -16,7 +17,9 @@ import { VariantsEditor } from "../variants-editor";
 import { STEP_FORM_ID } from "../wizard-shell";
 
 export function PriceStep({ onNext }: { onNext: () => void }) {
-  const { listing, update, flush, blockers } = useWizard();
+  const { listing, listingId, update, flush, blockers } = useWizard();
+  // "À discuter" ticked on an earlier visit of the step (P3-4): an empty optional price alone is not.
+  const [toDiscussChosen] = useState(() => readToDiscuss(listingId));
   const message = useValidationMessage();
   const t = useTranslations("Listing.fields");
   const locale = useLocale() as Locale;
@@ -52,6 +55,8 @@ export function PriceStep({ onNext }: { onNext: () => void }) {
         onDonation={(isDonation) => update(isDonation ? { isDonation, price: null, priceNegotiable: false } : { isDonation }, { flush: true })}
         donationAllowed={Boolean(subcategory?.donationAllowed)}
         priceOptional={Boolean(subcategory?.priceOptional)}
+        toDiscussChosen={toDiscussChosen}
+        onToDiscuss={(checked) => rememberToDiscuss(listingId, checked)}
         priceUnit={subcategory?.priceUnit}
         priceMode={subcategory?.priceMode}
         error={error}

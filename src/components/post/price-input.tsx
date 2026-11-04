@@ -17,7 +17,9 @@ import { SwitchField } from "./controls/switch";
 // digit, a comma or a sign is refused with a message: B9, zone 3 P2-5), "Négociable",
 // "Je donne" when the subcategory allows donations, "À discuter" when the price is optional, and
 // the unit ("par nuit", "par mois") when the subcategory sets one. A job offer's amount is a
-// monthly gross salary (`priceMode: "salary"`): same box, its own words.
+// monthly gross salary (`priceMode: "salary"`): same box, its own words. "À discuter" is the
+// seller's tick, never the default of an empty optional price, and it never locks the box: typing
+// an amount turns it off (zone 3 audit P3-4).
 
 export interface PriceInputProps {
   value: number | null;
@@ -28,6 +30,10 @@ export interface PriceInputProps {
   onDonation: (value: boolean) => void;
   donationAllowed: boolean;
   priceOptional: boolean;
+  /** "À discuter" ticked earlier by the seller (remembered for the tab); off by default. */
+  toDiscussChosen?: boolean;
+  /** The seller ticked or unticked "À discuter" (directly, or by typing an amount). */
+  onToDiscuss?: (checked: boolean) => void;
   priceUnit?: PriceUnit;
   /** "salary": the amount is a monthly gross salary (a job offer); the labels say so. */
   priceMode?: Subcategory["priceMode"];
@@ -39,19 +45,32 @@ export interface PriceInputProps {
   locale?: Locale;
 }
 
-export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonation, onDonation, donationAllowed, priceOptional, priceUnit, priceMode, error, warning, onBlur, locale: localeProp }: PriceInputProps) {
+export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonation, onDonation, donationAllowed, priceOptional, toDiscussChosen = false, onToDiscuss, priceUnit, priceMode, error, warning, onBlur, locale: localeProp }: PriceInputProps) {
   const t = useTranslations("Listing.fields");
   const salary = priceMode === "salary";
   const hookLocale = useLocale() as Locale;
   const locale = localeProp ?? hookLocale;
-  // "À discuter": the person asked for no amount (distinct from "not typed yet").
-  const [toDiscuss, setToDiscuss] = useState(priceOptional && value === null && !isDonation);
-  // Digits only, grouped as you type: the text is a pure function of the integer value.
+  // "À discuter": the person asked for no amount (distinct from "not typed yet", which stays off).
+  const [toDiscuss, setToDiscuss] = useState(priceOptional && toDiscussChosen && value === null && !isDonation);
+  const chooseToDiscuss = (checked: boolean) => {
+    setToDiscuss(checked);
+    onToDiscuss?.(checked);
+  };
+  // Digits only, grouped as you type: the text is a pure function of the integer value. An amount
+  // typed while "À discuter" is on is the seller changing their mind: the switch goes off.
   const input = useRef<HTMLInputElement>(null);
-  const amount = useIntegerField(input, { value, onChange, max: PRICE_MAX, grouped: true });
+  const amount = useIntegerField(input, {
+    value,
+    onChange: (next) => {
+      if (next !== null && toDiscuss) chooseToDiscuss(false);
+      onChange(next);
+    },
+    max: PRICE_MAX,
+    grouped: true,
+  });
   const notice = useIntegerNoticeMessage()(amount.notice, PRICE_MAX);
 
-  const disabled = isDonation || toDiscuss;
+  const disabled = isDonation;
   // The digits stay left to right (dir="ltr" on the input), so the box uses physical sides: the
   // currency sits at the reading end (right in French, left in Arabic) and the reserved padding is
   // on that same side, the amount aligned at the other end.
@@ -59,7 +78,7 @@ export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonati
 
   return (
     <div className="flex flex-col gap-5" onBlur={onBlur}>
-      <Field label={salary ? t("salary") : priceUnit ? t(`pricePer.${priceUnit}`) : t("price")} hint={disabled ? undefined : t(salary ? "salaryHint" : "priceHint")} error={notice ?? error} required={!priceOptional && !isDonation}>
+      <Field label={salary ? t("salary") : priceUnit ? t(`pricePer.${priceUnit}`) : t("price")} hint={disabled || toDiscuss ? undefined : t(salary ? "salaryHint" : "priceHint")} error={notice ?? error} required={!priceOptional && !isDonation}>
         <AmountBox
           inputRef={input}
           suffix={
@@ -71,11 +90,11 @@ export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonati
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder={disabled ? "" : t(salary ? "salaryPlaceholder" : "pricePlaceholder")}
+          placeholder={disabled ? "" : toDiscuss ? t(salary ? "salaryToDiscuss" : "toDiscuss") : t(salary ? "salaryPlaceholder" : "pricePlaceholder")}
           value={isDonation ? "0" : toDiscuss ? "" : amount.value}
           disabled={disabled}
           dir="ltr"
-          className={cn("h-14 text-2xl font-semibold tabular-nums", rtl ? "pl-20 text-right" : "pr-20 text-left", disabled && "text-foreground-muted")}
+          className={cn("h-14 text-2xl font-semibold tabular-nums", rtl ? "pl-20 text-right" : "pr-20 text-left", disabled && "text-foreground-muted", toDiscuss && "placeholder:text-lg placeholder:font-medium")}
           onChange={amount.onChange}
           onBlur={amount.onBlur}
         />
@@ -95,7 +114,7 @@ export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonati
             checked={toDiscuss}
             disabled={isDonation}
             onCheckedChange={(checked) => {
-              setToDiscuss(checked);
+              chooseToDiscuss(checked);
               if (checked) onChange(null);
               // Back to an amount: the field is where the next keystroke goes.
               else requestAnimationFrame(() => input.current?.focus());
@@ -112,7 +131,7 @@ export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonati
             onCheckedChange={(checked) => {
               onDonation(checked);
               if (checked) {
-                setToDiscuss(false);
+                if (toDiscuss) chooseToDiscuss(false);
                 onChange(null);
                 onNegotiable(false);
               } else requestAnimationFrame(() => input.current?.focus());

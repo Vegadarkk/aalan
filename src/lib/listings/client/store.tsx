@@ -228,6 +228,7 @@ export function photoItemsFromListing(listing: OwnerListing, mediaBaseUrl: strin
                 w: photo.w!,
                 h: photo.h!,
                 blurhash: photo.blurhash!,
+                ...(photo.hash ? { hash: photo.hash } : {}),
               }
             : null,
           blurhash: photo.blurhash,

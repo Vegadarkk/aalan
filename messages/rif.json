@@ -982,6 +982,14 @@
         "tile": "Yella wudem",
         "crop": "Gzem tawlaft {index}"
       },
+      "checks": {
+        "title": "{count, plural, one {# n twlaft i usenqed} other {# n twlafin i usenqed}}",
+        "small": "Tawlaft {index} : tamezyant ({width} × {height} px), war tetban mliḥ x annonce. Xtar tawlaft s {min} px ula d drus x yal tama.",
+        "same": "Tawlaft {index} : am tawlaft {other}. Kkes-tt mala tarniḍ-tt snat n twal.",
+        "body": "Tzemmreḍ ad tent-teǧǧeḍ : annonce ad teffeɣ ula s nitenti.",
+        "tileSmall": "Tawlaft tamezyant",
+        "tileSame": "Tella yakan"
+      },
       "crop": {
         "title": "Gzem tawlaft {index}",
         "description": "Ejj tiɣawsa deg cadre d ejj udmawen berra. Tawlaft yettwagezmen ad tbeddel tin n tazwara.",
@@ -1090,7 +1098,7 @@
       "description_min": "Aglam ixs ad yili ɣas {min} n yisekkilen.",
       "description_max": "Aglam war yezmir ca ad yɛeddi {max} n yisekkilen.",
       "price_required": "Ari ssuma, niɣ xtar « Ttakeɣ tiɣawsa-a ».",
-      "price_invalid": "Ari ssuma s dirhams, bla ṣṣantim.",
+      "price_invalid": "Ssuma ixs ad tili ugar n 0 DH : ari amḍan s dirhams, bla ṣṣantim.",
       "price_not_allowed": "Annonce-a war tsekken ca amḍan.",
       "price_max": "Ssuma war tezmir ca ad tɛeddi {max} DH.",
       "city_required": "Xtar tamdint nnec zi tabdart.",

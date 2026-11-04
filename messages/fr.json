@@ -992,6 +992,14 @@
         "tile": "Visage détecté",
         "crop": "Recadrer la photo {index}"
       },
+      "checks": {
+        "title": "{count, plural, one {Une photo à vérifier} other {# photos à vérifier}}",
+        "small": "Photo {index} : petite ({width} × {height} px), elle paraîtra floue sur l'annonce. Préférez une photo d'au moins {min} px de côté.",
+        "same": "Photo {index} : identique à la photo {other}. Retirez-la si vous l'avez ajoutée deux fois.",
+        "body": "Vous pouvez les garder : ces remarques n'empêchent pas la publication.",
+        "tileSmall": "Petite photo",
+        "tileSame": "Déjà ajoutée"
+      },
       "crop": {
         "title": "Recadrer la photo {index}",
         "description": "Gardez l'objet dans le cadre et laissez les visages en dehors. La photo recadrée remplace l'originale.",
@@ -1100,7 +1108,7 @@
       "description_min": "La description doit faire au moins {min} caractères.",
       "description_max": "La description ne peut pas dépasser {max} caractères.",
       "price_required": "Indiquez un prix, ou cochez « Je donne cet objet ».",
-      "price_invalid": "Entrez un prix en dirhams, sans centimes.",
+      "price_invalid": "Le prix doit être supérieur à 0 DH : entrez un montant en dirhams, sans centimes.",
       "price_not_allowed": "Cette annonce n'affiche pas de montant.",
       "price_max": "Le prix ne peut pas dépasser {max} DH.",
       "city_required": "Choisissez votre ville dans la liste.",

@@ -98,6 +98,11 @@ describe("mergePhotos", () => {
     const noFace = [upload("attached0001", "ready", 0, { checks: { nsfw: 0.01, faces: 0 } })];
     expect(mergePhotos(listing("draft"), noFace)).toEqual([{ id: "attached0001", status: "ready", w: 800, h: 600, blurhash: BLUR }]);
   });
+
+  it("hands the wizard the dHash of an attached photo (same photo twice, P3-2)", () => {
+    const hashed = listing("draft", { photos: [{ id: "attached0001", w: 800, h: 600, blurhash: BLUR, hash: "0123456789abcdef" }] });
+    expect(mergePhotos(hashed, [])).toEqual([{ id: "attached0001", status: "ready", w: 800, h: 600, blurhash: BLUR, hash: "0123456789abcdef" }]);
+  });
 });
 
 describe("ownerListingView", () => {

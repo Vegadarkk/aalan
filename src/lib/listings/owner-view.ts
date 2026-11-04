@@ -38,7 +38,7 @@ export function mergePhotos(listing: Pick<ListingRecord, "photos" | "status" | "
   const faces = new Map(uploads.map((upload) => [upload.id, upload.checks?.faces ?? 0]));
   const photos: OwnerPhoto[] = listing.photos.map((photo) => {
     const found = faces.get(photo.id) ?? 0;
-    return { id: photo.id, status: "ready", w: photo.w, h: photo.h, blurhash: photo.blurhash, ...(found > 0 ? { faces: found } : {}) };
+    return { id: photo.id, status: "ready", w: photo.w, h: photo.h, blurhash: photo.blurhash, ...(photo.hash ? { hash: photo.hash } : {}), ...(found > 0 ? { faces: found } : {}) };
   });
   const attached = new Set(listing.photos.map((photo) => photo.id));
   const unattachedReady = showsUnattachedReady(listing);

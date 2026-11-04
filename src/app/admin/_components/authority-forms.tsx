@@ -14,11 +14,13 @@ import {
   createAuthorityRequestSchema,
   updateAuthorityRequestSchema,
   type AuthorityRequestView,
+  type AuthorityTargetCandidate,
   type CreateAuthorityResponse,
 } from "@/lib/decisions/contracts";
 import { cn } from "@/lib/utils";
 import { COUNTRY_LABEL, KIND_LABEL, TIME_ZONE_LABEL, moroccoLocalToIso } from "../_lib/moderation-format";
 import { ADMIN_API, adminFetch, errorMessage } from "./api-client";
+import { AuthorityTargetPicker } from "./authority-target-picker";
 
 // Authority requests register (design D17, admin only): record a request (holds, freezes, and for
 // a removal order the decisions executing it), then answer or close it.
@@ -32,7 +34,7 @@ const MESSAGES: Record<string, string> = {
 const FIELD_MESSAGES: Record<string, string> = {
   authority: "Nom de l'autorité : 2 à 200 caractères.",
   legalBasis: "Fondement juridique : 2 à 500 caractères.",
-  scope: "Une cible par ligne : listing:{id}, user:{uid} ou conversation:{cid}, sans doublon (50 au plus).",
+  scope: "Ajoutez au moins un contenu visé (50 au plus).",
   identityCheck: "Indiquez comment l'identité du demandeur a été vérifiée.",
   receivedAt: "Date de réception requise.",
   dueAt: "Échéance invalide.",
@@ -43,7 +45,8 @@ const textarea = cn(inputClassName, "h-auto min-h-20 py-2");
 
 export function AuthorityCreateForm() {
   const router = useRouter();
-  const [values, setValues] = useState({ authority: "", country: "MA", legalBasis: "", kind: "removal_order", scope: "", method: "", receivedAt: "", dueAt: "", reasonId: "", notify: true });
+  const [values, setValues] = useState({ authority: "", country: "MA", legalBasis: "", kind: "removal_order", method: "", receivedAt: "", dueAt: "", reasonId: "", notify: true });
+  const [targets, setTargets] = useState<AuthorityTargetCandidate[]>([]);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,10 +62,7 @@ export function AuthorityCreateForm() {
       country: values.country,
       legalBasis: values.legalBasis.trim(),
       kind: values.kind,
-      scope: values.scope
-        .split(/\s+/)
-        .map((line) => line.trim())
-        .filter(Boolean),
+      scope: targets.map((target) => target.entry),
       identityCheck: { method: values.method.trim() },
       receivedAt: moroccoLocalToIso(values.receivedAt) ?? "",
       ...(dueAt ? { dueAt } : {}),
@@ -128,9 +128,14 @@ export function AuthorityCreateForm() {
           <input type="datetime-local" name="dueAt" value={values.dueAt} onChange={set("dueAt")} className={inputClassName} />
         </Field>
       </div>
-      <Field label="Contenus visés" required error={problems["scope"]} hint="Une cible par ligne : listing:{id}, user:{uid} ou conversation:{cid}. Chacun est conservé ; les conversations sont gelées.">
-        <textarea name="scope" rows={3} value={values.scope} onChange={set("scope")} className={textarea} />
-      </Field>
+      <AuthorityTargetPicker
+        value={targets}
+        onChange={(next) => {
+          setTargets(next);
+          setProblems(({ scope: _scope, ...rest }) => rest);
+        }}
+        error={problems["scope"]}
+      />
       <Field label="Vérification de l'identité du demandeur" required error={problems["identityCheck"]} hint="Rappel au numéro officiel, courriel signé, portail officiel…">
         <input name="method" value={values.method} onChange={set("method")} maxLength={300} className={inputClassName} />
       </Field>

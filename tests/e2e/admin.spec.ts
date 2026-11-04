@@ -191,6 +191,13 @@ test("staff sign in with their password, see the quota board and the roster, the
   await expect(page.getByRole("heading", { name: /quotas gratuits/i })).toBeVisible();
   await expect(page.getByText("Admin", { exact: true })).toBeVisible();
 
+  // Every section in view on a 1366 px laptop, the page no wider than the window (zone 6 audit 6-24).
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const sections = page.getByRole("navigation", { name: "Sections du back-office" });
+  await expect(sections.getByRole("link", { name: "Paiement vendeur" })).toBeInViewport({ ratio: 1 });
+  expect(await sections.evaluate((nav) => nav.scrollWidth <= nav.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
   await page.getByRole("link", { name: "Personnel" }).click();
   await expect(page).toHaveURL(`${admin}/personnel`);
   await expect(page.getByRole("heading", { name: "Personnel", level: 1 })).toBeVisible();

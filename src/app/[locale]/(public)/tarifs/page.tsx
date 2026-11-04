@@ -40,7 +40,7 @@ const mad = (minor: number) => Math.round(minor / 100);
 function Card({ title, price, note, items, Icon, highlight, action }: { title: string; price: string; note?: string; items: string[]; Icon: typeof Store; highlight?: string; action?: ReactNode }) {
   return (
     <article className={cn("relative flex flex-col gap-4 rounded-lg border bg-surface p-6", highlight ? "border-featured shadow-md" : "border-border")}>
-      {highlight ? <span className="absolute -top-3 start-6 rounded-full bg-featured px-3 py-0.5 text-xs font-semibold text-featured-foreground">{highlight}</span> : null}
+      {highlight ? <span className="absolute -top-3 start-6 whitespace-nowrap rounded-full bg-featured px-3 py-0.5 text-xs font-semibold text-featured-foreground shadow-sm">{highlight}</span> : null}
       <div className="flex items-center gap-3">
         <span className="flex size-10 items-center justify-center rounded-full bg-structure text-structure-foreground">
           <Icon className="size-5" aria-hidden="true" />
@@ -178,7 +178,8 @@ export default async function PricingPage({ params }: { params: Params }) {
             {offerEnd ? t("pros.launchOfferUntil", { date: offerEnd }) : n("pros.launchOffer", { days: offer.noticeDays })}
           </p>
         ) : null}
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {/* Rows 2 rem apart: the « Recommandé » badge rides 0.75 rem above its card (zone 6 audit 6-25). */}
+        <div className="grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-4">
           <Card
             Icon={Store}
             title={t("pros.essentiel")}

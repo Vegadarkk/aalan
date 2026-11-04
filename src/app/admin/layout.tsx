@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <ThemeScript nonce={nonce} />
         <ThemeSync />
         {children}
-        <LabelledToaster dir="ltr" labels={{ region: toaster("region"), close: toaster("close") }} />
+        <LabelledToaster dir="ltr" labels={{ region: toaster("region"), close: toaster("close") }} duration={12_000} />
       </body>
     </html>
   );

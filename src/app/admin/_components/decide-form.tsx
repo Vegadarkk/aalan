@@ -2,17 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
-import { toast } from "sonner";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { inputClassName } from "@/components/ui/input";
-import { DETAILS_MAX, decisionTemplate, fillTemplateText, type DecisionTargetType, type DecisionTemplate } from "@/config/decision-templates";
+import { DETAILS_MAX, RESTRICTIVE_ACTIONS, decisionTemplate, fillTemplateText, type DecisionTargetType, type DecisionTemplate } from "@/config/decision-templates";
 import type { DecideResponse } from "@/lib/decisions/contracts";
 import type { AiProposal } from "@/lib/reports/admin";
 import { cn } from "@/lib/utils";
 import { plural } from "../_lib/moderation-format";
 import { ADMIN_API, adminFetch, errorMessage } from "./api-client";
+import { decisionToast } from "./decision-toast";
 import {
   AI_REVIEW_LABEL,
   aiReview,
@@ -115,7 +115,12 @@ export function DecideForm({ targetKey, targetType, role, priorities, strikes, o
       const body = buildDecideRequest(targetKey, { ...draft, template }, context, ai);
       const result = await adminFetch<DecideResponse>(ADMIN_API.decisions, { method: "POST", csrf: true, body });
       const closed = result?.reportIds.length ?? 0;
-      toast.success(SUCCESS[template.action] ?? "Décision enregistrée", { description: closed > 0 ? `${plural(closed, "signalement clos", "signalements clos")}.` : undefined });
+      decisionToast({
+        title: SUCCESS[template.action] ?? "Décision enregistrée",
+        description: [closed > 0 ? plural(closed, "signalement clos", "signalements clos") : null, RESTRICTIVE_ACTIONS.includes(template.action) ? "personne visée prévenue par e-mail" : null].filter(Boolean).join(", "),
+        decisionId: result?.decisionId,
+        navigate: router.push,
+      });
       router.push("/signalements");
       router.refresh();
     } catch (cause) {

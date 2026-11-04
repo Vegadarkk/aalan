@@ -116,6 +116,16 @@ describe("human decisions (moderation queue)", () => {
     expect(renderMail({ template: "listingPublished", locale: "fr", to: "salma@example.com", data: { displayName: "Salma", title: "Vélo", url: `${SITE}/fr/annonce/velo-abcd2345`, expiresAt: "2026-12-15T10:00:00.000Z" } }).replyTo).toBeUndefined();
   });
 
+  it("listingRejected with a signed appeal link: the button-like link and the 6-month redress (audit zone 7 P2-9)", () => {
+    const rejected = renderMail({ template: "listingRejected", locale: "fr", to: "salma@example.com", data: { displayName: "Salma", title: "Vélo", listingId: "abcd2345", statement: human, appealToken: "x.y" } });
+    expect(rejected.text).toContain("Contester la décision");
+    expect(rejected.text).toContain(`${SITE}/fr/recours?`);
+    expect(rejected.text).toContain("pendant 6 mois");
+    expect(rejected.text).not.toContain("écrivez à dsa@");
+    const ar = renderMail({ template: "listingRejected", locale: "ar", to: "salma@example.com", data: { displayName: "سلمى", title: "دراجة", listingId: "abcd2345", statement: human, appealToken: "x.y" } });
+    expect(ar.text).toContain("الطعن في القرار");
+  });
+
   it("listingApproved links the public page and names the expiry date", () => {
     const url = `${SITE}/fr/annonce/velo-de-ville-casablanca-abcd2345`;
     const fr = renderMail({ template: "listingApproved", locale: "fr", to: "salma@example.com", data: { displayName: "Salma", title: "Vélo de ville", url, expiresAt: "2026-12-15T10:00:00.000Z" } });

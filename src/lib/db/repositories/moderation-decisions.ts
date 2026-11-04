@@ -19,10 +19,16 @@ export type ModerationDecisionInput = Omit<ModerationDecisionDoc, "createdAt" | 
   notified?: boolean;
 };
 
-export function buildModerationDecision(input: ModerationDecisionInput): ModerationDecisionDoc {
-  const { now = new Date(), notified, ...rest } = input;
+/** The appeal deadline of a decision taken at `now`: 6 calendar months (UTC). */
+export function appealDeadlineAt(now: Date): Date {
   const appealDeadline = new Date(now.getTime());
   appealDeadline.setUTCMonth(appealDeadline.getUTCMonth() + APPEAL_MONTHS);
+  return appealDeadline;
+}
+
+export function buildModerationDecision(input: ModerationDecisionInput): ModerationDecisionDoc {
+  const { now = new Date(), notified, ...rest } = input;
+  const appealDeadline = appealDeadlineAt(now);
   const purgeAt = new Date(now.getTime());
   purgeAt.setUTCFullYear(purgeAt.getUTCFullYear() + DECISION_RETENTION_YEARS);
   return moderationDecisionSchema.parse({ ...rest, ...(notified ? { notifiedAt: now } : {}), appealDeadline, createdAt: now, purgeAt });

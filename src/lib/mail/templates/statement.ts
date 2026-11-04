@@ -62,6 +62,8 @@ interface StatementCopy {
   automated: string;
   human: string;
   redress: (email: string, ref: string | undefined, human: boolean) => string;
+  /** With a signed appeal link in the mail: the link below, 6 months, another person. */
+  appealRedress: string;
 }
 
 const COPY: Record<MailLocale, StatementCopy> = {
@@ -74,6 +76,7 @@ const COPY: Record<MailLocale, StatementCopy> = {
     human: "Cette décision a été prise par un modérateur d'Aalan, après examen de l'annonce.",
     redress: (email, ref, human) =>
       `Pour la contester, écrivez à ${email}${ref ? ` en indiquant la référence ${ref}` : ""} : ${human ? "une autre personne" : "un modérateur"} réexaminera votre annonce.`,
+    appealRedress: "Vous pouvez contester cette décision pendant 6 mois avec le lien « Contester la décision » ci-dessous : une autre personne réexaminera votre annonce.",
   },
   ar: {
     measure: { hold: "الإجراء: تعليق النشر في انتظار مراجعة بشرية.", reject: "الإجراء: رُفض الإعلان ولم يُنشر." },
@@ -83,11 +86,15 @@ const COPY: Record<MailLocale, StatementCopy> = {
     automated: "اتُّخذ هذا الإجراء بمعالجة آلية دون تدخل بشري في هذه المرحلة.",
     human: "اتخذ هذا القرار مشرف لدى Aalan بعد فحص الإعلان.",
     redress: (email, ref, human) => `للاعتراض عليه، اكتب إلى ${email}${ref ? ` مع ذكر المرجع ${ref}` : ""}: ${human ? "سيعيد شخص آخر" : "سيعيد مشرف"} فحص إعلانك.`,
+    appealRedress: "يمكنك الطعن في هذا القرار خلال 6 أشهر عبر رابط «الطعن في القرار» أدناه: سيعيد شخص آخر فحص إعلانك.",
   },
 };
 
-/** The statement as mail paragraphs, in the recipient's language; `ref` (listing id) is quoted in the redress line. */
-export function statementParagraphs(statement: ModerationStatement, lang: MailLocale, ref?: string): string[] {
+/**
+ * The statement as mail paragraphs, in the recipient's language; `ref` (listing id) is quoted in the
+ * redress line, which points to the mail's appeal link instead when `appealLink` (a human decision).
+ */
+export function statementParagraphs(statement: ModerationStatement, lang: MailLocale, ref?: string, options: { appealLink?: boolean } = {}): string[] {
   const copy = COPY[lang];
   // A moderator's sentence may end with its own full stop: the list adds one.
   const facts = statement.facts.map((fact) => FLAGS[lang][fact] ?? reasonFactText(fact, lang) ?? fact.replace(/[.\s]+$/, ""));
@@ -96,6 +103,6 @@ export function statementParagraphs(statement: ModerationStatement, lang: MailLo
     facts.length > 0 ? `${copy.facts}${facts.join(" ; ")}.` : copy.noFacts,
     `${copy.ground}${statement.ground}.`,
     statement.automated ? copy.automated : copy.human,
-    copy.redress(statement.redress, ref, !statement.automated),
+    options.appealLink ? copy.appealRedress : copy.redress(statement.redress, ref, !statement.automated),
   ];
 }

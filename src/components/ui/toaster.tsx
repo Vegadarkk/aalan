@@ -30,8 +30,12 @@ export function Toaster({ dir }: { dir: "ltr" | "rtl" }) {
   return <LabelledToaster dir={dir} labels={{ region: t("region"), close: t("close") }} />;
 }
 
-/** The same container with labels from the caller: the back office renders no intl provider. */
-export function LabelledToaster({ dir, labels }: { dir: "ltr" | "rtl"; labels: ToasterLabels }) {
+/**
+ * The same container with labels from the caller: the back office renders no intl provider, and
+ * keeps its confirmations longer (`duration`, audit zone 7 P2-3: a moderator back on a list must
+ * still see that the action went through).
+ */
+export function LabelledToaster({ dir, labels, duration = 5000 }: { dir: "ltr" | "rtl"; labels: ToasterLabels; duration?: number }) {
   const { resolvedTheme } = useTheme();
   return (
     <Sonner
@@ -41,7 +45,7 @@ export function LabelledToaster({ dir, labels }: { dir: "ltr" | "rtl"; labels: T
       closeButton
       richColors
       containerAriaLabel={labels.region}
-      toastOptions={{ className: cn("font-sans", toastMotionClassName), duration: 5000, closeButtonAriaLabel: labels.close }}
+      toastOptions={{ className: cn("font-sans", toastMotionClassName), duration, closeButtonAriaLabel: labels.close }}
     />
   );
 }

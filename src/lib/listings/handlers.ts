@@ -71,7 +71,8 @@ export async function handleCreate(request: Request): Promise<Response> {
 }
 
 export async function handleMine(request: Request): Promise<Response> {
-  const auth = await requireUser(request);
+  // A suspended account still reads its own listings (audit zone 7 P2-4): changes stay refused.
+  const auth = await requireUser(request, { allowSuspended: true });
   const bucket = mineQuerySchema.safeParse(new URL(request.url).searchParams.get("status") ?? "drafts");
   if (!bucket.success) throw new HttpError(400, "invalid_body", undefined, { details: [{ path: "status", code: "invalid_value" }] });
   await enforceLimit("listing.owner.read.uid", auth.user.uid);

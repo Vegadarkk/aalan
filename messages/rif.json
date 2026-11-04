@@ -6416,5 +6416,12 @@
       "withdrawal_expired": "Lweqt n 14 n wussan n pack-a yezri.",
       "withdrawal_nothing_left": "Marra crédits n pack-a ttwasxedmen yakan: walu ma ad d-yuɣal."
     }
+  },
+  "Suspension": {
+    "title": "Amiḍan nnec yettwaḥbes",
+    "bodyUntil": "Aḥbas ad yekfu deg {date} (tasaɛt n Lmeɣrib). Ar din, tzemmreḍ ad teɣreḍ tameslayin nnec d annonces nnec, maca war tzemmreḍ ca ad tessufɣeḍ niɣ ad tbeddleḍ annonce.",
+    "body": "Tzemmreḍ ad teɣreḍ tameslayin nnec d annonces nnec, maca war tzemmreḍ ca ad tessufɣeḍ niɣ ad tbeddleḍ annonce.",
+    "deposit": "Tasuffeɣt n annonces ad d-tuɣal deg tagara n uḥbas.",
+    "appeal": "Ẓar ssebba d agi x tegtint"
   }
 }

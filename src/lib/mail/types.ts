@@ -101,7 +101,8 @@ export interface TemplateData {
   /** Held by the pre-moderation: a moderator will decide; statement of the automated measure. */
   listingPendingReview: { displayName: string; title: string; listingId: string; statement: ModerationStatement };
   /** Rejected (automated or by a moderator): statement of reasons and how to object. */
-  listingRejected: { displayName: string; title: string; listingId: string; statement: ModerationStatement };
+  /** `appealToken`: signed appeal link of the moderator's decision (art. 20, audit zone 7 P2-9); absent in mails queued before it. */
+  listingRejected: { displayName: string; title: string; listingId: string; statement: ModerationStatement; appealToken?: string | null };
   /** Approved by a moderator after a hold: online now, public URL and expiry date (ISO). */
   listingApproved: { displayName: string; title: string; url: string; expiresAt: string };
   /**

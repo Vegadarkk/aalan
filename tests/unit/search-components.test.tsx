@@ -230,7 +230,7 @@ describe("SearchEmpty", () => {
   it("says nothing is free on the dates and offers nearby ones (audit L4-10)", () => {
     const from = new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10);
     const to = new Date(Date.now() + 23 * 86_400_000).toISOString().slice(0, 10);
-    const html = render(<SearchEmpty params={url(`sous-categorie=location-vacances&du=${from}&au=${to}`)} locale="fr" />);
+    const html = render(<SearchEmpty params={url(`sous-categorie=location-vacances&du=${from}&au=${to}`)} locale="fr" today={Math.floor(Date.now() / 86_400_000)} />);
     expect(text(html)).toContain("Aucun logement correspondant n'est libre");
     expect(html.match(/data-testid="search-empty-dates"/g)).toHaveLength(1);
     expect(html.match(/du=\d{4}-\d{2}-\d{2}&amp;au=/g)).toHaveLength(4);

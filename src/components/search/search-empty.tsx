@@ -12,7 +12,6 @@ import { chipClassName } from "./active-filter-chips";
 import { useFilterLabels } from "./filter-labels";
 import { datedRental } from "@/config/categories";
 import { intlLocale } from "@/lib/listings/client/format";
-import { moroccoToday } from "@/lib/listings/rental-availability";
 import { clearFilters, describeFilters, nearbyDates, widenings, withPage } from "./filter-model";
 import { SearchLink } from "./search-navigation";
 
@@ -26,11 +25,13 @@ interface SearchEmptyProps {
   locale: Locale;
   /** Hits exist but this page is past the last one (stale link). */
   outOfRange?: boolean;
+  /** Today in Morocco (a day number): nearby dates of a dated rental search start no earlier. */
+  today?: number;
   action?: ReactNode;
   className?: string;
 }
 
-export function SearchEmpty({ params, locale, outOfRange = false, action, className }: SearchEmptyProps) {
+export function SearchEmpty({ params, locale, outOfRange = false, today, action, className }: SearchEmptyProps) {
   const t = useTranslations("SearchPage.empty");
   const chips = useTranslations("SearchFilters");
   const labels = useFilterLabels();
@@ -68,7 +69,7 @@ export function SearchEmpty({ params, locale, outOfRange = false, action, classN
   // A dated rental search: nothing free on those dates, the same stay a little earlier or later (audit L4-10).
   const dated = datedRental(params.subcategory);
   const stays = dated?.unit === "night";
-  const nearby = nearbyDates(params, moroccoToday(Date.now()));
+  const nearby = today === undefined ? [] : nearbyDates(params, today);
   const day = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", timeZone: "UTC" });
   const at = (value: string) => day.format(new Date(`${value}T12:00:00Z`));
   return (

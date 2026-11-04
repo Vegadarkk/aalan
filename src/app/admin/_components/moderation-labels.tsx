@@ -155,7 +155,11 @@ export function evidenceLabel(line: string, labels: Pick<CatalogLabels, "categor
   }
   if ((match = /^same (text|photo) as (\d+) listing\(s\)$/.exec(line))) {
     const count = Number(match[2]);
-    return `${match[1] === "text" ? "Même texte" : "Même photo"} que ${plural(count, "autre annonce", "autres annonces")} du vendeur`;
+    return `${match[1] === "text" ? "Même texte" : "Même photo, ou presque,"} que ${plural(count, "autre annonce", "autres annonces")} du vendeur`;
+  }
+  if ((match = /^same photo as (\d+) listing\(s\) of other accounts: (.*)$/.exec(line))) {
+    const count = Number(match[1]);
+    return `Même photo, ou presque, que ${plural(count, "annonce", "annonces")} d'un autre compte (${match[2]})`;
   }
   if ((match = /^account age (\d+) day\(s\)$/.exec(line))) {
     const days = Number(match[1]);

@@ -38,6 +38,7 @@ export const MODERATION_FLAGS = [
   "price_outlier",
   "dup_text",
   "dup_photo",
+  "dup_photo_other",
   "new_account",
   "volume",
   "restricted_category",

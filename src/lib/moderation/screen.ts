@@ -212,6 +212,10 @@ export function screenListing(input: ScreenInput, ctx: ScreenContext): ScreenRes
     flags.add("dup_photo");
     note(`same photo as ${input.duplicates?.samePhoto} listing(s)`);
   }
+  if ((input.duplicates?.otherAccountPhoto ?? 0) > 0) {
+    flags.add("dup_photo_other");
+    note(`same photo as ${input.duplicates?.otherAccountPhoto} listing(s) of other accounts: ${(input.duplicates?.otherAccountListings ?? []).join(", ")}`);
+  }
   if (input.seller.accountAgeDays < risk.newAccountDays) {
     flags.add("new_account");
     note(`account age ${input.seller.accountAgeDays} day(s)`);

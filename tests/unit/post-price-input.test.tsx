@@ -100,15 +100,32 @@ describe("PriceInput", () => {
     expect(render({ donationAllowed: true, isDonation: true })).not.toContain('aria-required="true"');
   });
 
-  it("disables the amount for a donation or an undecided price", () => {
+  it("disables the amount for a donation only", () => {
     const donation = render({ donationAllowed: true, isDonation: true });
     expect(inputValue(donation)).toBe("0");
     expect(donation).toMatch(/<input[^>]*inputmode="numeric"[^>]*disabled/i);
     expect(donation).toContain('role="switch" aria-checked="true"');
+  });
 
-    const toDiscuss = render({ priceOptional: true, value: null });
-    expect(inputValue(toDiscuss)).toBe("");
-    expect(toDiscuss).toMatch(/<input[^>]*inputmode="numeric"[^>]*disabled/i);
+  it("leaves « À discuter » off on an empty optional price until the seller ticks it (P3-4)", () => {
+    // Only one switch ("À discuter") can be on here: no donation, not negotiable.
+    const checkedSwitches = (html: string) => html.match(/role="switch" aria-checked="true"/g)?.length ?? 0;
+    // A rental reached with no amount yet: the box is open, the switch off.
+    const fresh = render({ priceOptional: true, value: null });
+    expect(inputValue(fresh)).toBe("");
+    expect(inputTag(fresh)).not.toMatch(/ disabled=""/);
+    expect(inputTag(fresh)).toContain(`placeholder="${fr.Listing.fields.pricePlaceholder}"`);
+
+    // Ticked earlier: the switch shows it, the box says it and still takes an amount.
+    const chosen = render({ priceOptional: true, value: null, toDiscussChosen: true });
+    expect(inputValue(chosen)).toBe("");
+    expect(inputTag(chosen)).not.toMatch(/ disabled=""/);
+    expect(inputTag(chosen)).toContain(`placeholder="${fr.Listing.fields.toDiscuss}"`);
+    expect(checkedSwitches(chosen)).toBe(1);
+    expect(checkedSwitches(fresh)).toBe(0);
+
+    // An amount on the listing wins over a remembered tick.
+    expect(inputValue(render({ priceOptional: true, value: 4000, toDiscussChosen: true }))).toBe("4\u202f000");
   });
 
   it("shows the validation message", () => {

@@ -1085,7 +1085,7 @@
       "description_min": "La description doit faire au moins {min} caractères.",
       "description_max": "La description ne peut pas dépasser {max} caractères.",
       "price_required": "Indiquez un prix, ou cochez « Je donne cet objet ».",
-      "price_invalid": "Entrez un prix en dirhams, sans centimes.",
+      "price_invalid": "Le prix doit être supérieur à 0 DH : entrez un montant en dirhams, sans centimes.",
       "price_not_allowed": "Cette annonce n'affiche pas de montant.",
       "price_max": "Le prix ne peut pas dépasser {max} DH.",
       "city_required": "Choisissez votre ville dans la liste.",

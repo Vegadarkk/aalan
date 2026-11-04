@@ -6,7 +6,7 @@ import { HELP_AR } from "@/content/help/ar";
 import { HELP_FR } from "@/content/help/fr";
 import { HELP_RIF } from "@/content/help/rif";
 import { MAX_PHOTOS_INDIVIDUAL } from "@/lib/contracts/media";
-import { foldHelpText, matchHelp, queryTokens } from "@/lib/help/match";
+import { foldHelpText, matchHelp, questionLocale, queryTokens } from "@/lib/help/match";
 import { helpDocuments } from "@/lib/help/search";
 
 // Help centre corpus (design phase-5 D25): every article in every locale, placeholders resolved
@@ -67,6 +67,24 @@ describe("help corpus", () => {
     expect(new Set(documents.map((document) => document.id)).size).toBe(documents.length);
     for (const document of documents) expect(document.id).toMatch(/^[A-Za-z0-9_-]{1,400}$/);
     expect(documents.find((document) => document.id === "ar_eviter-les-arnaques")).toMatchObject({ locale: "ar", slug: "eviter-les-arnaques", title: "تجنب الاحتيال" });
+  });
+});
+
+describe("questionLocale (audit zone 5 n°18)", () => {
+  it("sends a question in Arabic script on the French or Tarifit pages to the Arabic articles", () => {
+    expect(questionLocale("كيف أتجنب الاحتيال؟", "fr")).toBe("ar");
+    expect(questionLocale("واش iPhone 13 كاين؟", "rif")).toBe("ar");
+    expect(questionLocale("Comment éviter les arnaques ?", "fr")).toBe("fr");
+    expect(questionLocale("Mamec ad ɣreɣ ?", "rif")).toBe("rif");
+    // A French word in an Arabic question, an Arabic word in a French one: the majority decides.
+    expect(questionLocale("annonce ديالي تحيدات علاش", "fr")).toBe("ar");
+    expect(questionLocale("Que veut dire « مشرف » ?", "fr")).toBe("fr");
+  });
+
+  it("keeps the Arabic pages on their articles, Darija in Latin letters included", () => {
+    expect(questionLocale("kifach nbi3 tomobil", "ar")).toBe("ar");
+    expect(questionLocale("Comment payer ?", "ar")).toBe("ar");
+    expect(questionLocale("123 ?", "fr")).toBe("fr");
   });
 });
 

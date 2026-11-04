@@ -62,6 +62,19 @@ function words(text: string): string[] {
     .map(stem);
 }
 
+/**
+ * The corpus a question is searched and answered in: a question in Arabic script on the French or
+ * Tarifit pages goes to the Arabic articles (audit zone 5 n°18). A Latin-script question on the
+ * Arabic pages stays there: Darija is often typed in Latin letters, and the French articles would
+ * switch the answer to French.
+ */
+export function questionLocale<L extends string>(question: string, locale: L): L | "ar" {
+  if (locale === "ar") return locale;
+  const arabic = question.match(/[\u0621-\u064a\u0671-\u06d3]/g)?.length ?? 0;
+  const latin = question.match(/[a-zA-Z\u00c0-\u024f\u025b\u0263]/g)?.length ?? 0;
+  return arabic > latin ? "ar" : locale;
+}
+
 export function queryTokens(query: string): string[] {
   return [...new Set(words(query).filter((word) => word.length >= 2 && !STOP_WORDS.has(word)))].slice(0, 12);
 }

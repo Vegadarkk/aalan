@@ -123,6 +123,22 @@ describe("POST /api/assistant", () => {
     expect(down.body.articles[0]).toMatchObject({ slug: "decisions-et-recours", title: "القرارات والطعون" });
   });
 
+  it("answers an Arabic question on the French pages from the Arabic articles, linked to /ar (audit zone 5 n°18)", async () => {
+    const arabic = { locale: "fr", question: "البائع يطلب مني عربونًا قبل رؤية الغرض، ماذا أفعل؟" };
+    const ai = await ask(arabic, visitor());
+    expect(ai.status).toBe(200);
+    expect(ai.body.articles[0]).toMatchObject({ slug: "eviter-les-arnaques", title: "تجنب الاحتيال", locale: "ar" });
+    expect(JSON.stringify(parse.mock.calls[0]?.[0])).toContain("تجنب الاحتيال");
+
+    setAssistantClientForTests(null);
+    const search = await ask({ locale: "fr", question: "كيف أتجنب الاحتيال؟" }, visitor());
+    expect([search.status, search.body.mode]).toEqual([200, "search"]);
+    expect(search.body.articles[0]).toMatchObject({ slug: "eviter-les-arnaques", title: "تجنب الاحتيال", locale: "ar" });
+    // A French question keeps the French articles, with no locale of their own.
+    const french = await ask(question, visitor());
+    expect(french.body.articles[0]).toEqual({ slug: "eviter-les-arnaques", title: "Éviter les arnaques", summary: expect.any(String) });
+  });
+
   it("limits each device to 10 questions an hour and 30 a day, before calling Claude", async () => {
     expect(RATE_LIMITS["assistant.device.hour"]).toMatchObject({ points: 10, policy: "closed" });
     expect(RATE_LIMITS["assistant.device.day"]).toMatchObject({ points: 30, policy: "closed" });

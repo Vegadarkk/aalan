@@ -34,6 +34,8 @@ export interface HelpHit {
   slug: string;
   title: string;
   summary: string;
+  /** The article's locale when it is not the page's: a question in Arabic on the French pages. */
+  locale?: (typeof LOCALES)[number];
 }
 
 /**

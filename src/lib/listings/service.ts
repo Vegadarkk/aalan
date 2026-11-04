@@ -213,6 +213,38 @@ export async function createDraft(actor: Actor, input: CreateListingInput, now =
   return { id };
 }
 
+/** Statuses a listing can be copied from: anything its owner still sees (sold included: the same item again). */
+const DUPLICABLE_STATUSES: readonly ListingStatus[] = ["draft", "pending_review", "published", "paused", "expired", "rejected", "sold"];
+
+/**
+ * « Dupliquer » of « Mes annonces » (audit §7, Pros: a dealer posting 25 cars a day): a new draft
+ * with the source's category, criteria, texts, price, place, contact options and catalogue. The
+ * photos stay with the source (each item has its own; a shared upload would be purged with either
+ * listing), and so do the declarations, the payment link, the promotion and the shelf: the seller
+ * states them again. The drafts cap and the creation limit apply as for « Déposer ».
+ */
+export async function duplicateListing(actor: Actor, id: string, now = new Date()): Promise<{ id: string }> {
+  const source = await ownedListing(actor, id);
+  const seller = await sellerOf(actor.auth);
+  if (seller.seller.type !== "pro") throw new HttpError(403, "forbidden", "duplicate is a Pro tool");
+  if (!DUPLICABLE_STATUSES.includes(source.status)) throw new HttpError(409, "conflict", `cannot duplicate a ${source.status} listing`);
+  const patch: ListingPatch = {
+    title: source.title,
+    description: source.description,
+    attributes: source.attributes,
+    price: source.price,
+    priceNegotiable: source.priceNegotiable,
+    isDonation: source.isDonation,
+    contact: { showPhone: source.contact.showPhone, whatsapp: source.contact.whatsapp },
+    ...(source.condition ? { condition: source.condition } : {}),
+    ...(source.location ? { location: { regionCode: source.location.regionCode, citySlug: source.location.citySlug, ...(source.location.district ? { district: source.location.district } : {}) } } : {}),
+    ...(source.variants ? { variants: source.variants } : {}),
+    ...(typeof source.stock === "number" ? { stock: source.stock } : {}),
+  };
+  const tree: CreateListingInput = source.subcategoryId ? { subcategoryId: source.subcategoryId } : source.categoryId ? { categoryId: source.categoryId } : {};
+  return createDraft(actor, { ...tree, ...(source.isDonation ? { isDonation: true } : {}) }, now, { patch, seller });
+}
+
 // ---- Edits ----------------------------------------------------------------------------------
 
 function invalidField(path: string, code: string): HttpError {

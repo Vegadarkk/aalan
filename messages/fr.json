@@ -2898,7 +2898,8 @@
       "resumeOf": "Remettre en ligne « {title} »",
       "renewOf": "Renouveler pour 60 jours « {title} »",
       "promote": "Mettre en avant",
-      "promoteOf": "Mettre en avant « {title} »"
+      "promoteOf": "Mettre en avant « {title} »",
+      "duplicate": "Dupliquer"
     },
     "confirm": {
       "deleteTitle": "Supprimer cette annonce ?",
@@ -2915,7 +2916,8 @@
       "sold": "Annonce marquée comme vendue",
       "renewed": "Annonce renouvelée pour 60 jours",
       "deleted": "Annonce supprimée",
-      "renewHeld": "Renouvellement envoyé en vérification : votre annonce sera remise en ligne après validation"
+      "renewHeld": "Renouvellement envoyé en vérification : votre annonce sera remise en ligne après validation",
+      "duplicated": "Copie créée en brouillon : ajoutez ses photos"
     },
     "pending": {
       "title": "En cours de vérification",
@@ -3054,6 +3056,17 @@
       "removed": "Annonce retirée de la sélection.",
       "full": "Sélection complète ({max, number} annonces)",
       "position": "Sélection de la boutique, {index, number} sur {max, number}"
+    },
+    "find": {
+      "label": "Rechercher dans mes annonces",
+      "placeholder": "Titre ou ville",
+      "clear": "Effacer la recherche",
+      "category": "Catégorie",
+      "allCategories": "Toutes les catégories",
+      "count": "{shown, plural, =0 {Aucune annonce} one {# annonce} other {# annonces}} sur {total}",
+      "emptyTitle": "Aucune annonce ne correspond",
+      "emptyBody": "Essayez d'autres mots ou une autre catégorie.",
+      "reset": "Effacer la recherche"
     }
   },
   "Map": {

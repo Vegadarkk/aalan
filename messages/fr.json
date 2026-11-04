@@ -1001,7 +1001,14 @@
         "unavailable": "Cette photo ne peut pas être recadrée ici. Retirez-la et ajoutez une version sans visage.",
         "failed": "Le recadrage a échoué. Réessayez, ou retirez la photo.",
         "cancel": "Annuler",
-        "confirm": "Recadrer"
+        "confirm": "Recadrer",
+        "editTitle": "Recadrer ou pivoter la photo {index}",
+        "editDescription": "Redressez la photo d'un quart de tour et resserrez le cadre sur l'objet. La photo modifiée remplace l'originale.",
+        "rotateLabel": "Pivoter la photo",
+        "rotateLeft": "Pivoter à gauche",
+        "rotateRight": "Pivoter à droite",
+        "reset": "Rétablir",
+        "editConfirm": "Enregistrer"
       },
       "ignored": {
         "title": "Des fichiers n'ont pas été ajoutés",
@@ -1011,7 +1018,8 @@
         "rejected": "« {name} » : {reason}",
         "overflow": "{max} photos maximum : {count, plural, one {# fichier n'a pas été ajouté} other {# fichiers n'ont pas été ajoutés}}.",
         "dismiss": "J'ai compris"
-      }
+      },
+      "edit": "Recadrer ou pivoter la photo {index}"
     },
     "review": {
       "title": "Vérifiez votre annonce",

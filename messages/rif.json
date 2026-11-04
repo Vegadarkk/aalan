@@ -991,7 +991,14 @@
         "unavailable": "Tawlaft-a war tezmir ca ad tettwagzem da. Kkes-itt d rnu tawlaft bla udem.",
         "failed": "Agzam war yeddi ca. Ɛawed, niɣ kkes tawlaft.",
         "cancel": "Ssbeṭṭel",
-        "confirm": "Gzem"
+        "confirm": "Gzem",
+        "editTitle": "Gzem naɣ ssezzi tawlaft {index}",
+        "editDescription": "Ssegrareḍ tawlaft s ukuẓ n tuzzya d ssemẓi cadre x tɣawsa. Tawlaft yettwabeddlen ad tbeddel tin n tazwara.",
+        "rotateLabel": "Ssezzi tawlaft",
+        "rotateLeft": "Ssezzi ɣer zelmeḍ",
+        "rotateRight": "Ssezzi ɣer yeffus",
+        "reset": "Rred-itt",
+        "editConfirm": "Ḥrez"
       },
       "ignored": {
         "title": "Des fichiers n'ont pas été ajoutés",
@@ -1001,7 +1008,8 @@
         "rejected": "« {name} » : {reason}",
         "overflow": "{max} photos maximum : {count, plural, one {# fichier n'a pas été ajouté} other {# fichiers n'ont pas été ajoutés}}.",
         "dismiss": "J'ai compris"
-      }
+      },
+      "edit": "Gzem naɣ ssezzi tawlaft {index}"
     },
     "review": {
       "title": "Senqed annonce nnec",

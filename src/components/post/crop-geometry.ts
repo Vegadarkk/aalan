@@ -52,3 +52,40 @@ export function cropPixels(rect: CropRect, width: number, height: number): { sx:
   const sh = Math.max(1, Math.min(height - sy, Math.round(rect.h * height)));
   return { sx, sy, sw, sh };
 }
+
+/** The whole image: the starting frame of « Recadrer ou pivoter » (nothing cut until the seller says so). */
+export const FULL_CROP: CropRect = { x: 0, y: 0, w: 1, h: 1 };
+
+/** True when the frame keeps the whole image (to a pixel's worth on a large photo). */
+export function isFullRect(rect: CropRect): boolean {
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-3;
+  return near(rect.x, 0) && near(rect.y, 0) && near(rect.w, 1) && near(rect.h, 1);
+}
+
+/** Quarter turns clockwise, 0 to 3. */
+export type QuarterTurns = 0 | 1 | 2 | 3;
+
+export function addTurns(turns: QuarterTurns, delta: 1 | -1): QuarterTurns {
+  return (((turns + delta) % 4) + 4) % 4 as QuarterTurns;
+}
+
+/** The same area of the photo after a quarter turn of the whole image (clockwise: 1, counter: -1). */
+export function rotateRect(rect: CropRect, delta: 1 | -1): CropRect {
+  return delta === 1 ? clampRect({ x: 1 - rect.y - rect.h, y: rect.x, w: rect.h, h: rect.w }) : clampRect({ x: rect.y, y: 1 - rect.x - rect.w, w: rect.h, h: rect.w });
+}
+
+/** Size of an image of `width` x `height` after `turns` quarter turns. */
+export function turnedSize(width: number, height: number, turns: QuarterTurns): { width: number; height: number } {
+  return turns % 2 === 1 ? { width: height, height: width } : { width, height };
+}
+
+/**
+ * Draws `image` turned by `turns` quarter turns clockwise onto `context`, whose canvas has the
+ * turned size (turnedSize).
+ */
+export function drawTurned(context: Pick<CanvasRenderingContext2D, "translate" | "rotate" | "drawImage">, image: CanvasImageSource, width: number, height: number, turns: QuarterTurns): void {
+  const turned = turnedSize(width, height, turns);
+  context.translate(turned.width / 2, turned.height / 2);
+  context.rotate((turns * Math.PI) / 2);
+  context.drawImage(image, -width / 2, -height / 2, width, height);
+}

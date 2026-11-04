@@ -59,6 +59,11 @@ jobs:
         run: |
           node scripts/assert-target.ts
           node --test scripts/assert-target.test.ts scripts/legal-config.test.ts
+      # Zero-Joutiya plan: the former name only shrinks (scripts/legacy-name-baseline.json).
+      - name: Former name
+        run: |
+          node scripts/legacy-name.ts
+          node --test scripts/legacy-name.test.ts
       - run: npm run lint
       - name: Typecheck (app and uptime Worker)
         run: |

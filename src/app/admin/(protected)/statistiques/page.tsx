@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
 import { moderationStats } from "@/lib/decisions/stats";
 import { cn } from "@/lib/utils";
-import { formatDateTime, PRIORITY_DELAY, PRIORITY_TONE } from "../../_lib/moderation-format";
+import { formatDateTime, plural, PRIORITY_DELAY, PRIORITY_TONE } from "../../_lib/moderation-format";
 import { linkClassName, Panel } from "../../_components/panel";
 
 // Moderation figures (design D12, D24, AF §10 "SLA visibles"): open reports and overdue ones per
@@ -69,7 +69,11 @@ export default async function StatsPage() {
                   <td className="px-4 py-3 text-end tabular-nums">{number.format(open.count)}</td>
                   <td className={cn("px-4 py-3 text-end tabular-nums", open.overdue > 0 && "font-semibold text-danger")}>{number.format(open.overdue)}</td>
                   <td className="px-4 py-3 text-end tabular-nums">{number.format(decided.count)}</td>
-                  <td className={cn("px-4 py-3 text-end tabular-nums", slow && "font-semibold text-warning")}>{hours(decided.medianHours)}</td>
+                  <td className="px-4 py-3 text-end tabular-nums">
+                    <span className={cn(slow && "font-semibold text-warning")}>{hours(decided.medianHours)}</span>
+                    {/* The sample behind the median beside it (zone 7 audit P4): one decision is not a trend. */}
+                    {decided.medianHours === null ? null : <span className="ms-1.5 text-xs whitespace-nowrap text-foreground-muted">({plural(decided.count, "décision", "décisions")})</span>}
+                  </td>
                   <td className="px-4 py-3 text-end text-foreground-muted">{PRIORITY_DELAY[priority]}</td>
                 </tr>
               );

@@ -109,7 +109,8 @@ export const passwordChangeSchema = z.object({ currentPassword: z.string().min(1
 
 export const actionSchema = z
   .object({
-    mode: z.enum(["verifyEmail", "resetPassword"]),
+    /** changeEmail: the confirmation link of a new address (Z1-10, src/lib/account/email-change.ts). */
+    mode: z.enum(["verifyEmail", "resetPassword", "changeEmail"]),
     oobCode: z.string().min(10).max(512),
   })
   .strict();
@@ -151,13 +152,15 @@ export interface SessionSummary {
    * `effective`: the day it applies to this member (CGU §22.1); `noticed`: the first notice is recorded.
    */
   cguUpdate: { version: string; effective: string; noticed: boolean } | null;
+  /** A change of address waiting for its confirmation link (Z1-10); absent or null: none. */
+  emailChange?: { newEmail: string; expiresAt: string } | null;
 }
 
 export type SignupResponse = { status: "verification_sent" };
 export type LoginResponse = { status: "signed_in"; session: SessionSummary } | { status: "turnstile_required" } | { status: "verification_required" };
 export type GoogleResponse = { status: "signed_in"; session: SessionSummary } | { status: "needs_consent"; email: string; displayName: string | null };
 export type ResetRequestResponse = { status: "sent" };
-export type ActionResponse = { status: "verified"; session: SessionSummary | null } | { status: "reset_ok"; email: string };
+export type ActionResponse = { status: "verified"; session: SessionSummary | null } | { status: "reset_ok"; email: string } | { status: "email_changed"; email: string };
 export type PhoneStartResponse = { status: "pending"; code: string; waLink: string; number: string; expiresAt: string };
 export type PhoneStatusResponse = { status: "none" | "pending" | "verified" | "expired"; phone: string | null };
 export type VerifyResendResponse = { status: "verification_sent" };

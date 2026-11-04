@@ -24,6 +24,7 @@ import { Section } from "./settings-section";
 import { AccountClosedView, CloseAccountSection, DataSection } from "@/components/account/account-sections";
 import { ProStorefrontNotice, StorefrontSection } from "@/components/account/storefront-section";
 import { NotificationsSection } from "@/components/account/notifications-section";
+import { EmailSection } from "@/components/account/email-section";
 import { ExamplesSwitch } from "@/components/examples/examples-controls";
 import type { CloseAccountResponse } from "@/lib/contracts/account";
 
@@ -72,6 +73,7 @@ export function SettingsView() {
           {/* A Pro's public page is its shop's storefront, edited in the Pro area (UX audit of the Pro shops, B3). */}
           {session.role === "pro" ? <ProStorefrontNotice /> : <StorefrontSection />}
           <ExamplesSection />
+          <EmailSection session={session} />
           <PasswordSection email={session.email} displayName={session.displayName} hasPassword={session.providers.includes("password")} />
           <VerificationSection session={session} />
           <MethodsSection session={session} />

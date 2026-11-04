@@ -85,3 +85,53 @@ export function removeRow(list: InboxList, cid: string): InboxList {
 export function shouldLoadMore(list: InboxList, endVisible: boolean): boolean {
   return Boolean(list.next) && list.more === "idle" && (endVisible || list.rows.length === 0);
 }
+
+// ---- Filters (audit §7): « Non lues » and « Par annonce », over the rows loaded so far -------
+
+export interface InboxFilter {
+  unread: boolean;
+  /** The listing (or shop) of the conversations shown; null for all. */
+  listingId: string | null;
+}
+
+export const NO_FILTER: InboxFilter = { unread: false, listingId: null };
+
+export interface ListingChoice {
+  listingId: string;
+  title: string;
+  /** Conversations of the listing among the loaded rows. */
+  count: number;
+}
+
+/** The listings of the loaded rows, most conversations first, then by title. */
+export function listingChoices(rows: readonly ConversationView[]): ListingChoice[] {
+  const byListing = new Map<string, ListingChoice>();
+  for (const row of rows) {
+    const known = byListing.get(row.listingId);
+    if (known) known.count += 1;
+    else byListing.set(row.listingId, { listingId: row.listingId, title: row.listing.title, count: 1 });
+  }
+  return [...byListing.values()].sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+}
+
+/** The filter as it applies: a listing that left the loaded rows no longer filters. */
+export function effectiveFilter(filter: InboxFilter, rows: readonly ConversationView[]): InboxFilter {
+  if (filter.listingId && !rows.some((row) => row.listingId === filter.listingId)) return { ...filter, listingId: null };
+  return filter;
+}
+
+export const isFiltering = (filter: InboxFilter) => filter.unread || filter.listingId !== null;
+
+/**
+ * Rows the filter keeps. The open conversation stays while it is open: reading it must not make
+ * it vanish from « Non lues » under the person's eyes.
+ */
+export function filterRows(rows: readonly ConversationView[], filter: InboxFilter, selected: string | null): ConversationView[] {
+  if (!isFiltering(filter)) return [...rows];
+  return rows.filter((row) => row.cid === selected || ((!filter.unread || row.unread > 0) && (!filter.listingId || row.listingId === filter.listingId)));
+}
+
+/** Conversations with unread messages among the loaded rows. */
+export function unreadConversations(rows: readonly ConversationView[]): number {
+  return rows.filter((row) => row.unread > 0).length;
+}

@@ -296,6 +296,35 @@ describe("RevenueCat webhook", () => {
     expect(await getOrder(transactionId)).toMatchObject({ status: "refunded", refundEventId: refund.event.id });
   });
 
+  it("gives the credits back when RevenueCat reverses a pack's refund (a dispute won)", async () => {
+    const buyer = await member();
+    const appUserId = await checkoutOf(buyer);
+    const transactionId = `txn_${randomUUID()}`;
+    store.purchases = [owned(transactionId)];
+    expect((await deliver(rcEvent("NON_RENEWING_PURCHASE", appUserId, transactionId))).status).toBe(200);
+    const now = new Date();
+    await setWallet(buyer.uid, { balance: 10, frozen: false, planCredits: 0, allowances: { featured: 0 }, createdAt: now, updatedAt: now });
+    store.purchases = [owned(transactionId, "refunded")];
+    expect((await deliver(rcEvent("CANCELLATION", appUserId, transactionId, { cancel_reason: "CHARGEBACK", price_in_purchased_currency: -100 }))).status).toBe(200);
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: -100, frozen: true });
+
+    // Not owned again yet: waits.
+    const reversal = rcEvent("REFUND_REVERSED", appUserId, transactionId);
+    expect((await deliver(reversal)).status).toBe(500);
+    store.purchases = [owned(transactionId)];
+    expect((await deliver(reversal)).status).toBe(200);
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: 10, frozen: false });
+    expect((await ledgerRef(buyer.uid, `reversal_${reversal.event.id}`).get()).data()).toMatchObject({ reason: "refund_reversed", delta: 110, paidPart: 100, bonusPart: 10, balanceAfter: 10 });
+    const order = await getOrder(transactionId);
+    expect(order).toMatchObject({ status: "paid" });
+    expect(order?.refundEventId).toBeUndefined();
+    expect(vi.mocked(alert).mock.calls.map(([event]) => event.title)).toContain(`Remboursement annulé, crédits rendus (${buyer.uid})`);
+
+    // Delivered again: nothing more.
+    expect((await deliver(rcEvent("REFUND_REVERSED", appUserId, transactionId))).status).toBe(200);
+    expect((await getWallet(buyer.uid))?.balance).toBe(10);
+  });
+
   it("keeps a purchase refunded before it was processed without crediting it", async () => {
     const buyer = await member();
     const appUserId = await checkoutOf(buyer);
@@ -355,6 +384,24 @@ describe("billing reconciliation", () => {
     expect(await getOrder(transactionId)).toMatchObject({ status: "refunded" });
     expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 0, failed: 0 });
     expect((await getWallet(buyer.uid))?.balance).toBe(0);
+  });
+
+  it("gives back a refunded pack RevenueCat shows owned again, once", async () => {
+    const buyer = await member();
+    const appUserId = await checkoutOf(buyer);
+    const transactionId = `txn_${randomUUID()}`;
+    store.purchases = [listed(transactionId)];
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 1 });
+    store.purchases = [listed(transactionId, "refunded")];
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 1 });
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: 0 });
+
+    store.purchases = [listed(transactionId)];
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 1, failed: 0 });
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: 110 });
+    expect(await getOrder(transactionId)).toMatchObject({ status: "paid" });
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 0, failed: 0 });
+    expect((await getWallet(buyer.uid))?.balance).toBe(110);
   });
 
   it("processes again an event the queue left failed, and alerts what it cannot solve", async () => {

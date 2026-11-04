@@ -72,6 +72,8 @@ describe("evidence labels of the moderation review", () => {
     expect(labels.evidence("nsfw 0.90 on photo 2 (above reject threshold)")).toBe("Nudité probable (score 0,90) sur la photo 2, au-delà du seuil de refus");
     expect(labels.evidence("3 listings in 24h")).toBe("3 annonces en 24 h");
     expect(labels.evidence("same text as 1 listing(s)")).toBe("Même texte que 1 autre annonce du vendeur");
+    expect(labels.evidence("same photo as 2 listing(s)")).toBe("Même photo, ou presque, que 2 autres annonces du vendeur");
+    expect(labels.evidence("same photo as 1 listing(s) of other accounts: lst_a1")).toBe("Même photo, ou presque, que 1 annonce d'un autre compte (lst_a1)");
     expect(labels.evidence("account age 0 day(s)")).toBe("Compte créé aujourd'hui");
     expect(labels.evidence("1 previous rejection(s)")).toBe("1 refus antérieur");
     expect(labels.evidence("declaration self")).toBe("Déclaration du vendeur : le vendeur est la personne concernée");

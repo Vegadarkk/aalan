@@ -11,7 +11,7 @@ import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
 import { publishRevoked } from "@/lib/messaging";
-import { enforceLimit, resetLimit } from "@/lib/rate-limit/limiter";
+import { enforceLimit, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
 import { accountByEmail, displayNameFor, userByEmail, withCodeErrors } from "./accounts";
 import { activateMember } from "./activation";
 import { checkResetCode } from "./action";
@@ -84,7 +84,10 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   const email = context.user.email ?? (await auth().getUser(uid)).email;
   if (!email) throw forbidden("this account has no password");
   const keys = loginKeys(email, device.identity.ipBucket);
-  await assertNotLocked(keys);
+  const { accountFailures, accountFailureLimit } = await assertNotLocked(keys);
+  // 20 failures per hour on the account make Turnstile mandatory at login; this form has none, so it
+  // refuses until the hour is over (audit A-3: a stolen session must not test passwords here).
+  if (accountFailures >= accountFailureLimit) throw new HttpError(429, "account_locked", undefined, { headers: { "Retry-After": String((await rateLimitDefinition("login.fail.account")).duration) } });
   // The attempt is counted before the check (atomic), and forgotten as soon as the password is right.
   const attempt = await countAttempt(keys);
   await checkPassword(email, input.currentPassword, keys, attempt);

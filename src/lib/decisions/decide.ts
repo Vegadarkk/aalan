@@ -30,6 +30,7 @@ import { consume } from "@/lib/quota";
 import { adsEligibleOf, closeReportsTx, openReportsForTarget, recordReporterOutcomes, targetKey, unhideTarget, type TargetRef } from "@/lib/reports";
 import { splitMessageId } from "@/lib/reports/target-key";
 import { reviewDocRef } from "@/lib/reports/targets";
+import { expireShopCheckouts } from "@/lib/payments/plans";
 import { getReview } from "@/lib/reviews/repository";
 import { setReviewVisibility } from "@/lib/reviews/moderation";
 import { notifySearchIndex } from "@/lib/search/queue";
@@ -641,6 +642,8 @@ async function afterCommit(run: AfterInput): Promise<void> {
   const accountDecisionId = committed.sanction?.id ?? mainId;
   // Live messaging streams of a suspended or banned account end at once (phase-5 D2 security).
   if (plan?.kind === "sanction" && (plan.sanction.action === "suspend_account" || plan.sanction.action === "ban")) await step("messaging revoke", context, () => publishRevoked(ownerUid));
+  // A shop's payment pages still open are expired (audit P-7): nothing is paid to a closed shop.
+  if (plan?.kind === "sanction" && (plan.sanction.action === "suspend_account" || plan.sanction.action === "ban")) await step("checkout expiry", context, () => expireShopCheckouts(ownerUid, now));
   if (plan?.kind === "sanction" && plan.sanction.action === "suspend_account") await step("listings pause", context, () => pauseListingsForSuspension(ownerUid, now, clearHiddenFor));
   if (plan?.kind === "sanction" && plan.sanction.action === "ban") await step("listings removal", context, () => removeListingsForBan(ownerUid, accountDecisionId, actor.uid, now, clearHiddenFor));
   if (plan?.kind === "reverse" && plan.action === "suspend_account" && plan.suspensionLifted) await step("listings resume", context, () => resumeModerationPaused(ownerUid, now));

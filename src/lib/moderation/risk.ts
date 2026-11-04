@@ -9,6 +9,9 @@ import type { ScreenState } from "@/lib/moderation/types";
 // Why these weights (reasons are the moderator-facing wording):
 // - prohibited_kw 60: a hard keyword is a 422 blocker; the flag only documents a blocked attempt.
 // - nsfw_review 40, prohibited_soft 35, dup_* 30: strong signals, each one near the threshold.
+//   dup_photo_other (a near-duplicate of another account's photo) weighs like dup_photo: alone it
+//   stays auto (a shared catalogue photo, a seller with a second account), with a new account or an
+//   odd price it holds the listing (photos copied from a real listing, the classic scam).
 // - sensitive_text / third_party_phone 25 / 20: legally mandatory review (step 3) -> always review.
 // - credit_ad 25: instalment without the APR (loi 31-08 art. 76), the mentions are checked by a person -> always review.
 // - price_outlier 20, new_account 15, volume 15: weak alone, review when combined
@@ -50,6 +53,7 @@ export const RISK_WEIGHTS: Readonly<Record<ModerationFlag, RiskWeight>> = {
   price_outlier: { weight: 20, reason: "price outside the subcategory envelope" },
   dup_text: { weight: 30, reason: "same text as another listing" },
   dup_photo: { weight: 30, reason: "same photo as another listing" },
+  dup_photo_other: { weight: 30, reason: "same photo as a listing of another account" },
   new_account: { weight: 15, reason: "account younger than the threshold" },
   volume: { weight: 15, reason: "many listings in 24 hours" },
   restricted_category: { weight: 0, reason: "adults-only subcategory, human review required" },

@@ -375,6 +375,7 @@
         "displayNameMin": "Le nom doit faire au moins 2 caractères.",
         "displayNameMax": "Le nom ne peut pas dépasser 40 caractères.",
         "displayNameFormat": "Utilisez des lettres, des chiffres, des espaces, des points, des apostrophes ou des tirets.",
+        "displayNameContact": "Retirez le numéro de téléphone ou le lien : les autres membres vous contactent par la messagerie Aalan.",
         "consentRequired": "Cette case est obligatoire pour continuer.",
         "currentPassword": "Entrez votre mot de passe actuel.",
         "phone": "Entrez un numéro de mobile marocain (06 ou 07).",
@@ -512,6 +513,7 @@
         "title": "Profil",
         "body": "Le nom affiché apparaît sur vos annonces et dans la messagerie.",
         "displayName": "Nom affiché",
+        "displayNameHint": "{count} sur {max} caractères. Visible sur vos annonces et dans la messagerie : ni numéro ni lien.",
         "locale": "Langue de l'interface",
         "save": "Enregistrer",
         "saved": "Profil enregistré"
@@ -573,7 +575,31 @@
         "none": "Aucune méthode de connexion n'est enregistrée."
       },
       "signOut": "Se déconnecter",
-      "signedOut": "Vous êtes déconnecté"
+      "signedOut": "Vous êtes déconnecté",
+      "notifications": {
+        "title": "E-mails et notifications",
+        "body": "Choisissez les e-mails que vous recevez. Vous pouvez changer d'avis à tout moment.",
+        "loading": "Chargement de vos préférences",
+        "retry": "Réessayer",
+        "messagesEmail": {
+          "label": "Messages et rendez-vous",
+          "hint": "Un e-mail quand des messages vous attendent (au plus toutes les 6 heures), les rappels de rendez-vous et les avis reçus.",
+          "on": "Vous recevrez les e-mails de la messagerie",
+          "off": "Vous ne recevrez plus les e-mails de la messagerie"
+        },
+        "marketing": {
+          "label": "Nouveautés et offres d'Aalan",
+          "hint": "Facultatif : quelques e-mails sur les nouveautés du site et nos offres.",
+          "since": "Accepté le {date}.",
+          "on": "Vous recevrez nos nouveautés et nos offres",
+          "off": "Vous ne recevrez plus nos nouveautés ni nos offres"
+        },
+        "alerts": {
+          "body": "Les alertes de vos recherches sauvegardées se règlent recherche par recherche.",
+          "action": "Gérer mes alertes"
+        },
+        "always": "Les e-mails nécessaires à votre compte (sécurité, connexion, décisions de modération et recours) sont toujours envoyés."
+      }
     },
     "verifications": {
       "title": "Vérifier mon numéro",
@@ -3922,6 +3948,7 @@
       "settings": "Ouvrir mes paramètres",
       "inactive": "Votre compte doit être actif pour demander un compte Pro.",
       "phoneCall": "Votre numéro de mobile sera vérifié par un appel de notre équipe pendant l'examen de la demande.",
+      "verifyPhoneNow": "Vous pouvez aussi le vérifier dès maintenant par WhatsApp.",
       "ready": "Votre compte remplit les conditions pour demander un compte Pro."
     },
     "closed": "Les demandes de compte Pro sont fermées pour le moment. Revenez bientôt.",
@@ -3989,6 +4016,7 @@
       "resubmit": "Envoyer ma demande corrigée",
       "required": "Ce champ est obligatoire.",
       "nameLength": "Le nom doit compter de 2 à {max} caractères.",
+      "nameContact": "Retirez le numéro de téléphone ou le lien du nom : vos clients vous contactent par la messagerie Aalan.",
       "iceFormat": "L'ICE compte 15 chiffres.",
       "identifierFormat": "Utilisez des chiffres et des lettres uniquement.",
       "cityRequired": "Choisissez la ville de la boutique.",

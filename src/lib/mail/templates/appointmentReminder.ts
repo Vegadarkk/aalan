@@ -78,6 +78,6 @@ export function appointmentReminder(data: TemplateData["appointmentReminder"], c
     sections: [{ heading: copy.when, items: [{ title: when, ...(place ? { detail: `${copy.place} : ${place}` } : {}), url }] }],
     action: { label: copy.button, url },
     closing: [copy.safety, copy.closing],
-    links: [{ label: copy.settings, url: pageUrl(ctx, "parametres") }],
+    links: [{ label: copy.settings, url: pageUrl(ctx, "parametres#notifications") }],
   });
 }

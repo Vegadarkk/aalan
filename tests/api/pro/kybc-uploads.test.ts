@@ -87,11 +87,9 @@ describe("KYBC pieces", () => {
   });
 
   it("signs for eligible accounts only (same gates as the application)", async () => {
+    // The number is verified by the moderator's call during the review, WhatsApp check or not (Z1-03).
     const noPhone = await member();
-    const refused = await withWhatsApp(() => signPiece(noPhone));
-    expect(refused.status).toBe(403);
-    expect(code(refused.body)).toBe("phone_required");
-    // Without the WhatsApp check the number is verified by the moderator's call during the review.
+    expect((await withWhatsApp(() => signPiece(noPhone))).status).toBe(201);
     expect((await signPiece(noPhone)).status).toBe(201);
     const pending = await applicant();
     await applyAs(pending, application([await readyPiece(pending)]));

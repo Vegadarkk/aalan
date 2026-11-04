@@ -18,6 +18,8 @@ import { ApiError } from "@/lib/auth/client";
 import type { ProApplyInput, ProSelfView } from "@/lib/contracts/pro";
 import { sectorCommitmentScope, type CommitmentScope } from "@/lib/pro/commitments";
 import { LEGAL_FORMS, normalizeIdentifier, type LegalForm } from "@/lib/pro/kybc";
+import { displayNameContact } from "@/lib/moderation/display-name";
+import { firstStrictIssue, type FreeTextIssue } from "@/lib/moderation/free-text";
 import { submitProApplication } from "@/lib/pro/client";
 import { PRO_DESCRIPTION_MAX, PRO_NAME_MAX, type ProSector } from "@/lib/pro/profile-schema";
 import { cn } from "@/lib/utils";
@@ -74,7 +76,7 @@ export interface Draft {
   sectorCommitment: boolean;
 }
 
-type MessageKey = "required" | "activityRequired" | "nameLength" | "cityRequired" | "iceFormat" | "identifierFormat" | "rcOrTp" | "phoneRequired" | "phoneFormat" | "piecesRequired" | "piecesPending" | "commitmentRequired" | "sectorCommitmentRequired" | "challenge";
+type MessageKey = "required" | "activityRequired" | "nameLength" | "nameContact" | "cityRequired" | "iceFormat" | "identifierFormat" | "rcOrTp" | "phoneRequired" | "phoneFormat" | "piecesRequired" | "piecesPending" | "commitmentRequired" | "sectorCommitmentRequired" | "challenge";
 
 export function initialDraft(previous: ProSelfView | null): Draft {
   const form = previous && (LEGAL_FORMS as readonly string[]).includes(previous.legalForm) ? (previous.legalForm as LegalForm) : null;
@@ -93,12 +95,20 @@ export function initialDraft(previous: ProSelfView | null): Draft {
   };
 }
 
+/** The presentation's text screen, as the storefront's (src/lib/moderation/free-text.ts): null when it may be sent. */
+export function descriptionIssue(draft: Pick<Draft, "description">): FreeTextIssue | null {
+  const text = draft.description.trim();
+  return text ? firstStrictIssue(text) : null;
+}
+
 export function draftProblems(draft: Draft, pieces: readonly PieceState[], needsPhone: boolean, token: string | null): Partial<Record<FieldKey, MessageKey>> {
   const out: Partial<Record<FieldKey, MessageKey>> = {};
   if (!draft.activity) out.activity = "activityRequired";
   const name = draft.name.trim();
   if (name === "") out.name = "required";
   else if (name.length < 2 || name.length > PRO_NAME_MAX) out.name = "nameLength";
+  // The shop's name and presentation show publicly: no number or link in them (B6, Z1-27).
+  else if (displayNameContact(name)) out.name = "nameContact";
   if (!draft.city) out.city = "cityRequired";
   if (!draft.form) out.form = "required";
   else {
@@ -147,6 +157,7 @@ interface ProApplicationFormProps {
 export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicationFormProps) {
   const t = useTranslations("Pro.form");
   const errors = useTranslations("Pro.errors");
+  const issues = useTranslations("FreeText");
   const apiMessage = useApiErrorMessage();
   const locale = useLocale() as Locale;
   const formRef = useRef<HTMLFormElement>(null);
@@ -163,6 +174,8 @@ export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicat
     const found = problems[key];
     return found ? t(found) : undefined;
   };
+  // Shown as typed, like the storefront's own presentation.
+  const textIssue = descriptionIssue(draft);
   const set = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }));
   const setId = (key: Identifier, value: string) => setDraft((current) => ({ ...current, ids: { ...current.ids, [key]: value } }));
 
@@ -177,7 +190,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicat
     if (pending) return;
     setAttempted(true);
     const found = draftProblems(draft, pieces, needsPhone, token);
-    if (Object.keys(found).length > 0 || !draft.activity || !draft.form || !draft.city || !token) {
+    if (Object.keys(found).length > 0 || textIssue || !draft.activity || !draft.form || !draft.city || !token) {
       // The first invalid control takes the focus, once the messages are rendered.
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
@@ -250,7 +263,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicat
         <Field label={t(agencyScope ? "agencyName" : "name")} hint={t("nameHint", { max: PRO_NAME_MAX })} error={message("name")} required>
           <Input value={draft.name} maxLength={PRO_NAME_MAX} dir="auto" autoComplete="organization" onChange={(event) => set({ name: event.target.value })} />
         </Field>
-        <Field label={t("description")} hint={t("descriptionHint")}>
+        <Field label={t("description")} hint={t("descriptionHint")} error={textIssue ? issues(textIssue) : undefined}>
           <Textarea value={draft.description} rows={3} maxLength={PRO_DESCRIPTION_MAX} dir="auto" className="min-h-24" onChange={(event) => set({ description: event.target.value })} />
         </Field>
         <CityCombobox value={draft.city} onSelect={(city) => set({ city })} error={message("city")} required locale={locale} />

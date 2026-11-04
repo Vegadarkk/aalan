@@ -37,6 +37,8 @@ export const ACCOUNT_API = {
   export: "/api/account/export",
   /** GET -> StorefrontSettings; POST StorefrontInput -> StorefrontSettings (vitrine-avis §1). */
   storefront: "/api/account/storefront",
+  /** GET -> NotificationSettings; POST NotificationSettingsInput -> NotificationSettings (audit B2). */
+  notifications: "/api/account/notifications",
 } as const;
 
 export const LISTING_API = {

@@ -80,12 +80,13 @@ beforeEach(() => {
 });
 
 describe("POST /api/pro/apply", () => {
-  it("needs a phone verified beforehand while the WhatsApp check works", async () => {
+  it("takes an unverified number even while the WhatsApp check works: the moderator calls it (Z1-03)", async () => {
     const owner = await member();
     const piece = await kybPiece(owner);
-    const result = await withWhatsApp(() => applyAs(owner, application([piece], { phone: freshPhone() })));
-    expect(result.status).toBe(403);
-    expect(code(result.body)).toBe("phone_required");
+    const phone = freshPhone();
+    const result = await withWhatsApp(() => applyAs(owner, application([piece], { phone })));
+    expect(result.status).toBe(201);
+    expect((await getProProfile(result.body.proId))?.kybc.phoneToCheck).toBe(phone);
   });
 
   it("without the WhatsApp check, takes the Moroccan mobile a moderator will call", async () => {

@@ -62,6 +62,6 @@ export function newMessages(data: TemplateData["newMessages"], ctx: TemplateCont
     sections,
     action: { label: copy.button, url: inbox },
     closing: [copy.safety, copy.closing],
-    links: [{ label: copy.settings, url: pageUrl(ctx, "parametres") }],
+    links: [{ label: copy.settings, url: pageUrl(ctx, "parametres#notifications") }],
   });
 }

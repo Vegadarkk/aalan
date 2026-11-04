@@ -181,6 +181,28 @@ export async function updateStorefront(uid: string, patch: StorefrontPatch, now 
   void consume("firestore.writes", 1);
 }
 
+export interface NotificationPatch {
+  marketing?: boolean;
+  messagesEmail?: boolean;
+}
+
+/**
+ * E-mail preferences of /parametres (audit B2), one write with dotted paths. The marketing opt-in
+ * keeps its proof (text version and date) while it is given; a withdrawal removes it, as an opt-in
+ * refused at sign-up never had one.
+ */
+export async function updateNotificationPreferences(uid: string, patch: NotificationPatch, now = new Date()): Promise<void> {
+  const update: Record<string, unknown> = {};
+  if (patch.marketing !== undefined) {
+    update["consents.marketing"] = patch.marketing;
+    update["consents.marketingConsent"] = patch.marketing ? { version: MARKETING_CONSENT_VERSION, at: now } : FieldValue.delete();
+  }
+  if (patch.messagesEmail !== undefined) update["notifications.messagesEmail"] = patch.messagesEmail;
+  if (Object.keys(update).length === 0) return;
+  await privateRef(uid).update(update);
+  void consume("firestore.writes", 1);
+}
+
 /** Renewed transfers consent (art. 44 loi 09-08): only consents.transfers changes (a dotted path in update()). */
 export async function updateTransfersConsent(uid: string, version: string, now = new Date()): Promise<void> {
   await privateRef(uid).update({ "consents.transfers": { version, at: now } });

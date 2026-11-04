@@ -16,13 +16,14 @@ import { SWITCHABLE_LOCALES, type Locale } from "@/config/site";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { ApiError, apiPost, isApiError, setSession, signOut, useSession } from "@/lib/auth/client";
 import { usePublicConfig } from "@/lib/config/client";
-import { AUTH_API, passwordChangeSchema, profileSchema, type SessionSummary } from "@/lib/contracts/auth";
+import { AUTH_API, DISPLAY_NAME_MAX, passwordChangeSchema, profileSchema, type SessionSummary } from "@/lib/contracts/auth";
 import { toast } from "sonner";
 import { FormMessage, useApiErrorMessage, useFieldMessage } from "./form-message";
 import { PasswordField } from "./password-field";
 import { Section } from "./settings-section";
 import { AccountClosedView, CloseAccountSection, DataSection } from "@/components/account/account-sections";
 import { ProStorefrontNotice, StorefrontSection } from "@/components/account/storefront-section";
+import { NotificationsSection } from "@/components/account/notifications-section";
 import { ExamplesSwitch } from "@/components/examples/examples-controls";
 import type { CloseAccountResponse } from "@/lib/contracts/account";
 
@@ -73,6 +74,7 @@ export function SettingsView() {
           <PasswordSection email={session.email} displayName={session.displayName} hasPassword={session.providers.includes("password")} />
           <VerificationSection session={session} />
           <MethodsSection session={session} />
+          <NotificationsSection />
           <DataSection />
           <CloseAccountSection onClosed={setClosed} />
         </div>
@@ -139,12 +141,14 @@ function ProfileSection({ session }: { session: SessionSummary }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileForm, unknown, ProfileInput>({
     resolver: zodResolver(profileSchema),
     defaultValues: { displayName: session.displayName ?? "", locale: session.locale ?? "fr" },
     mode: "onTouched",
   });
+  const displayName = useWatch({ control, name: "displayName" }) ?? "";
 
   const submit = handleSubmit(async (values) => {
     setServerError(undefined);
@@ -162,8 +166,9 @@ function ProfileSection({ session }: { session: SessionSummary }) {
     <Section id="profile" title={t("title")} body={t("body")}>
       <form method="post" onSubmit={submit} noValidate className="flex flex-col gap-4">
         <FormMessage error={serverError} />
-        <Field label={t("displayName")} error={fieldMessage("displayName", errors.displayName)} required>
-          <Input autoComplete="name" maxLength={40} {...register("displayName")} />
+        {/* The limit is shown, not only enforced by maxLength (Z1-04). */}
+        <Field label={t("displayName")} hint={t("displayNameHint", { count: displayName.length, max: DISPLAY_NAME_MAX })} error={fieldMessage("displayName", errors.displayName)} required>
+          <Input autoComplete="name" maxLength={DISPLAY_NAME_MAX} {...register("displayName")} />
         </Field>
         <Field label={t("locale")} error={fieldMessage("locale", errors.locale)}>
           <select className={inputClassName} {...register("locale")}>

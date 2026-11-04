@@ -89,6 +89,7 @@ export function useFieldMessage(): (kind: FieldKind, error?: FieldError) => stri
         case "newPassword":
           return error.type === "too_big" ? t("passwordMax", { max: PASSWORD_MAX }) : t("passwordMin", { min: PASSWORD_MIN });
         case "displayName":
+          if (error.type === "custom") return t("displayNameContact");
           return error.type === "too_small" ? t("displayNameMin") : error.type === "too_big" ? t("displayNameMax") : t("displayNameFormat");
         case "consent":
           return t("consentRequired");

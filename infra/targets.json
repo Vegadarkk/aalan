@@ -7,7 +7,7 @@
       "a3lanZoneId": "e7b4053eb9c2496ffc7b7c71b0819109",
       "accessTeamDomain": "joutiya.cloudflareaccess.com",
       "sshTunnelId": "fddd6cc1-24d3-4fad-83b1-09e2ac432fe9",
-      "accessOauthClientId": "365736224142-b7gv3fng8tv3uj2g6c9pffqcqu5sn1cp.apps.googleusercontent.com"
+      "accessOauthClientId": "410714423718-me54fjq2hfemc12s8ugtvrh2jvkmrp1t.apps.googleusercontent.com"
     },
     "oracle": {
       "homeRegion": "eu-paris-1",
@@ -91,9 +91,9 @@
         "dsn": "https://d6aa7e09b2945a669af0b118e1203e27@o4512265655746560.ingest.de.sentry.io/4512265664725072"
       },
       "r2": {
-        "quarantine": "joutiya-staging-quarantine",
-        "media": "joutiya-staging-media",
-        "private": "joutiya-staging-private"
+        "quarantine": "aalan-staging-quarantine",
+        "media": "aalan-staging-media",
+        "private": "aalan-staging-private"
       },
       "whatsapp": {
         "wabaId": null,
@@ -107,7 +107,7 @@
         "site": "staging.aalan.ma",
         "www": null,
         "admin": "admin-staging.aalan.ma",
-        "media": "media-staging.joutiya.ma"
+        "media": "media-staging.aalan.ma"
       }
     },
     "prod": {

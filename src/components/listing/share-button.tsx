@@ -86,6 +86,7 @@ export function ShareButton({ url, title, className }: { url: string; title: str
         <DropdownMenu.Content
           align="start"
           sideOffset={6}
+          collisionPadding={12}
           data-testid="share-menu"
           className="z-50 min-w-56 rounded-md border border-border bg-surface p-1 text-foreground shadow-lg shadow-bab-950/10 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >

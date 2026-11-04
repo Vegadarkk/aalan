@@ -279,6 +279,8 @@ export const moderationSchema = z
     /** Hidden by a report's strong signal (D11) or by a staff `restrict_visibility` decision (D13, `signal: "decision"`, reportId = the decision id when no report). */
     hiddenBy: z.object({ reportId: z.string().min(1).max(128), signal: z.enum(["trusted", "multi", "auto", "authority", "decision"]), at: ts }).strict().optional(),
     lastDecisionId: z.string().max(128).optional(),
+    /** contentFingerprint of the listing when the last automated hold was written (src/lib/listings/screening.ts). */
+    heldContent: z.string().regex(/^[0-9a-f]{64}$/).optional(),
     reviewedBy: z.string().max(128).optional(),
     reviewedAt: ts.optional(),
     ai: z

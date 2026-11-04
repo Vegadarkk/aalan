@@ -115,6 +115,23 @@ describe("report queue", () => {
     expect(html).toContain('href="/signalements/cible?cle=listing%3Aabcd2345"');
   });
 
+  it("shows a target in words with its photo, the reference secondary and copyable (zone 7 P2-8)", () => {
+    const cards = {
+      "listing:abcd2345": { kind: "Annonce", title: "iPhone 15 Pro Max neuf", details: ["Yassine", "2 500 DH", "Casablanca"], thumb: { src: "https://media.example/listings/abcd2345/p1-s.webp", width: 640, height: 480 }, reference: "abcd2345" },
+      "user:u1": { kind: "Compte", title: "Rachid", details: ["Compte actif"], thumb: null, reference: "k7m2p9q4rs" },
+    };
+    const html = renderToStaticMarkup(<ReportQueue items={items} groups={groups} renderedAt={T0.toISOString()} cards={cards} />);
+    const content = text(html);
+    expect(content).toContain("Annonce iPhone 15 Pro Max neuf");
+    expect(content).toContain("Yassine, 2 500 DH, Casablanca");
+    expect(content).toContain("Compte Rachid");
+    expect(html).toContain('src="https://media.example/listings/abcd2345/p1-s.webp"');
+    expect(html).toContain('aria-label="Copier la référence abcd2345"');
+    expect(html).toContain('aria-label="Examiner : Annonce : iPhone 15 Pro Max neuf"');
+    // A target without a card keeps its reference name.
+    expect(content).toContain("Annonce wxyz2345");
+  });
+
   it("follows the clock: a group past due moves ahead of a P0 still on time", () => {
     const ticks: Date[] = [];
     const stop = startClock((now) => ticks.push(now), 15_000);

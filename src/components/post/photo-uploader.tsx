@@ -19,8 +19,7 @@ import { PhotoCropDialog } from "./photo-crop-dialog";
 // accepts camera capture on phones (OS camera app: no getUserMedia, which Permissions-Policy
 // denies). Moves are announced to screen readers and keep the focus on the moved photo. A ready
 // photo where the local check found a face says so and offers a crop (PhotoCropDialog); kept as
-// is, it sends the listing to a moderator before publication (CGU §7). A photo too small to look
-// sharp, or the same photo twice, gets a note that never blocks (zone 3 audit P3-2).
+// is, it sends the listing to a moderator before publication (CGU §7).
 
 interface PhotoUploaderProps {
   photos: PhotoItem[];
@@ -150,6 +149,7 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
           {t(onCrop ? "faces.body" : "faces.bodyNoCrop", { count: withFaces })}
         </ErrorBanner>
       ) : null}
+      {/* A photo too small to look sharp, or the same photo twice: a note that never blocks (zone 3 audit P3-2). */}
       {warnings.size > 0 ? (
         <ErrorBanner tone="warning" title={t("checks.title", { count: warnings.size })}>
           <ul data-testid="photo-checks" className="flex list-disc flex-col gap-0.5 ps-4">
@@ -339,6 +339,13 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
         ) : (
           <span className="sr-only">{t("photoAlt", { index: n })}</span>
         )}
+        {/* P3-2 note on the tile (under the cover badge on the first photo); the banner above lists them all. */}
+        {warning && !busy ? (
+          <span className={cn("absolute start-2 flex max-w-[calc(100%-3.5rem)] items-center gap-1 rounded-full bg-bab-950/80 px-2 py-0.5 text-xs font-medium text-cream-100 shadow-sm", index === 0 ? "top-9" : "top-2")} data-testid="photo-check">
+            {warning.sameAs ? <Copy className="size-3 shrink-0 text-gold-300" aria-hidden="true" /> : <Shrink className="size-3 shrink-0 text-gold-300" aria-hidden="true" />}
+            <span className="truncate">{t(warning.sameAs ? "checks.tileSame" : "checks.tileSmall")}</span>
+          </span>
+        ) : null}
         {index === 0 && item.status === "ready" ? (
           <Badge variant="featured" className="absolute start-2 top-2 gap-1 shadow-sm">
             <Star className="size-3" aria-hidden="true" />
@@ -349,12 +356,6 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
           <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 px-2.5 py-1.5 text-xs font-medium text-cream-100" data-testid="photo-face">
             <ScanFace className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" />
             {t("faces.tile")}
-          </span>
-        ) : warning && !busy ? (
-          // The face strip goes first (it changes the publication); the banner above lists every note.
-          <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 px-2.5 py-1.5 text-xs font-medium text-cream-100" data-testid="photo-check">
-            {warning.sameAs ? <Copy className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" /> : <Shrink className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" />}
-            {t(warning.sameAs ? "checks.tileSame" : "checks.tileSmall")}
           </span>
         ) : null}
         {busy || item.removing ? (

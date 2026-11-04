@@ -517,7 +517,7 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
 
 /**
  * The declared stock alone (catalogue §3): from « Mes annonces » or the Pro area, one write, the
- * listing indexed again when online, no screening (no text, no price changes). Joutiya never
+ * listing indexed again when online, no screening (no text, no price changes). Aalan never
  * counts sales: the Pro sets the figure. A combination not on the listing is a 400.
  */
 export async function updateStock(actor: Actor, id: string, input: StockUpdateInput, now = new Date()) {

@@ -23,7 +23,7 @@ const DAY = 86_400_000;
 test.use({ extraHTTPHeaders: { "x-dev-access-email": EMAIL } });
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 /** The moderator account with its roster entry (idempotent across Playwright workers). */

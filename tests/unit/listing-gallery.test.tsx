@@ -8,7 +8,7 @@ import { isolate } from "@/lib/i18n/bidi";
 
 // Server HTML of the listing gallery (design §5, §8): what the ISR page paints before hydration.
 
-const MEDIA = "https://media.joutiya.test";
+const MEDIA = "https://media.aalan.test";
 const PHOTOS: GalleryProps["photos"] = [
   { id: "photo0001", w: 1600, h: 1200, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
   { id: "photo0002", w: 1200, h: 1600, blurhash: "LKO2?U%2Tw=w]~RBVZRi};RPxuwH" },

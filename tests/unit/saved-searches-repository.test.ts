@@ -9,7 +9,7 @@ import { accountEndPath } from "@/lib/saved-searches/repository";
 
 describe("accountEndPath", () => {
   it("names a document of the account, after every auto-ID ([A-Za-z0-9]) by UTF-8 bytes", () => {
-    const firestore = getFirestore(initializeApp({ projectId: "demo-joutiya" }, "account-end-path"));
+    const firestore = getFirestore(initializeApp({ projectId: "demo-aalan" }, "account-end-path"));
     // doc() throws for a path that does not name a document (e.g. a trailing slash).
     const ref = firestore.doc(accountEndPath("uid123"));
     expect(ref.parent.id).toBe("savedSearches");

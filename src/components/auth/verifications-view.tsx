@@ -314,7 +314,7 @@ export function PendingCode({
           </a>
         </Button>
         <p className="text-center text-sm text-foreground-muted">
-          {t("joutiyaNumber")}{" "}
+          {t("aalanNumber")}{" "}
           <span dir="ltr" className="whitespace-nowrap font-medium text-foreground">
             {displayMoroccanPhone(`+${state.number.replace(/^\+/, "")}`)}
           </span>

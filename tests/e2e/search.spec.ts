@@ -24,7 +24,7 @@ const randomFrom = (alphabet: string, length: number) => Array.from(randomBytes(
 const WORD = `zq${randomFrom(LETTERS, 8)}`;
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 interface Seeded {

@@ -11,7 +11,7 @@ process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 /** Auth emulator admin REST (firebase-admin/auth does not load under the Playwright loader here). */
 async function authEmulator<T>(action: string, body: unknown): Promise<T> {
-  const project = process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya";
+  const project = process.env.FIREBASE_PROJECT_ID ?? "demo-aalan";
   const response = await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${project}/accounts:${action}`, {
     method: "POST",
     headers: { authorization: "Bearer owner", "content-type": "application/json" },

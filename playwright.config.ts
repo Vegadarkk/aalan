@@ -39,7 +39,7 @@ export default defineConfig({
       // Chromium resolves *.localhost to the loopback address.
       ADMIN_HOST: "admin.localhost",
       // Firebase emulators (npm run test:e2e runs inside `firebase emulators:exec`): demo project.
-      FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya",
+      FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan",
       FIREBASE_API_KEY: process.env.FIREBASE_API_KEY ?? "fake-api-key",
       FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST ?? "127.0.0.1:9099",
       FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST ?? "127.0.0.1:8080",

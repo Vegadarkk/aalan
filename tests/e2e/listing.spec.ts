@@ -10,7 +10,7 @@ import { isolate } from "../../src/lib/i18n/bidi";
 // Public listing page and seller profile (phase 3 lot D2) against the production build and the
 // Firebase emulators (npm run test:e2e). The fixtures are written straight into the emulator (a
 // seller, a published listing with two photos, a sold one) and the photos into the development
-// object store the server reads (FsObjectStore, D11: os.tmpdir()/joutiya-dev-storage, media bucket
+// object store the server reads (FsObjectStore, D11: os.tmpdir()/aalan-dev-storage, media bucket
 // served publicly by /api/dev/storage). The wizard spec covers the real upload and publish flow.
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
@@ -21,10 +21,10 @@ const ERROR_TITLE = "La page n'a pas pu s'afficher";
 /** Valid blurhash (the one from the blurhash README). */
 const BLURHASH = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
 /** FsObjectStore layout of the dev media bucket (src/lib/storage/fs.ts, keys.ts). */
-const MEDIA_ROOT = path.join(os.tmpdir(), "joutiya-dev-storage", "joutiya-dev-media");
+const MEDIA_ROOT = path.join(os.tmpdir(), "aalan-dev-storage", "joutiya-dev-media");
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 interface Fixture {

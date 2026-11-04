@@ -7,13 +7,13 @@ import { pepperedHash, safeEqual } from "@/lib/security/hash";
 import { assertObjectKey, bucketName } from "./keys";
 import type { BucketRole, GetOptions, ObjectHead, ObjectStore, PresignedPut, PresignPutInput, PutOptions } from "./types";
 
-// Development stand-in for R2 (D11): objects live under os.tmpdir()/joutiya-dev-storage/<bucket>,
+// Development stand-in for R2 (D11): objects live under os.tmpdir()/aalan-dev-storage/<bucket>,
 // shared by the web and worker processes of one machine. "Presigned" URLs point to the dev-only
 // route /api/dev/storage/<bucket>/<key> and carry an HMAC (HASH_PEPPER) with an expiry, so the
 // browser flow (sign -> PUT -> complete) runs exactly as against R2.
 
 export const DEV_STORAGE_ROUTE = "/api/dev/storage";
-export const DEFAULT_FS_ROOT = path.join(os.tmpdir(), "joutiya-dev-storage");
+export const DEFAULT_FS_ROOT = path.join(os.tmpdir(), "aalan-dev-storage");
 
 interface StoredMeta {
   contentType: string;

@@ -33,7 +33,8 @@ describe("unsubscribe token", () => {
     const [payload, sig] = token.split(".") as [string, string];
     const other = Buffer.from(`v1.uid-2.${SEARCH}`).toString("base64url");
     expect(verifyUnsubscribeToken(`${other}.${sig}`)).toBeNull();
-    expect(verifyUnsubscribeToken(`${payload}.${sig.slice(0, -1)}A`)).toBeNull();
+    // The first character carries 6 signature bits (the last only 4): a flip there always changes it.
+    expect(verifyUnsubscribeToken(`${payload}.${sig[0] === "A" ? "B" : "A"}${sig.slice(1)}`)).toBeNull();
     expect(verifyUnsubscribeToken(payload)).toBeNull();
     expect(verifyUnsubscribeToken(`${payload}.${sig}.x`)).toBeNull();
     expect(verifyUnsubscribeToken("")).toBeNull();

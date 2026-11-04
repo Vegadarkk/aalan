@@ -25,7 +25,7 @@ export default defineConfig({
       APP_ENV: "dev",
       SITE_URL: "http://localhost:3000",
       ADMIN_HOST: "admin.localhost",
-      FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya",
+      FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan",
       FIREBASE_API_KEY: "fake-api-key",
       FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST ?? "127.0.0.1:9099",
       FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST ?? "127.0.0.1:8080",

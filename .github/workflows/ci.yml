@@ -172,7 +172,7 @@ jobs:
         id: baseline
         if: hashFiles('tests/e2e/visual/static-map.spec.ts-snapshots/*.png') == ''
         run: |
-          npx firebase emulators:exec --only auth,firestore --project demo-joutiya "npx playwright test tests/e2e/visual --update-snapshots"
+          npx firebase emulators:exec --only auth,firestore --project demo-aalan "npx playwright test tests/e2e/visual --update-snapshots"
           for file in tests/e2e/visual/static-map.spec.ts-snapshots/*.png; do
             echo "BASELINE-BEGIN $(basename "$file")"
             base64 -w0 "$file"

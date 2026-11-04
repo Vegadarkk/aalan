@@ -20,7 +20,7 @@ const SCREENSHOT = "static-map.png";
 const SELLER_PUBLIC_ID = "vsmapsef23";
 
 async function seedFixture(): Promise<void> {
-  const app = getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  const app = getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
   const firestore = getFirestore(app);
   const uid = "e2e-visual-seller";
   const at = new Date("2026-10-01T09:00:00.000Z");

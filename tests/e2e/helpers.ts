@@ -18,10 +18,10 @@ export const randomId = (length: number) => Array.from(randomBytes(length), (byt
 /** Valid blurhash (the one from the blurhash README). */
 export const BLURHASH = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
 /** FsObjectStore layout of the dev media bucket (src/lib/storage/fs.ts, keys.ts). */
-const MEDIA_ROOT = path.join(os.tmpdir(), "joutiya-dev-storage", "joutiya-dev-media");
+const MEDIA_ROOT = path.join(os.tmpdir(), "aalan-dev-storage", "joutiya-dev-media");
 
 export function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 interface DevMail {

@@ -42,7 +42,7 @@ const text = (html: string) =>
 /** A message as React prints it inside an attribute or text. */
 const escape = (value: string) => value.replace(/'/g, "&#x27;");
 
-const MEDIA = "https://media.joutiya.test";
+const MEDIA = "https://media.aalan.test";
 /** Digit groups are joined by U+202F, the amount and the currency by U+00A0 (format.ts). */
 const NNBSP = "\u202f";
 const NBSP = "\u00a0";

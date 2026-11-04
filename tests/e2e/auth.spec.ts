@@ -210,7 +210,7 @@ test.describe("account", () => {
     // Firebase compares revocation to the second: the cookie must be older than the revocation.
     const second = Math.floor(Date.now() / 1000);
     while (Math.floor(Date.now() / 1000) === second) await new Promise((resolve) => setTimeout(resolve, 50));
-    const app = getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+    const app = getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
     await getAuth(app).revokeRefreshTokens(me.session!.uid);
 
     // The cookie is still there and unexpired: only the revocation check can send the person away.

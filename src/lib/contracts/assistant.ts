@@ -2,7 +2,7 @@ import { LOCALES } from "@/config/site";
 import { z } from "@/lib/zod";
 import { ASSISTANT_HISTORY_MAX, ASSISTANT_QUESTION_MAX, ASSISTANT_TURN_MAX } from "./endpoints";
 
-// POST /api/assistant (design phase-5 D25): a question to the Assistant Joutiya, with the last
+// POST /api/assistant (design phase-5 D25): a question to the Assistant Aalan, with the last
 // turns of the conversation kept by the widget (never stored server side). Client-safe.
 
 export { ASSISTANT_HISTORY_MAX, ASSISTANT_QUESTION_MAX, ASSISTANT_TURN_MAX };

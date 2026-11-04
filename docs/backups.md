@@ -169,7 +169,7 @@ version la plus récente). Il n'affiche que des nombres et des chemins, jamais l
 si une collection ou les comptes ne correspondent pas.
 
 ```
-npx firebase emulators:exec --only auth,firestore --project demo-joutiya \
+npx firebase emulators:exec --only auth,firestore --project demo-aalan \
   "node --env-file=.env.local scripts/restore-drill.ts --identity joutiya-backup.key --from-bucket staging"
 ```
 
@@ -184,7 +184,7 @@ encore : identifiants du worker -> bucket privé -> cycle de vie -> clé age hor
 
 - **A, critère de sortie de la phase 3**, dès que le staging tourne et a au moins deux nuits de sauvegarde
   dont un cycle complet (jauge `firestore.storage` connue au back-office) : sauvegardes du staging vers
-  l'émulateur Firestore du PC (`npx firebase emulators:start --only firestore --project demo-joutiya`, Java 21,
+  l'émulateur Firestore du PC (`npx firebase emulators:start --only firestore --project demo-aalan`, Java 21,
   puis `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`). Toute la chaîne y passe sauf l'écriture dans un vrai projet,
   que B couvre.
 - **B, avant le lancement (porte de la phase 6)** : sauvegardes de la production vers le staging, écrites en
@@ -206,7 +206,7 @@ vide ou jetable.
 4. Comparez trois documents avec la source : une annonce, un utilisateur, son document `private/account`
    (dates, position, références intactes). Pour B dans la console Firebase du staging ; pour A dans
    l'émulateur, sans interface, par son API REST sur le PC (`curl
-   "http://127.0.0.1:8080/v1/projects/demo-joutiya/databases/(default)/documents/listings/<id>"`).
+   "http://127.0.0.1:8080/v1/projects/demo-aalan/databases/(default)/documents/listings/<id>"`).
 5. Remplissez une ligne du tableau. Pour B, gardez le staging tel quel (données d'avant le lancement) ou
    videz-le ; pour A, arrêtez l'émulateur (il ne garde rien).
 

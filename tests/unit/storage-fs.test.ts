@@ -11,7 +11,7 @@ import { GET, HEAD, PUT } from "@/app/api/dev/storage/[bucket]/[...key]/route";
 // The development stand-in for R2 (D11): presigned PUT -> dev route -> HEAD/GET/DELETE through the
 // same store, with the signature, expiry, Content-Type and key hygiene the browser flow relies on.
 
-// A temporary root instead of os.tmpdir()/joutiya-dev-storage, shared by the route and the test.
+// A temporary root instead of os.tmpdir()/aalan-dev-storage, shared by the route and the test.
 const root = await vi.hoisted(async () => {
   const { mkdtempSync, realpathSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");

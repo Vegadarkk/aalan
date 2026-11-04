@@ -119,7 +119,7 @@ describe("publicConfig", () => {
   });
 
   it("never hands the browser the Web API key or the Auth emulator", () => {
-    const emulated = { FIREBASE_PROJECT_ID: "demo-joutiya", FIREBASE_API_KEY: "AIza-fake-key", FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099" };
+    const emulated = { FIREBASE_PROJECT_ID: "demo-aalan", FIREBASE_API_KEY: "AIza-fake-key", FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099" };
     const json = JSON.stringify(publicConfig(parseEnv(emulated).env));
     expect(json).not.toContain("AIza-fake-key");
     expect(json).not.toContain("9099");

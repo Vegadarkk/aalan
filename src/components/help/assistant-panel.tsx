@@ -20,7 +20,7 @@ import { ASSISTANT_API, ASSISTANT_HISTORY_MAX, ASSISTANT_QUESTION_MAX, ASSISTANT
 import { cn } from "@/lib/utils";
 import { loadTurns, saveTurns, type AssistantTurnView } from "./assistant-history";
 
-// The Assistant Joutiya panel (design phase-5 D25): a side sheet (bottom sheet on phones). The AI
+// The Assistant Aalan panel (design phase-5 D25): a side sheet (bottom sheet on phones). The AI
 // disclosure (AI Act art. 50) heads the conversation and stays in view of the first question; the
 // conversation stays in the browser tab (sessionStorage, assistant-history.ts: it survives an
 // article link or a reload, audit zone 5 n°17; the API stores nothing) and the last turns go back

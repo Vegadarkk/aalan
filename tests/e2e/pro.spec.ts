@@ -26,7 +26,7 @@ const randomId = (length: number) => Array.from(randomBytes(length), (byte) => A
 const MINIMAL_PDF = Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n");
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 async function seedStaff(email: string, role: "moderator" | "admin", displayName: string): Promise<void> {

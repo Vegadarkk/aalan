@@ -26,7 +26,7 @@ const uniqueEmail = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Ma
 test.use({ extraHTTPHeaders: { "x-dev-access-email": EMAIL } });
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 /** A staff account with its roster entry. Idempotent: every Playwright worker seeds the shared admin. */
@@ -56,7 +56,7 @@ test.beforeAll(async () => {
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from({ length }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
 /** FsObjectStore layout of the dev media bucket (src/lib/storage/fs.ts, keys.ts), served by /api/dev/storage on the public host. */
-const MEDIA_ROOT = path.join(os.tmpdir(), "joutiya-dev-storage", "joutiya-dev-media");
+const MEDIA_ROOT = path.join(os.tmpdir(), "aalan-dev-storage", "joutiya-dev-media");
 
 /** A listing held for review, with one photo (both WebP variants) in the dev media bucket. */
 async function seedHeldListing(): Promise<{ id: string; title: string }> {

@@ -144,7 +144,10 @@ test("a moderator removes a reported listing from the queue with a template, and
   await expect(row).toContainText("Arnaque ou tentative d'escroquerie");
   await expect(row).toContainText(/Reste (23|24) h/);
 
-  await row.getByRole("link", { name: `Examiner : Annonce ${id}` }).click();
+  // The row names the listing by its title, its id secondary and copyable (zone 7 P2-8).
+  await expect(row).toContainText(title);
+  await expect(row.getByRole("button", { name: `Copier la référence ${id}` })).toBeVisible();
+  await row.getByRole("link", { name: `Examiner : Annonce : ${title}` }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Annonce « ${title} »`);
   await expect(page.getByText("Le vendeur exige une avance par Wafacash avant de montrer le téléphone.")).toBeVisible();
 

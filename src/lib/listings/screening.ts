@@ -54,6 +54,16 @@ export function textFingerprint(title: string, description: string): string {
   return createHash("sha256").update(`${normalizeText(title)}\n${normalizeText(description)}`).digest("hex");
 }
 
+/**
+ * sha256 of what the seller wrote and showed (title, description, price, photo ids): stored on the
+ * listing when a hold is written (`moderation.heldContent`) so the review says whether the seller
+ * changed it since, apart from score moves that only follow the seller's context (zone 7 P2-11).
+ */
+export function contentFingerprint(listing: Pick<ListingDoc, "title" | "description" | "price" | "isDonation" | "photos">): string {
+  const photos = listing.photos.map((photo) => photo.id).join(",");
+  return createHash("sha256").update(`${textFingerprint(listing.title, listing.description)}\n${listing.isDonation ? "don" : String(listing.price)}\n${photos}`).digest("hex");
+}
+
 /** How many of the owner's other listings share the text fingerprint, and how many share a photo hash. */
 export function detectDuplicates(listing: Pick<ListingDoc, "title" | "description" | "photos">, others: ScreeningInput["others"], selfId?: string): ScreenDuplicates {
   const fingerprint = textFingerprint(listing.title, listing.description);

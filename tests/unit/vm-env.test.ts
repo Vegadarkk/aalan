@@ -78,7 +78,7 @@ describe("app.env names", () => {
       FIREBASE_SERVICE_ACCOUNT: "aalan-web@aalan-staging.iam.gserviceaccount.com",
       GOOGLE_CLOUD_PROJECT: "aalan-staging",
       TURNSTILE_SITE_KEY: "0x4AAAAAAFYY7P8KeaWCGihV",
-      MEDIA_BASE_URL: "https://media-staging.joutiya.ma",
+      MEDIA_BASE_URL: "https://media-staging.aalan.ma",
     });
     // search-setup writes it with the keys: alone, it would stop the first start.
     expect(staging.MEILI_URL).toBeUndefined();
@@ -99,7 +99,7 @@ describe("planEnv", () => {
       HASH_PEPPER: "5".repeat(64),
       R2_ACCESS_KEY_ID: "r2-id-staging",
       R2_S3_ENDPOINT: `https://${targets.shared.cloudflare.accountId ?? ""}.eu.r2.cloudflarestorage.com`,
-      R2_BUCKET_MEDIA: "joutiya-staging-media",
+      R2_BUCKET_MEDIA: "aalan-staging-media",
       SENTRY_DSN: targets.environments.staging.sentry.dsn,
       TURNSTILE_SITE_KEY: "0x4AAAAAAFYY7P8KeaWCGihV",
     });

@@ -195,14 +195,14 @@ describe("r2-buckets.json", () => {
       jurisdiction: "eu",
       defaultMultipartAbort: { name: "Default Multipart Abort Rule", abortAfterDays: 7 },
       buckets: {
-        "joutiya-staging-quarantine": { cors: [{ AllowedOrigins: ["https://joutiya.ma"], AllowedMethods: ["PUT"] }] },
+        "aalan-staging-quarantine": { cors: [{ AllowedOrigins: ["https://joutiya.ma"], AllowedMethods: ["PUT"] }] },
         "aalan-prod-media": { cors: [{ AllowedOrigins: ["https://joutiya.ma"], AllowedMethods: ["GET", "PUT"] }] },
         "aalan-prod-private": { lifecycle: [{ name: "purge", prefix: "", deleteAfterDays: 0 }] },
         "joutiya-prod-backups": {},
       },
     };
     expect(validateR2(settings, targets)).toEqual([
-      "r2-buckets.json: joutiya-staging-quarantine must not admit https://joutiya.ma",
+      "r2-buckets.json: aalan-staging-quarantine must not admit https://joutiya.ma",
       "r2-buckets.json: aalan-prod-media must not allow PUT",
       "r2-buckets.json: aalan-prod-private: purge needs a whole number of days",
       "r2-buckets.json: aalan-prod-private: purge would empty the bucket",

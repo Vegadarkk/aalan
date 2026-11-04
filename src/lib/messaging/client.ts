@@ -31,10 +31,11 @@ export async function findListingConversation(listingId: string): Promise<string
 }
 
 /**
- * My conversation as the renter of `listingId` among my most recent ones, with its booking requests
- * (the listing page's « Votre demande est confirmée », audit L4-09), or null.
+ * My conversation as the buyer (or renter) of `listingId` among my most recent ones, or null: the
+ * listing page's « Voir la conversation », its booking requests (« Votre demande est confirmée »,
+ * audit L4-09), its offer and its appointment (audit zone 5 n°14).
  */
-export async function findRentalConversation(listingId: string): Promise<ConversationView | null> {
+export async function findBuyerConversation(listingId: string): Promise<ConversationView | null> {
   const page = await fetchInbox();
   return page.conversations.find((row) => row.listingId === listingId && row.subject === "listing" && row.role === "buyer") ?? null;
 }

@@ -34,6 +34,9 @@ import { pageLocale } from "@/i18n/params";
 import { searchMapConfig } from "@/lib/config/public";
 import { getFlags } from "@/lib/config/runtime";
 import { alternates } from "@/lib/i18n/metadata";
+import { siteJsonLd } from "@/lib/seo/jsonld";
+import { JsonLd } from "@/components/listing/json-ld";
+import { BRAND, CANONICAL_ORIGIN, LOCALE_TAGS } from "@/config/site";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
@@ -97,9 +100,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
   const map = searchMapConfig();
-  const [t, own, welcome, flags, featured, recent, labels, legal, directory, shops] = await Promise.all([
+  const [t, own, meta, welcome, flags, featured, recent, labels, legal, directory, shops] = await Promise.all([
     getTranslations({ locale, namespace: "Home" }),
     getTranslations({ locale, namespace: "SearchMap" }),
+    getTranslations({ locale, namespace: "Metadata" }),
     welcomeTexts(locale),
     getFlags(),
     section("featured", () => featuredListings({}, FEATURED_HOME_SLOTS)),
@@ -120,8 +124,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const featuredRows = listings.filter((listing) => listing.featured);
   const recentRows = listings.filter((listing) => !listing.featured);
 
+  const siteLd = siteJsonLd({
+    origin: CANONICAL_ORIGIN,
+    locale,
+    inLanguage: LOCALE_TAGS[locale],
+    name: BRAND.latin,
+    alternateNames: [BRAND.arabic, BRAND.tifinagh],
+    description: meta("description"),
+    searchPath: SEARCH_PATH,
+  });
+
   return (
     <PageMessages locale={locale} namespaces={HOME_PAGE_CLIENT_NAMESPACES}>
+      {/* The site and its search box for search engines (audit zone 2, P3-2). */}
+      <JsonLd data={siteLd} />
       {/* First visit only (decided before paint, see src/lib/welcome/script.ts); hidden otherwise. */}
       <WelcomeThreshold locale={locale} texts={welcome} />
       <SearchNavigationProvider>

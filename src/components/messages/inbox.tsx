@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { AppWindow, Ban, CloudOff, Lock, RefreshCw, ShieldAlert, UserX } from "lucide-react";
+import { AppWindow, Ban, CloudOff, Lock, MailOpen, RefreshCw, ShieldAlert, UserX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { EmptyState } from "@/components/feedback/empty-state";
+import { Select } from "@/components/post/controls/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Locale } from "@/config/site";
@@ -16,14 +17,15 @@ import { rentalRequestEventOf, type RentalRequestEvent } from "@/lib/contracts/r
 import { offerEventOf, type OfferEvent } from "@/lib/offers/rules";
 import { cn } from "@/lib/utils";
 import { formatRowTime } from "./format";
-import { shouldLoadMore } from "./inbox-state";
+import { NO_FILTER, effectiveFilter, filterRows, listingChoices, shouldLoadMore, unreadConversations, type InboxFilter } from "./inbox-state";
 import { ListingDoor } from "./listing-door";
 import { useMessages } from "./messages-provider";
 
 // The conversation list (design phase-5 D2): inbox or archived view, newest activity first, with
 // the listing, the other participant, the last message and the unread count. Pages load as the end
 // of the list comes into view; a page can hold no row of this view, so loading goes on until the
-// end is off screen or the last page is in.
+// end is off screen or the last page is in. Filters « Non lues » and « Par annonce » (audit §7) sort
+// the rows loaded so far; the end of a short filtered list is on screen, so the next pages load.
 
 /** The last message as one line: moderation and masked links in words ("Vous :" is set apart). */
 export function previewText(
@@ -165,6 +167,52 @@ function useOnScreen(target: RefObject<HTMLElement | null>, active: boolean): bo
   return visible;
 }
 
+/** « Non lues » and the listing picker, under the views. The picker shows from two listings on. */
+function InboxFilters({ rows, filter, onChange }: { rows: readonly ConversationView[]; filter: InboxFilter; onChange: (filter: InboxFilter) => void }) {
+  const t = useTranslations("Messaging.filters");
+  const choices = listingChoices(rows);
+  const unread = unreadConversations(rows);
+  return (
+    <div role="group" aria-label={t("label")} data-testid="inbox-filters" className="flex min-w-0 items-center gap-2">
+      <button
+        type="button"
+        aria-pressed={filter.unread}
+        onClick={() => onChange({ ...filter, unread: !filter.unread })}
+        data-testid="filter-unread"
+        className={cn(
+          "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-[background-color,border-color,color] duration-150 ease-door max-sm:h-11",
+          filter.unread ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-foreground-muted hover:text-foreground",
+        )}
+      >
+        <MailOpen className="size-4" aria-hidden="true" />
+        {t("unread")}
+        {unread > 0 ? <span className={cn("tabular-nums", filter.unread ? "text-primary-foreground/85" : "text-foreground-muted")}>{unread > 99 ? "99+" : unread}</span> : null}
+      </button>
+      {choices.length > 1 ? (
+        <div className="min-w-0 flex-1">
+          <label htmlFor="inbox-listing-filter" className="sr-only">
+            {t("listing")}
+          </label>
+          <Select
+            id="inbox-listing-filter"
+            data-testid="filter-listing"
+            value={filter.listingId ?? ""}
+            onChange={(event) => onChange({ ...filter, listingId: event.target.value || null })}
+            className="h-9 w-full min-w-0 truncate rounded-full border-border bg-surface py-0 text-sm max-sm:h-11"
+          >
+            <option value="">{t("allListings")}</option>
+            {choices.map((choice) => (
+              <option key={choice.listingId} value={choice.listingId}>
+                {t("listingOption", { title: choice.title || t("untitled"), count: choice.count })}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function Inbox({ selected }: { selected: string | null }) {
   const t = useTranslations("Messaging.page");
   const apiMessage = useApiErrorMessage();
@@ -178,6 +226,14 @@ export function Inbox({ selected }: { selected: string | null }) {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
+
+  // Filters of the current view: a switch to the other view starts unfiltered.
+  const [filtered, setFiltered] = useState<{ archived: boolean; filter: InboxFilter }>({ archived, filter: NO_FILTER });
+  const chosen = filtered.archived === archived ? filtered.filter : NO_FILTER;
+  const setFilter = (filter: InboxFilter) => setFiltered({ archived, filter });
+  const loadedRows = inbox.kind === "ready" ? inbox.rows : [];
+  const filter = effectiveFilter(chosen, loadedRows);
+  const shownRows = filterRows(loadedRows, filter, selected);
 
   const wantsMore = inbox.kind === "ready" && shouldLoadMore(inbox, endVisible);
   useEffect(() => {
@@ -203,6 +259,7 @@ export function Inbox({ selected }: { selected: string | null }) {
             </Link>
           ))}
         </nav>
+        {inbox.kind === "ready" && inbox.rows.length > 0 ? <InboxFilters rows={inbox.rows} filter={filter} onChange={setFilter} /> : null}
         {/* One live region for both notices: a busy tab is not offline (audit zone 5 n°7). */}
         <div role="status" className="empty:hidden">
           {live.status === "busy" ? (
@@ -270,12 +327,23 @@ export function Inbox({ selected }: { selected: string | null }) {
           )
         ) : (
           <>
-            {inbox.rows.length > 0 ? (
+            {shownRows.length > 0 ? (
               <ul className="flex flex-col divide-y divide-border/70">
-                {inbox.rows.map((row) => (
+                {shownRows.map((row) => (
                   <ConversationRow key={row.cid} row={row} selected={row.cid === selected} archived={archived} now={now} />
                 ))}
               </ul>
+            ) : inbox.rows.length > 0 && !inbox.next ? (
+              <EmptyState
+                title={filter.unread && !filter.listingId ? t("filteredUnreadTitle") : t("filteredTitle")}
+                action={
+                  <Button type="button" variant="outline" onClick={() => setFilter(NO_FILTER)}>
+                    {t("showAll")}
+                  </Button>
+                }
+              >
+                {t("filteredBody")}
+              </EmptyState>
             ) : null}
             {inbox.next ? (
               <div ref={end} className="flex justify-center px-4 py-4">

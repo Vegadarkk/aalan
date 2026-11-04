@@ -205,6 +205,12 @@ test.describe("price guide and offers", () => {
       await shoot(buyerPage, "2-dialogue-offre-ar");
     }
 
+    // Back on the listing: the conversation and the accepted offer, not a first message (audit zone 5 n°14).
+    await buyerPage.goto(`/fr/annonce/${listing.slugId}`);
+    await expect(buyerPage.locator('[data-testid="conversation-link"]:visible')).toHaveAttribute("href", `/fr/messages/${cid}`, { timeout: 15_000 });
+    await expect(buyerPage.locator('[data-testid="conversation-link"]:visible')).toHaveText("Voir la conversation");
+    await expect(buyerPage.locator('[data-testid="conversation-status"]:visible')).toContainText(/Offre acceptée à 1\s?300\sDH/);
+
     await buyerPage.setViewportSize({ width: 360, height: 780 });
     await buyerPage.goto(`/fr/messages/${cid}`);
     // On a phone the settled offer folds into the summary line, which unfolds the card (audit zone 5 n°6).

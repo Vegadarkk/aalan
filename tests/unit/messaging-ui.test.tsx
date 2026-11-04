@@ -9,7 +9,8 @@ import { composerProblem, sendsOnEnter } from "@/components/messages/composer";
 import { MESSAGING_ERROR_KEYS, messagingErrorKey } from "@/components/messages/errors";
 import { formatDayLabel, formatRowTime } from "@/components/messages/format";
 import { previewText, threadHref } from "@/components/messages/inbox";
-import { firstPage, inboxIsEmpty, removeRow, shouldLoadMore, withFreshHead, withPage, withRow, type InboxList } from "@/components/messages/inbox-state";
+import { NO_FILTER, effectiveFilter, filterRows, firstPage, inboxIsEmpty, listingChoices, removeRow, shouldLoadMore, unreadConversations, withFreshHead, withPage, withRow, type InboxList } from "@/components/messages/inbox-state";
+import { titleWithUnread } from "@/components/messages/unread-title";
 import { ThreadPlaceholderView } from "@/components/messages/thread-placeholder";
 import { canReport, MessageItem, textParts, warningsFor } from "@/components/messages/message-item";
 import { badgeText } from "@/components/messages/messages-link";
@@ -168,6 +169,53 @@ describe("inbox paging", () => {
     expect(selectedConversation(cid(1))).toBe(cid(1));
     expect(selectedConversation(null)).toBeNull();
     expect(selectedConversation("__PAGE__")).toBeNull();
+  });
+});
+
+describe("inbox filters (audit §7)", () => {
+  const rows = [
+    row(1, 500, { unread: 2, listingId: "velo", listing: { title: "Vélo", price: 900, isDonation: false, photo: null } }),
+    row(2, 400, { listingId: "velo", listing: { title: "Vélo", price: 900, isDonation: false, photo: null } }),
+    row(3, 300, { unread: 1, listingId: "table", listing: { title: "Table", price: 200, isDonation: false, photo: null } }),
+    row(4, 200),
+  ];
+
+  it("keeps the unread rows, the rows of a listing, or both", () => {
+    expect(filterRows(rows, NO_FILTER, null).map((item) => item.cid)).toEqual(rows.map((item) => item.cid));
+    expect(filterRows(rows, { unread: true, listingId: null }, null).map((item) => item.cid)).toEqual([cid(1), cid(3)]);
+    expect(filterRows(rows, { unread: false, listingId: "velo" }, null).map((item) => item.cid)).toEqual([cid(1), cid(2)]);
+    expect(filterRows(rows, { unread: true, listingId: "velo" }, null).map((item) => item.cid)).toEqual([cid(1)]);
+  });
+
+  it("keeps the open conversation once it is read", () => {
+    expect(filterRows(rows, { unread: true, listingId: null }, cid(2)).map((item) => item.cid)).toEqual([cid(1), cid(2), cid(3)]);
+  });
+
+  it("lists the listings by number of conversations and counts the unread ones", () => {
+    expect(listingChoices(rows)).toEqual([
+      { listingId: "velo", title: "Vélo", count: 2 },
+      { listingId: "listing4", title: "Annonce 4", count: 1 },
+      { listingId: "table", title: "Table", count: 1 },
+    ]);
+    expect(unreadConversations(rows)).toBe(2);
+  });
+
+  it("drops a listing that left the loaded rows", () => {
+    expect(effectiveFilter({ unread: true, listingId: "gone" }, rows)).toEqual({ unread: true, listingId: null });
+    expect(effectiveFilter({ unread: false, listingId: "table" }, rows)).toEqual({ unread: false, listingId: "table" });
+  });
+});
+
+describe("unread count in the tab title (audit §7)", () => {
+  it("puts the count in front, replaces it and takes it off", () => {
+    expect(titleWithUnread("Messages - Aalan", 3, null)).toEqual({ title: "(3) Messages - Aalan", prefix: "(3) " });
+    expect(titleWithUnread("(3) Messages - Aalan", 120, "(3) ")).toEqual({ title: "(99+) Messages - Aalan", prefix: "(99+) " });
+    expect(titleWithUnread("(99+) Messages - Aalan", 0, "(99+) ")).toEqual({ title: "Messages - Aalan", prefix: null });
+  });
+
+  it("never removes a prefix it did not write", () => {
+    expect(titleWithUnread("(2) Chaises - Aalan", 0, null).title).toBe("(2) Chaises - Aalan");
+    expect(titleWithUnread("(2) Chaises - Aalan", 1, "(4) ").title).toBe("(1) (2) Chaises - Aalan");
   });
 });
 

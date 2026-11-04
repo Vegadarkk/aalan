@@ -17,6 +17,7 @@ import { isolate } from "@/lib/i18n/bidi";
 import { cn } from "@/lib/utils";
 import { useAppointmentErrorMessage } from "./errors";
 import { dayTile, formatSlotDay, formatSlotRange, placeText } from "./format";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // The conversation's current appointment, pinned under the thread header while it is active
 // (architecture §5, 28 Oct). For the one who answers: the proposed slots to pick from, confirm or
@@ -78,6 +79,8 @@ export function AppointmentCard({ cid, appointment, role, counterpartName, listi
   const [error, setError] = useState<string | null>(null);
   const [choice, setChoice] = useState<number | null>(appointment.slots.length === 1 ? (appointment.slots[0]?.start ?? null) : null);
   const [cancelling, setCancelling] = useState(false);
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(cancelling);
   const [reason, setReason] = useState<AppointmentCancelReason | null>(null);
 
   if (!isActive(appointment, now)) return null;
@@ -164,6 +167,7 @@ export function AppointmentCard({ cid, appointment, role, counterpartName, listi
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
             <Dialog.Content
+              onCloseAutoFocus={returnFocusOnClose}
               className={cn(
                 "fixed inset-x-4 bottom-4 z-50 flex flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-xl shadow-bab-950/20 outline-none",
                 "sm:inset-x-auto sm:start-1/2 sm:top-1/2 sm:bottom-auto sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 rtl:sm:translate-x-1/2",

@@ -3887,7 +3887,7 @@
   },
   "SearchFilters": {
     "open": "Filtres",
-    "openCount": "Filtres, {count, plural, one {# actif} other {# actifs}}",
+    "openCount": "Filtres {n}, {count, plural, one {filtre actif} other {filtres actifs}}",
     "title": "Filtres",
     "close": "Fermer les filtres",
     "apply": "Voir les résultats",
@@ -4382,7 +4382,7 @@
       "selectTitle": "Choisissez une conversation",
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
       "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
-      "busy": "Vous avez déjà {count} onglets ouverts sur la messagerie : fermez-en un pour reprendre le direct.",
+      "busy": "Vous avez déjà {count} onglets d'Aalan ouverts : fermez-en un pour reprendre le direct de la messagerie.",
       "refreshLive": "Actualiser"
     },
     "row": {

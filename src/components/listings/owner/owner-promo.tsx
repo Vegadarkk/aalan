@@ -32,6 +32,7 @@ import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { endPromo, savePromo } from "@/lib/listings/client/api";
 import { formatPrice, intlLocale } from "@/lib/listings/client/format";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a published or paused Pro listing (catalogue §4): its promotion at a
 // glance, and a dialog that launches one (kind, cut, period, preview against the struck-out price
@@ -115,6 +116,8 @@ interface PromoDialogProps {
 }
 
 function PromoDialog({ listing, title, now, onClose, onChanged }: PromoDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(true);
   const t = useTranslations("MyListings.promo");
   const locale = useLocale() as Locale;
   const apiMessage = useApiErrorMessage();
@@ -212,6 +215,7 @@ function PromoDialog({ listing, title, now, onClose, onChanged }: PromoDialogPro
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           aria-describedby={descriptionId}
           data-testid="promo-dialog"
           className={cn(

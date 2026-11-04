@@ -15,6 +15,7 @@ import { SAVED_SEARCH_NAME_MAX, type SavedSearchView } from "@/lib/contracts/sea
 import { existingSearchId, saveSearch } from "@/lib/saved-searches/client";
 import type { SearchParams } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Sauvegarder la recherche" (design D18): name (proposed from the filters), the daily alert (on
 // by default), the criteria being saved. A bottom sheet on phones, a centred dialog from sm (the
@@ -31,6 +32,8 @@ export interface SaveSearchDialogProps {
 }
 
 export function SaveSearchDialog({ open, onOpenChange, params, suggestedName, summary, onSaved }: SaveSearchDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("SavedSearches.dialog");
   const summaryId = useId();
   const [name, setName] = useState(suggestedName);
@@ -77,6 +80,7 @@ export function SaveSearchDialog({ open, onOpenChange, params, suggestedName, su
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="save-search-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-y-auto rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",

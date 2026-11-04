@@ -491,8 +491,15 @@ test.describe("favorites and saved searches", () => {
     await heart.click();
     await expect(heart).toHaveAttribute("aria-pressed", "true");
 
-    await page.getByRole("button", { name: "Sauvegarder la recherche" }).click();
+    const saveButton = page.getByRole("button", { name: "Sauvegarder la recherche" });
+    await saveButton.click();
     const dialog = page.getByRole("dialog", { name: "Sauvegarder cette recherche" });
+    // Closed without saving, the dialog gives the focus back to its button (audit zone 8, 5.2-1).
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(saveButton).toBeFocused();
+    await saveButton.click();
     await dialog.getByRole("button", { name: "Sauvegarder" }).click();
     await expect(dialog).toBeHidden();
 

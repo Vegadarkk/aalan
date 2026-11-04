@@ -47,6 +47,7 @@ import { getLegalConfig } from "@/lib/legal/config";
 import { formatDate, formatPrice } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
 import { listingJsonLd } from "@/lib/listings/jsonld";
+import { localizeExample } from "@/lib/demo/localized";
 import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { offerAllowed } from "@/lib/offers/eligibility";
@@ -136,7 +137,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const locale = pageLocale(value);
   const found = await load(slugId);
   if (!found || found.redirect) return {};
-  const { listing } = found;
+  const listing = localizeExample(found.listing, locale);
   const [t, card] = await Promise.all([getTranslations({ locale, namespace: "ListingPage.meta" }), getTranslations({ locale, namespace: "ListingCard" })]);
   const city = cityBySlug(listing.location.citySlug);
   const title = city ? t("title", { title: listing.title, city: cityName(city, locale) }) : listing.title;
@@ -167,7 +168,7 @@ export default async function ListingPage({ params }: { params: Params }) {
   if (!found) notFound();
   if (found.redirect) permanentRedirect(listingPath(locale, found.listing.slugId));
 
-  const { listing } = found;
+  const listing = localizeExample(found.listing, locale);
   const variants = listing.catalogue?.variants;
   const range = variants ? priceRange({ variants, price: listing.price, isDonation: listing.isDonation }) : null;
   const shownPrice = range ? range.min : listing.price;

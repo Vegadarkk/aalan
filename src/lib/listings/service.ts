@@ -54,6 +54,7 @@ import { notifyOwner } from "@/lib/pro/seller-payment";
 import { ownerPaymentLink, paymentShown } from "@/lib/pro/seller-payment-rules";
 import { notifySearchIndex } from "@/lib/search/queue";
 import { escalateOnIp } from "./escalation";
+import { AGENT_SCREENED_STATUSES, changesScreenedContent, contentFrozen } from "./edit-guard";
 import { buildSlugId, newListingId } from "./ids";
 import { IllegalTransitionError, canRenew, canTransition, draftPurgeAt, renew, renewForReview, transition, type Lifetime, type TransitionContext, type TransitionEffects, type TransitionResult } from "./lifecycle";
 import { ownerListingView, toOwnerSummary } from "./owner-view";
@@ -63,7 +64,7 @@ import { planPromo, promoEnd } from "./promo";
 import { assessReadiness } from "./readiness";
 import { needsRealEstateAttestation } from "./real-estate";
 import { revalidateListingPaths } from "./revalidate";
-import { screen, sellerFacts, type ScreeningResult } from "./screening";
+import { contentFingerprint, screen, sellerFacts, type ScreeningResult } from "./screening";
 
 // Listing service (design §4 service.ts): drafts, edits, publication, status changes. Every entry
 // point takes the signed-in `AuthContext` (ownership answers 404, never 403) and the clear IP for
@@ -85,8 +86,6 @@ export const EDITABLE_STATUSES: readonly ListingStatus[] = ["draft", "pending_re
  * (readiness), is re-screened and may fall back to pending_review. Drafts are screened at publish.
  */
 const SCREENED_STATUSES: readonly ListingStatus[] = ["published", "paused", "pending_review", "expired"];
-/** Fields whose change re-runs the pre-moderation (every free text, the district included). */
-const SCREENED_FIELDS: readonly (keyof ListingDoc)[] = ["title", "description", "attributes", "categoryId", "subcategoryId", "price", "isDonation", "photos", "contact", "location"];
 /** A patch touching what sets the prices shown (the listing's, or its combinations'). */
 const pricesTouched = (fields: ListingFieldPatch) => fields.price !== undefined || fields.isDonation !== undefined || fields.variants !== undefined;
 /** CGU reference quoted in the automated statements (design D8). */
@@ -305,14 +304,6 @@ function catalogueFields(listing: ListingRecord, patch: ListingPatch, fields: Li
 }
 
 /**
- * What the pre-moderation reads of the variants: the axes (free labels and values are texts) and
- * the prices; the stock alone is never screened again (catalogue §3).
- */
-function screenedVariants(variants: ListingDoc["variants"] | null | undefined): unknown {
-  return variants ? { axes: variants.axes, items: variants.items.map(({ stock: _stock, ...item }) => item) } : null;
-}
-
-/**
  * The fields of a save that change the stored listing. `null` deletes, so it changes only a field
  * that holds a value (`price: null` too: null is its value). Resent values drop out, so a screened
  * field is screened again only when it changes.
@@ -396,6 +387,10 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
   const fields = changedFields(listing, await fieldsOf(listing, patch, { uid, quotas: seller.quotas, sellerType: seller.seller.type, now }));
   // Nothing changes: nothing is written. A rejected listing's save reopens it, even an empty one.
   if (Object.keys(fields).length === 0 && listing.status !== "rejected") return ownerListingView(listing);
+  // Under review (report, authority request, appeal): the reported content stays as it is until the
+  // decision (audit C-2). A concurrent report bumps the version, so commit's version check catches it.
+  const contentChanged = changesScreenedContent(listing, fields);
+  if (contentChanged && contentFrozen(listing)) throw new HttpError(409, "listing_under_review", "listing content is frozen while under review");
   // Every draft edit restarts its 30-day clock (written with the edit: no extra write).
   if (listing.status === "draft") fields.purgeAt = draftPurgeAt(now);
   let effects: TransitionEffects = { search: null, contentOp: null, audit: null, revalidate: false, mail: null };
@@ -403,6 +398,7 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
   let hold: ModerationDecisionInput | undefined;
   let maxDrafts: number | undefined;
   let maxActive: number | null | undefined;
+  let screened = false;
 
   if (SCREENED_STATUSES.includes(listing.status)) {
     // A price change ends the promotion: its struck-out price no longer holds (catalogue §4).
@@ -412,10 +408,10 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
     if (blockers.length > 0) throw invalidListing(blockers);
     // Kept as is: indexed again when published, its public page refreshed (paused and expired too).
     effects = { search: listing.status === "published" ? "upsert" : null, contentOp: { op: "listing.update", ip: actor.ip }, audit: null, revalidate: hasPublicPage(listing.status), mail: null };
-    const variantsScreened = fields.variants !== undefined && !isDeepStrictEqual(screenedVariants(fields.variants), screenedVariants(listing.variants));
     // A sensitive declaration added to a live listing holds it for a moderator (zone 3 audit P1-1).
     const declared = Boolean(patch.sensitiveDeclaration && !listing.moderation.sensitiveDeclaration);
-    if (variantsScreened || declared || SCREENED_FIELDS.some((field) => fields[field] !== undefined)) {
+    if (contentChanged || declared) {
+      screened = true;
       const result = await screenFor(next, seller, now);
       if (result.blockers.length > 0) throw invalidListing(result.blockers);
       if (result.state === "needs_review" && listing.status !== "pending_review") {
@@ -455,6 +451,10 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
   }
   const updated = await commit(listing, fields, effects, { actor, user: seller.user, now, hold, maxDrafts, maxActive });
   if (fields.photos) await releaseDroppedPhotos(listing, fields.photos, now);
+  // The rules screened the edit; the agent screens it too, like a publication (audit C-1, D19-D20):
+  // otherwise a listing that passed once could be rewritten past the model. The job id carries the
+  // new version (deduplicated); a paused or expired listing is screened when it resumes or renews.
+  if (screened && AGENT_SCREENED_STATUSES.includes(updated.status)) await requestScreening(updated);
   if (mail) await notifySeller(updated, seller.user, mail);
   return ownerListingView(updated);
 }
@@ -768,7 +768,11 @@ export async function changeStatus(actor: Actor, id: string, action: OwnerAction
     }
   });
   if (action === "resume") await assertWithinQuota(actor.auth.user.uid, seller.quotas);
-  return commit(listing, result.patch, result.effects, { actor, user: seller.user, now, ...(action === "resume" ? { maxActive: seller.quotas.activeListings } : {}) });
+  const updated = await commit(listing, result.patch, result.effects, { actor, user: seller.user, now, ...(action === "resume" ? { maxActive: seller.quotas.activeListings } : {}) });
+  // Back online after a pause: an edit made while paused had the rule screen only (audit C-1). The
+  // agent skips content it already screened (same input hash), so an unchanged listing costs no call.
+  if (action === "resume" && !approvedByModerator(listing)) await requestScreening(updated);
+  return updated;
 }
 
 /**
@@ -848,7 +852,8 @@ async function commit(listing: ListingRecord, patch: ListingFieldPatch, effects:
       if (ctx.maxDrafts !== undefined && (await countDraftsTx(tx, listing.ownerUid)) >= ctx.maxDrafts) throw new DraftLimitError();
       if (typeof ctx.maxActive === "number" && !withinQuota(ctx.maxActive, await countActiveTx(tx, listing.ownerUid))) throw new ActiveLimitError();
       // Reads above, writes below (Firestore transactions). A retry records a fresh decision id.
-      if (ctx.hold) full.moderation = { ...(full.moderation ?? current.moderation), lastDecisionId: recordModerationDecisionTx(tx, ctx.hold) };
+      // The held content's fingerprint: the review tells a seller's edit from a context-only score move.
+      if (ctx.hold) full.moderation = { ...(full.moderation ?? current.moderation), lastDecisionId: recordModerationDecisionTx(tx, ctx.hold), heldContent: contentFingerprint(applyPatch(current, patch)) };
       updateListingTx(tx, listing.id, full);
       if (effects.search) enqueueSearchOutboxTx(tx, listing.id, effects.search, version, ctx.now);
       if (effects.contentOp && ctx.actor.ip) recordContentOpTx(tx, { uid: ctx.actor.auth.user.uid, op: effects.contentOp.op, contentRef: listingContentRef(listing.id), ip: ctx.actor.ip, now: ctx.now });

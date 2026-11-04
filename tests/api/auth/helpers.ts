@@ -60,7 +60,7 @@ export class Jar {
 export interface CallOptions {
   jar?: Jar;
   body?: unknown;
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "DELETE";
   /** null: no Origin header at all. */
   origin?: string | null;
   /** false: do not send the X-CSRF-Token header even when the jar has the csrf cookie. */

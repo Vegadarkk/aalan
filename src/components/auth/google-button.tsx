@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { googleSignIn, setSession } from "@/lib/auth/client";
 import { usePublicConfig } from "@/lib/config/client";
@@ -11,10 +10,13 @@ import type { SessionSummary } from "@/lib/contracts/auth";
 import { cn } from "@/lib/utils";
 import { detectInAppBrowser, InAppBrowserNotice, type InAppBrowser } from "./in-app-browser-notice";
 import { loadScript } from "./load-script";
+import { useFirstInteraction } from "./use-first-interaction";
 
 // Google Identity Services button (https://developers.google.com/identity/gsi/web): the Google ID
 // token goes to POST /api/auth/google, which signs an existing account in or asks for the
-// sign-up consents (`needs_consent`). Hidden when no OAuth client id is configured.
+// sign-up consents (`needs_consent`). Hidden when no OAuth client id is configured. The script
+// (~150 KiB with its button frame) loads on the visitor's first action on the page (audit zone 8,
+// perf 5); until Google draws its button, a look-alike stands in its place.
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 
@@ -100,13 +102,15 @@ export function GoogleButton({ nonce, gisNonce, onSignedIn, onNeedsConsent, onEr
   const [rendered, setRendered] = useState(false);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const wanted = useFirstInteraction();
+  const [pressed, setPressed] = useState(false);
 
   useEffect(() => {
     handlers.current = { onSignedIn, onNeedsConsent, onError };
   }, [onSignedIn, onNeedsConsent, onError]);
 
   useEffect(() => {
-    if (!clientId || !gisNonce || inApp !== null) return;
+    if (!clientId || !gisNonce || inApp !== null || !wanted) return;
     let cancelled = false;
     async function submit(credential: string) {
       setBusy(true);
@@ -157,7 +161,7 @@ export function GoogleButton({ nonce, gisNonce, onSignedIn, onNeedsConsent, onEr
     return () => {
       cancelled = true;
     };
-  }, [clientId, gisNonce, inApp, nonce, locale]);
+  }, [clientId, gisNonce, inApp, wanted, nonce, locale]);
 
   if (!clientId) return null;
   return (
@@ -170,8 +174,19 @@ export function GoogleButton({ nonce, gisNonce, onSignedIn, onNeedsConsent, onEr
         <div className="flex flex-col gap-1.5">
           <div className="relative flex h-11 items-center justify-center" aria-busy={busy || undefined}>
             <div ref={slot} className="flex w-full justify-center" />
-            {!rendered && !failed ? <Skeleton className="absolute inset-x-0 top-0.5 mx-auto h-10 max-w-sm rounded-full" /> : null}
-            {!rendered && !failed ? <span className="sr-only">{t("googleLoading")}</span> : null}
+            {!rendered && !failed ? (
+              // A press here is the first action at the latest: the real button replaces this one as soon as Google draws it.
+              <button
+                type="button"
+                onClick={() => setPressed(true)}
+                aria-busy={pressed || undefined}
+                className="absolute inset-x-0 top-0.5 mx-auto flex h-10 w-full max-w-sm items-center justify-center gap-3 rounded-full border border-[#dadce0] bg-white px-4 text-sm font-medium text-[#1f1f1f] outline-offset-2"
+              >
+                {pressed ? <Spinner className="size-4.5 text-[#1f1f1f]" /> : <GoogleMark />}
+                {t("googleContinue")}
+                {pressed ? <span className="sr-only">{t("googleLoading")}</span> : null}
+              </button>
+            ) : null}
             {busy ? (
               <div className="absolute inset-0 flex items-center justify-center rounded-full bg-surface/70">
                 <Spinner className="text-foreground" />
@@ -183,5 +198,17 @@ export function GoogleButton({ nonce, gisNonce, onSignedIn, onNeedsConsent, onEr
       )}
       {divider}
     </div>
+  );
+}
+
+/** Google's "G", as on its own button (the look-alike shown until the real one is drawn). */
+function GoogleMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48" className="size-4.5 shrink-0">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
   );
 }

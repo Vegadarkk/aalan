@@ -1,5 +1,6 @@
 import "server-only";
 import { Redis } from "ioredis";
+import { LIVE_STREAMS_PER_ACCOUNT } from "@/lib/contracts/endpoints";
 import type { MessagingEvent } from "@/lib/contracts/messaging";
 import { serverEnv } from "@/lib/env";
 import { logger } from "@/lib/logging/logger";
@@ -13,7 +14,7 @@ import { EVENT_CHANNEL_PREFIX, eventChannel } from "./events";
 // connection closes every stream: browsers reconnect (503 while Valkey is down) and resync.
 
 /** Open streams of one account in this process (one per tab, D2). */
-export const MAX_STREAMS_PER_UID = 5;
+export const MAX_STREAMS_PER_UID = LIVE_STREAMS_PER_ACCOUNT;
 /** Open streams in this process (web container on the Always Free VM). */
 export const MAX_STREAMS = 1000;
 /** First connection: how long an open waits for the subscriber connection. */
@@ -107,6 +108,11 @@ export class MessagingBus {
   /** Open streams and accounts subscribed in this process. */
   stats(): { streams: number; accounts: number } {
     return { streams: this.streams, accounts: this.entries.size };
+  }
+
+  /** Open streams of one account. */
+  streamCount(uid: string): number {
+    return this.entries.get(uid)?.sinks.size ?? 0;
   }
 
   /**
@@ -227,6 +233,12 @@ function createValkeyBus(url: string): MessagingBus {
   const connection = new Redis(url, clientOptions("queue", { connectionName: "joutiya-queue-events", lazyConnect: false, enableOfflineQueue: false, autoResubscribe: false, maxRetriesPerRequest: 1 }));
   connection.on("error", (error: Error) => logger.warn({ err: error.message }, "messaging bus: valkey connection error"));
   return new MessagingBus(connection);
+}
+
+/** Open streams of `uid` in this process, without creating the bus (0 before its first stream). */
+export function openStreamCount(uid: string): number {
+  const bus = busForTests !== undefined ? busForTests : (globalThis as GlobalBus)[BUS_KEY];
+  return bus?.streamCount(uid) ?? 0;
 }
 
 /**

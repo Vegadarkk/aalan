@@ -33,6 +33,7 @@
     "contact": "Nous contacter",
     "procedures": "Démarches administratives",
     "visitorMenu": "Menu",
+    "floating": "Raccourcis",
     "signUp": "Créer un compte"
   },
   "Locale": {
@@ -156,6 +157,7 @@
     "intro": "Avec {site}, trouvez la bonne affaire près de chez vous : des petites annonces de particuliers et de professionnels partout au Maroc. Voitures, immobilier, location de vacances, emploi, téléphones, meubles, produits du terroir… Déposez une annonce gratuitement pour vendre, louer, donner ou proposer vos services, et échangez en toute sécurité par la messagerie.",
     "categoriesLabel": "Annonces par catégorie",
     "regionsLabel": "Annonces par région",
+    "directoryToggle": "Annonces par catégorie et par région",
     "prosTitle": "Nos solutions Pros",
     "questionsTitle": "Des questions ?",
     "becomePro": "Devenir Pro",
@@ -170,6 +172,7 @@
     "frenchPrevails": "Les textes légaux font foi en français.",
     "contents": "Sommaire",
     "backToTop": "Haut de page",
+    "printSource": "Adresse de la page :",
     "frenchOnly": "Ce texte n'existe qu'en français pour le moment. Il fait foi.",
     "upcomingTitle": "Nouvelle version en vigueur le {date}",
     "upcomingBody": "D'ici là, la version {version} reste en vigueur. Pour un membre prévenu moins de 30 jours avant cette date, elle le reste jusqu'à la date indiquée dans son avis.",
@@ -356,6 +359,7 @@
       "hidePassword": "Masquer le mot de passe",
       "or": "ou",
       "googleLoading": "Chargement du bouton Google…",
+      "googleContinue": "Continuer avec Google",
       "backHome": "Revenir à l'accueil",
       "waitLater": "dans quelques minutes",
       "brandPromise": "Une porte ouverte sur le monde.",
@@ -408,7 +412,9 @@
       "verifyTitle": "Confirmez votre adresse e-mail",
       "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi.",
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
-      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedSuspended": "Votre session a pris fin : votre compte est suspendu jusqu'au {date} (heure du Maroc).",
+      "sessionEndedSuspendedBody": "Reconnectez-vous pour lire vos conversations, voir le motif de la décision et la contester."
     },
     "signUp": {
       "title": "Créer un compte",
@@ -467,6 +473,10 @@
       "expiredBody": "Les liens de confirmation sont valables un temps limité. Demandez-en un nouveau.",
       "failedTitle": "La confirmation n'a pas abouti",
       "retry": "Réessayer",
+      "changingEmail": "Changement de votre adresse en cours…",
+      "emailChangedTitle": "Adresse e-mail modifiée",
+      "emailChangedBody": "Votre compte utilise désormais <email></email>. Par sécurité, vous avez été déconnecté de tous vos appareils : reconnectez-vous avec cette adresse.",
+      "emailChangeInvalidBody": "Ce lien a déjà servi, a dépassé ses 24 heures, ou la demande a été annulée ou remplacée. Recommencez depuis Mes paramètres si besoin.",
       "resetTitle": "Choisir un nouveau mot de passe",
       "resetLead": "Pour le compte {email}.",
       "newPassword": "Nouveau mot de passe",
@@ -474,7 +484,14 @@
       "resetDoneTitle": "Mot de passe modifié",
       "resetDoneBody": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
       "resetExpiredBody": "Les liens de réinitialisation sont valables une heure. Demandez-en un nouveau.",
-      "requestNew": "Demander un nouveau lien"
+      "requestNew": "Demander un nouveau lien",
+      "passwordTitle": "Confirmez votre adresse",
+      "passwordLead": "Pour confirmer votre adresse sur cet appareil, saisissez le mot de passe choisi à l'inscription.",
+      "passwordAccount": "Compte : {email}",
+      "passwordSubmit": "Confirmer et me connecter",
+      "passwordWrong": "Mot de passe incorrect.",
+      "passwordUnknown": "Vous ne connaissez pas ce mot de passe ou vous l'avez oublié ?",
+      "passwordChoose": "Choisissez-en un nouveau"
     },
     "settings": {
       "title": "Mes paramètres",
@@ -486,6 +503,8 @@
         "displayName": "Nom affiché",
         "displayNameHint": "{count} sur {max} caractères. Visible sur vos annonces et dans la messagerie : ni numéro ni lien.",
         "locale": "Langue de l'interface",
+        "localeHint": "Utilisée sur tous vos appareils et pour nos e-mails.",
+        "localeSaved": "Votre compte est réglé sur {name} : enregistrez pour utiliser cette langue sur tous vos appareils et pour nos e-mails.",
         "save": "Enregistrer",
         "saved": "Profil enregistré"
       },
@@ -513,6 +532,24 @@
         "retry": "Réessayer",
         "proBody": "Votre page publique est la vitrine de votre boutique : bannière, présentation, adresse et horaires se règlent dans l'espace Pro.",
         "proEdit": "Modifier ma fiche boutique"
+      },
+      "email": {
+        "title": "Adresse e-mail",
+        "body": "L'adresse qui vous sert à vous connecter et à recevoir nos e-mails. Elle n'est jamais montrée aux autres membres.",
+        "current": "Adresse actuelle",
+        "change": "Changer d'adresse",
+        "formLabel": "Changer d'adresse e-mail",
+        "formLead": "Nous enverrons un lien de confirmation à la nouvelle adresse. Votre adresse actuelle reste valable jusqu'à ce que vous l'ouvriez.",
+        "newEmail": "Nouvelle adresse e-mail",
+        "password": "Mot de passe actuel",
+        "submit": "Envoyer le lien de confirmation",
+        "close": "Annuler",
+        "sent": "Demande enregistrée : consultez la boîte de réception de la nouvelle adresse.",
+        "pendingBody": "Si l'adresse <email></email> peut être utilisée, un lien de confirmation vient d'y être envoyé. Ouvrez-le avant le {date} (heure du Maroc).",
+        "pendingHint": "Votre adresse actuelle reste valable d'ici là. Rien reçu ? Vérifiez les courriers indésirables, ou annulez puis recommencez.",
+        "cancel": "Annuler la demande",
+        "cancelled": "Demande annulée : votre adresse reste la même.",
+        "googleOnly": "Vous vous connectez avec Google : votre adresse est celle de votre compte Google et se gère chez Google. Pour utiliser une autre adresse sur Aalan, choisissez d'abord un mot de passe (section Mot de passe), puis revenez ici."
       },
       "password": {
         "title": "Mot de passe",
@@ -666,6 +703,8 @@
       "recent_auth_required": "Par sécurité, reconnectez-vous puis réessayez dans les dix minutes.",
       "pro_subscription_active": "Résiliez d'abord votre abonnement Pro, puis réessayez.",
       "wallet_not_empty": "Il reste des crédits achetés sur votre compte : utilisez-les ou demandez leur remboursement, puis réessayez.",
+      "same_email": "C'est déjà l'adresse de votre compte.",
+      "password_required": "Choisissez d'abord un mot de passe pour votre compte, puis réessayez.",
       "unavailable": "Le service est momentanément indisponible. Réessayez dans quelques minutes.",
       "internal": "Une erreur technique est survenue. Réessayez.",
       "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
@@ -687,6 +726,7 @@
       "upload_not_ready": "Une photo est encore en cours de traitement. Patientez quelques secondes, puis réessayez.",
       "phone_required": "Vérifiez votre numéro de téléphone pour afficher ce moyen de contact.",
       "listing_unavailable": "Cette annonce n'est plus disponible.",
+      "listing_under_review": "Cette annonce est en cours de vérification : vous ne pouvez pas la modifier pour le moment. Vous pourrez le faire dès que la vérification sera terminée.",
       "reveal_not_allowed": "Le numéro ne peut pas être affiché pour le moment. Vérifiez votre adresse e-mail ou réessayez plus tard.",
       "search_unavailable": "La recherche est momentanément indisponible. Réessayez dans quelques instants.",
       "favorite_limit": "Vous avez atteint le nombre maximal de favoris (300). Retirez-en quelques-uns pour en ajouter d'autres.",
@@ -3084,6 +3124,7 @@
     "home": "Accueil",
     "breadcrumb": "Fil d'Ariane",
     "sellerLabel": "Vendeur et contact",
+    "printSource": "Adresse de l'annonce :",
     "reportLink": "Signaler l'annonce",
     "share": {
       "share": "Partager",
@@ -3834,7 +3875,7 @@
       "label": "{title}, {price}",
       "featured": "À la Une · Sponsorisé",
       "today": "publiée aujourd'hui",
-      "cluster": "{count, plural, one {# annonce} other {# annonces}} ici, zoomer pour les voir",
+      "cluster": "{n} {count, plural, one {annonce} other {annonces}} ici, zoomer pour les voir",
       "per": {
         "night": "/nuit",
         "month": "/mois",
@@ -3880,7 +3921,7 @@
   },
   "SearchFilters": {
     "open": "Filtres",
-    "openCount": "Filtres, {count, plural, one {# actif} other {# actifs}}",
+    "openCount": "Filtres {n}, {count, plural, one {filtre actif} other {filtres actifs}}",
     "title": "Filtres",
     "close": "Fermer les filtres",
     "apply": "Voir les résultats",
@@ -4374,7 +4415,9 @@
       "archivedEmptyBody": "Une conversation archivée revient dans la boîte de réception dès qu'un nouveau message arrive.",
       "selectTitle": "Choisissez une conversation",
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
-      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion."
+      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
+      "busy": "Vous avez déjà {count} onglets d'Aalan ouverts : fermez-en un pour reprendre le direct de la messagerie.",
+      "refreshLive": "Actualiser"
     },
     "row": {
       "you": "Vous :",
@@ -4428,7 +4471,9 @@
       "counterpartClosed": "{name} a fermé son compte : vous pouvez relire la conversation, mais plus y écrire.",
       "frozen": "Cette conversation est suspendue : vous pouvez la lire, mais plus y écrire.",
       "suspended": "Votre compte est suspendu : vous pouvez lire vos conversations, mais plus envoyer de message.",
-      "shop": "Voir la boutique « {title} »"
+      "shop": "Voir la boutique « {title} »",
+      "pinsShow": "Afficher le détail de l'offre et du rendez-vous",
+      "pinsHide": "Masquer le détail de l'offre et du rendez-vous"
     },
     "review": {
       "label": "Donner votre avis",
@@ -5369,7 +5414,7 @@
         "once": "Paiement unique par carte sur la page sécurisée de Stripe. Le prix HT est le prix payé : Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
         "credits": "Les crédits offerts servent pendant le pass. Une prolongation ajoute les siens à ceux qui restent ; ils ne sont pas reportés après la fin du pass.",
         "end": "À la fin du pass, vos annonces au-delà du quota gratuit sont mises en pause, sans être supprimées. Vous êtes prévenu 7 jours et 1 jour avant.",
-        "subscribe": "Vous pouvez aussi vous abonner pendant le pass : pris au moins 2 jours avant sa fin, l'abonnement n'est facturé qu'à la fin du pass ; pris plus tard, il est facturé tout de suite."
+        "subscribe": "Vous pouvez aussi vous abonner pendant le pass : à l'offre de votre pass et au moins 2 jours avant sa fin, l'abonnement n'est facturé qu'à la fin du pass. Une autre offre, ou un abonnement pris plus tard, est facturé tout de suite."
       },
       "consent": {
         "terms": "J'accepte les",
@@ -5984,7 +6029,7 @@
     "check": {
       "title": "Contrôle de l'agrément sur document",
       "saveFirst": "Enregistrez d'abord votre numéro d'agrément : vous pourrez ensuite envoyer votre décision d'agrément pour obtenir la mention « agrément contrôlé sur document » sur votre vitrine.",
-      "none": "Envoyez votre décision d'agrément (PDF ou photo nette). Si son numéro, la raison sociale ou l'ICE et sa date concordent avec votre compte Pro, votre vitrine affiche « agrément contrôlé sur document ».",
+      "none": "Envoyez votre décision d'agrément (PDF de 5 pages au plus ou photo nette). Si son numéro, l'ICE de votre société et sa date concordent avec votre compte Pro, votre vitrine affiche « agrément contrôlé sur document » ; si la décision ne porte pas d'ICE lisible, notre équipe la vérifie. 5 envois par mois au plus.",
       "pending": "Document reçu : contrôle en cours. Le résultat s'affiche ici en quelques minutes.",
       "review": "Notre équipe vérifie votre document : le résultat s'affichera ici.",
       "verified": "Agrément contrôlé sur document le {date}.",

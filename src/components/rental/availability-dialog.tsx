@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/listings/client/format";
 import { RENTAL_AHEAD_DAYS, RENTAL_PERIODS_MAX, blockedSet, isFresh, moroccoToday, periodsOf } from "@/lib/listings/rental-availability";
 import { cn } from "@/lib/utils";
 import { AvailabilityCalendar } from "./availability-calendar";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // The agency's calendar of one car rental (rental pack §3): tap the first then the last day of a
 // period to block it (or free it when it starts on a blocked day); save, or confirm unchanged days
@@ -36,6 +37,8 @@ interface AvailabilityDialogProps {
 const MONTHS_SHOWN = 2;
 
 export function AvailabilityDialog({ listingId, title, rental, onClose, onSaved, now, unit = "day" }: AvailabilityDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(true);
   const t = useTranslations("Rental.availability");
   const locale = useLocale() as Locale;
   const apiMessage = useApiErrorMessage();
@@ -91,6 +94,7 @@ export function AvailabilityDialog({ listingId, title, rental, onClose, onSaved,
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           aria-describedby={descriptionId}
           data-testid="availability-dialog"
           className={cn(

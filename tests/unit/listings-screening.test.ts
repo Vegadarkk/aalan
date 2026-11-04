@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ListingDoc } from "@/lib/db/schemas";
-import { screen, sellerFacts } from "@/lib/listings/screening";
+import { screeningChange } from "@/lib/listings/screening-change";
+import { contentFingerprint, screen, sellerFacts } from "@/lib/listings/screening";
 
 // Adapter between a listing document and the moderation core: the seller facts (a reopened
 // listing's own rejection counts) and the fields handed to the screen (the district included).
@@ -69,5 +70,37 @@ describe("screen", () => {
     const result = await screen({ listing: listing(), uploads: [], seller: { ...seller, previousRejections: 1 }, others: [] });
     expect(result).toMatchObject({ state: "auto_ok", score: 10 });
     expect(result.evidence).toContain("1 previous rejection(s)");
+  });
+});
+
+describe("contentFingerprint", () => {
+  it("moves with the text, the price and the photos, not with the other fields", () => {
+    const base = listing();
+    const fingerprint = contentFingerprint(base);
+    expect(fingerprint).toMatch(/^[0-9a-f]{64}$/);
+    expect(contentFingerprint({ ...base, title: "  vélo de ville PEUGEOT en bon état " })).toBe(fingerprint);
+    expect(contentFingerprint({ ...base, ...{ priceNegotiable: true, attributes: { "bike-type": "route" } } } as ListingDoc)).toBe(fingerprint);
+    expect(contentFingerprint({ ...base, description: `${base.description} Casque offert.` })).not.toBe(fingerprint);
+    expect(contentFingerprint({ ...base, price: 1200 })).not.toBe(fingerprint);
+    expect(contentFingerprint({ ...base, photos: [{ id: "up_photo_added", w: 800, h: 600 }] as ListingDoc["photos"] })).not.toBe(fingerprint);
+  });
+});
+
+describe("screeningChange (zone 7 P2-11)", () => {
+  const stored = { score: 80, flags: ["dup_photo", "new_account"] as const };
+
+  it("says nothing when the re-run gives the stored score and flags", () => {
+    expect(screeningChange(stored, { score: 80, flags: ["new_account", "dup_photo"] }, false)).toEqual({ kind: "none" });
+    expect(screeningChange(stored, null, null)).toEqual({ kind: "none" });
+  });
+
+  it("names a context-only move as a re-scored check, with the flags it added and dropped", () => {
+    expect(screeningChange(stored, { score: 95, flags: ["dup_photo", "new_account", "volume"] }, false)).toEqual({ kind: "rescored", added: ["volume"], removed: [] });
+    expect(screeningChange(stored, { score: 65, flags: ["dup_photo"] }, null)).toEqual({ kind: "rescored", added: [], removed: ["new_account"] });
+  });
+
+  it("speaks of a content change only when the seller changed the text, price or photos", () => {
+    expect(screeningChange(stored, { score: 95, flags: ["dup_photo", "new_account", "volume"] }, true)).toEqual({ kind: "content", rescored: true });
+    expect(screeningChange(stored, { score: 80, flags: ["dup_photo", "new_account"] }, true)).toEqual({ kind: "content", rescored: false });
   });
 });

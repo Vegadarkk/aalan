@@ -11,7 +11,7 @@ import { logConnection } from "@/lib/logging/connection-logs";
 import { assertLimit, blockLimit, consumeLimit, consumedPoints, limitState, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
 import { classifySignInError } from "./accounts";
 import { activateMember } from "./activation";
-import { anonymous, beginAnonymous, checkTurnstile, finish, hasPass, respond } from "./anonymous";
+import { anonymous, beginAnonymous, checkTurnstile, finish, hasPass, respond, type AnonymousFlow } from "./anonymous";
 import { signedIn } from "./respond";
 import { sessionSummary } from "./summary";
 
@@ -95,9 +95,12 @@ export async function checkPassword(email: string, password: string, keys: Login
   }
 }
 
-async function login(request: Request): Promise<Response> {
-  const flow = beginAnonymous(request);
-  const input = await readJson(request, loginSchema);
+/**
+ * The protections in front of a password check from an anonymous request (the login, a verification
+ * link opened on another device): IP escalation, account + IP lock, Turnstile. Null: Turnstile is
+ * required and the request carries no token, the answer is `turnstile_required`.
+ */
+export async function passwordGate(flow: AnonymousFlow, request: Request, email: string, turnstileToken: string | undefined): Promise<LoginKeys | null> {
   // §6 "une IP n'est jamais bloquée net": past 300 attempts per hour an IP (CGNAT: hundreds of
   // subscribers behind it) escalates to Turnstile instead of a 429. The store being down still
   // refuses (policy "closed"). Device and account keys keep their hard answers.
@@ -107,7 +110,7 @@ async function login(request: Request): Promise<Response> {
   const networkOutcome = flow.identity.ip48 ? await consumeLimit("login.ip48", flow.identity.ip48) : null;
   if (networkOutcome && !networkOutcome.ok && networkOutcome.reason === "unavailable") assertLimit("login.ip48", networkOutcome);
   const ipEscalated = !ipOutcome.ok || (networkOutcome !== null && !networkOutcome.ok);
-  const keys = loginKeys(input.email, flow.identity.ipBucket);
+  const keys = loginKeys(email, flow.identity.ipBucket);
   const { failures, accountFailures, accountFailureLimit } = await assertNotLocked(keys);
 
   // The 30-minute pass lifts the IP and account + IP escalations only: 20 failures per hour on
@@ -115,15 +118,30 @@ async function login(request: Request): Promise<Response> {
   const pass = hasPass(flow, request);
   const turnstileNeeded = ((failures >= TURNSTILE_AFTER_FAILURES || ipEscalated) && !pass) || accountFailures >= accountFailureLimit;
   if (turnstileNeeded) {
-    if (!input.turnstileToken) return respond<LoginResponse>(flow, { status: "turnstile_required" });
-    await checkTurnstile(flow, input.turnstileToken, "login");
+    if (!turnstileToken) return null;
+    await checkTurnstile(flow, turnstileToken, "login");
   }
+  return keys;
+}
 
-  // Counted before the check (atomic), forgotten as soon as the password is right: a pending,
-  // disabled or staff account answered below is not a failed attempt.
+/**
+ * The password check behind passwordGate. Counted before the check (atomic), forgotten as soon as
+ * the password is right: a pending, disabled or staff account answered by the caller is not a failed
+ * attempt (the caller records one itself where it must look like a wrong password).
+ */
+export async function verifyPassword(email: string, password: string, keys: LoginKeys): Promise<{ localId: string; idToken: string; attempt: LoginAttempt }> {
   const attempt = await countAttempt(keys);
-  const result = await checkPassword(input.email, input.password, keys, attempt);
+  const result = await checkPassword(email, password, keys, attempt);
   await resetLimit("login.fail.accountIp", keys.accountIp);
+  return { ...result, attempt };
+}
+
+async function login(request: Request): Promise<Response> {
+  const flow = beginAnonymous(request);
+  const input = await readJson(request, loginSchema);
+  const keys = await passwordGate(flow, request, input.email, input.turnstileToken);
+  if (!keys) return respond<LoginResponse>(flow, { status: "turnstile_required" });
+  const { attempt, ...result } = await verifyPassword(input.email, input.password, keys);
   const record = await auth().getUser(result.localId);
   if (record.disabled) throw new HttpError(403, "account_disabled");
   const claims = readClaims(record.customClaims ?? {});

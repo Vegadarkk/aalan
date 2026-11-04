@@ -63,6 +63,8 @@ describe("AccountMenu", () => {
     const html = render(<AccountMenu />, "fr", session);
     const trigger = /<button[^>]*>([\s\S]*?)<\/button>/.exec(html);
     expect(trigger?.[0]).not.toContain("aria-label=");
+    // A navigation dialog of links, not an ARIA menu (audit zone 8, 5.2-3), from the stand-in button on.
+    expect(trigger?.[0]).toContain('aria-haspopup="dialog"');
     expect(trigger?.[1]).toMatch(new RegExp(`^<span class="[^"]*" aria-hidden="true">SB</span><span class="sr-only">${fr.Auth.menu.account}</span>$`));
     expect(trigger?.[0]).toContain("min-w-11");
     expect(trigger?.[0]).toContain("rounded-full");
@@ -78,7 +80,7 @@ describe("AccountMenu", () => {
     expect(html).toContain('href="/fr/favoris"');
     expect(html).not.toContain(`aria-label="${fr.Auth.menu.messagesLink}"`);
     // Below lg: the visitor menu (sign in, create an account, the rentals, the Pro space), a plain 44 px button until its chunk runs.
-    const menu = /<button type="button" aria-haspopup="menu" aria-expanded="false" aria-label="([^"]+)" data-testid="visitor-menu" class="([^"]*)"/.exec(html);
+    const menu = /<button type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="([^"]+)" data-testid="visitor-menu" class="([^"]*)"/.exec(html);
     expect(menu?.[1]).toBe(fr.Nav.visitorMenu);
     expect(menu?.[2]).toContain("min-w-11");
     expect(menu?.[2]).toContain("lg:hidden");

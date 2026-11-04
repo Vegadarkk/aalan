@@ -9,6 +9,7 @@ import { datedRental, subcategoryById } from "@/config/categories";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
+import { shownTitle } from "@/lib/examples/title";
 import { useNumbersTranslations } from "@/i18n/numbers";
 import { formatPrice, intlLocale } from "@/lib/listings/client/format";
 import type { PublicListingCard } from "@/lib/listings/public";
@@ -85,7 +86,7 @@ export function ListingCard({ listing, mediaBaseUrl, locale, headingLevel = "h3"
           dir="auto"
           className={cn("line-clamp-2 break-words outline-none", quietLinkClassName, "group-hover:decoration-current after:absolute after:inset-0 after:rounded-lg")}
         >
-          {listing.title}
+          {shownTitle(listing, locale)}
         </Link>
       </Heading>
       {facts.length > 0 ? (

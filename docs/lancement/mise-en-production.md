@@ -19,7 +19,7 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    images » présent sur le commit) et a été vérifié dans le staging.
 3. **Tag** (après ton feu vert) :
    ```
-   git tag -a v1.0.0 <commit> -m "Joutiya 1.0.0"
+   git tag -a v1.0.0 <commit> -m "Aalan 1.0.0"
    git push origin v1.0.0
    ```
    Le workflow *Release* (`.github/workflows/release.yml`) vérifie que le tag est annoté, au bon
@@ -37,6 +37,8 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    ```
    NODE_USE_ENV_PROXY=1 node scripts/launch-check.ts --tag=v1.0.0
    ```
+   (options : `--site=https://…` si le site n'ouvre pas sur `joutiya.ma`, `--ads=test|live`,
+   `--rif=indexable`, `--opening=AAAA-MM-JJ`)
    Contrôles automatiques (code de sortie 1 si l'un échoue) :
    - `/api/health` répond `ok` avec la version du tag. La production démarre seulement si ses
      contrôles de démarrage passent (mentions légales complètes, cibles, environnement) : une réponse
@@ -44,6 +46,12 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    - `/api/config` : production, publicité `off` jusqu'à l'ouverture d'AdSense (`--ads=test|live`
      ensuite), Turnstile, connexion Google et Firebase configurés ;
    - la page d'accueil applique sa CSP (pas en `report-only`) et HSTS ;
+   - moteurs de recherche : `robots.txt` ouvert (sauf `/api/`, pages privées et recherche interne)
+     avec `Sitemap: <site>/sitemap.xml` ; `ads.txt` en 404 tant que la publicité est `off`, la ligne
+     Google ensuite ; `/fr` indexable, canonique et hreflang `fr-MA`, `ar-MA`, `x-default` sur le site
+     (donc `CANONICAL_ORIGIN` de `src/config/site.ts` = le domaine d'ouverture), sans tarifit ;
+     `/rif` en `noindex, follow` jusqu'à la relecture native (`--rif=indexable` une fois
+     `RIF_INDEXABLE=true` posé dans l'`app.env` de la production) ;
    - note A ou A+ à l'HTTP Observatory de MDN (un balayage public, au plus un par minute) ;
    - répétition B de la restauration notée dans `docs/backups.md`, test de charge
      (`docs/lancement/charge.md`) et audit de sécurité (`docs/lancement/audit-securite.md`) présents ;
@@ -53,7 +61,10 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    Il liste ensuite ce qu'aucune adresse publique ne montre, à confirmer à la main : application
    OAuth de production publiée dans Google Auth Platform, `salesEnabled=false` et offre de lancement
    Pro au back-office, aucune alerte « Sauvegarde Firestore trop ancienne », seuils anti-abus et
-   listes de modération changés (voir ci-dessous), tarifit relu par un locuteur natif, annonces exemple posées en
+   listes de modération changés (voir ci-dessous), tarifit relu par un locuteur natif (puis
+   `RIF_INDEXABLE=true`), propriété Google Search Console vérifiée et `/sitemap.xml` soumis et lu
+   sans erreur (la règle WAF ne sert les sitemaps qu'aux robots vérifiés : le script ne peut pas les
+   lire), annonces exemple posées en
    production seulement sur feu vert du propriétaire (`docs/staging-demo.md`), règles Firestore de production déployées, dépôt
    repassé en privé le jour de l'ouverture, contournement du test de charge retiré
    (`docs/lancement/charge-procedure.md` : règle Cloudflare `loadtest` désactivée et `zone --check`

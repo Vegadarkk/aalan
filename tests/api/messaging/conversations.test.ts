@@ -290,6 +290,25 @@ describe("POST /api/conversations/{cid}/messages", () => {
     expect((await setState(seller, cid, { archived: true })).status).toBe(204);
     expect((await unread(seller)).status).toBe(200);
   });
+
+  it("delivers nothing to a suspended, banned or closed recipient (409), either way (audit C-6)", async () => {
+    const { buyer, seller, listingId } = await pair();
+    const { cid } = await startOk(buyer, listingId);
+    const users = db().collection(COLLECTIONS.users);
+    for (const status of ["suspended", "banned", "closed"] as const) {
+      await users.doc(seller.uid).update({ status });
+      expectError(await send(buyer, cid, "Vous êtes là ?"), 409, "conversation_unavailable");
+      // The first-message path appends to the existing conversation: refused the same way.
+      expectError(await start(buyer, { listingId, text: "Encore moi", turnstileToken: "ok" }), 409, "conversation_unavailable");
+    }
+    await users.doc(seller.uid).update({ status: "active" });
+    await users.doc(buyer.uid).update({ status: "banned" });
+    expectError(await send(seller, cid, "Toujours disponible"), 409, "conversation_unavailable");
+    // A restricted account still receives messages (only its listings are hidden).
+    await users.doc(buyer.uid).update({ status: "restricted" });
+    expect((await send(seller, cid, "Toujours disponible")).status).toBe(201);
+    expect((await conversationDoc(cid)).messageCount).toBe(2);
+  });
 });
 
 describe("blocking", () => {
@@ -384,12 +403,12 @@ describe("GET /api/messages/unread", () => {
     const { cid } = await startOk(buyer, listingId);
     await send(buyer, cid, "Bonjour ?");
     const first = await unread(seller);
-    expect(first.body).toEqual({ total: 2 });
+    expect(first.body).toEqual({ total: 2, streams: 0 });
     expect(valkey.ttlMs(MESSAGING_KEYS.seen(seller.uid))).toBeGreaterThan(0);
     await send(buyer, cid, "Allô ?");
-    expect((await unread(seller)).body).toEqual({ total: 3 });
+    expect((await unread(seller)).body).toEqual({ total: 3, streams: 0 });
     await markRead(seller, cid);
-    expect((await unread(seller)).body).toEqual({ total: 0 });
+    expect((await unread(seller)).body).toEqual({ total: 0, streams: 0 });
     expectError(await unread(undefined), 401, "unauthenticated");
   });
 
@@ -399,6 +418,6 @@ describe("GET /api/messages/unread", () => {
     valkey.failing = true;
     expectError(await unread(seller), 503, "unavailable");
     setMessagingValkeyForTests(null);
-    expect((await unread(seller)).body).toEqual({ total: 1 });
+    expect((await unread(seller)).body).toEqual({ total: 1, streams: 0 });
   });
 });

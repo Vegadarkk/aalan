@@ -9,6 +9,10 @@ export type TemplateId =
   | "verifyEmail"
   | "resetPassword"
   | "signupExisting"
+  | "signupClosed"
+  // Change of address (Z1-10): the link to the new address, the notice to the old one.
+  | "emailChangeConfirm"
+  | "emailChanged"
   | "passwordChanged"
   | "staffInvite"
   | "phoneVerified"
@@ -91,6 +95,11 @@ export interface TemplateData {
   verifyEmail: { displayName: string; actionUrl: string };
   resetPassword: { displayName: string; actionUrl: string };
   signupExisting: { displayName: string; loginUrl: string; resetUrl: string };
+  /** Sign-up on the e-mail of a closed account (Z1-11): ISO dates of the closure and of the address's release. */
+  signupClosed: { displayName: string; closedAt: string; reusableFrom: string };
+  emailChangeConfirm: { displayName: string; actionUrl: string; expiresAt: string };
+  /** `newEmail` already masked (maskEmail): the notice goes to an address that may no longer be the owner's. */
+  emailChanged: { displayName: string; newEmail: string; at: string };
   passwordChanged: { displayName: string; at: string };
   staffInvite: { displayName: string; actionUrl: string; role: "moderator" | "admin" };
   phoneVerified: { displayName: string; phone: string };
@@ -246,7 +255,7 @@ export interface FavoriteDropListing extends SavedSearchAlertListing {
 }
 
 /** Templates whose Firebase action link (live oobCode) the worker generates at delivery. */
-export type ActionLinkTemplate = "verifyEmail" | "resetPassword" | "staffInvite";
+export type ActionLinkTemplate = "verifyEmail" | "resetPassword" | "staffInvite" | "emailChangeConfirm";
 
 /**
  * The action link of a queued mail, for its recipient (`to`): the queue holds this request, never
@@ -254,7 +263,10 @@ export type ActionLinkTemplate = "verifyEmail" | "resetPassword" | "staffInvite"
  * `actionUrl` = `url` plus `oobCode`; `continueUrl` is the SDK's own continue URL.
  */
 export interface ActionLinkRequest {
-  action: "verifyEmail" | "resetPassword";
+  /** changeEmail: a VERIFY_AND_CHANGE_EMAIL code from `currentEmail` to the recipient (Z1-10). */
+  action: "verifyEmail" | "resetPassword" | "changeEmail";
+  /** changeEmail only: the account's address the code moves away from. */
+  currentEmail?: string;
   /** The Joutiya page the code is appended to, its other query parameters included (`mode`). */
   url: string;
   continueUrl: string;

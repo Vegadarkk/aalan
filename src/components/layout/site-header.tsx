@@ -7,6 +7,7 @@ import { SITE_NAME } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { CategoryChips } from "./category-chips";
 import { Container } from "./container";
+import { FloatingActions } from "./floating-actions";
 import { HeaderSearch } from "./header-search";
 import { IntentLink } from "./intent-link";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -69,8 +70,10 @@ export function SiteHeader({ locale }: { locale: string }) {
         </Container>
       </header>
       <CategoryChips items={chips} label={t("categories")} shops={t("shops")} guide={t("guide")} previous={t("previousCategories")} next={t("nextCategories")} />
-      <SellFab label={t("post")} text={t("sell")} />
-      <AssistantBubble />
+      <FloatingActions label={t("floating")}>
+        <SellFab label={t("post")} text={t("sell")} />
+        <AssistantBubble />
+      </FloatingActions>
     </>
   );
 }

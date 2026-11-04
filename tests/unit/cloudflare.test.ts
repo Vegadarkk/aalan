@@ -259,6 +259,17 @@ describe("zone --check", () => {
   });
 });
 
+describe("webhook edge rules (security review D-1)", () => {
+  it("keep the webhooks out of BIC and Security Level challenges but inside the edge rate limit", () => {
+    const skip = readEdgeFile<Ruleset>("waf-rules.json").rules.find((rule) => rule.ref === "webhooks_skip");
+    expect(skip?.expression).toBe('starts_with(http.request.uri.path, "/api/webhooks/")');
+    expect(skip?.action).toBe("skip");
+    expect(skip?.action_parameters).toEqual({ products: ["bic", "securityLevel"] });
+    const limit = readEdgeFile<Ruleset>("ratelimit-rules.json").rules.find((rule) => rule.ref === "site_wide");
+    expect(limit?.expression).not.toContain("/api/webhooks/");
+  });
+});
+
 describe("load test rule", () => {
   const secret = "a".repeat(20) + "B9".repeat(10);
   const waf = readEdgeFile<Ruleset>("waf-rules.json");

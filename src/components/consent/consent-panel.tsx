@@ -11,12 +11,15 @@ import { SITE_NAME } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useAdsConfig, useConsent } from "./consent-provider";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // Second layer (phase 6, D2): one switch per purpose, nothing pre-ticked on a first choice, the
 // exempt cookies listed apart. Without any tracker (ads off) it says so and offers nothing to
 // accept: no consent is needed then (CNIL).
 
 export function ConsentPanel() {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(true);
   const t = useTranslations("Consent");
   const { choice, save, closePanel } = useConsent();
   const ads = useAdsConfig();
@@ -35,6 +38,7 @@ export function ConsentPanel() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="consent-panel"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col overflow-y-auto rounded-t-xl border-t-4 border-structure bg-surface shadow-2xl shadow-bab-950/25 outline-none dark:border-bab-600",

@@ -18,7 +18,7 @@ vi.mock("@/lib/valkey/clients", () => ({
   }),
 }));
 
-const { healthReport } = await import("@/lib/health");
+const { cachedHealthReport, HEALTH_CACHE_MS, healthReport, resetHealthCache } = await import("@/lib/health");
 const { resetServerEnv } = await import("@/lib/env");
 const { resetSearchEngine, setSearchEngineForTests } = await import("@/lib/search/engine");
 const { SEARCH_LAG_KEY } = await import("@/lib/search/indexer");
@@ -91,5 +91,59 @@ describe("health report: search (informational)", () => {
     expect((await healthReport()).info.searchLagSeconds).toBeNull();
     valkeyState.getFails = true;
     expect((await healthReport()).info.searchLagSeconds).toBeNull();
+  });
+});
+
+describe("health report: in-process cache (security review D-6)", () => {
+  const saved = { ...process.env };
+  beforeEach(() => {
+    process.env = { ...saved, APP_ENV: "dev" };
+    process.env.MEILI_URL = "http://127.0.0.1:7700";
+    process.env.MEILI_SEARCH_KEY = "s";
+    resetServerEnv();
+    resetHealthCache();
+    Object.assign(valkeyState, { configured: false, lag: null, getFails: false });
+  });
+  afterEach(() => {
+    process.env = { ...saved };
+    resetServerEnv();
+    resetSearchEngine();
+    resetHealthCache();
+  });
+
+  it("computes the report once per window, concurrent callers included, then again", async () => {
+    let calls = 0;
+    setSearchEngineForTests(
+      engine(async () => {
+        calls += 1;
+        return true;
+      }),
+    );
+    const t0 = 1_000_000;
+    const [a, b] = await Promise.all([cachedHealthReport(t0), cachedHealthReport(t0 + 1)]);
+    expect(a).toBe(b);
+    expect(await cachedHealthReport(t0 + HEALTH_CACHE_MS - 1)).toBe(a);
+    expect(calls).toBe(1);
+    const fresh = await cachedHealthReport(t0 + HEALTH_CACHE_MS);
+    expect(fresh).not.toBe(a);
+    expect(fresh.info.meilisearch).toBe("ok");
+    expect(calls).toBe(2);
+  });
+
+  it("serves the route from the cache", async () => {
+    const { GET } = await import("@/app/api/health/route");
+    let calls = 0;
+    setSearchEngineForTests(
+      engine(async () => {
+        calls += 1;
+        return true;
+      }),
+    );
+    for (let i = 0; i < 5; i += 1) {
+      const response = await GET();
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    }
+    expect(calls).toBe(1);
   });
 });

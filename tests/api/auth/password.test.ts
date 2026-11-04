@@ -93,6 +93,27 @@ describe("password reset", () => {
     expect(fresh.body.session.uid).toBe(uid);
   });
 
+  it("a sign-up squatted by someone else stays pending until the owner of the address resets the password (audit A-1)", async () => {
+    const email = uniqueEmail("squat");
+    const attacker = new Jar();
+    expect((await call(signup, "/api/auth/signup", { jar: attacker, body: { email, password: PASSWORD, displayName: "Squatter", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
+    const verifyCode = oobCodeOf(await actionUrlOf(lastMail(sendMail, "verifyEmail", email)!));
+
+    // The owner opens the confirmation link on their own device: the account is not confirmed.
+    const owner = new Jar();
+    expect((await call<{ status: string }>(action, "/api/auth/action", { jar: owner, body: { mode: "verifyEmail", oobCode: verifyCode } })).body).toEqual({ status: "password_required", email });
+    expect((await call<{ status: string }>(login, "/api/auth/login", { jar: attacker, body: { email, password: PASSWORD } })).body).toEqual({ status: "verification_required" });
+
+    // "Mot de passe oublié": the new password replaces the squatter's and confirms the address.
+    expect((await call(resetRequest, "/api/auth/password/reset", { jar: owner, body: { email, turnstileToken: "t" } })).status).toBe(202);
+    const resetCode = oobCodeOf(await actionUrlOf(lastMail(sendMail, "resetPassword", email)!));
+    expect((await call(resetConfirm, "/api/auth/password/confirm", { jar: owner, body: { oobCode: resetCode, password: NEW_PASSWORD } })).status).toBe(200);
+    expect((await call<ErrorBody>(login, "/api/auth/login", { jar: attacker, body: { email, password: PASSWORD } })).status).toBe(401);
+    const signedIn = await call<SignedInBody>(login, "/api/auth/login", { jar: owner, body: { email, password: NEW_PASSWORD } });
+    expect(signedIn.status).toBe(200);
+    expect(signedIn.body.session).toMatchObject({ role: "individual", emailVerified: true });
+  });
+
   it("answers 202 without a mail for an unknown e-mail, in no less time than for a real one, and limits requests per e-mail", async () => {
     const ghost = uniqueEmail("ghost");
     const startedAt = Date.now();

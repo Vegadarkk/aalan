@@ -5,6 +5,7 @@ import type { MeResponse } from "@/lib/contracts/auth";
 import { revokeSessions, verifySession } from "@/lib/firebase/session";
 import { readCookie } from "@/lib/http/cookies";
 import { logConnection } from "@/lib/logging/connection-logs";
+import { publishRevoked } from "@/lib/messaging";
 import { CSRF_HEADER, SESSION_COOKIE, clearSessionCookies } from "@/lib/security/cookies";
 import { csrfToken } from "@/lib/security/csrf";
 import { deviceOf, jsonResponse, withDevice } from "./respond";
@@ -22,13 +23,19 @@ export async function handleMe(request: Request): Promise<Response> {
   return withDevice(response, request);
 }
 
-/** Clears the cookies and revokes the account's tokens (§6: a cookie would stay valid until it expires). */
+/**
+ * Clears the cookies and revokes the account's tokens (§6: a cookie would stay valid until it
+ * expires). Only a live session revokes: a revoked cookie (stolen, then the password changed) just
+ * clears the cookies, or replaying it would sign the owner out of every new session (audit A-2).
+ */
 export async function handleLogout(request: Request): Promise<Response> {
   requireSameOrigin(request);
   const cookie = readCookie(request.headers, SESSION_COOKIE);
-  const user = cookie ? await verifySession(cookie) : null;
+  const user = cookie ? await verifySession(cookie, { checkRevoked: true }) : null;
   if (user) {
     await revokeSessions(user.uid);
+    // Open live-messaging streams checked the session once, at open: they close now (audit A-4).
+    await publishRevoked(user.uid);
     await logConnection({ uid: user.uid, event: "logout", ip: deviceOf(request).identity.ip });
   }
   const response = new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });

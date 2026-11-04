@@ -207,7 +207,14 @@ test.describe("price guide and offers", () => {
 
     await buyerPage.setViewportSize({ width: 360, height: 780 });
     await buyerPage.goto(`/fr/messages/${cid}`);
-    await expect(buyerPage.getByTestId("offer-card")).toBeVisible({ timeout: 15_000 });
+    // On a phone the settled offer folds into the summary line, which unfolds the card (audit zone 5 n°6).
+    const summary = buyerPage.getByTestId("thread-pins-summary");
+    await expect(summary).toBeVisible({ timeout: 15_000 });
+    await expect(summary).toContainText(/Offre acceptée à 1\s?300\sDH/);
+    await expect(buyerPage.getByTestId("offer-card")).toBeHidden();
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+    await expect(buyerPage.getByTestId("offer-card")).toBeVisible();
     expect(await buyerPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     expect(errors).toEqual([]);

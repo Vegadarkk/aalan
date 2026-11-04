@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BadgeCheck, KeyRound, LogOut, Mail, Smartphone } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import type { z } from "@/lib/zod";
 import { ErrorBanner } from "@/components/feedback/error-banner";
@@ -24,6 +24,7 @@ import { Section } from "./settings-section";
 import { AccountClosedView, CloseAccountSection, DataSection } from "@/components/account/account-sections";
 import { ProStorefrontNotice, StorefrontSection } from "@/components/account/storefront-section";
 import { NotificationsSection } from "@/components/account/notifications-section";
+import { EmailSection } from "@/components/account/email-section";
 import { ExamplesSwitch } from "@/components/examples/examples-controls";
 import type { CloseAccountResponse } from "@/lib/contracts/account";
 
@@ -35,6 +36,7 @@ export function SettingsView() {
   const t = useTranslations("Auth.settings");
   const router = useRouter();
   const { status, session } = useSession();
+  const locale = useLocale();
   // Set by the closure (L7): the page gives way to its confirmation, whatever the session does next.
   const [closed, setClosed] = useState<CloseAccountResponse | null>(null);
 
@@ -67,10 +69,11 @@ export function SettingsView() {
         <SessionLost />
       ) : (
         <div className="flex flex-col divide-y divide-border">
-          <ProfileSection key={`${session.uid}-${session.displayName}-${session.locale}`} session={session} />
+          <ProfileSection key={`${session.uid}-${session.displayName}-${session.locale}-${locale}`} session={session} />
           {/* A Pro's public page is its shop's storefront, edited in the Pro area (UX audit of the Pro shops, B3). */}
           {session.role === "pro" ? <ProStorefrontNotice /> : <StorefrontSection />}
           <ExamplesSection />
+          <EmailSection session={session} />
           <PasswordSection email={session.email} displayName={session.displayName} hasPassword={session.providers.includes("password")} />
           <VerificationSection session={session} />
           <MethodsSection session={session} />
@@ -137,6 +140,10 @@ function ProfileSection({ session }: { session: SessionSummary }) {
   const fieldMessage = useFieldMessage();
   const router = useRouter();
   const pathname = usePathname();
+  // The selector shows the language the interface is in (Z1-12), not only the saved one: a member
+  // reading /ar with "fr" saved sees "العربية" and is offered to keep it on every device.
+  const current = useLocale() as Locale;
+  const saved = session.locale;
   const [serverError, setServerError] = useState<unknown>();
   const {
     register,
@@ -145,10 +152,13 @@ function ProfileSection({ session }: { session: SessionSummary }) {
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileForm, unknown, ProfileInput>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { displayName: session.displayName ?? "", locale: session.locale ?? "fr" },
+    defaultValues: { displayName: session.displayName ?? "", locale: current },
     mode: "onTouched",
   });
   const displayName = useWatch({ control, name: "displayName" }) ?? "";
+  const chosen = useWatch({ control, name: "locale" }) ?? current;
+  const unsaved = saved !== null && chosen !== saved;
+  const options = [...new Set<Locale>([...SWITCHABLE_LOCALES, current, ...(saved ? [saved] : [])])];
 
   const submit = handleSubmit(async (values) => {
     setServerError(undefined);
@@ -156,7 +166,7 @@ function ProfileSection({ session }: { session: SessionSummary }) {
       const answer = await apiPost<{ session: SessionSummary }>(AUTH_API.profile, values);
       setSession(answer.session);
       toast.success(t("saved"));
-      if (values.locale && values.locale !== session.locale) router.replace(pathname, { locale: values.locale });
+      if (values.locale && values.locale !== current) router.replace(pathname, { locale: values.locale });
     } catch (error) {
       setServerError(error);
     }
@@ -170,17 +180,17 @@ function ProfileSection({ session }: { session: SessionSummary }) {
         <Field label={t("displayName")} hint={t("displayNameHint", { count: displayName.length, max: DISPLAY_NAME_MAX })} error={fieldMessage("displayName", errors.displayName)} required>
           <Input autoComplete="name" maxLength={DISPLAY_NAME_MAX} {...register("displayName")} />
         </Field>
-        <Field label={t("locale")} error={fieldMessage("locale", errors.locale)}>
+        <Field label={t("locale")} hint={unsaved && saved ? t("localeSaved", { name: names(saved) }) : t("localeHint")} error={fieldMessage("locale", errors.locale)}>
           <select className={inputClassName} {...register("locale")}>
-            {/* Tarifit is not offered until its review; an account that chose it keeps its value. */}
-            {(SWITCHABLE_LOCALES.includes(session.locale as Locale) || !session.locale ? SWITCHABLE_LOCALES : [...SWITCHABLE_LOCALES, session.locale as Locale]).map((locale: Locale) => (
+            {/* A language not offered (Tarifit before its review) stays listed when the page or the account uses it. */}
+            {options.map((locale) => (
               <option key={locale} value={locale} lang={locale === "rif" ? "rif-Latn" : locale}>
                 {names(locale)}
               </option>
             ))}
           </select>
         </Field>
-        <Button type="submit" loading={isSubmitting} disabled={!isDirty} className="w-fit">
+        <Button type="submit" loading={isSubmitting} disabled={!isDirty && !unsaved} className="w-fit">
           {t("save")}
         </Button>
       </form>

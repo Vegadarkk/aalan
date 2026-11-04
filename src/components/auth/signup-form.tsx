@@ -117,6 +117,7 @@ export function SignupForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: str
         <TurnstileWidget
           ref={turnstile}
           action="signup"
+          defer
           nonce={nonce}
           onToken={(token) => setValue("turnstileToken", token ?? "", { shouldValidate: submitCount > 0 })}
           error={errors.turnstileToken ? c("turnstilePending") : undefined}

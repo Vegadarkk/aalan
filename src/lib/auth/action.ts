@@ -1,8 +1,9 @@
 import "server-only";
+import { confirmEmailChange } from "@/lib/account/email-change";
 import { actionSchema, type ActionResponse } from "@/lib/contracts/auth";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { auth } from "@/lib/firebase/admin";
-import { readClaims } from "@/lib/firebase/claims";
+import { isStaff, readClaims } from "@/lib/firebase/claims";
 import { applyEmailVerificationCode, verifyPasswordResetCode, type OobResult } from "@/lib/firebase/rest";
 import { createSessionForUid } from "@/lib/firebase/session";
 import { HttpError } from "@/lib/http/errors";
@@ -14,25 +15,16 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { pepperedHash, safeEqual } from "@/lib/security/hash";
 import { userByEmail, withCodeErrors } from "./accounts";
 import { activateMember } from "./activation";
-import { anonymous, beginAnonymous, finish, respond } from "./anonymous";
+import { anonymous, beginAnonymous, finish, respond, type AnonymousFlow } from "./anonymous";
+import { passwordGate, recordFailure, verifyPassword } from "./login";
 import { signedIn } from "./respond";
 import { sessionSummary } from "./summary";
 
-// /action links of our mails (§6): the verification code activates the account (role
-// "individual") and signs the person in, on the device that signed up only; a reset code is only
-// checked here, the new password goes to /api/auth/password/confirm.
-
-/** Applies a VERIFY_EMAIL code. The emulator answers 501 to a code of another type where production says 400: ask the code its type before giving up. */
-async function applyVerification(oobCode: string): Promise<OobResult> {
-  try {
-    return await withCodeErrors(() => applyEmailVerificationCode(oobCode));
-  } catch (error) {
-    if (!(error instanceof HttpError) || error.code !== "unavailable") throw error;
-    const check = await verifyPasswordResetCode(oobCode).catch(() => null);
-    if (check?.requestType && check.requestType !== "VERIFY_EMAIL") throw new HttpError(400, "invalid_code");
-    throw error;
-  }
-}
+// /action links of our mails (§6): the verification code activates the account (role "individual")
+// and signs the person in. On the device that signed up the link alone is enough; on any other
+// device the code is only applied once the account password is given (audit A-1). A reset code is
+// only checked here, the new password goes to /api/auth/password/confirm. A change-of-address code
+// moves the account to its new address (src/lib/account/email-change.ts, Z1-10).
 
 async function uidOf(result: OobResult): Promise<string> {
   if (result.localId) return result.localId;
@@ -49,15 +41,43 @@ export async function checkResetCode(oobCode: string): Promise<string> {
 }
 
 /**
+ * The e-mail of a VERIFY_EMAIL code, without consuming it: accounts:resetPassword with the code
+ * alone answers the type and the e-mail of any action code (the Firebase SDK's checkActionCode, the
+ * emulator's resetPassword without newPassword), and applies nothing.
+ */
+export async function checkVerificationCode(oobCode: string): Promise<{ email: string; uid: string }> {
+  const result = await withCodeErrors(() => verifyPasswordResetCode(oobCode));
+  if (result.requestType !== "VERIFY_EMAIL" || !result.email) throw new HttpError(400, "invalid_code");
+  return { email: result.email, uid: await uidOf(result) };
+}
+
+/**
  * True when the request carries the device cookie of the sign-up (its hash is in the private
- * document). A link clicked from another device activates the account but opens no session: a
- * sign-up made by someone else with this address would otherwise sign its victim into an account
- * whose password that person chose.
+ * document). A link clicked from another device needs the account password: a sign-up made by
+ * someone else with this address would otherwise become a verified account whose password that
+ * person chose (pre-account takeover, audit A-1).
  */
 async function signedUpFromThisDevice(uid: string, deviceId: string | null): Promise<boolean> {
   if (!deviceId) return false;
   const account = await getUserPrivate(uid);
   return Boolean(account?.signupDeviceHash && safeEqual(account.signupDeviceHash, pepperedHash("did", deviceId)));
+}
+
+/**
+ * Another device: the account password, with the login protections (lock, Turnstile, counters).
+ * Null: Turnstile is required first. The password must sign in the account of the code's e-mail.
+ */
+async function checkAccountPassword(flow: AnonymousFlow, request: Request, uid: string, email: string, password: string, turnstileToken: string | undefined): Promise<boolean> {
+  const keys = await passwordGate(flow, request, email, turnstileToken);
+  if (!keys) return false;
+  const { attempt, localId } = await verifyPassword(email, password, keys);
+  const record = await auth().getUser(localId);
+  // Staff accounts never verify from the public host; same answer as a wrong password (login).
+  if (localId !== uid || isStaff(readClaims(record.customClaims ?? {}))) {
+    await recordFailure(keys, attempt);
+    throw new HttpError(401, "invalid_credentials");
+  }
+  return true;
 }
 
 async function action(request: Request): Promise<Response> {
@@ -69,17 +89,28 @@ async function action(request: Request): Promise<Response> {
     const email = await checkResetCode(input.oobCode);
     return respond<ActionResponse>(flow, { status: "reset_ok", email });
   }
+  if (input.mode === "changeEmail") {
+    // Checked, not consumed (Firebase would change the address itself): see confirmEmailChange.
+    const code = await withCodeErrors(() => verifyPasswordResetCode(input.oobCode));
+    const changed = await confirmEmailChange(code, flow.identity.ip);
+    return respond<ActionResponse>(flow, { status: "email_changed", email: changed.email });
+  }
 
-  const result = await applyVerification(input.oobCode);
-  const uid = await uidOf(result);
-  const record = await auth().getUser(uid);
+  // Read first, applied only once the device or the password says the account is this person's.
+  const { email, uid } = await checkVerificationCode(input.oobCode);
   // The address just proved it receives our mail: a bounce or complaint suppression no longer holds.
-  const email = result.email ?? record.email;
-  if (email) await removeSuppression(email).catch((error: unknown) => logger.warn({ err: (error as Error).message }, "mail suppression removal skipped"));
+  await removeSuppression(email).catch((error: unknown) => logger.warn({ err: (error as Error).message }, "mail suppression removal skipped"));
+  const record = await auth().getUser(uid);
   if (record.disabled) throw new HttpError(403, "account_disabled");
+  if (!(await signedUpFromThisDevice(uid, flow.identity.deviceId))) {
+    // The link holder owns the mailbox: the e-mail is theirs to see (and fills the sign-in field).
+    if (!input.password) return respond<ActionResponse>(flow, { status: "password_required", email });
+    if (!(await checkAccountPassword(flow, request, uid, email, input.password, input.turnstileToken))) return respond<ActionResponse>(flow, { status: "turnstile_required" });
+  }
+
+  await withCodeErrors(() => applyEmailVerificationCode(input.oobCode));
   const claims = readClaims(record.customClaims ?? {});
   if (!(await activateMember(uid, claims))) return respond<ActionResponse>(flow, { status: "verified", session: null });
-  if (!(await signedUpFromThisDevice(uid, flow.identity.deviceId))) return respond<ActionResponse>(flow, { status: "verified", session: null });
   const minted = await createSessionForUid(uid);
   // The verification link opens a 14-day session: a sign-in for connectionLogs like any other.
   await logConnection({ uid, event: "login", ip: flow.identity.ip });

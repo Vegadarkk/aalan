@@ -33,6 +33,7 @@
     "contact": "Ari-d aneɣ",
     "procedures": "Lewraq n lidara",
     "visitorMenu": "Tabdart",
+    "floating": "Iberdan iwezlen",
     "signUp": "Snulfu amiḍan"
   },
   "Locale": {
@@ -146,6 +147,7 @@
     "intro": "S {site}, af lhemza ɣer tama nnec : annonces n imdanen d Pro deg marra Lmeɣrib. Ṭumubilat, lɛeqqar, akra i lɛuṭla, axeddim, tilifunat, lmeɛdat n uxxam, tiɣawsiwin n tmurt… Ssuffeɣ annonce bla idrimen ḥima ad tzenzeḍ, ad tekreḍ, ad tefkeḍ niɣ ad tessekneḍ lxedmat nnec, d mmeslay s laman s tebratin.",
     "categoriesLabel": "Annonces s taggayt",
     "regionsLabel": "Annonces s tmnaḍt",
+    "directoryToggle": "Annonces s taggayt d tmnaḍt",
     "prosTitle": "Ayen nesɛa i Pro",
     "questionsTitle": "Tesɛiḍ isteqsiyen ?",
     "becomePro": "Ili d Pro",
@@ -160,6 +162,7 @@
     "frenchPrevails": "Iḍrisen n lqanun : d tafransist i yettwaḥsaben.",
     "contents": "Ayen yellan",
     "backToTop": "Ɣer ufella n tasna",
+    "printSource": "Adres n tasna:",
     "frenchOnly": "Aḍris-a s tefransist kan i yella ar dǧa. D netta i yettwaḥsaben.",
     "upcomingTitle": "Nnusxa tamaynut ad tebdu deg {date}",
     "upcomingBody": "Ar ass-nni, nnusxa {version} ad teqqim tetteddu. I uɛeḍḍu i yettwaselɣen qell zi 30 n wussan zzat n wass-nni, ad teqqim ar ass i d-yuran deg usselɣu nnes.",
@@ -346,6 +349,7 @@
       "hidePassword": "Ffer awal n uɛeddi",
       "or": "niɣ",
       "googleLoading": "Taqeffalt n Google ad tettwaɛemmar…",
+      "googleContinue": "Kemmel s Google",
       "backHome": "Uɣal ɣer tasna tamezwarut",
       "waitLater": "deg kra n tesdidin",
       "brandPromise": "Tawwurt yerẓmen ɣer ddunit.",
@@ -398,7 +402,9 @@
       "verifyTitle": "Sentem adres n e-mail nnec",
       "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu.",
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
-      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedSuspended": "Tukcimt nnec tekmel: amiḍan nnec yettwaḥbes ar {date} (tasaɛt n Lmeɣrib).",
+      "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s."
     },
     "signUp": {
       "title": "Snulfu amiḍan",
@@ -457,6 +463,10 @@
       "expiredBody": "Isuɣan n usentem ṣeḥḥan i kra n lweqt kan. Ssuter yiwen amaynu.",
       "failedTitle": "Asentem war yeddi ca",
       "retry": "Ɛawed",
+      "changingEmail": "Abeddel n adres nnec yettwaxdam…",
+      "emailChangedTitle": "Adres n e-mail tettwabeddel",
+      "emailChangedBody": "Amiḍan nnec issexdam dǧa <email></email>. I teɣellist, tffeɣeḍ zi marra ibenkan nnec : ɛawed kcem s adres-a.",
+      "emailChangeInvalidBody": "Asaɣ-a yettwasxdem zzat, niɣ iɛedda 24 n tsaɛtin, niɣ asuter yettwakkes niɣ yettwabeddel. Ɛawed zi Iɣewwaren inu ma texsed.",
       "resetTitle": "Xtar awal n uɛeddi amaynu",
       "resetLead": "I umiḍan {email}.",
       "newPassword": "Awal n uɛeddi amaynu",
@@ -464,7 +474,14 @@
       "resetDoneTitle": "Awal n uɛeddi yettwabeddel",
       "resetDoneBody": "Dǧa tzemmreḍ ad tkecmeḍ s awal n uɛeddi amaynu.",
       "resetExpiredBody": "Isuɣan n ubeddel n awal n uɛeddi ṣeḥḥan yiwet n tsaɛt. Ssuter yiwen amaynu.",
-      "requestNew": "Ssuter asaɣ amaynu"
+      "requestNew": "Ssuter asaɣ amaynu",
+      "passwordTitle": "Sentem adres nnec",
+      "passwordLead": "Ḥima ad tsentmeḍ adres nnec deg lmakina-a, ari awal n uɛeddi i texetreḍ asmi tejjiḍ amiḍan.",
+      "passwordAccount": "Amiḍan: {email}",
+      "passwordSubmit": "Sentem uca kcem",
+      "passwordWrong": "Awal n uɛeddi war iṣeḥḥa ca.",
+      "passwordUnknown": "War tessineḍ ca awal n uɛeddi-a niɣ tettuḍ-t?",
+      "passwordChoose": "Xtar yiwen amaynu"
     },
     "settings": {
       "title": "Iɣewwaren inu",
@@ -476,6 +493,8 @@
         "displayName": "Isem i ɣa yban",
         "displayNameHint": "{count} zi {max} n yisekkilen. Ad yban deg annonces nnec d deg tibratin : war uṭṭun war asaɣ.",
         "locale": "Tutlayt n usit",
+        "localeHint": "Ad tettwasexdem deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
+        "localeSaved": "Amiḍan nnec iqqim x {name} : ḥrez ḥima ad tesxedmeḍ tutlayt-a deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
         "save": "Ḥrez",
         "saved": "Profil yettwaḥrez"
       },
@@ -503,6 +522,24 @@
         "retry": "Ɛawed",
         "proBody": "Tasna nnec tazayezt d tafrent n tḥanut nnec: tabanirt, asenṭel, tansa d ikuden ttwasbedden deg tallunt Pro.",
         "proEdit": "Beddel tafiche n tḥanut inu"
+      },
+      "email": {
+        "title": "Adres n e-mail",
+        "body": "Adres s i tkeččmeḍ d s i ttaweḍ tebratin nneɣ. War ttbayan ca i imeddukal nniḍen.",
+        "current": "Adres n dǧa",
+        "change": "Beddel adres",
+        "formLabel": "Beddel adres n e-mail",
+        "formLead": "Ad nazen asaɣ n usentem ɣer adres tamaynut. Adres n dǧa teqqim teṣeḥḥa ar d teldiḍ asaɣ.",
+        "newEmail": "Adres n e-mail tamaynut",
+        "password": "Awal n uɛeddi n dǧa",
+        "submit": "Azen asaɣ n usentem",
+        "close": "Bḍel",
+        "sent": "Asuter yettwaḥrez : ẓar tabwaṭ n adres tamaynut.",
+        "pendingBody": "Ma tezmer adres <email></email> ad tettwasxdem, yuyur-as-d dǧa yiwen usaɣ n usentem. Ldi-t zzat n {date} (tasaɛt n Lmeɣrib).",
+        "pendingHint": "Adres n dǧa teqqim teṣeḥḥa ar imiren. War dak-d yusi walu ? Ẓar tibratin n spam, niɣ bḍel asuter uca ɛawed.",
+        "cancel": "Bḍel asuter",
+        "cancelled": "Asuter yettwabḍel : adres nnec teqqim am zik.",
+        "googleOnly": "Tkeččmeḍ s Google : adres nnec d tin n umiḍan nnec n Google, tettwasefrak ɣer Google. Ḥima ad tesxedmeḍ adres nniḍen deg Aalan, xtar zzat awal n uɛeddi (ixef n Awal n uɛeddi), uca uɣul ɣer da."
       },
       "password": {
         "title": "Awal n uɛeddi",
@@ -656,6 +693,8 @@
       "recent_auth_required": "I teɣellist, ɛawed kcem uca ɛawed deg mraw n tesdidin.",
       "pro_subscription_active": "Ssbeṭṭel zzat abonnement nnec n Pro, uca ɛawed.",
       "wallet_not_empty": "Qqimen crédits i tesɣiḍ deg umiḍan nnec : sxedm-iten niɣ ssuter ad ak-d ttwarren idrimen nsen, uca ɛawed.",
+      "same_email": "Ta d adres n umiḍan nnec dǧa.",
+      "password_required": "Xtar zzat awal n uɛeddi i umiḍan nnec, uca ɛawed.",
       "unavailable": "Lxedmet war telli ca i kra n lweqt. Ɛawed deg kra n tesdidin.",
       "internal": "Tella tuccḍa n tteknik. Ɛawed.",
       "network": "War tella ca connexion. Ẓar internet nnec, uca ɛawed.",
@@ -677,6 +716,7 @@
       "upload_not_ready": "Yiwet n twlaft mazal tettwaxdam. Ṛaǧu kra n tesdidin, uca ɛawed.",
       "phone_required": "Senqed uṭṭun n tilifun nnec ḥima ad tsekneḍ abrid-a n umsawal.",
       "listing_unavailable": "Annonce-a war telli ca.",
+      "listing_under_review": "Annonce-a deg usenqed : war tezmireḍ ca ad tt-tbeddleḍ tura. Ad tizmireḍ ad tt-tbeddleḍ mlmi ikemmel usenqed.",
       "reveal_not_allowed": "Uṭṭun war yezmir ca ad yban tura. Senqed adres n e-mail nnec niɣ ɛawed deffir.",
       "search_unavailable": "Tarzzut war telli ca i kra n lweqt. Ɛawed deg kra n tesdidin.",
       "favorite_limit": "Tewḍeḍ lḥedd n favoris (300). Kkes kra zzaysen ḥima ad tarnuḍ wiyyaḍ.",
@@ -3074,6 +3114,7 @@
     "home": "Tasna tamezwarut",
     "breadcrumb": "Abrid n tsniwin",
     "sellerLabel": "Amzenzu d umsawal",
+    "printSource": "Adres n annonce:",
     "reportLink": "Smekti x annonce",
     "share": {
       "share": "Bḍu",
@@ -3824,7 +3865,7 @@
       "label": "{title}, {price}",
       "featured": "Deg uqerru · Yettwaxelleṣ",
       "today": "tettwassufeɣ assa",
-      "cluster": "{count, plural, one {# n annonce} other {# n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
+      "cluster": "{n} {count, plural, one {n annonce} other {n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
       "per": {
         "night": "/iḍ",
         "month": "/ayyur",
@@ -3870,7 +3911,7 @@
   },
   "SearchFilters": {
     "open": "Ifilṭren",
-    "openCount": "Ifilṭren, {count, plural, one {# yexdem} other {# xedmen}}",
+    "openCount": "Ifilṭren {n}, {count, plural, one {yexdem} other {xedmen}}",
     "title": "Ifilṭren",
     "close": "Mdel ifilṭren",
     "apply": "Ẓar igmaḍ",
@@ -4364,7 +4405,9 @@
       "archivedEmptyBody": "Tameslayt deg archive ad d-tuɣal ɣer tebratin i d-yewḍen xmi ad d-taweḍ tebrat tamaynut.",
       "selectTitle": "Xtar tameslayt",
       "selectBody": "Timeslayin nnec d imzenza d imsaɣen ad d-banent da.",
-      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna."
+      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna.",
+      "busy": "Tesɛiḍ yakan {count} n onglets n Aalan ttwaldin: qqen yiwen akken ad d-yuɣal ubeddel nican n tebratin.",
+      "refreshLive": "Ɛawed ɛemmer"
     },
     "row": {
       "you": "Cek:",
@@ -4418,7 +4461,9 @@
       "counterpartClosed": "{name} yeqqen amiḍan nnes: tzemmreḍ ad tɛawdeḍ ad teɣreḍ tameslayt, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "frozen": "Tameslayt-a tettwaḥbes: tzemmreḍ ad tt-teɣreḍ, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "suspended": "Amiḍan nnec yettwaḥbes: tzemmreḍ ad teɣreḍ timeslayin nnec, maca war tzemmreḍ ca ad tazneḍ tabrat.",
-      "shop": "Ẓar taḥanut « {title} »"
+      "shop": "Ẓar taḥanut « {title} »",
+      "pinsShow": "Sken ttafaṣil n usumer d umyafa",
+      "pinsHide": "Ffer ttafaṣil n usumer d umyafa"
     },
     "review": {
       "label": "Efk tamuɣli nnec",
@@ -5359,7 +5404,7 @@
         "once": "Yiwen n udfaɛ kan s takarḍa deg tasna s taɣellist n Stripe. Ssuma HT d netta ay tettxelleṣeḍ: Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
         "credits": "Crédits bla idrimen xeddmen deg pass. Mala trniḍ wussan, ad ttwarnan crédits nnes x wid i d-yeqqimen; war ttɛeddayen ca deffir n tagra n pass.",
         "end": "Deg tagra n pass, annonces nnec yeɛeddan amḍan bla idrimen ad ttwaḥebsent, war ttwakksent ca. Ad dak-d nini 7 n wussan d 1 n wass zzat.",
-        "subscribe": "Tzemmreḍ ula ad tawiḍ abonnement deg pass: mala t-tiwiḍ ɣas 2 n wussan zzat n tagra nnes, abonnement war yettwaxelleṣ ca ɣir deg tagra n pass; mala t-tiwiḍ deffir, ad yettwaxelleṣ nican."
+        "subscribe": "Tzemmreḍ ula ad tawiḍ abonnement deg pass: s offre n pass nnec, mala t-tiwiḍ ɣas 2 n wussan zzat n tagra nnes, abonnement war yettwaxelleṣ ca ɣir deg tagra n pass. Offre nniḍen, niɣ abonnement i t-tiwiḍ deffir, ad yettwaxelleṣ nican."
       },
       "consent": {
         "terms": "Qebleɣ",

@@ -110,6 +110,26 @@ export function accountPurgeVerdict(account: Record<string, unknown>, userStatus
   return { kind: "purge", keepIdentity: !identityDue && (legalName || keepEmailBlock), keepEmailBlock };
 }
 
+export interface ClosedAddress {
+  closedAt: Date;
+  /** When the purge releases the address (its emailIndex entry): purgeAt, identityPurgeAt for a ban. */
+  reusableFrom: Date;
+}
+
+/**
+ * The closure dates a sign-up on this account's e-mail tells its owner (audit Z1-11), or null when
+ * the account is not closed. Same clocks as accountPurgeVerdict: the entry goes at purgeAt, a ban
+ * keeps it until identityPurgeAt. A legal hold can only delay it: the date is the earliest one.
+ */
+export function closedAddress(account: { closedAt?: Date; purgeAt?: Date; identityPurgeAt?: Date } | null, userStatus: string | null): ClosedAddress | null {
+  const closedAt = dateOf(account?.closedAt);
+  const purgeAt = dateOf(account?.purgeAt);
+  if (!closedAt || !purgeAt) return null;
+  const identityPurgeAt = dateOf(account?.identityPurgeAt);
+  const reusableFrom = userStatus === "banned" && identityPurgeAt && identityPurgeAt.getTime() > purgeAt.getTime() ? identityPurgeAt : purgeAt;
+  return { closedAt, reusableFrom };
+}
+
 /** users/{uid}/private/identity past its purgeAt (the account's identityPurgeAt) and not held. */
 export function identityPurgeable(identity: Record<string, unknown>, now: Date): boolean {
   const at = dateOf(identity.purgeAt);

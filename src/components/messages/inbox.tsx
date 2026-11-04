@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { Ban, CloudOff, Lock, ShieldAlert, UserX } from "lucide-react";
+import { AppWindow, Ban, CloudOff, Lock, RefreshCw, ShieldAlert, UserX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
+import { LIVE_STREAMS_PER_ACCOUNT } from "@/lib/contracts/endpoints";
 import { appointmentEventOf, type AppointmentEvent } from "@/lib/contracts/appointments";
 import { HIDDEN_MARKER, URL_MARKER, type ConversationView } from "@/lib/contracts/messaging";
 import { rentalRequestEventOf, type RentalRequestEvent } from "@/lib/contracts/rental-requests";
@@ -167,7 +168,7 @@ function useOnScreen(target: RefObject<HTMLElement | null>, active: boolean): bo
 export function Inbox({ selected }: { selected: string | null }) {
   const t = useTranslations("Messaging.page");
   const apiMessage = useApiErrorMessage();
-  const { archived, inbox, live, loadMore, retry } = useMessages();
+  const { archived, inbox, live, loadMore, retry, refreshLive } = useMessages();
   const end = useRef<HTMLDivElement>(null);
   const ready = inbox.kind === "ready";
   const endVisible = useOnScreen(end, ready && Boolean(inbox.next));
@@ -202,12 +203,26 @@ export function Inbox({ selected }: { selected: string | null }) {
             </Link>
           ))}
         </nav>
-        {live.status === "down" ? (
-          <p role="status" className="flex items-start gap-2 text-xs text-foreground-muted text-pretty">
-            <CloudOff className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-            {t("offline")}
-          </p>
-        ) : null}
+        {/* One live region for both notices: a busy tab is not offline (audit zone 5 n°7). */}
+        <div role="status" className="empty:hidden">
+          {live.status === "busy" ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5" data-testid="live-busy">
+              <p className="flex min-w-0 flex-1 basis-56 items-start gap-2 text-xs text-foreground-muted text-pretty">
+                <AppWindow className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+                {t("busy", { count: LIVE_STREAMS_PER_ACCOUNT })}
+              </p>
+              <Button type="button" variant="outline" size="sm" className="max-sm:h-11" onClick={refreshLive}>
+                <RefreshCw aria-hidden="true" />
+                {t("refreshLive")}
+              </Button>
+            </div>
+          ) : live.status === "down" ? (
+            <p className="flex items-start gap-2 text-xs text-foreground-muted text-pretty">
+              <CloudOff className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+              {t("offline")}
+            </p>
+          ) : null}
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" data-testid="inbox">

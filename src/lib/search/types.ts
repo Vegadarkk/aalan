@@ -2,6 +2,7 @@ import type { Condition } from "@/config/categories";
 import type { CardFacts } from "@/lib/listings/card-facts";
 import type { CardPromo, PromoKind } from "@/lib/contracts/catalog-core";
 import type { ListingAttributes } from "@/lib/contracts/listings";
+import type { ExampleTitles } from "@/lib/examples/title";
 import type { PhotoVariant } from "@/lib/contracts/photo-variants";
 import type { SearchParams, SearchSort } from "./params";
 
@@ -260,6 +261,8 @@ export interface SearchCard {
   facts?: CardFacts;
   /** Example listing: "Exemple" label, no favorite action. */
   example?: true;
+  /** Example listing: its title per language, shown in the page language (shownTitle). */
+  titles?: ExampleTitles;
   /** Pro catalogue: declared stock 0 everywhere (« Épuisé »). */
   soldOut?: true;
   /** Combinations at different prices: `price` is the lowest (« À partir de »). */

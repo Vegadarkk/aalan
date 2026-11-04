@@ -63,8 +63,10 @@ export default async function SalesPage() {
       <div>
         <h1 className="text-2xl font-semibold">Ventes et fiscalité</h1>
         <p className="mt-1 max-w-prose text-sm text-foreground-muted">
-          {current ? `Seuils de ${current.year}, comptés le ${formatDateTime(current.computedAt.toISOString())}.` : "Seuils de l'année : pas encore comptés (tâche de nuit)."} La marche à
-          suivre est dans le guide fiscal (docs/tax-runbook.md).
+          {current
+            ? `Seuils de ${current.year}, comptés le ${formatDateTime(current.computedAt.toISOString())} ; recalculés chaque nuit à 5 h 20 UTC.`
+            : "Seuils de l'année : pas encore comptés ; prochain calcul cette nuit à 5 h 20 UTC."}{" "}
+          La marche à suivre quand un seuil approche est décrite dans le guide fiscal de l&apos;équipe.
         </p>
       </div>
       <section aria-labelledby="thresholds-title" className="flex flex-col gap-3">

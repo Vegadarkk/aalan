@@ -11,6 +11,7 @@ import { countRevealsSince, hasRevealed, recordReveal } from "@/lib/db/repositor
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { HttpError, notFound } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
+import { getUserBlocks, isPairBlocked } from "@/lib/messaging/repository";
 import { displayPhone } from "@/lib/phone/normalize";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { escalateOnIp } from "./escalation";
@@ -69,9 +70,12 @@ export async function revealPhone(auth: AuthContext, request: Request, listingId
     turnstilePassed = await escalateOnIp(request, "reveal.ip", options.device, options.turnstileToken, "listing");
   }
 
-  const [owner, account] = await Promise.all([getUserRecord(listing.ownerUid), getUserPrivate(listing.ownerUid)]);
+  const [owner, account, blocks] = await Promise.all([getUserRecord(listing.ownerUid), getUserPrivate(listing.ownerUid), getUserBlocks([viewer.uid, listing.ownerUid])]);
   if (owner && SELLER_UNREACHABLE.includes(owner.status)) throw new HttpError(409, "listing_unavailable");
   if (!owner?.badges.phoneVerified || !account?.phoneE164) throw notFound();
+  // Either account blocked the other in messaging (D6, audit C-5): the number stays hidden too,
+  // with the "no number" answer, so the refusal does not tell the requester he is blocked.
+  if (isPairBlocked(blocks, viewer.uid, listing.ownerUid)) throw notFound();
 
   if (!repeat) {
     await recordReveal({ viewerUid: viewer.uid, listingId: listing.id, ip: options.device.identity.ip, deviceKey: options.device.identity.deviceKey, now });

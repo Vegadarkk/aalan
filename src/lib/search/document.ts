@@ -6,6 +6,7 @@ import { availableValues, isSoldOut, isVariantCriterion, priceRange, promoSummar
 import type { ListingStatus, ModerationState } from "@/lib/contracts/listings";
 import type { ListingRecord } from "@/lib/db/repositories/listings";
 import type { ListingDoc } from "@/lib/db/schemas";
+import { exampleSearchTitles } from "@/lib/demo/localized";
 import ar from "../../../messages/ar.json";
 import fr from "../../../messages/fr.json";
 import { blockedDays, freshUntil, moroccoToday } from "@/lib/listings/rental-availability";
@@ -194,6 +195,8 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
   const title = listing.title.trim();
   const foldedTitle = foldDigits(title);
   if (foldedTitle !== title) attrsText.push(foldedTitle);
+  // An example listing is found in either language (it shows in the page's: src/lib/demo/localized.ts).
+  if (listing.example) attrsText.push(...exampleSearchTitles(listing.id).filter((other) => other !== title));
 
   const photo = listing.photos[0];
   const featuredUntil = listing.boosts.featuredUntil?.getTime();

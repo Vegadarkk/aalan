@@ -107,6 +107,7 @@ export async function proReview(proId: string): Promise<ProReview | null> {
       : null,
     pieces: pieces.map((upload) => ({ id: upload.id, status: upload.status, declaredType: upload.declaredType, size: upload.size ?? null })),
     rentalCheck: await rentalCheckReview(record),
+    notes: (record.staffNotes ?? []).map((note) => ({ at: note.at.toISOString(), by: note.byName, text: note.text })),
   };
 }
 

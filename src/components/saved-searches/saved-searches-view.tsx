@@ -23,6 +23,7 @@ import { searchQueryObject, SEARCH_PATH } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
 import { useSearchSummary } from "./summary";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes recherches" (design D18): the saved searches (10 at most), each with its filters, the daily
 // alert switch, open, rename and delete. The gold edge of a row marks an active alert.
@@ -42,6 +43,8 @@ export function formatDay(iso: string, locale: Locale): string {
 }
 
 function RenameDialog({ search, onClose, onRenamed }: { search: SavedSearchView | null; onClose: () => void; onRenamed: (search: SavedSearchView) => void }) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(search !== null);
   const t = useTranslations("SavedSearches.rename");
   const [name, setName] = useState(search?.name ?? "");
   const [pending, setPending] = useState(false);
@@ -73,6 +76,7 @@ function RenameDialog({ search, onClose, onRenamed }: { search: SavedSearchView 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           className={cn(
             "fixed inset-x-4 bottom-4 z-50 rounded-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",
             "sm:inset-x-auto sm:start-1/2 sm:top-1/2 sm:bottom-auto sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 rtl:sm:translate-x-1/2",

@@ -1,6 +1,8 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import ar from "../../messages/ar.json";
 import fr from "../../messages/fr.json";
+import rif from "../../messages/rif.json";
 import { approximatePosition, cityBySlug, MOROCCO_BBOX } from "@/config/regions";
 import { buildMapListings, pinAmount, type MapListingLabels } from "@/components/search/map/map-listings";
 import { mapPadding, DETAIL_PX, PANEL_PX } from "@/components/search/map/map-layout";
@@ -367,5 +369,15 @@ describe("search map style", () => {
     expect(style.layers.at(-1)?.id).toBe(HALO_LAYER);
     const dark = buildSearchStyle("https://media.joutiya.test/maps/morocco.pmtiles", { theme: "dark", pins: pinsCollection([]) });
     expect(JSON.stringify(dark.layers)).not.toBe(JSON.stringify(style.layers));
+  });
+});
+
+describe("cluster bubble name", () => {
+  // The bubble shows its count: the name must hold it as written (WCAG 2.5.3, audit zone 8, 5.2-6).
+  it("contains the visible count in French, Arabic and Tarifit", () => {
+    for (const [locale, messages] of [["fr", fr], ["ar", ar], ["rif", rif]] as const) {
+      const t = createTranslator({ locale, messages, namespace: "SearchMap.pin" });
+      for (const count of [1, 2, 3, 11, 100, 1234]) expect(t("cluster", { count, n: String(count) }), `${locale} ${count}`).toContain(String(count));
+    }
   });
 });

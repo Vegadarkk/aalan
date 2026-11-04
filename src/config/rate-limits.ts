@@ -63,6 +63,10 @@ export const RATE_LIMITS = {
   // Personal data export: up to ~2 000 Firestore reads each (Spark: 50 000 a day), 3 per day.
   "account.close.uid": { points: 5, duration: HOUR, policy: "closed", key: "uid" },
   "account.export.uid": { points: 3, duration: DAY, policy: "closed", key: "uid" },
+  // Change of e-mail address (Z1-10): 5 requests a day per account (each one may mail the new
+  // address), and 3 an hour per new address whichever account asks (mail bombing).
+  "account.email.uid": { points: 5, duration: DAY, policy: "closed", key: "uid" },
+  "account.email.target": { points: 3, duration: HOUR, policy: "closed", key: "email" },
   // POST /api/auth/consents (CGU change notice and acceptance, one write and one audit entry): 10 per hour per account.
   // Open: a Valkey outage must not lock members out of the account area behind the panel.
   "consents.uid": { points: 10, duration: HOUR, policy: "open", key: "uid" },
@@ -235,6 +239,14 @@ export const RATE_LIMITS = {
   "savedSearch.docs.uid": { points: 1000, duration: DAY, policy: "open", key: "uid" },
   // One-click unsubscribe links of the alert e-mails (signed token, no session).
   "alerts.unsubscribe.ip": { points: 60, duration: HOUR, policy: "open", key: "ip" },
+  // Provider webhooks (/api/webhooks/*, security review D-1): checked before the body is read, so
+  // a sender of junk-signed bodies is cut off before any buffering or HMAC. 120 per minute per IP
+  // is far above Stripe, RevenueCat, Resend or Meta volumes, and each provider retries a 429.
+  // Open: a Valkey outage must never drop a provider event.
+  "webhook.ip": { points: 120, duration: MINUTE, policy: "open", key: "ip" },
+  // CSP violation reports (/api/csp-report, security review D-7): 30 per minute per IP before the
+  // per-process sample, so one client cannot fill the sample window and hide real violations.
+  "csp.report.ip": { points: 30, duration: MINUTE, policy: "open", key: "ip" },
 
   // Phase 5 (architecture §6, design phase-5 §2).
   // Messaging: 20 messages per minute; new conversations 50 per day, 10 for accounts under 7 days;

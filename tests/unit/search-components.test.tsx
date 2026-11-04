@@ -332,7 +332,9 @@ describe("FiltersSheet", () => {
   it("renders its trigger with the number of active filters", () => {
     const html = render(<FiltersSheet params={url("categorie=vehicules&photo=1")} facets={{ categories: {}, subcategories: {} }} />);
     expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('aria-label="Filtres, 2 actifs"');
+    expect(html).toContain('aria-label="Filtres 2, filtres actifs"');
+    // The visible digit is in the accessible name in every language (WCAG 2.5.3), Arabic dual/singular forms included.
+    expect(render(<FiltersSheet params={url("photo=1")} />, "ar")).toContain('aria-label="التصفية 1،');
     expect(text(render(<FiltersSheet params={{}} />, "ar"))).toContain(ar.SearchFilters.open);
   });
 

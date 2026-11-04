@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { AmountField, amountProblem } from "./amount-field";
 import { OfferNotice } from "./offer-notice";
 import { useOfferErrorMessage } from "./errors";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // The thread's offer form in a sheet (mobile) or a dialog (Carte vivante lot 5): the buyer's offer,
 // or the seller's counter-offer to the open offer `answering`. An optional note goes with it as an
@@ -33,6 +34,8 @@ export interface OfferDialogProps {
 }
 
 export function OfferDialog({ cid, open, onOpenChange, counterpartName, price, answering, onDone }: OfferDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("Offers.dialog");
   const errorMessage = useOfferErrorMessage();
   const id = useId();
@@ -80,6 +83,7 @@ export function OfferDialog({ cid, open, onOpenChange, counterpartName, price, a
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="offer-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-y-auto rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",

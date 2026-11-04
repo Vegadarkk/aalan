@@ -23,7 +23,8 @@ interface ConsentFieldsProps {
 function legalLink(href: "/legal/cgu" | "/legal/confidentialite" | "/legal/confidentialite#transferts") {
   return function LegalLink(chunks: ReactNode) {
     return (
-      <Link href={href} target="_blank" rel="noopener" className="font-medium text-link underline underline-offset-2">
+      // A new tab never reads this page's prefetch cache: no prefetch (the footer's link is the page's one, audit zone 8, perf 5).
+      <Link href={href} target="_blank" rel="noopener" prefetch={false} className="font-medium text-link underline underline-offset-2">
         {chunks}
       </Link>
     );

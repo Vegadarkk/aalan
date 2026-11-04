@@ -379,8 +379,11 @@ export async function relay(request: Request, deps: RelayDeps): Promise<Response
   // Chunked bodies carry no Content-Length: the read itself is capped, before any signature work.
   const body = await readCapped(request.body, deps.maxBytes);
   if (body === null) return new Response(null, { status: 413 });
-  const signature = request.headers.get("X-Joutiya-Signature");
-  const valid = await verifySignature(deps.secret, request.headers.get("X-Joutiya-Timestamp"), signature, body, Math.floor(deps.nowMs / 1000));
+  // X-Aalan-* first; X-Joutiya-* still accepted from an app not yet redeployed (zero-Joutiya plan).
+  // The pair is read together so a timestamp is never checked against the other name's signature.
+  const prefix = request.headers.has("X-Aalan-Signature") ? "X-Aalan" : "X-Joutiya";
+  const signature = request.headers.get(`${prefix}-Signature`);
+  const valid = await verifySignature(deps.secret, request.headers.get(`${prefix}-Timestamp`), signature, body, Math.floor(deps.nowMs / 1000));
   if (!valid || !signature) return new Response(null, { status: 401 });
   const alert = parseAlert(body);
   if (!alert) return new Response(null, { status: 400 });

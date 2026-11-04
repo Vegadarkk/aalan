@@ -34,7 +34,10 @@ describe("RelayEmailChannel", () => {
     await new RelayEmailChannel("https://probe.example/alert", "s3cret", fetchImpl as unknown as typeof fetch).send(ALERT, "prod");
     const headers = request?.headers as Record<string, string>;
     const body = String(request?.body);
-    const expected = createHmac("sha256", "s3cret").update(`${headers["X-Joutiya-Timestamp"]}.${body}`).digest("hex");
+    const expected = createHmac("sha256", "s3cret").update(`${headers["X-Aalan-Timestamp"]}.${body}`).digest("hex");
+    expect(headers["X-Aalan-Signature"]).toBe(expected);
+    // Copies for a Worker not yet redeployed.
+    expect(headers["X-Joutiya-Timestamp"]).toBe(headers["X-Aalan-Timestamp"]);
     expect(headers["X-Joutiya-Signature"]).toBe(expected);
     expect(JSON.parse(body)).toEqual({ ...ALERT, env: "prod" });
   });

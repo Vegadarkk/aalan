@@ -309,11 +309,11 @@ describe("relay", () => {
   const nowMs = 1760000000_000;
   const body = JSON.stringify({ severity: "P1", title: "Quota", body: "Firestore à 70 %", env: "prod" });
 
-  async function signedRequest(secret: string, raw = body, timestamp = String(Math.floor(nowMs / 1000))) {
+  async function signedRequest(secret: string, raw = body, timestamp = String(Math.floor(nowMs / 1000)), prefix = "X-Aalan") {
     const signature = await sign(secret, timestamp, raw);
     const request = new Request("https://probe.example/alert", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Joutiya-Timestamp": timestamp, "X-Joutiya-Signature": signature },
+      headers: { "Content-Type": "application/json", [`${prefix}-Timestamp`]: timestamp, [`${prefix}-Signature`]: signature },
       body: raw,
     });
     return { request, signature };
@@ -348,6 +348,17 @@ describe("relay", () => {
     expect(errorSpy).toHaveBeenCalledWith("email: resend: HTTP 429 daily_quota_exceeded");
   });
 
+  it("still accepts the X-Joutiya-* pair of an app not yet redeployed, never a mixed pair", async () => {
+    const send = vi.fn(async (): Promise<RelayOutcome> => "sent");
+    const deps = { secret: "s3cret", nowMs, maxBytes: 16_384, send };
+    const timestamp = String(Math.floor(nowMs / 1000));
+    expect((await relay((await signedRequest("s3cret", body, timestamp, "X-Joutiya")).request, deps)).status).toBe(204);
+    const signature = await sign("s3cret", timestamp, body);
+    const mixed = new Request("https://probe.example/alert", { method: "POST", headers: { "X-Aalan-Signature": signature, "X-Joutiya-Timestamp": timestamp }, body });
+    expect((await relay(mixed, deps)).status).toBe(401);
+    expect(send).toHaveBeenCalledOnce();
+  });
+
   it("refuses bad signatures, stale requests, invalid alerts and oversized bodies without sending", async () => {
     const send = vi.fn(async (): Promise<RelayOutcome> => "sent");
     const deps = { secret: "s3cret", nowMs, maxBytes: 16_384, send };
@@ -371,7 +382,7 @@ describe("relay with incidents", () => {
     const signature = await sign("s3cret", timestamp, body);
     return new Request("https://probe.example/alert", {
       method: "POST",
-      headers: { "X-Joutiya-Timestamp": timestamp, "X-Joutiya-Signature": signature },
+      headers: { "X-Aalan-Timestamp": timestamp, "X-Aalan-Signature": signature },
       body,
     });
   }

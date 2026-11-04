@@ -50,6 +50,7 @@ export const DENIED_HEADERS: ReadonlySet<string> = new Set([
   "x-csrf-token",
   "x-hub-signature-256",
   "svix-signature",
+  "x-aalan-signature",
   "x-joutiya-signature",
   "cf-access-jwt-assertion",
   "cf-connecting-ip",

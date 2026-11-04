@@ -34,7 +34,13 @@
     "procedures": "Démarches administratives",
     "visitorMenu": "Menu",
     "floating": "Raccourcis",
-    "signUp": "Créer un compte"
+    "signUp": "Créer un compte",
+    "suggestions": {
+      "label": "Suggestions de recherche",
+      "recent": "Recherches récentes",
+      "clearRecent": "Effacer",
+      "in": "dans {place}"
+    }
   },
   "Locale": {
     "label": "Langue",

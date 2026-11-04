@@ -1,13 +1,16 @@
+import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { photoSources } from "@/components/listing/photo";
+import type { SensitiveDeclarationKind } from "@/lib/contracts/listings";
 import { isolate } from "@/lib/i18n/bidi";
 import type { ModerationQueueItem } from "@/lib/listings/moderation-actions";
 import { FLAG_LABELS } from "@/lib/moderation/decisions";
 import { ALWAYS_REVIEW_FLAGS } from "@/lib/moderation/risk";
 import { formatPrice, waitingFor, type CatalogLabels } from "./moderation-labels";
 import { RiskMeter } from "./moderation-risk";
+import { DECLARATION_SIGNAL } from "./sensitive-declaration";
 
 /** What waits for review (lifecycle `holdKind`). */
 export const HOLD_LABEL: Record<ModerationQueueItem["hold"], string> = {
@@ -22,12 +25,27 @@ interface ModerationQueueProps {
   mediaBaseUrl: string | null;
 }
 
+interface FlagBadgesProps {
+  flags: readonly ModerationQueueItem["flags"][number][];
+  /** The seller's sensitive-data declaration: shown first and named by who the data concern (zone 7 P3-2). */
+  declaration?: SensitiveDeclarationKind | null;
+}
+
 /** Flags that alone send a listing to review are shown in amber, the others neutral. */
-export function FlagBadges({ flags }: { flags: readonly ModerationQueueItem["flags"][number][] }) {
-  if (flags.length === 0) return <span className="text-sm text-foreground-muted">Aucun signal</span>;
+export function FlagBadges({ flags, declaration = null }: FlagBadgesProps) {
+  const others = declaration ? flags.filter((flag) => flag !== "sensitive_declared") : flags;
+  if (others.length === 0 && !declaration) return <span className="text-sm text-foreground-muted">Aucun signal</span>;
   return (
     <ul className="flex flex-wrap gap-1.5" aria-label="Signaux du contrôle automatique">
-      {flags.map((flag) => (
+      {declaration ? (
+        <li>
+          <Badge variant="warning">
+            <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
+            {DECLARATION_SIGNAL[declaration]}
+          </Badge>
+        </li>
+      ) : null}
+      {others.map((flag) => (
         <li key={flag}>
           <Badge variant={ALWAYS_REVIEW_FLAGS.has(flag) ? "warning" : "neutral"}>{FLAG_LABELS[flag]}</Badge>
         </li>
@@ -60,7 +78,7 @@ export function ModerationQueue({ items, labels, mediaBaseUrl }: ModerationQueue
                 {labels.category(item.categoryId, item.subcategoryId)}, {labels.place(item.citySlug)}, {formatPrice(item.price, item.isDonation)}
               </p>
               <p className="text-sm text-foreground">{HOLD_LABEL[item.hold]}</p>
-              <FlagBadges flags={item.flags} />
+              <FlagBadges flags={item.flags} declaration={item.sensitiveDeclaration} />
             </div>
             <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 sm:col-span-1 sm:flex-col sm:items-end">
               <RiskMeter score={item.score} />

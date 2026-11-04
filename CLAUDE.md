@@ -1,4 +1,4 @@
-# Joutiya — Claude Code instructions
+# Aalan — Claude Code instructions
 
 C2C/B2C classifieds marketplace for Morocco, modeled on Leboncoin.fr (multi-criteria
 search, multi-photo listings, messaging, pro accounts, paid boosts, RevenueCat pro
@@ -40,7 +40,7 @@ subscriptions, Google Ads slots, moderation).
   components on `radix-ui` + `cva` without the shadcn CLI, next-intl FR/AR/RIF) app + a
   BullMQ worker sharing `src/lib`; one Docker image, targets `web` and `worker`. Public
   anonymous pages: ISR + hash CSP; private pages: dynamic + nonce CSP.
-  `admin.joutiya.ma` is rewritten to `src/app/admin` by `proxy.ts`.
+  `admin.aalan.ma` is rewritten to `src/app/admin` by `proxy.ts`.
 - **Hosting**: Oracle Cloud Always Free ARM VM (Docker Compose, staging as a separate
   Compose project), Cloudflare Free in front, traffic only via Cloudflare Tunnel (no
   inbound port, SSH included). The VM holds no unique data (`infra/redeploy.md`).
@@ -63,14 +63,15 @@ subscriptions, Google Ads slots, moderation).
 
 ## Hard rules
 
-- **Accounts and keys**: every service gets a new, dedicated, free "Joutiya" account or
+- **Accounts and keys**: every service gets a new, dedicated, free "Aalan" account or
   project (owner decision, 2026-10-12); never reuse, write to or alter an existing one.
   Only the Claude cloud environment stays shared with the owner's other projects until
-  Joutiya has revenue: its keys belong to those projects, so scripts read prefixed
+  Aalan has revenue: its keys belong to those projects, so scripts read prefixed
   names only: `AALAN_*` first, former `JOUTIYA_*` as fallback (`scripts/owner-env.ts`;
   `AALAN_CLOUDFLARE_API_TOKEN`, never `CLOUDFLARE_API_TOKEN`), never
-  modify or delete a resource not named `joutiya-*` or not listed in `infra/targets.json`,
-  and need the owner's approval to create a `joutiya-*` resource in an existing account.
+  modify or delete a resource not named `aalan-*` (or a legacy `joutiya-*`) or not listed in
+  `infra/targets.json`, and need the owner's approval to create an `aalan-*` resource in an
+  existing account.
 - **Secrets**: never put keys, tokens or `.env` files in Git, PRs, logs or chat; print
   variable names, never values. Only `.env.example` (no values) is versioned; local
   secrets live in `.env.local`.

@@ -1,7 +1,7 @@
 import { Fragment, cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { BadgeCheck, CalendarDays, Flag, MapPin, Pin } from "lucide-react";
+import { BadgeCheck, CalendarDays, MapPin, Pin } from "lucide-react";
 import { ContactBar } from "@/components/listing/contact-bar";
 import { ViewBeacon } from "@/components/stats/view-beacon";
 import { ShareButton } from "@/components/listing/share-button";
@@ -30,7 +30,6 @@ import { ReportButton } from "@/components/report/report-button";
 import { RatingLink } from "@/components/reviews/rating-link";
 import { SellerReviews } from "@/components/reviews/seller-reviews";
 import { Button } from "@/components/ui/button";
-import { quietLinkClassName } from "@/components/ui/text-link";
 import { ExampleBanner } from "@/components/listing/example-banner";
 import { JsonLd } from "@/components/listing/json-ld";
 import { RENTAL_SUBCATEGORY, criterionById } from "@/config/categories";
@@ -157,11 +156,16 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   const aside = (
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-4 text-sm text-foreground-muted">
       <p className="text-pretty">{store.example ? t("example.note") : agency ? t("agency.verifiedNote") : rentalAgency ? t("rental.verifiedNote") : holidayAgency ? t("holiday.verifiedNote") : t("verifiedNote")}</p>
-      {/* "Signaler" within reach (DSA art. 16(1), Phase 6 review), out of the header (UX audit B2); the dialog stays below. */}
-      <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 self-start ${quietLinkClassName}`}>
-        <Flag className="size-4 shrink-0" aria-hidden="true" />
-        {t("reportLink")}
-      </a>
+      {/* "Signaler" within reach (DSA art. 16(1), Phase 6 review), out of the header (UX audit B2): it opens
+          the form itself (zone 3 audit P3-6), like the button at the bottom of the page. */}
+      <ReportButton
+        target={{ type: "user", id: seller.publicId }}
+        subject={store.name}
+        ownerPublicId={seller.publicId}
+        email={legal.dsaContactEmail}
+        url={`${CANONICAL_ORIGIN}${storefrontPath(locale, store.segment)}`}
+        hint={false}
+      />
     </div>
   );
 

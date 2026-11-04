@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { SearchCityCombobox } from "@/components/search/city-combobox";
@@ -8,10 +8,13 @@ import { dropEmptyFields } from "@/components/search/drop-empty-fields";
 import type { LocationValue } from "@/components/search/location";
 import { SEARCH_PATH, SEARCH_Q_MAX, SEARCH_QUERY_KEYS } from "@/lib/search/url-keys";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/i18n/navigation";
 import { useHeaderSearchBinding, type HeaderSearchBinding } from "./header-search-store";
+import { rememberSearch, SuggestionList, useSuggestionItems, type SuggestionItem } from "./search-suggestions";
 
 // The header's search pill (Carte vivante, lot 1): words, then the place from xl (the search page's
-// own combobox in its "any city" variant), then the ochre submit. A GET form to /recherche that
+// own combobox in its "any city" variant), then the ochre submit. The words field suggests what the
+// search understands while typing and the last searches when empty (audit §7, search-suggestions.tsx). A GET form to /recherche that
 // works before hydration: `q`, and `ville` (slug) or `region`; empty fields leave the URL once
 // hydrated. Below xl the pill keeps the words only (the place is set in the search page's filters):
 // beside "Louer", "Espace Pro" and "Vendre" (UX audit, choice B) the place segment left the words
@@ -40,6 +43,15 @@ function HeaderSearchForm({ locale, binding, className }: { locale: string; bind
   const form = useRef<HTMLFormElement>(null);
   const [q, setQ] = useState(binding?.q ?? "");
   const [place, setPlace] = useState<LocationValue>(binding?.place ?? {});
+  const router = useRouter();
+  const listId = useId();
+  // Suggestions: the index loads on the first focus; the list is open while the field has the focus.
+  const [open, setOpen] = useState(false);
+  // -1: nothing highlighted (Enter searches the typed words).
+  const [active, setActive] = useState(-1);
+  const { items, arm, clearRecent } = useSuggestionItems(locale, q);
+  const shown = open && items.length > 0;
+  const activeItem = shown && active >= 0 ? items[active] : undefined;
 
   useEffect(() => {
     const element = form.current;
@@ -48,9 +60,56 @@ function HeaderSearchForm({ locale, binding, className }: { locale: string; bind
   }, []);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
+    rememberSearch(q);
+    setOpen(false);
     if (!binding) return;
     event.preventDefault();
     binding.submit(q, place);
+  }
+
+  /** The place of the pill as URL keys (a suggestion's filters keep it). */
+  function placeQuery(): Record<string, string> {
+    if (place.city) return { [SEARCH_QUERY_KEYS.city]: place.city };
+    return place.region ? { [SEARCH_QUERY_KEYS.region]: place.region } : {};
+  }
+
+  function choose(item: SuggestionItem) {
+    setOpen(false);
+    setActive(-1);
+    const words = item.kind === "recent" ? item.q : "q" in item.suggestion.target ? item.suggestion.target.q : null;
+    if (words !== null) {
+      setQ(words);
+      rememberSearch(words);
+      if (binding) binding.submit(words, place);
+      else router.push({ pathname: SEARCH_PATH, query: { [SEARCH_QUERY_KEYS.q]: words, ...placeQuery() } });
+      return;
+    }
+    if (item.kind !== "suggestion" || !("query" in item.suggestion.target)) return;
+    // A category or a noun: its filters, the words it replaces gone.
+    setQ("");
+    router.push({ pathname: SEARCH_PATH, query: { ...item.suggestion.target.query, ...placeQuery() } });
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      if (items.length === 0) return;
+      event.preventDefault();
+      setOpen(true);
+      setActive((index) => (index + 1) % items.length);
+    } else if (event.key === "ArrowUp") {
+      if (!shown) return;
+      event.preventDefault();
+      setActive((index) => (index <= 0 ? items.length - 1 : index - 1));
+    } else if (event.key === "Enter") {
+      if (activeItem) {
+        event.preventDefault();
+        choose(activeItem);
+      }
+    } else if (event.key === "Escape") {
+      if (shown) event.preventDefault();
+      setOpen(false);
+      setActive(-1);
+    }
   }
 
   return (
@@ -62,7 +121,7 @@ function HeaderSearchForm({ locale, binding, className }: { locale: string; bind
       aria-label={t("searchLabel")}
       onSubmit={onSubmit}
       className={cn(
-        "float-card flex h-12 min-w-0 items-center gap-1 rounded-full p-0.5 md:h-13 md:p-1",
+        "float-card relative flex h-12 min-w-0 items-center gap-1 rounded-full p-0.5 md:h-13 md:p-1",
         "has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-ring",
         className,
       )}
@@ -80,8 +139,24 @@ function HeaderSearchForm({ locale, binding, className }: { locale: string; bind
           enterKeyHint="search"
           maxLength={SEARCH_Q_MAX}
           placeholder={t("searchPlaceholder")}
+          role="combobox"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={shown}
+          aria-controls={listId}
+          aria-activedescendant={activeItem ? `${listId}-${active}` : undefined}
           value={q}
-          onChange={(event) => setQ(event.target.value)}
+          onChange={(event) => {
+            setQ(event.target.value);
+            setActive(-1);
+            setOpen(true);
+          }}
+          onFocus={() => {
+            arm();
+            setOpen(true);
+          }}
+          onBlur={() => setOpen(false)}
+          onKeyDown={onKeyDown}
           className={cn(SEGMENT_INPUT, "peer ps-4 pe-2 md:ps-10 lg:placeholder:text-transparent [&::-webkit-search-cancel-button]:hidden")}
         />
         {/* Wide screens: the invitation to type a sentence (« Chercher en parlant », lot 4) in place of
@@ -104,6 +179,7 @@ function HeaderSearchForm({ locale, binding, className }: { locale: string; bind
           inputClassName={cn(SEGMENT_INPUT, "focus-visible:ring-0")}
         />
       </div>
+      <SuggestionList id={listId} items={items} active={active} open={open} onActive={setActive} onChoose={choose} onClearRecent={clearRecent} />
       {binding?.carried.map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       <button
         type="submit"

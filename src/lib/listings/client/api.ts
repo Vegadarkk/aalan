@@ -64,6 +64,11 @@ export function listMine(bucket: OwnerListBucket): Promise<OwnerListingsResponse
 
 export type OwnerAction = "pause" | "resume" | "sold" | "renew";
 
+/** A new draft copied from a listing (Pros): its id, for the wizard. */
+export function duplicateListing(id: string): Promise<CreateListingResponse> {
+  return apiPost<CreateListingResponse>(LISTING_API.duplicate(id), {});
+}
+
 export function listingAction(id: string, action: OwnerAction): Promise<ListingResponse> {
   return apiPost<ListingResponse>(LISTING_API[action](id), {});
 }

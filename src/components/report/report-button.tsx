@@ -58,6 +58,8 @@ export interface ReportButtonProps {
   quote?: string;
   /** A small "Signaler" without the hint line (under a review). */
   compact?: boolean;
+  /** The hint line under the button (default: not on a compact one). A second button near the contact goes without it. */
+  hint?: boolean;
   /** dsaContactEmail of the legal config. */
   email: string;
   /** Absolute canonical URL of the page (the e-mail stand-in). */
@@ -65,7 +67,7 @@ export interface ReportButtonProps {
   className?: string;
 }
 
-export function ReportButton({ target, subject, ownerPublicId, quote, compact, email, url, className }: ReportButtonProps) {
+export function ReportButton({ target, subject, ownerPublicId, quote, compact, hint = !compact, email, url, className }: ReportButtonProps) {
   const t = useTranslations("Report");
   const { status, session } = useSession();
   const [state, setState] = useState<"closed" | "checking" | "open">("closed");
@@ -103,7 +105,7 @@ export function ReportButton({ target, subject, ownerPublicId, quote, compact, e
         <Flag aria-hidden="true" />
         {t(`trigger.${context}`)}
       </Button>
-      {compact ? null : <p className="text-xs text-foreground-muted text-pretty">{t("hint")}</p>}
+      {hint ? <p className="text-xs text-foreground-muted text-pretty">{t("hint")}</p> : null}
       {mounted ? (
         <ReportDialog
           open={state === "open"}

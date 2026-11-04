@@ -22,7 +22,7 @@ import { listFleet, saveFleet } from "./fleet";
 import { isListingId } from "./ids";
 import { ownerListingView, toOwnerSummary } from "./owner-view";
 import { revealPhone } from "./phone-reveal";
-import { changeStatus, createDraft, patchListing, publish, endListingPromo, setPromo, setPaymentLink, setSection, updateStock, type Actor, type OwnerAction } from "./service";
+import { changeStatus, createDraft, duplicateListing, patchListing, publish, endListingPromo, setPromo, setPaymentLink, setSection, updateStock, type Actor, type OwnerAction } from "./service";
 
 // Route handlers of /api/listings/** (design §3): thin, every one through requireUser (Origin +
 // CSRF on mutations, 401 anonymous, 403 role_missing / account_suspended), the owner check inside
@@ -70,6 +70,16 @@ export async function handleCreate(request: Request): Promise<Response> {
   return json(body, { status: 201 });
 }
 
+/** POST /api/listings/{id}/duplicate (Pros, audit §7): a new draft copied from one of the seller's listings. */
+export async function handleDuplicate(request: Request, params: Params): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  const id = await listingIdOf(params);
+  await enforceLimit("listing.new.uid", auth.user.uid);
+  await assertQuotas(DEPOSIT_QUOTAS);
+  const body: CreateListingResponse = await duplicateListing(actorOf(request, auth), id);
+  return json(body, { status: 201 });
+}
+
 export async function handleMine(request: Request): Promise<Response> {
   // A suspended account still reads its own listings (audit zone 7 P2-4): changes stay refused.
   const auth = await requireUser(request, { allowSuspended: true });
@@ -91,7 +101,7 @@ export async function handleMine(request: Request): Promise<Response> {
     ...(sections.length > 0 ? { sections } : {}),
     ...(paymentReady ? { paymentReady } : {}),
     // The pins of « Mes annonces » rows (UX audit lot 3), for a shop that publishes.
-    ...(owned && publishesAsPro(owned.lifecycle) ? { pinned: owned.pinned ?? [] } : {}),
+    ...(owned && publishesAsPro(owned.lifecycle) ? { pinned: owned.pinned ?? [], duplicate: true as const } : {}),
   };
   return json(body);
 }

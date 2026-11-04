@@ -357,6 +357,45 @@ test.describe("posting wizard", () => {
     expect(listingPhotos[0]!.w).toBeLessThan(original.get("width") as number);
   });
 
+  test("turns a photo a quarter on the phone, and the turned copy replaces it (audit §7)", { tag: "@mobile" }, async ({ page, request }) => {
+    const id = runId();
+    await signUpAndIn(page, request, `e2e-post-turn-${id}@test.joutiya.ma`);
+    await verifyPhone(page, request);
+
+    await page.goto("/fr/deposer");
+    await page.getByRole("radio", { name: "Véhicules" }).click();
+    await page.getByRole("radio", { name: "Vélos" }).click();
+    await expect(page).toHaveURL(/\/fr\/deposer\/[a-z0-9]+\/criteres$/);
+    const listingId = new URL(page.url()).pathname.split("/")[3]!;
+    await page.getByRole("radiogroup", { name: /État/ }).getByRole("radio", { name: "Très bon état" }).click();
+    await page.getByRole("radiogroup", { name: /Type de vélo/ }).getByRole("radio", { name: "Ville" }).click();
+    await next(page);
+    await page.getByRole("textbox", { name: /Titre de l'annonce/ }).fill(`Vélo photographié de travers ${id}`);
+    await next(page);
+    await page.getByRole("textbox", { name: /^Description/ }).fill(`Vélo de ville ${id}, photo prise de travers au téléphone, pneus neufs et freins réglés.`);
+    await next(page);
+    await page.locator('input[type="file"][multiple]').setInputFiles({ name: "velo.jpg", mimeType: "image/jpeg", buffer: await photoWithExif() });
+    await expect(page.getByText("Couverture", { exact: true })).toBeVisible({ timeout: 60_000 });
+    const photosOf = async () => ((await getFirestore(firebase()).collection("listings").doc(listingId).get()).get("photos") as { id: string; w: number; h: number }[] | undefined) ?? [];
+    await expect.poll(async () => (await photosOf()).length, { timeout: 20_000 }).toBe(1);
+    const [original] = await photosOf();
+    expect(original!.w).toBeGreaterThan(original!.h);
+
+    await page.getByRole("button", { name: "Recadrer ou pivoter la photo 1" }).click();
+    const dialog = page.getByTestId("photo-crop-dialog");
+    await expect(dialog.getByTestId("photo-crop-frame")).toBeVisible({ timeout: 15_000 });
+    await dialog.getByRole("button", { name: "Pivoter à droite" }).click();
+    await expect(dialog.getByTestId("photo-crop-frame")).toBeVisible({ timeout: 15_000 });
+    await dialog.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    // The turned copy uploads next to the original, which goes once the copy is ready: portrait now.
+    await expect.poll(async () => (await photosOf()).map((photo) => photo.id), { timeout: 60_000 }).toEqual([expect.not.stringMatching(original!.id)]);
+    const [turned] = await photosOf();
+    expect(turned!.h).toBeGreaterThan(turned!.w);
+    await expect(page.getByText("1 / 10 photos")).toBeVisible();
+  });
+
   test("a refused publication: « Corriger » shows the reason and the passage on the step, the list survives a reload (zone 3 P2-9)", { tag: "@mobile" }, async ({ page, request }) => {
     const id = runId();
     await signUpAndIn(page, request, `e2e-post-fix-${id}@test.joutiya.ma`);

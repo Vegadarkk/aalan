@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it } from "vitest";
 import ar from "../../messages/ar.json";
 import fr from "../../messages/fr.json";
+import rif from "../../messages/rif.json";
 import { Breadcrumb, SEARCH_QUERY, searchHref } from "@/components/listing/breadcrumb";
 import { CriteriaGrid, CriteriaSection } from "@/components/listing/criteria-grid";
 import { JobNotice } from "@/components/listing/job-notice";
@@ -12,7 +13,7 @@ import { ListingCard } from "@/components/listing/listing-card";
 import { ListingPrice } from "@/components/listing/listing-price";
 import { ListingStatusBanner } from "@/components/listing/listing-status-banner";
 import { PriceTag } from "@/components/listing/price-tag";
-import { PROPERTY_TERM_FIELDS, PropertyTerms } from "@/components/listing/property-terms";
+import { feesKey, PROPERTY_TERM_FIELDS, PropertyTerms } from "@/components/listing/property-terms";
 import { SafetyTips } from "@/components/listing/safety-tips";
 import { formatMemberSince, initialOf, SellerCard } from "@/components/listing/seller-card";
 import { ReportButton, reportMailto } from "@/components/report/report-button";
@@ -282,6 +283,10 @@ describe("ReportButton", () => {
     expect(listing).not.toContain("mailto:");
     expect(text(render(<ReportButton target={{ type: "user", id: "abcdefghjk" }} {...props} />))).toContain(fr.Report.trigger.user);
     expect(text(render(<ReportButton target={{ type: "user", id: "abcdefghjk" }} {...props} />, "ar"))).toContain(ar.Report.trigger.user);
+    // The second button, in the seller card: the same dialog, without the hint line (zone 3 audit P3-6).
+    const near = render(<ReportButton target={{ type: "listing", id: "abcd2345" }} {...props} hint={false} />);
+    expect(near).toContain('aria-haspopup="dialog"');
+    expect(text(near)).not.toContain(fr.Report.hint);
   });
 });
 
@@ -386,6 +391,27 @@ describe("PropertyTerms", () => {
     expect(render(<PropertyTerms attributes={{ surface: 90 }} locale="fr" />)).toBe("");
     // A holiday rental without a number says so (zone 3 audit P1-2).
     expect(text(render(<PropertyTerms attributes={{ surface: 90 }} locale="fr" holidayRental />))).toContain(fr.ListingPage.terms.authorizationMissing);
+  });
+
+  it("names the rent and the tenant in the fees of a long-term rental (zone 3 audit P3-5)", () => {
+    const rent = text(render(<PropertyTerms attributes={{ mandate: "simple", "agency-fees": "en-sus", "agency-fees-amount": 4500 }} locale="fr" rent />));
+    expect(rent).toMatch(/4\s500 DH en plus du loyer, à la charge du locataire/);
+    expect(rent).not.toContain("prix");
+    expect(text(render(<PropertyTerms attributes={{ mandate: "simple", "agency-fees": "en-sus" }} locale="fr" rent />))).toContain(fr.ListingPage.terms.feesOnTopRent);
+    expect(text(render(<PropertyTerms attributes={{ mandate: "simple", "agency-fees": "inclus", "agency-fees-amount": 4500 }} locale="fr" rent />))).toMatch(/4\s500 DH, inclus dans le loyer/);
+    expect(text(render(<PropertyTerms attributes={{ mandate: "simple", "agency-fees": "sans-frais" }} locale="fr" rent />))).toContain(fr.ListingPage.terms.feesNoneRent);
+    expect(text(render(<PropertyTerms attributes={{ mandate: "simple", "agency-fees": "en-sus" }} locale="ar" rent />, "ar"))).toContain(ar.ListingPage.terms.feesOnTopRent);
+  });
+
+  it("picks one fees wording per case", () => {
+    expect(feesKey("en-sus", false, false)).toBe("feesOnTop");
+    expect(feesKey("en-sus", true, true)).toBe("feesOnTopRentAmount");
+    expect(feesKey("inclus", true, false)).toBe("feesIncludedAmount");
+    expect(feesKey("inclus", false, true)).toBe("feesIncludedRent");
+    // No amount on "no fees".
+    expect(feesKey("sans-frais", true, false)).toBe("feesNone");
+    expect(feesKey("sans-frais", true, true)).toBe("feesNoneRent");
+    for (const locale of [fr, ar, rif]) for (const fees of ["en-sus", "inclus", "sans-frais"] as const) for (const amount of [true, false]) for (const rent of [true, false]) expect(locale.ListingPage.terms[feesKey(fees, amount, rent)]).toBeTruthy();
   });
 
   it("takes its fields out of the criteria grid when asked", () => {

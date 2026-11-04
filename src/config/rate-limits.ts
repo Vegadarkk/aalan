@@ -27,6 +27,9 @@ export const RATE_LIMITS = {
   // IP: 30 per hour, Turnstile always required.
   "signup.device": { points: 3, duration: DAY, policy: "closed", key: "device" },
   "signup.ip": { points: 30, duration: HOUR, policy: "closed", key: "ip" },
+  // A script gets a new device cookie on every request, so the device limit alone does not hold
+  // (audit A-5): 150 sign-ups per day per IP, room for a CGNAT exit (config/abuse can raise it).
+  "signup.ip.day": { points: 150, duration: DAY, policy: "closed", key: "ip" },
   // IPv6 clients also count on their /48 (§6 "Les clés": the wider counter for aggressive sources),
   // ten times the /64 allowance; IPv4 clients have no such counter (keys.ts `ip48`).
   "signup.ip48": { points: 300, duration: HOUR, policy: "closed", key: "ip48" },

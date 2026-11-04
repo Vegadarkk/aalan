@@ -396,7 +396,8 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
           providers: [...account.providers],
           consents: {
             cgu: { version: account.consents.cgu.version, at: account.consents.cgu.at.toISOString() },
-            transfers: { version: account.consents.transfers.version, at: account.consents.transfers.at.toISOString() },
+            // Accounts created before 2026-11-04 only (historical record, see userPrivateSchema).
+            transfers: account.consents.transfers ? { version: account.consents.transfers.version, at: account.consents.transfers.at.toISOString() } : null,
             marketing: account.consents.marketing,
             marketingConsent: account.consents.marketingConsent
               ? { version: account.consents.marketingConsent.version, at: account.consents.marketingConsent.at.toISOString() }

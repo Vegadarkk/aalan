@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cguEffectiveFor } from "@/config/legal-versions";
-import { CGU_VERSION, TRANSFERS_CONSENT_VERSION } from "@/lib/contracts/auth";
+import { CGU_VERSION } from "@/lib/contracts/auth";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
@@ -21,8 +21,10 @@ vi.mock("@/lib/security/turnstile", async (importOriginal) => ({
   verifyTurnstile: vi.fn(async () => ({ ok: true, codes: [] })),
 }));
 
-// POST /api/auth/consents (design D12, audit C2-04): the re-consent panel renews the transfers
-// consent; only consents.transfers changes and an audit entry without personal data is written.
+// POST /api/auth/consents (D11): the CGU change notice records the acceptance of the current CGU;
+// only consents.cgu changes and an audit entry without personal data is written. The transfers
+// outside Morocco are no longer a consent (audit B2): `{ transfers: true }` is refused, sign-up
+// writes no consents.transfers, and an older account's record is left untouched.
 
 const CONSENTS_PATH = "/api/auth/consents";
 
@@ -37,9 +39,10 @@ async function verifiedAccount() {
 
 const privateDoc = (uid: string) => db().collection(COLLECTIONS.users).doc(uid).collection(COLLECTIONS.userPrivate).doc(COLLECTIONS.userPrivateDoc);
 
-/** An account created before the bump: the stored version is the previous text's. */
-async function withOldConsent(uid: string, at = new Date("2026-10-14T10:00:00Z")): Promise<void> {
-  await privateDoc(uid).update({ "consents.transfers": { version: "2026-10", at } });
+/** An account that accepted an earlier CGU text and, created before 2026-11-04, kept its transfers record. */
+const OLD_TRANSFERS = { version: "2026-11-03", at: new Date("2026-10-14T10:00:00Z") };
+async function withOldConsent(uid: string): Promise<void> {
+  await privateDoc(uid).update({ "consents.cgu": { version: "0.9", at: new Date("2026-10-01T10:00:00Z") }, "consents.transfers": OLD_TRANSFERS });
 }
 
 async function auditEntries(uid: string) {
@@ -50,33 +53,35 @@ async function auditEntries(uid: string) {
 beforeEach(() => resetRateLimiters());
 
 describe("POST /api/auth/consents", () => {
-  it("records the current version, changes nothing else and audits without personal data", async () => {
+  it("records the current CGU version, changes nothing else and audits without personal data", async () => {
     const { jar, email, uid } = await verifiedAccount();
-    expect((await getUserPrivate(uid))?.consents.transfers.version).toBe(TRANSFERS_CONSENT_VERSION);
+    // Sign-up no longer records a transfers consent.
+    expect((await getUserPrivate(uid))?.consents.transfers).toBeUndefined();
     await withOldConsent(uid);
     const before = (await privateDoc(uid).get()).data()!;
 
     const started = Date.now();
-    const accepted = await call<{ status: string; version: string }>(consents, CONSENTS_PATH, { jar, body: { transfers: true } });
+    const accepted = await call<{ status: string; version: string }>(consents, CONSENTS_PATH, { jar, body: { cgu: true } });
     expect(accepted.status).toBe(200);
-    expect(accepted.body).toEqual({ status: "recorded", version: TRANSFERS_CONSENT_VERSION });
+    expect(accepted.body).toEqual({ status: "recorded", version: CGU_VERSION });
     expect(accepted.header("cache-control")).toContain("no-store");
 
     const after = (await privateDoc(uid).get()).data()!;
-    expect(after.consents.transfers.version).toBe(TRANSFERS_CONSENT_VERSION);
-    expect(after.consents.transfers.at.toMillis()).toBeGreaterThanOrEqual(started - 1000);
-    expect(after.consents.cgu).toEqual(before.consents.cgu);
+    expect(after.consents.cgu.version).toBe(CGU_VERSION);
+    expect(after.consents.cgu.at.toMillis()).toBeGreaterThanOrEqual(started - 1000);
+    // The historical transfers record stays as it was.
+    expect(after.consents.transfers).toEqual(before.consents.transfers);
     expect(after.consents.marketing).toBe(before.consents.marketing);
     expect({ ...after, consents: undefined }).toEqual({ ...before, consents: undefined });
 
     const entries = await auditEntries(uid);
     expect(entries).toHaveLength(1);
-    expect(entries[0]).toMatchObject({ actorUid: uid, actorRole: "individual", action: "consent.transfers", target: { type: "user", id: uid }, automated: false });
+    expect(entries[0]).toMatchObject({ actorUid: uid, actorRole: "individual", action: "consent.cgu", target: { type: "user", id: uid }, automated: false });
     expect(entries[0]?.ipHash).toBeUndefined();
     expect(JSON.stringify(entries[0])).not.toContain(email);
   });
 
-  it("lets a suspended member renew it (it opens nothing the suspension closes)", async () => {
+  it("lets a suspended member accept the CGU (it opens nothing the suspension closes)", async () => {
     const { uid } = await verifiedAccount();
     await withOldConsent(uid);
     await setClaims(uid, { role: "individual", st: "suspended" });
@@ -84,31 +89,33 @@ describe("POST /api/auth/consents", () => {
     const jar = new Jar();
     jar.cookies.set("__Host-session", minted.cookie);
     jar.cookies.set("__Host-csrf", csrfToken(minted.cookie));
-    expect((await call(consents, CONSENTS_PATH, { jar, body: { transfers: true } })).status).toBe(200);
-    expect((await getUserPrivate(uid))?.consents.transfers.version).toBe(TRANSFERS_CONSENT_VERSION);
+    expect((await call(consents, CONSENTS_PATH, { jar, body: { cgu: true } })).status).toBe(200);
+    expect((await getUserPrivate(uid))?.consents.cgu.version).toBe(CGU_VERSION);
   });
 
   it("refuses a request without the CSRF header (403) and leaves the old version", async () => {
     const { jar, uid } = await verifiedAccount();
     await withOldConsent(uid);
-    const refused = await call<ErrorBody>(consents, CONSENTS_PATH, { jar, body: { transfers: true }, csrf: false });
+    const refused = await call<ErrorBody>(consents, CONSENTS_PATH, { jar, body: { cgu: true }, csrf: false });
     expect(refused.status).toBe(403);
     expect(refused.body.error.code).toBe("csrf");
-    const foreign = await call<ErrorBody>(consents, CONSENTS_PATH, { jar, body: { transfers: true }, origin: "https://evil.example" });
+    const foreign = await call<ErrorBody>(consents, CONSENTS_PATH, { jar, body: { cgu: true }, origin: "https://evil.example" });
     expect(foreign.status).toBe(403);
-    expect((await getUserPrivate(uid))?.consents.transfers.version).toBe("2026-10");
+    expect((await getUserPrivate(uid))?.consents.cgu.version).toBe("0.9");
     expect(await auditEntries(uid)).toEqual([]);
   });
 
-  it("answers 400 to any other body", async () => {
+  it("answers 400 to any other body, the former transfers re-consent included", async () => {
     const { jar, uid } = await verifiedAccount();
     await withOldConsent(uid);
-    for (const body of [{}, { transfers: false }, { transfers: "yes" }, { transfers: true, version: "2099-01-01" }]) {
+    for (const body of [{}, { transfers: true }, { cgu: false }, { cgu: "yes" }, { cgu: true, version: "2099-01-01" }, { cgu: true, transfers: true }]) {
       const refused = await call<ErrorBody>(consents, CONSENTS_PATH, { jar, body });
       expect(refused.status, JSON.stringify(body)).toBe(400);
       expect(refused.body.error.code).toBe("invalid_body");
     }
-    expect((await getUserPrivate(uid))?.consents.transfers.version).toBe("2026-10");
+    const account = await getUserPrivate(uid);
+    expect(account?.consents.cgu.version).toBe("0.9");
+    expect(account?.consents.transfers?.version).toBe(OLD_TRANSFERS.version);
   });
 
   it("records the first notice of a CGU change once, and answers the day it applies to the member", async () => {
@@ -136,7 +143,7 @@ describe("POST /api/auth/consents", () => {
   });
 
   it("answers 401 when signed out", async () => {
-    const refused = await call<ErrorBody>(consents, CONSENTS_PATH, { jar: new Jar(), body: { transfers: true } });
+    const refused = await call<ErrorBody>(consents, CONSENTS_PATH, { jar: new Jar(), body: { cgu: true } });
     expect(refused.status).toBe(401);
     expect(refused.body.error.code).toBe("unauthenticated");
   });

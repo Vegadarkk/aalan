@@ -192,9 +192,12 @@ describe("sign-up, verification, session, profile, logout", () => {
     const disposable = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: signupBody("someone@mailinator.com") });
     expect(disposable.status).toBe(400);
     expect(disposable.body.error.code).toBe("disposable_email");
-    const consent = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(uniqueEmail()), consents: { cgu: true, transfers: false } } });
+    const consent = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(uniqueEmail()), consents: { cgu: false } } });
     expect(consent.status).toBe(400);
     expect(consent.body.error.code).toBe("invalid_body");
+    // The transfers box is gone (contract necessity, audit B2): the strict body refuses the field.
+    const transfers = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(uniqueEmail()), consents: { cgu: true, transfers: true } } });
+    expect(transfers.body.error.code).toBe("invalid_body");
     const extra = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(uniqueEmail()), role: "admin" } });
     expect(extra.body.error.code).toBe("invalid_body");
     expect(capturedMails(sendMail)).toHaveLength(0);

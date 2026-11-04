@@ -111,8 +111,8 @@ export function SignupForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: str
           {...register("password")}
         />
         <ConsentFields
-          fields={{ cgu: register("consents.cgu"), transfers: register("consents.transfers"), marketing: register("consents.marketing") }}
-          errors={{ cgu: fieldMessage("consent", errors.consents?.cgu), transfers: fieldMessage("consent", errors.consents?.transfers) }}
+          fields={{ cgu: register("consents.cgu"), marketing: register("consents.marketing") }}
+          errors={{ cgu: fieldMessage("consent", errors.consents?.cgu) }}
         />
         <TurnstileWidget
           ref={turnstile}

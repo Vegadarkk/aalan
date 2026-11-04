@@ -59,7 +59,6 @@ async function signUpAndIn(page: Page, request: APIRequestContext, email: string
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
   await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-  await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
   const widget = page.locator("[data-turnstile]");
   if ((await widget.count()) > 0) await expect(widget.first()).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
   await page.getByRole("button", { name: "Créer mon compte" }).click();

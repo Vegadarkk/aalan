@@ -120,8 +120,13 @@ export const userPrivateSchema = z
     consents: z
       .object({
         cgu: consentSchema,
-        /** Art. 44 loi 09-08: express consent to data transfers outside Morocco. */
-        transfers: consentSchema,
+        /**
+         * Historical only: the express consent to transfers outside Morocco that sign-up asked for
+         * until 2026-11-04. The transfers now rest on the contract (loi 09-08 art. 44 pt 4; audit
+         * B2): nothing writes this field any more, and the records of older accounts are kept
+         * untouched as proof of what they were shown. Absent on newer accounts.
+         */
+        transfers: consentSchema.optional(),
         marketing: z.boolean(),
         /** Proof of the opt-in to information e-mails (text version and date); absent when refused or before 2026-10-28. */
         marketingConsent: consentSchema.optional(),

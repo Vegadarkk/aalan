@@ -11,7 +11,7 @@ import type { ActionLinkRequest, MailJob, TemplateId } from "@/lib/mail/types";
 export const ORIGIN = "http://localhost:3000";
 // Assembled at runtime: a literal would look like a credential to the secret scan.
 export const PASSWORD = ["Correct", "Horse", "9"].join("-");
-export const CONSENTS = { cgu: true, transfers: true, marketing: false } as const;
+export const CONSENTS = { cgu: true, marketing: false } as const;
 
 type RouteContext = { params: Promise<Record<string, string | string[] | undefined>> };
 export type Handler = (request: NextRequest, context: RouteContext) => Promise<Response>;

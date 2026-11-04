@@ -11,11 +11,6 @@ import { PASSWORD_MAX, PASSWORD_MIN } from "./endpoints";
 
 /** Version strings recorded with the consents (users/{uid}/private.consents). */
 export const CGU_VERSION = LEGAL_VERSIONS.cgu.version;
-/**
- * 2026-10-19: the text names each provider, its role and region (audit C2-04); older consents are asked again.
- * 2026-11-03: OpenAI marked "only if activated", like AdSense (zone 1 audit Z1-14).
- */
-export const TRANSFERS_CONSENT_VERSION = "2026-11-03";
 /** Version of the opt-in text for information e-mails (SignUp.consents.marketing). */
 export const MARKETING_CONSENT_VERSION = "2026-10";
 
@@ -52,10 +47,8 @@ export type TurnstileAction = (typeof TURNSTILE_ACTIONS)[number];
 
 export const consentsSchema = z
   .object({
-    /** CGU acceptance. */
+    /** CGU acceptance (the privacy policy is acknowledged, not consented to). */
     cgu: z.literal(true),
-    /** Express consent to transfers outside Morocco (art. 44 loi 09-08). */
-    transfers: z.literal(true),
     marketing: z.boolean().default(false),
   })
   .strict();
@@ -128,13 +121,15 @@ export type VerifyResendInput = z.infer<typeof verifyResendSchema>;
 
 export const profileSchema = z.object({ displayName: displayNameSchema.optional(), locale: localeSchema.optional() }).strict();
 
-/** POST /api/auth/consents: the renewed transfers consent of the re-consent panel (design D12). */
-export const transfersConsentSchema = z.object({ transfers: z.literal(true) }).strict();
 /** POST /api/auth/consents: the current CGU acknowledged from the change notice (design D11). */
 export const cguConsentSchema = z.object({ cgu: z.literal(true) }).strict();
 /** POST /api/auth/consents: the change notice was shown (CGU §22.1), recorded once per version. */
 export const cguNoticeSchema = z.object({ cguNotice: z.literal(true) }).strict();
-export const consentsRequestSchema = z.union([transfersConsentSchema, cguConsentSchema, cguNoticeSchema]);
+/**
+ * No transfers branch any more: the transfers outside Morocco rest on the contract, not on a
+ * consent (audit B2), so `{ transfers: true }` is refused like any unknown body.
+ */
+export const consentsRequestSchema = z.union([cguConsentSchema, cguNoticeSchema]);
 
 /** Moroccan mobile only (06, 07): national or international format, as typed by the user. */
 export const phoneStartSchema = z.object({ phone: z.string().trim().min(9).max(20) }).strict();

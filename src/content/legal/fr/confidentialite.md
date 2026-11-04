@@ -64,7 +64,7 @@ Pour signaler un contenu, utilisez le bouton « Signaler » présent sur chaque 
 - **Compte Pro :** nom et forme de l'entreprise, identifiants légaux selon la forme (ICE, registre du commerce, identifiant fiscal, numéro d'auto-entrepreneur, de coopérative ou de taxe professionnelle), ville, description, logo, site web, téléphone public, pièces justificatives, engagements acceptés (liste, version et date) ; les liens vers ses comptes de réseaux sociaux (nom de compte) ; selon l'activité, les informations de vente à distance (adresse, e-mail de contact, livraison, retours), le lien de paiement, le barème d'honoraires d'une agence immobilière, le numéro d'agrément, les agences et horaires d'un loueur de voitures, et les numéros sanitaires ONSSA.
 - **Achats, à l'ouverture des ventes :** options achetées, crédits, abonnements, données de facturation. Les données de votre carte sont saisies directement chez notre prestataire de paiement.
 - **Assistant {brand} :** les questions que vous lui posez.
-- **Vos choix :** acceptation des CGU, consentement aux transferts (§7.2), accord pour recevoir nos e-mails d'information, choix en matière de cookies.
+- **Vos choix :** acceptation des CGU, accord pour recevoir nos e-mails d'information, choix en matière de cookies.
 
 ### 2.2 Les données créées par votre utilisation du service {#donnees-2}
 
@@ -320,7 +320,7 @@ Si une annonce contient des données qui vous concernent sans votre accord, util
 <!--endif-->
 - **Photos envoyées mais jamais publiées :** 7 jours.
 - **Favoris, recherches sauvegardées et alertes :** jusqu'à ce que vous les supprimiez, ou jusqu'à la clôture du compte.
-- **Preuve de vos consentements (CGU, transferts, e-mails d'information) :** pendant la vie du compte, puis avec les données de compte.
+- **Preuve de vos acceptations et consentements (CGU, e-mails d'information et, s'il a été enregistré, l'ancien consentement aux transferts) :** pendant la vie du compte, puis avec les données de compte.
 - **Empreinte d'une adresse e-mail en erreur ou qui a signalé un e-mail comme indésirable :** 3 ans après le dernier incident.
 - **Questions posées à l'Assistant {brand} :** 30 jours.
 - **Messages reçus sur nos adresses de contact et demandes d'exercice de vos droits :** 3 ans après le dernier échange.
@@ -386,39 +386,41 @@ Pour une offre ou une demande d'emploi, nous communiquons aux inspecteurs du tra
 
 ## 7. Transferts hors de l'Union européenne et du Maroc {#transferts}
 
-### 7.1 Les garanties prévues par le RGPD {#transferts-1}
+### 7.1 Pourquoi vos données sortent du Maroc {#transferts-1}
 
-Nos données sont hébergées principalement en France et dans l'Union européenne. Les prestataires situés aux États-Unis (§6.2) reçoivent des données selon l'une des garanties prévues par le RGPD :
-- le cadre de protection des données UE–États-Unis (Data Privacy Framework), quand le prestataire y est certifié ;
-- à défaut, les clauses contractuelles types adoptées par la Commission européenne.
+Si vous êtes au Maroc, vos données sont transférées hors du Maroc : vers l'Union européenne, où se trouvent nos serveurs et notre base de données, et, pour certaines, vers les États-Unis. Ces transferts sont nécessaires pour vous fournir le service que vous demandez en ouvrant un compte : ils reposent sur l'exécution du contrat qui nous lie, les CGU (loi 09-08, article 44, point 4). Ils ne dépendent pas de votre consentement : l'inscription ne vous le demande pas, elle vous en informe.
 
-Nous limitons aussi ce qui est transmis : chiffrement pendant le transfert, masquage des numéros, e-mails et noms avant tout envoi à une IA (sauf la décision d'agrément d'un loueur de voitures, §3.8), et uniquement les données utiles à la tâche. Vous pouvez obtenir la liste des garanties applicables à chaque prestataire en écrivant à {dpo}.
+Vers l'Union européenne, dont le niveau de protection est reconnu suffisant au regard de la loi 09-08, le transfert ne demande pas de dérogation.
 
-### 7.2 Votre consentement exprès (loi 09-08, article 44) {#transferts-2}
+Depuis l'Union européenne, les données confiées à un prestataire situé aux États-Unis le sont selon l'une des garanties prévues par le RGPD : la certification du prestataire au cadre de protection des données UE–États-Unis (Data Privacy Framework), ou les clauses contractuelles types adoptées par la Commission européenne.
 
-Si vous êtes au Maroc, vos données sont transférées hors du Maroc : vers l'Union européenne, où se trouvent nos serveurs, et vers les États-Unis. La loi marocaine 09-08 permet ce transfert quand vous y avez consenti expressément (article 44).
+### 7.2 Les prestataires, leur pays et les garanties {#transferts-2}
 
-C'est pourquoi l'inscription comporte une case distincte, non cochée à l'avance, qui vous demande ce consentement et nomme les prestataires américains et leur rôle :
-- **Google :** authentification des comptes et connexion avec Google ; publicité, seulement si vous l'acceptez dans la bannière de cookies ;
-- **Anthropic et OpenAI :** aide au contrôle des annonces et des signalements ; Anthropic lit aussi la décision d'agrément d'un loueur de voitures ;
+| Prestataire et rôle | Pays | Garanties | Base du transfert |
+|---|---|---|---|
+| Google (Firebase, Firestore) : base de données | France (Union européenne) | Union européenne | Exécution du contrat |
+| Oracle (Oracle Cloud) : serveur du site, du moteur de recherche et des tâches automatiques | France (Union européenne) | Union européenne | Exécution du contrat |
+| Hostinger : nom de domaine et boîtes de messagerie d'{brand} | Union européenne | Union européenne | Exécution du contrat |
+| Brevo : envoi de secours des e-mails de sécurité | Union européenne | Union européenne | Exécution du contrat |
+| Sentry : suivi des erreurs techniques | Union européenne (rapports) ; accès possible depuis les États-Unis | Union européenne ; pour les accès depuis les États-Unis, clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| Cloudflare : diffusion et protection du site, vérification anti-robot (Turnstile), stockage des photos et des sauvegardes (R2), IA de secours (Workers AI) | Union européenne (photos, pièces de vérification Pro, sauvegardes) ; réseau mondial, dont les États-Unis (diffusion) | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| Google (Firebase Authentication) : connexion et gestion des comptes | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| Anthropic (Claude) : aide au contrôle des annonces, au tri des signalements et à l'examen des recours ; lecture des décisions d'agrément des loueurs de voitures ; Assistant {brand} | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| OpenAI : contrôle de secours des contenus, seulement s'il est activé | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
 <!--if:whatsappEnabled-->
-- **Meta :** vérification de votre téléphone par WhatsApp ;
+| Meta (WhatsApp) : réception des messages de vérification du téléphone | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
 <!--endif-->
-- **Resend :** envoi des e-mails ;
-- **Cloudflare :** diffusion et protection du site, vérification anti-robot, IA de secours ;
-- **Stripe et RevenueCat :** paiements et abonnements, à l'ouverture des ventes.
+| Resend : envoi des e-mails | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| Stripe : paiements, à l'ouverture des ventes | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
+| RevenueCat : gestion des abonnements Pro, à l'ouverture des ventes | États-Unis | Clauses contractuelles types ou certification Data Privacy Framework du prestataire | Exécution du contrat |
 
-La date et la version de votre consentement sont enregistrées. Si cette liste change, nous vous demandons à nouveau votre accord.
+Nous limitons aussi ce qui est transmis : chiffrement pendant le transfert, masquage des numéros, e-mails et noms avant tout envoi à une IA (sauf la décision d'agrément d'un loueur de voitures, §3.8), et uniquement les données utiles à la tâche. Vous pouvez obtenir le détail des garanties applicables à chaque prestataire en écrivant à {dpo}. Avant qu'un nouveau prestataire situé hors du Maroc reçoive vos données, il est ajouté à ce tableau.
 
-La publicité de Google fait l'objet d'un consentement séparé, demandé dans la bannière de cookies, qui couvre aussi le transfert de ces données à Google LLC, aux États-Unis.
+La publicité de Google est à part : elle repose sur votre consentement, demandé dans la bannière de cookies, qui couvre aussi le transfert de ces données à Google LLC, aux États-Unis. Vous pouvez le retirer à tout moment par le lien « Gérer mes cookies », en bas de chaque page.
 
-### 7.3 Retirer ce consentement {#transferts-3}
+### 7.3 Arrêter ces transferts {#transferts-3}
 
-Vous pouvez retirer votre consentement aux transferts à tout moment en écrivant à {dpo}. Le retrait vaut pour l'avenir : il ne remet pas en cause les transferts déjà faits.
-
-Sans ce consentement, nous ne transférons plus vos données vers ces prestataires, et les fonctions qui en dépendent sont désactivées pour vous. Certaines sont indispensables au compte, comme la connexion et les e-mails de service : votre compte ne peut alors plus être utilisé, et vous pouvez le clôturer. Vos données sont ensuite conservées seulement pour les durées du §5.
-
-Pour la publicité, retirez votre accord à tout moment par le lien « Gérer mes cookies », en bas de chaque page.
+Ces transferts font partie du fonctionnement du service : la connexion, les e-mails de service, le contrôle des annonces et la diffusion du site en dépendent. Pour les arrêter, clôturez votre compte depuis vos paramètres (CGU §21) : nous cessons alors d'envoyer vos données à ces prestataires, et elles ne sont plus conservées que pour les durées du §5. Vous gardez les droits décrits au §8, dont celui de vous opposer à un traitement fondé sur notre intérêt légitime.
 
 ## 8. Vos droits {#droits}
 
@@ -432,7 +434,7 @@ Vous pouvez :
 - recevoir les données que vous nous avez fournies dans un format lisible par une machine, pour les **transmettre** à un autre service (portabilité, article 20) ;
 - vous **opposer** à un traitement fondé sur notre intérêt légitime, pour des raisons tenant à votre situation, et à tout moment aux e-mails d'information (article 21) ;
 - ne pas faire l'objet d'une décision fondée uniquement sur un traitement automatisé qui vous affecte de manière significative, et obtenir une intervention humaine (article 22, voir §4.3) ;
-- **retirer votre consentement** à tout moment (§7.3 et page « Gestion des cookies »).
+- **retirer votre consentement** à tout moment : e-mails d'information (§3.6), publicité (page « Gestion des cookies »).
 
 Quand nous rectifions ou effaçons des données à votre demande, nous en informons les destinataires à qui elles ont été communiquées, sauf si c'est impossible ou disproportionné (article 19).
 
@@ -499,6 +501,6 @@ Les cookies et traceurs utilisés par {brand}, leurs finalités et leurs durées
 
 Nous pouvons modifier cette politique, notamment quand nous ajoutons une fonction ou changeons de prestataire. La version et la date d'entrée en vigueur figurent en haut de la page.
 
-En cas de modification importante, nous vous en informons avant son entrée en vigueur, par un message sur le site et, si vous avez un compte, par e-mail. Si la modification exige votre accord, par exemple un nouveau transfert hors du Maroc, nous vous le demandons à nouveau.
+En cas de modification importante, nous vous en informons avant son entrée en vigueur, par un message sur le site et, si vous avez un compte, par e-mail. Si la modification exige votre accord, nous vous le demandons à nouveau. Un nouveau prestataire situé hors du Maroc est ajouté au tableau du §7.2 avant de recevoir vos données.
 
 Les versions précédentes sont disponibles sur demande à {dpo}.

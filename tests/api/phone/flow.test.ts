@@ -58,7 +58,7 @@ async function member(): Promise<Member> {
     email,
     displayName: "Testeur Aalan",
     locale: "fr",
-    consents: { cguVersion: "2026-10", transfersVersion: "2026-10", marketing: false },
+    consents: { cguVersion: "2026-10", marketing: false },
     provider: "password",
     activated: true,
   });

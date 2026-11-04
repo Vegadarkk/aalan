@@ -80,8 +80,8 @@ export function GoogleConsentStep({ payload, nonce, onDone, onCancel }: GoogleCo
       <FormMessage error={serverError} />
       <ConsentFields
         autoFocus
-        fields={{ cgu: register("consents.cgu"), transfers: register("consents.transfers"), marketing: register("consents.marketing") }}
-        errors={{ cgu: fieldMessage("consent", errors.consents?.cgu), transfers: fieldMessage("consent", errors.consents?.transfers) }}
+        fields={{ cgu: register("consents.cgu"), marketing: register("consents.marketing") }}
+        errors={{ cgu: fieldMessage("consent", errors.consents?.cgu) }}
       />
       <TurnstileWidget
         ref={turnstile}

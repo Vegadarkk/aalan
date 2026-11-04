@@ -1,27 +1,16 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
-import { TransfersReconsent } from "@/components/auth/transfers-reconsent";
-import { Container } from "@/components/layout/container";
 import { redirect } from "@/i18n/navigation";
 import { pageLocale } from "@/i18n/params";
-import { needsTransfersReconsent } from "@/lib/auth/consents";
-import { currentMember, renderUserPrivate } from "@/lib/auth/current-user";
-import { getLegalConfig } from "@/lib/legal/config";
-import { logger } from "@/lib/logging/logger";
+import { currentMember } from "@/lib/auth/current-user";
 
 // Account area: a member session is required (§6 "layout : session obligatoire"). The guard only
 // decides what renders; every API route re-checks the session itself. Nothing secret reaches the
 // client from here: the pages fetch their data from /api/auth/me.
 //
-// Transfers consent gate (design D12): a member whose stored consent is not the current text gets
-// the re-consent panel instead of any account page but the settings, where closing the account and
-// downloading one's data stay open. The API does not check it: a check per mutation would cost one
-// more Firestore read each (Spark quota). Writes from public pages (contact dialog, favourites,
-// reports) and the appeal and alert pages are therefore not blocked; a member is asked at their
-// next visit to an account page (messages, posting, listings, settings excepted).
-
-/** Settings page (`x-pathname`, with or without a locale prefix): exempt from the gate. */
-const SETTINGS_PATH = /^\/(?:[a-z]{2,3}\/)?parametres(?:[/?]|$)/;
+// No consent gate: the transfers outside Morocco rest on the contract, not on a consent (audit B2,
+// 2026-11-04), so the former re-consent panel (design D12) is gone. CGU changes are notified by
+// the banner of D11, which never blocks a page.
 
 export default async function AccountLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
   const locale = pageLocale((await params).locale);
@@ -33,25 +22,5 @@ export default async function AccountLayout({ children, params }: { children: Re
     redirect({ href: next ? { pathname: "/connexion", query: { next } } : "/connexion", locale });
     return null; // not reached: redirect() throws
   }
-  if (await needsGate(user.uid)) {
-    const legal = await getLegalConfig();
-    return (
-      <Container className="max-w-2xl py-10 lg:py-14">
-        <TransfersReconsent dpo={legal.dpoContact} />
-      </Container>
-    );
-  }
   return <>{children}</>;
-}
-
-async function needsGate(uid: string): Promise<boolean> {
-  if (SETTINGS_PATH.test((await headers()).get("x-pathname") ?? "")) return false;
-  try {
-    // Same read as the private layout's session summary (cached per request).
-    return needsTransfersReconsent(await renderUserPrivate(uid));
-  } catch (error) {
-    // Fail open: a Firestore outage must not take the account area down (the pages degrade).
-    logger.warn({ err: error instanceof Error ? error.message : String(error) }, "account layout: consent check skipped");
-    return false;
-  }
 }

@@ -88,7 +88,6 @@ async function createVerifiedAccount(page: Page, request: APIRequestContext, pre
   await waitForTurnstile(page);
   await fillSignup(page, { name, email, password: PASSWORD });
   await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-  await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
   await waitForTurnstile(page);
   await page.getByRole("button", { name: "Créer mon compte" }).click();
   await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible({ timeout: 15_000 });
@@ -110,7 +109,6 @@ test.describe("account", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Créer un compte" })).toBeVisible();
     await fillSignup(page, { name, email, password: PASSWORD });
     await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-    await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
     await waitForTurnstile(page);
     await page.getByRole("button", { name: "Créer mon compte" }).click();
     await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible({ timeout: 15_000 });

@@ -60,7 +60,6 @@ async function signUpAndIn(page: Page, request: APIRequestContext, email: string
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
   await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-  await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
   await waitForTurnstile(page);
   await page.getByRole("button", { name: "Créer mon compte" }).click();
   await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible({ timeout: 15_000 });

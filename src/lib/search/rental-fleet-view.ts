@@ -2,6 +2,7 @@ import { criterionById } from "@/config/categories";
 import { dayNumber, moroccoToday } from "@/lib/listings/rental-availability";
 import { rentalDayRate } from "@/lib/listings/rental";
 import { RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, rentalDuration, type RentalDates } from "./params";
+import { searchPhotoOf } from "./photo";
 import type { SearchDocument, SearchPhoto } from "./types";
 
 // The fleet of a car rental agency's storefront (rental pack §5): each vehicle with what its card
@@ -94,7 +95,7 @@ function ordered(criterionId: string, values: Set<string>): string[] {
 export function toFleetVehicle(doc: FleetDocument, now: Date): FleetVehicle {
   const today = moroccoToday(now);
   const last = today + RENTAL_SEARCH_AHEAD_DAYS + RENTAL_SEARCH_DAYS_MAX;
-  const photo = doc.photo ? { id: doc.photo.id, w: doc.photo.w, h: doc.photo.h, blurhash: doc.photo.blurhash } : null;
+  const photo = searchPhotoOf(doc.photo);
   return {
     id: doc.id,
     slugId: doc.slugId,

@@ -9,6 +9,7 @@ import ar from "../../../messages/ar.json";
 import fr from "../../../messages/fr.json";
 import { blockedDays, freshUntil, moroccoToday } from "@/lib/listings/rental-availability";
 import { foldDigits } from "./normalize";
+import { searchPhotoOf } from "./photo";
 import { districtKey } from "./params";
 import { SEARCH_DESCRIPTION_MAX, SITEMAP_SHARDS, attributeField, sitemapShardOf, type SearchDocument } from "./types";
 
@@ -217,7 +218,7 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
     ...(listing.condition ? { condition: listing.condition } : {}),
     attributes: shown,
     hasPhoto: photo !== undefined,
-    ...(photo ? { photo: { id: photo.id, w: photo.w, h: photo.h, blurhash: photo.blurhash } } : {}),
+    ...(photo ? { photo: searchPhotoOf(photo)! } : {}),
     photoCount: listing.photos.length,
     sortAt: listing.sortAt.getTime(),
     updatedAt: listing.updatedAt.getTime(),

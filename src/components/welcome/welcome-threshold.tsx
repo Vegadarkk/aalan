@@ -61,11 +61,12 @@ export function WelcomeThreshold({ locale, texts }: { locale: Locale; texts: Wel
             >
               {texts.signIn}
             </Link>
-            {/* A link to the page itself: it lets the visitor through even before hydration (globals.css). */}
+            {/* A link to the page itself: it lets the visitor through even before hydration (globals.css).
+                Underlined from the start: it reads as a way in, not as a footnote (audit Z1-09, zone 2 P2-10). */}
             <a
               href="#main"
               data-welcome-action="discover"
-              className={cn(action, "px-4 text-cream-200 underline decoration-transparent underline-offset-[0.3em] hover:decoration-cream-200/70")}
+              className={cn(action, "px-4 text-cream-200 underline decoration-cream-200/60 underline-offset-[0.3em] hover:decoration-cream-200")}
             >
               {texts.discover}
             </a>

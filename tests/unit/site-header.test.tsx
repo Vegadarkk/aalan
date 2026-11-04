@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import fr from "../../messages/fr.json";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
-import { showsCategoryRow, showsSellButton } from "@/components/layout/shell-paths";
+import { showsAssistantBubble, showsCategoryRow, showsSellButton } from "@/components/layout/shell-paths";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { CATEGORIES } from "@/config/categories";
@@ -184,9 +184,18 @@ describe("SiteHeader", () => {
 
 describe("shell paths", () => {
   it("drops the category row in the focused flows and 'Vendre' over forms and bottom bars", () => {
-    for (const path of ["/c/vehicules", "/mes-annonces", "/demarches"]) {
+    for (const path of ["/c/vehicules", "/mes-annonces", "/favoris"]) {
       expect(showsCategoryRow(path), path).toBe(true);
       expect(showsSellButton(path), path).toBe(true);
+    }
+    // Reading and account pages: 'Vendre' only hid text or a form there (audit Z1-07, 6-15, zone 8).
+    for (const path of ["/legal/cgu", "/aide", "/aide/contact", "/demarches", "/tarifs", "/professionnels", "/parametres", "/verifications", "/porte-monnaie/acheter", "/recours"]) {
+      expect(showsSellButton(path), path).toBe(false);
+    }
+    expect(showsAssistantBubble("/c/vehicules")).toBe(true);
+    expect(showsAssistantBubble("/tarifs")).toBe(true);
+    for (const path of ["/aide", "/legal/cgu", "/connexion", "/inscription", "/deposer", "/messages/c1", "/anti-robot"]) {
+      expect(showsAssistantBubble(path), path).toBe(false);
     }
     // The home page (lot 3) shows the twelve categories itself (map panel or arcade); 'Vendre' stays.
     expect(showsCategoryRow("/")).toBe(false);

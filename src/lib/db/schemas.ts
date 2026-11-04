@@ -607,7 +607,9 @@ export { uploadIdSchema, listingIdSchema };
 
 // ---- Phase 4: favorites and saved searches (architecture §5 "Autres collections").
 
-const searchPhotoSchema = z.object({ id: z.string().min(1).max(64), w: z.number().int().min(1), h: z.number().int().min(1), blurhash: z.string().max(100) }).strict();
+const searchPhotoSchema = z
+  .object({ id: z.string().min(1).max(64), w: z.number().int().min(1), h: z.number().int().min(1), blurhash: z.string().max(100), variants: z.array(z.enum(PHOTO_VARIANTS)).max(PHOTO_VARIANTS.length).optional() })
+  .strict();
 
 /** What a favorite shows once its listing is gone (sold, expired, removed): the card at the time it was saved. */
 export const favoriteSnapshotSchema = z

@@ -3,6 +3,7 @@ import { promoRunning, type CardPromo } from "@/lib/contracts/catalog-core";
 import { cardFactsField, cardFactsOf } from "@/lib/listings/card-facts";
 import { rentalDayRate } from "@/lib/listings/rental";
 import { rentalDuration, type RentalDates } from "./params";
+import { searchPhotoOf } from "./photo";
 import { attributeField, type CardDocument, type SearchCard } from "./types";
 
 /** A rental searched by dates: its estimated total (a car's long-term rate applied; a home has none) and freshness. */
@@ -33,7 +34,7 @@ function promoOf(doc: CardDocument, now: Date): { promo?: CardPromo } {
  * shop of a Pro's listing (src/lib/search/shop-names.ts).
  */
 export function toSearchCard(doc: CardDocument, now: Date, featured = false, dates?: RentalDates, shopName?: string): SearchCard {
-  const photo = doc.photo ? { id: doc.photo.id, w: doc.photo.w, h: doc.photo.h, blurhash: doc.photo.blurhash } : null;
+  const photo = searchPhotoOf(doc.photo);
   return {
     id: doc.id,
     slugId: doc.slugId,

@@ -483,6 +483,7 @@
       "verifiedTitle": "Adresse confirmée",
       "verifiedBody": "Votre compte est activé et vous êtes connecté. Bienvenue sur Aalan.",
       "verifiedBodyAnonymous": "Votre compte est activé. Connectez-vous pour commencer.",
+      "goBack": "Reprendre où vous en étiez",
       "goSettings": "Mes paramètres",
       "goHome": "Découvrir les annonces",
       "goSignIn": "Se connecter",

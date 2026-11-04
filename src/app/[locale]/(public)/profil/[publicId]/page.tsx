@@ -27,7 +27,7 @@ import { pageLocale } from "@/i18n/params";
 import { PROFILE_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
-import { alternates } from "@/lib/i18n/metadata";
+import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
 import { getPublicProfile, profilePath, publicShopRef, storefrontPath } from "@/lib/listings/public";
 import { mediaBaseUrl } from "@/lib/storage/keys";
@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title,
     description,
     alternates: alternates(locale, path),
-    openGraph: { type: "profile", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description },
+    openGraph: { type: "profile", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description, images: DEFAULT_OG_IMAGES },
     // A private seller's name stays out of search engines (loi 09-08); a business with listings is listed.
     ...(profile.sellerType === "pro" && profile.publishedCount > 0 ? {} : { robots: { index: false, follow: true } }),
   };

@@ -34,9 +34,13 @@ const SRCSET_ORDER: readonly PhotoVariant[] = ["s", "m", "l"];
  * `srcset` over the variants the photo has, narrowest first. A variant as wide as the next one is
  * left out (a photo smaller than its maxEdge): the wider one is the same image at a higher quality.
  */
-export function srcSetOf(photo: Pick<PhotoLike, "w" | "h" | "variants">, url: (variant: PhotoVariant) => string): string {
+export function srcSetOf(photo: Pick<PhotoLike, "w" | "h" | "variants">, url: (variant: PhotoVariant) => string, thumbnail = false): string {
   const stored = photo.variants ?? LEGACY_PHOTO_VARIANTS;
-  const candidates = SRCSET_ORDER.filter((variant) => variant === "l" || stored.includes(variant)).map((variant) => ({ variant, width: variant === "l" ? photo.w : variantWidth(photo, variant) }));
+  // A thumbnail (cards, rows: at most 18rem wide) never needs more than `m` (960 px), which covers
+  // a 3x screen; the `l` variant stays only for a photo without `m` (audit zone 8 P0, B15: portrait
+  // photos have a narrow `s`, so the browser skipped to `l`, 100-480 KB per card).
+  const capped = thumbnail && stored.includes("m");
+  const candidates = SRCSET_ORDER.filter((variant) => (variant === "l" ? !capped : stored.includes(variant))).map((variant) => ({ variant, width: variant === "l" ? photo.w : variantWidth(photo, variant) }));
   return candidates
     .filter((candidate, index) => index === candidates.length - 1 || candidate.width < (candidates[index + 1]?.width ?? Infinity))
     .map(({ variant, width }) => `${url(variant)} ${width}w`)
@@ -58,7 +62,7 @@ export function photoSources(mediaBaseUrl: string | null, listingId: string, pho
   const small = photoUrl(mediaBaseUrl, listingId, photo.id, "s");
   const large = photoUrl(mediaBaseUrl, listingId, photo.id, "l");
   if (!small || !large) return null;
-  const srcSet = srcSetOf(photo, (variant) => photoUrl(mediaBaseUrl, listingId, photo.id, variant) ?? large);
+  const srcSet = srcSetOf(photo, (variant) => photoUrl(mediaBaseUrl, listingId, photo.id, variant) ?? large, prefer === "s");
   return { src: prefer === "s" ? small : large, srcSet, width: photo.w, height: photo.h, large };
 }
 

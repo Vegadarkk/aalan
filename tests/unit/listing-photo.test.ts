@@ -33,11 +33,14 @@ describe("photoSources", () => {
   });
 
   it("adds the m variant between s and l when the photo has it", () => {
-    const sources = photoSources(BASE, "abcd2345", { id: "photo0004", w: 1600, h: 1200, blurhash: HASH, variants: ["l", "m", "s"] });
-    expect(sources?.srcSet).toBe(
+    const photo = { id: "photo0004", w: 1600, h: 1200, blurhash: HASH, variants: ["l", "m", "s"] as const };
+    expect(photoSources(BASE, "abcd2345", { ...photo, variants: [...photo.variants] }, "l")?.srcSet).toBe(
       `${BASE}/listings/abcd2345/photo0004-s.webp 480w, ${BASE}/listings/abcd2345/photo0004-m.webp 960w, ${BASE}/listings/abcd2345/photo0004-l.webp 1600w`,
     );
-    expect(sources?.src).toBe(`${BASE}/listings/abcd2345/photo0004-s.webp`);
+    // A card stops at m (B15): enough for a 3x screen, never the large photo.
+    const card = photoSources(BASE, "abcd2345", { ...photo, variants: [...photo.variants] });
+    expect(card?.srcSet).toBe(`${BASE}/listings/abcd2345/photo0004-s.webp 480w, ${BASE}/listings/abcd2345/photo0004-m.webp 960w`);
+    expect(card?.src).toBe(`${BASE}/listings/abcd2345/photo0004-s.webp`);
     expect(variantWidth({ w: 1200, h: 1600 }, "m")).toBe(720);
   });
 
@@ -47,6 +50,14 @@ describe("photoSources", () => {
     expect(srcSetOf({ w: 400, h: 300, variants: ["l", "m", "s"] }, url)).toBe("l 400w");
     expect(srcSetOf({ w: 1600, h: 1200, variants: ["l", "s"] }, url)).toBe("s 480w, l 1600w");
     expect(srcSetOf({ w: 1600, h: 1200 }, url)).toBe("s 480w, l 1600w");
+  });
+
+  it("caps a thumbnail at m when the photo has it, a portrait one included (B15)", () => {
+    const url = (variant: string) => variant;
+    expect(srcSetOf({ w: 1067, h: 1600, variants: ["l", "m", "s"] }, url, true)).toBe("s 320w, m 640w");
+    expect(srcSetOf({ w: 900, h: 600, variants: ["l", "m", "s"] }, url, true)).toBe("s 480w, m 900w");
+    // Without m (legacy photo) the large one stays the only step above s.
+    expect(srcSetOf({ w: 1067, h: 1600 }, url, true)).toBe("s 320w, l 1067w");
   });
 
   it("returns null without a media host", () => {

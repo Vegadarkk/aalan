@@ -42,7 +42,7 @@ import { pageLocale } from "@/i18n/params";
 import { STOREFRONT_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
-import { alternates } from "@/lib/i18n/metadata";
+import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
 import { getPublicStorefront, parseStorefrontSegment, storefrontPath } from "@/lib/listings/public";
 import { dealerStock } from "@/lib/search/dealer";
@@ -112,7 +112,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title,
     description,
     alternates: alternates(locale, path),
-    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description },
+    openGraph: { type: "website", siteName: SITE_NAME, locale: LOCALE_TAGS[locale].replace("-", "_"), url: `/${locale}${path}`, title, description, images: DEFAULT_OG_IMAGES },
     // An empty shop has nothing to show search engines yet; an example shop is not a business.
     ...(store.seller.publishedCount > 0 && !store.example ? {} : { robots: { index: false, follow: true } }),
   };

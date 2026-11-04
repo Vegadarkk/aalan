@@ -8,7 +8,7 @@ import { welcomeAfterSignIn } from "@/lib/welcome/flags";
 
 /**
  * Where to go once signed in: the `?next=` path when it is a same-origin relative path (set by
- * the account layout guard and the header link), else the settings page. A locale prefix in
+ * the account layout guard and the header link), else the home page. A locale prefix in
  * `next` is honoured. Same check as the sign-in pages' server-side redirect.
  * The device then never gets the welcome screen, and the door opens on the home page when that is
  * where the sign-in lands, once per device.

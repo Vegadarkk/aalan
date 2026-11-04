@@ -478,6 +478,8 @@
         "displayName": "Isem i ɣa yban",
         "displayNameHint": "{count} zi {max} n yisekkilen. Ad yban deg annonces nnec d deg tibratin : war uṭṭun war asaɣ.",
         "locale": "Tutlayt n usit",
+        "localeHint": "Ad tettwasexdem deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
+        "localeSaved": "Amiḍan nnec iqqim x {name} : ḥrez ḥima ad tesxedmeḍ tutlayt-a deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
         "save": "Ḥrez",
         "saved": "Profil yettwaḥrez"
       },

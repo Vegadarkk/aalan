@@ -183,6 +183,29 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect(capturedMails(sendMail).filter((mail) => mail.template === "signupExisting" && mail.to === email)).toHaveLength(warned);
   });
 
+  it("answers a closed account's e-mail like a new one and tells its owner the account is closed, not to sign in (Z1-11)", async () => {
+    const email = uniqueEmail();
+    const mail = await signUp(new Jar(), email);
+    const uid = (await findUidByEmail(email))!;
+    await verify(new Jar(), mail);
+    // What closeAccount leaves behind (tests/api/account/close.test.ts): dates, status, Auth disabled.
+    const closedAt = new Date("2026-11-03T10:00:00.000Z");
+    const purgeAt = new Date("2027-11-03T10:00:00.000Z");
+    await db().collection(COLLECTIONS.users).doc(uid).collection(COLLECTIONS.userPrivate).doc(COLLECTIONS.userPrivateDoc).update({ closedAt, purgeAt, identityPurgeAt: new Date("2031-11-03T10:00:00.000Z") });
+    await db().collection(COLLECTIONS.users).doc(uid).update({ status: "closed" });
+    await auth().updateUser(uid, { disabled: true });
+    const before = capturedMails(sendMail).length;
+    const startedAt = Date.now();
+    const answer = await call<{ status: string }>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(email, "Yasmine Again"), locale: "ar" } });
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(UNIFORM_RESPONSE_MS - 5);
+    expect(answer.status).toBe(202);
+    expect(answer.body).toEqual({ status: "verification_sent" });
+    const mails = capturedMails(sendMail).slice(before);
+    expect(mails.map((sent) => sent.template)).toEqual(["signupClosed"]);
+    expect(mails[0]).toMatchObject({ to: email, locale: "ar", priority: "security", data: { displayName: "Yasmine Test", closedAt: closedAt.toISOString(), reusableFrom: purgeAt.toISOString() } });
+    expect(mails[0]?.idempotencyKey).toMatch(/^signup-closed-.+-\d+$/);
+  });
+
   it("refuses weak passwords, disposable domains and malformed bodies", async () => {
     const weak = await call<ErrorBody>(signup, SIGNUP, { jar: new Jar(), body: { ...signupBody(uniqueEmail()), password: "password123" } });
     expect(weak.status).toBe(400);

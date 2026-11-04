@@ -9,6 +9,7 @@ export type TemplateId =
   | "verifyEmail"
   | "resetPassword"
   | "signupExisting"
+  | "signupClosed"
   | "passwordChanged"
   | "staffInvite"
   | "phoneVerified"
@@ -91,6 +92,8 @@ export interface TemplateData {
   verifyEmail: { displayName: string; actionUrl: string };
   resetPassword: { displayName: string; actionUrl: string };
   signupExisting: { displayName: string; loginUrl: string; resetUrl: string };
+  /** Sign-up on the e-mail of a closed account (Z1-11): ISO dates of the closure and of the address's release. */
+  signupClosed: { displayName: string; closedAt: string; reusableFrom: string };
   passwordChanged: { displayName: string; at: string };
   staffInvite: { displayName: string; actionUrl: string; role: "moderator" | "admin" };
   phoneVerified: { displayName: string; phone: string };

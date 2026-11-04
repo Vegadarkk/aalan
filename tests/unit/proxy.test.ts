@@ -16,6 +16,8 @@ vi.mock("@/lib/rate-limit/proxy-limits", async (importOriginal) => {
 const checkPageLimits = vi.mocked(proxyLimits.checkPageLimits);
 
 const request = (path: string, host = "joutiya.ma") => new NextRequest(`https://${host}${path}`, { headers: { host } });
+/** A request carrying a session cookie (never verified by the proxy): account pages render. */
+const member = (path: string, host = "joutiya.ma") => new NextRequest(`https://${host}${path}`, { headers: { host, cookie: "__Host-session=session-cookie" } });
 
 beforeEach(() => {
   vi.stubEnv("ADMIN_HOST", "admin.joutiya.ma");
@@ -86,7 +88,7 @@ describe("proxy", () => {
   });
 
   it("allows WebAssembly in the wizard (private) only", async () => {
-    expect((await proxy(request("/fr/deposer"))).headers.get("content-security-policy")).toContain("'wasm-unsafe-eval'");
+    expect((await proxy(member("/fr/deposer"))).headers.get("content-security-policy")).toContain("'wasm-unsafe-eval'");
     expect((await proxy(request("/fr/annonce/velo-casablanca-abcd2345"))).headers.get("content-security-policy")).not.toContain("'wasm-unsafe-eval'");
   });
 
@@ -95,7 +97,7 @@ describe("proxy", () => {
     expect(before).not.toContain("tiles.joutiya.ma");
     vi.stubEnv("MAP_PMTILES_URL", "https://tiles.joutiya.ma/maps/morocco.pmtiles");
     for (const path of ["/fr/annonce/velo-casablanca-abcd2345", "/fr/deposer"]) {
-      const policy = (await proxy(request(path))).headers.get("content-security-policy") ?? "";
+      const policy = (await proxy(member(path))).headers.get("content-security-policy") ?? "";
       const directive = (name: string) => policy.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name} `)) ?? "";
       expect(directive("connect-src")).toContain("https://tiles.joutiya.ma");
       expect(directive("img-src")).toContain("https://tiles.joutiya.ma");
@@ -201,6 +203,16 @@ describe("proxy", () => {
     expect((await proxy(request("/fr/c/vehicules/casablanca"))).status).toBe(200);
     // Other pages keep their query.
     expect((await proxy(request("/fr/annonce/velo-casablanca-abcd2345?ref=1"))).status).toBe(200);
+  });
+
+  it("sends an account page opened without a session cookie to the sign-in page, with its path as next (ZAP 10044)", async () => {
+    const response = await proxy(request("/ar/messages/abc?x=1"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://joutiya.ma/ar/connexion?next=%2Far%2Fmessages%2Fabc%3Fx%3D1");
+    expect((await proxy(member("/ar/messages/abc"))).status).toBe(200);
+    // The sign-in and appeal pages render without a session.
+    expect((await proxy(request("/fr/connexion"))).status).toBe(200);
+    expect((await proxy(request("/fr/recours"))).status).toBe(200);
   });
 
   it("sends the home page and other query-less ISR pages with a query string to the clean path (audit D-5)", async () => {

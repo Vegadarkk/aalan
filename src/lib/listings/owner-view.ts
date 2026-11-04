@@ -4,7 +4,7 @@ import type { UploadStatus } from "@/lib/contracts/media";
 import type { ListingRecord } from "@/lib/db/repositories/listings";
 import { listUploadsByTarget, type UploadRecord } from "@/lib/db/repositories/uploads";
 import { ownerPaymentLink } from "@/lib/pro/seller-payment-rules";
-import { MANUAL_ATTACH_STATUSES } from "@/lib/uploads/policy";
+import { MANUAL_ATTACH_STATUSES, photosArePrivate } from "@/lib/uploads/policy";
 import { datedRental } from "@/config/categories";
 import { rentalAvailabilityOf } from "./availability";
 import { canRenew } from "./lifecycle";
@@ -68,6 +68,7 @@ export function toOwnerListing(listing: ListingRecord, uploads: readonly UploadR
     isDonation: listing.isDonation,
     location: listing.location ? { regionCode: listing.location.regionCode, citySlug: listing.location.citySlug, ...(listing.location.district ? { district: listing.location.district } : {}) } : null,
     photos: mergePhotos(listing, uploads),
+    ...(photosArePrivate(listing) ? { privatePhotos: true as const } : {}),
     contact: { showPhone: listing.contact.showPhone, whatsapp: listing.contact.whatsapp },
     sensitiveDeclaration: listing.moderation.sensitiveDeclaration ? { kind: listing.moderation.sensitiveDeclaration.kind, at: listing.moderation.sensitiveDeclaration.at.toISOString() } : null,
     variants: listing.variants ?? null,
@@ -109,6 +110,7 @@ export function toOwnerSummary(listing: ListingRecord, now = new Date()): OwnerL
     citySlug: listing.location?.citySlug ?? null,
     thumb: listing.photos[0] ?? null,
     photoCount: listing.photos.length,
+    ...(photosArePrivate(listing) ? { privatePhotos: true as const } : {}),
     moderation: { state: listing.moderation.state, flags: listing.moderation.flags },
     createdAt: listing.createdAt.toISOString(),
     updatedAt: listing.updatedAt.toISOString(),

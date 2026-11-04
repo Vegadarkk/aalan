@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   ABUSIVE_SUSPENSION_MS,
   applyReporterOutcome,
+  autoHideAllowed,
   findDuplicate,
   hasAutoSignal,
   hasMultiSignal,
   isCorroborated,
+  multiPartners,
   p0Alert,
   parisTime,
   priorityRank,
+  provenFromFacts,
   raisePriority,
   slaHours,
   strongSignalOf,
@@ -58,7 +61,14 @@ describe("findDuplicate (D10)", () => {
 });
 
 describe("hasMultiSignal (D11 multi)", () => {
-  const report = (uid: string | undefined, deviceHash: string, ipPrefixHash: string, createdAt = ago(DAY)): SignalReport => ({ ...(uid ? { uid } : {}), deviceHash, ipPrefixHash, createdAt });
+  // Accounts are proven unless said otherwise (audit C-4); visitors never are.
+  const report = (uid: string | undefined, deviceHash: string, ipPrefixHash: string, createdAt = ago(DAY), proven = uid !== undefined): SignalReport => ({
+    ...(uid ? { uid } : {}),
+    proven,
+    deviceHash,
+    ipPrefixHash,
+    createdAt,
+  });
   const candidate = report("u1", "d1", "ip1", NOW);
 
   it("needs another reporter distinct by account, device and IP prefix", () => {
@@ -66,6 +76,20 @@ describe("hasMultiSignal (D11 multi)", () => {
     expect(hasMultiSignal(candidate, [report("u2", "d2", "ip1")], NOW)).toBe(false);
     expect(hasMultiSignal(candidate, [report("u2", "d1", "ip2")], NOW)).toBe(false);
     expect(hasMultiSignal(candidate, [report("u1", "d2", "ip2")], NOW)).toBe(false);
+  });
+
+  it("needs two PROVEN accounts: two fresh accounts no longer make a multi signal (audit C-4)", () => {
+    const fresh = report("u1", "d1", "ip1", NOW, false);
+    expect(hasMultiSignal(fresh, [report("u2", "d2", "ip2", ago(DAY), false)], NOW)).toBe(false);
+    expect(hasMultiSignal(fresh, [report("u2", "d2", "ip2")], NOW)).toBe(false);
+    expect(hasMultiSignal(candidate, [report("u2", "d2", "ip2", ago(DAY), false)], NOW)).toBe(false);
+    expect(hasMultiSignal(candidate, [report("u2", "d2", "ip2", ago(DAY), false), report("u3", "d3", "ip3")], NOW)).toBe(true);
+  });
+
+  it("multiPartners: the signed-in, distinct, recent reports, proof aside", () => {
+    const partner = report("u2", "d2", "ip2", ago(DAY), false);
+    expect(multiPartners(candidate, [partner, report("u3", "d1", "ip3"), report(undefined, "d4", "ip4"), report("u5", "d5", "ip5", ago(8 * DAY))], NOW)).toEqual([partner]);
+    expect(multiPartners(report(undefined, "d1", "ip1", NOW), [partner], NOW)).toEqual([]);
   });
 
   it("is false alone (a lone P0 hides nothing)", () => {
@@ -124,6 +148,44 @@ describe("trustedFromFacts (D11 trusted)", () => {
     expect(trustedFromFacts({ user: user({ status: "restricted" }), reporter: reporter([true, true, true, true, true]), now: NOW })).toBe(false);
     expect(trustedFromFacts({ user: user(), reporter: reporter([true, true, true, true, true], { abusiveUntil: new Date(NOW.getTime() + DAY) }), now: NOW })).toBe(false);
     expect(trustedFromFacts({ user: null, reporter: reporter([true, true, true, true, true]), now: NOW })).toBe(false);
+  });
+});
+
+describe("provenFromFacts (audit C-4 proven reporter)", () => {
+  type ProvenUser = NonNullable<Parameters<typeof provenFromFacts>[0]["user"]>;
+  const user = (overrides: Partial<{ createdAt: Date; status: ProvenUser["status"]; activation: ProvenUser["activation"]; phoneVerified: boolean; activeListings: number; ratingCount: number }> = {}): ProvenUser => ({
+    createdAt: overrides.createdAt ?? ago(7 * DAY),
+    status: overrides.status ?? "active",
+    activation: overrides.activation ?? "done",
+    badges: { emailVerified: true, phoneVerified: overrides.phoneVerified ?? false, proCertified: false },
+    stats: { activeListings: overrides.activeListings ?? 0, responseRate: 0, medianReplyMin: 0, ratingCount: overrides.ratingCount ?? 0 },
+  });
+
+  it("proves an account of 7 days with a verified phone, a published listing, a received review or a founded report", () => {
+    expect(provenFromFacts({ user: user({ phoneVerified: true }), reporter: null, now: NOW })).toBe(true);
+    expect(provenFromFacts({ user: user({ activeListings: 1 }), reporter: null, now: NOW })).toBe(true);
+    expect(provenFromFacts({ user: user({ ratingCount: 1 }), reporter: null, now: NOW })).toBe(true);
+    expect(provenFromFacts({ user: user(), reporter: { recent: [false, true], total: 2 }, now: NOW })).toBe(true);
+  });
+
+  it("refuses a fresh account, an account with no proof, or one that is not active", () => {
+    expect(provenFromFacts({ user: user({ phoneVerified: true, activeListings: 3, createdAt: ago(7 * DAY - 1) }), reporter: null, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: user(), reporter: null, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: user(), reporter: { recent: [false], total: 1 }, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: user({ phoneVerified: true, status: "restricted" }), reporter: null, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: user({ phoneVerified: true, activation: "pending" }), reporter: null, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: user({ phoneVerified: true }), reporter: { recent: [true], total: 1, abusiveUntil: new Date(NOW.getTime() + DAY) }, now: NOW })).toBe(false);
+    expect(provenFromFacts({ user: null, reporter: null, now: NOW })).toBe(false);
+  });
+});
+
+describe("autoHideAllowed (audit C-4)", () => {
+  it("lets a report hide a listing or a message, never a profile, a review or a shop", () => {
+    expect(autoHideAllowed("listing")).toBe(true);
+    expect(autoHideAllowed("message")).toBe(true);
+    expect(autoHideAllowed("user")).toBe(false);
+    expect(autoHideAllowed("review")).toBe(false);
+    expect(autoHideAllowed("pro")).toBe(false);
   });
 });
 

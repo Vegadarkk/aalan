@@ -37,6 +37,24 @@ export const LIVE_STATUSES: readonly ListingStatus[] = ["published", "paused", "
  */
 export const RETAINED_STATUSES: readonly ListingStatus[] = ["removed"];
 
+/**
+ * Listings whose photos leave the public media bucket for the private one (audit C-3, owner
+ * decision 2026-11-04): removed, or refused by moderation. A refused listing's photos come back
+ * when it leaves `rejected` (resubmitted, appeal granted); a removed one's stay until its purge.
+ */
+export const PRIVATE_PHOTO_STATUSES: readonly ListingStatus[] = ["rejected", "removed"];
+
+/**
+ * Whether a listing's photos belong in the private bucket: a PRIVATE_PHOTO_STATUSES status, or
+ * hidden from the public (`moderation.hiddenBy`: a report's strong signal or a staff
+ * `restrict_visibility` decision). Everything else keeps them on the media host, drafts included.
+ * The worker moves them both ways (src/worker/jobs/listing-photos.ts, purge-quarantine step 3).
+ */
+export function photosArePrivate(listing: Pick<ListingRecord, "status" | "moderation">): boolean {
+  if (PRIVATE_PHOTO_STATUSES.includes(listing.status)) return true;
+  return listing.status !== "purged" && listing.moderation.hiddenBy !== undefined;
+}
+
 /** Photos per listing from the seller type of the listing (D5: individual 10, Pro 20). */
 export function maxPhotosOf(listing: Pick<ListingRecord, "sellerType">): number {
   const seller: Seller = listing.sellerType === "pro" ? { type: "pro", plan: "none" } : { type: "individual" };

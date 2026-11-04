@@ -12,7 +12,8 @@ describe("media object keys and URLs", () => {
     expect(isValidObjectKey(mediaObjectKey("abcd2345", "u1234567890", "l"))).toBe(true);
     expect(isValidObjectKey(quarantineObjectKey("u1234567890"))).toBe(true);
     expect(MEDIA_CONTENT_TYPE).toBe("image/webp");
-    expect(MEDIA_CACHE_CONTROL).toBe("public, max-age=31536000, immutable");
+    // A takedown reaches browsers within a day (audit C-3): no year-long, immutable copy.
+    expect(MEDIA_CACHE_CONTROL).toBe("public, max-age=86400");
   });
 
   it("serves photos from MEDIA_BASE_URL, the dev route in development, nowhere otherwise", () => {

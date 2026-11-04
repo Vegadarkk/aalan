@@ -15,6 +15,7 @@ import { usePublicConfig } from "@/lib/config/client";
 import { WIZARD_DONE, WIZARD_STEPS, type ListingPatch, type ListingStatus, type OwnerListing, type PublishListingResponse, type WizardStep } from "@/lib/contracts/listings";
 import { MAX_PHOTOS_INDIVIDUAL } from "@/lib/contracts/media";
 import { getListing, patchListing } from "@/lib/listings/client/api";
+import { ownerMediaBase } from "@/lib/listings/client/photo-url";
 import { parseWizardPath, wizardPath, type WizardScreen } from "@/lib/listings/client/routes";
 import { WizardProvider, useWizard } from "@/lib/listings/client/store";
 import { firstIncompleteStep, nextStep, previousStep, stepState, wizardSteps, type StepState } from "@/lib/listings/client/validation";
@@ -150,7 +151,7 @@ export function PostWizard({ listingId, nonce }: { listingId: string; nonce?: st
     );
   }
   return (
-    <WizardProvider listing={state.listing} maxPhotos={config?.upload.maxPhotos ?? MAX_PHOTOS_INDIVIDUAL} mediaBaseUrl={config?.mediaBaseUrl ?? null} onUnsavedLeave={onUnsavedLeave}>
+    <WizardProvider listing={state.listing} maxPhotos={config?.upload.maxPhotos ?? MAX_PHOTOS_INDIVIDUAL} mediaBaseUrl={ownerMediaBase(state.listing, config?.mediaBaseUrl ?? null)} onUnsavedLeave={onUnsavedLeave}>
       <WizardScreens nonce={nonce} />
     </WizardProvider>
   );

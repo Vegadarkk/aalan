@@ -32,7 +32,7 @@ export interface ListingPage {
 
 const listings = () => db().collection(COLLECTIONS.listings);
 
-async function page(query: Query, field: "expiresAt" | "purgeAt" | "updatedAt", limit: number, cursor?: ListingCursor): Promise<ListingPage> {
+async function page(query: Query, field: "expiresAt" | "purgeAt" | "updatedAt" | "moderation.hiddenBy.at", limit: number, cursor?: ListingCursor): Promise<ListingPage> {
   let ordered = query.orderBy(field, "asc").orderBy(FieldPath.documentId(), "asc");
   if (cursor) ordered = ordered.startAfter(Timestamp.fromDate(cursor.at), cursor.id);
   const snapshot = await ordered.limit(limit).get();
@@ -71,6 +71,15 @@ export function listListingsPastPurge(now: Date, limit: number, cursor?: Listing
  */
 export function listListingsChangedBefore(statuses: readonly ListingStatus[], before: Date, limit: number, cursor?: ListingCursor): Promise<ListingPage> {
   return page(listings().where("status", "in", [...statuses]).where("updatedAt", "<=", Timestamp.fromDate(before)), "updatedAt", limit, cursor);
+}
+
+/**
+ * Hidden listings (`moderation.hiddenBy`, any status) hidden at or before `before`, oldest hide
+ * first, after `cursor` (single-field index on moderation.hiddenBy.at): purge-quarantine's scan of
+ * newly hidden listings (audit C-3). A listing shown again leaves the field, and the index.
+ */
+export function listListingsHiddenBefore(before: Date, limit: number, cursor?: ListingCursor): Promise<ListingPage> {
+  return page(listings().where("moderation.hiddenBy.at", "<=", Timestamp.fromDate(before)), "moderation.hiddenBy.at", limit, cursor);
 }
 
 export interface TransitionWrite {

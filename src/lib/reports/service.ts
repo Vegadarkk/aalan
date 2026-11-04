@@ -21,7 +21,23 @@ import { normalizeEmail } from "@/lib/security/email-normalize";
 import { requestTriage } from "./hooks";
 import { createReportTx, listTargetReports, newReportId, OPEN_STATUSES, reportHold, reportPurgeAt, updateReport, withHold, type ReportRecord } from "./repository";
 import { privateAccountRef, readPrivateAccount } from "./reporter";
-import { findDuplicate, hasAutoSignal, hasMultiSignal, isAbusive, isCorroborated, p0Alert, raisePriority, slaHours, strongSignalOf, trustedFromFacts, type StrongSignal } from "./rules";
+import {
+  autoHideAllowed,
+  findDuplicate,
+  hasAutoSignal,
+  hasMultiSignal,
+  isAbusive,
+  isCorroborated,
+  multiPartners,
+  p0Alert,
+  provenFromFacts,
+  raisePriority,
+  slaHours,
+  strongSignalOf,
+  trustedFromFacts,
+  type SignalReport,
+  type StrongSignal,
+} from "./rules";
 import { conversationRef, reviewDocRef, resolveReportTarget, resolveSystemTarget, type ResolvedTarget, type SystemTargetInput } from "./targets";
 import { afterVisibilityChange, hideTarget, type VisibilityChange } from "./visibility";
 
@@ -30,7 +46,12 @@ import { afterVisibilityChange, hideTarget, type VisibilityChange } from "./visi
 // `report:{id}` legal hold (hidden at once on a strong signal); a message's conversation and a
 // reported account get the hold. Then: the strong-signal hide of an account or a message, the P0
 // alert, the acknowledgement mail, the agent's triage request. Without a strong signal nothing is
-// hidden: a lone P0 report from an unknown reporter only alerts (exit criterion).
+// hidden: a lone P0 report from an unknown reporter only alerts (exit criterion). Only proven
+// reporters make a "multi" signal, and a profile or a review is never hidden by a report, only by a
+// moderator's decision (owner, 2026-11-04, audit C-4; rules.ts provenFromFacts, AUTO_HIDE_TARGETS).
+
+/** Other reporters' accounts read to prove a "multi" signal (audit C-4), at most. */
+const MULTI_PROOF_LOOKUPS_MAX = 10;
 
 export interface ReportRequester {
   /** Signed-in reporter (the route checked the session), or null for a visitor. */
@@ -97,6 +118,7 @@ interface CommitInput {
   id: string;
   doc: ReportDoc;
   resolved: ResolvedTarget;
+  /** The strong signal that hides a listing target in the report's transaction. */
   signal?: StrongSignal;
   now: Date;
 }
@@ -174,7 +196,10 @@ async function commitReport({ id, doc, resolved, signal, now }: CommitInput): Pr
 interface AfterCommitInput {
   id: string;
   doc: ReportDoc;
+  /** The report's strong signal (P0 alert). */
   signal?: StrongSignal;
+  /** The signal hides the target (account, message): autoHideAllowed, or an authority order. */
+  hide: boolean;
   change: VisibilityChange | null;
   now: Date;
   /** Acknowledgement mail (art. 16(4)), when an address is known. */
@@ -183,11 +208,11 @@ interface AfterCommitInput {
 }
 
 /** Hide (account, message), P0 alert, acknowledgement, triage. Never throws: the report is stored. */
-async function afterCommit({ id, doc, signal, change, now, ack, triage }: AfterCommitInput): Promise<boolean> {
+async function afterCommit({ id, doc, signal, hide, change, now, ack, triage }: AfterCommitInput): Promise<boolean> {
   let hidden = change !== null;
   try {
     if (change) await afterVisibilityChange([change], now);
-    else if (signal && doc.target.type !== "listing") {
+    else if (signal && hide && doc.target.type !== "listing") {
       hidden = await hideTarget({ type: doc.target.type, id: doc.target.id }, signal, id, now);
       if (hidden) await updateReport(id, { hidden: true }, now);
     }
@@ -237,11 +262,13 @@ interface ReporterFacts {
   displayName: string | null;
   account: UserPrivateDoc | null;
   trusted: boolean;
+  /** Proven reporter (audit C-4): may make a "multi" signal. */
+  proven: boolean;
 }
 
 async function reporterFacts(input: CreateReportRequest, requester: ReportRequester, ai: AiConfig, now: Date): Promise<ReporterFacts> {
   if (!requester.uid) {
-    return { locale: requester.locale, ...(input.email ? { email: input.email } : {}), displayName: input.name ?? null, account: null, trusted: false };
+    return { locale: requester.locale, ...(input.email ? { email: input.email } : {}), displayName: input.name ?? null, account: null, trusted: false, proven: false };
   }
   const [user, account] = await Promise.all([getUserRecord(requester.uid), readPrivateAccount(requester.uid)]);
   // Art. 23: notices of an account suspended for manifestly unfounded reports are refused.
@@ -254,7 +281,25 @@ async function reporterFacts(input: CreateReportRequest, requester: ReportReques
     displayName: user?.displayName ?? null,
     account,
     trusted,
+    proven: provenFromFacts({ user, reporter: account?.reporter, now }),
   };
+}
+
+/**
+ * Marks the proven accounts among the "multi" partners of a report (audit C-4): reads the accounts
+ * one at a time, at most MULTI_PROOF_LOOKUPS_MAX, and stops at the first proven one (one is enough).
+ */
+async function withProof<T extends SignalReport>(partners: readonly T[], now: Date): Promise<T[]> {
+  const uids = [...new Set(partners.flatMap((partner) => (partner.uid ? [partner.uid] : [])))].slice(0, MULTI_PROOF_LOOKUPS_MAX);
+  let proven: string | undefined;
+  for (const uid of uids) {
+    const [user, account] = await Promise.all([getUserRecord(uid), readPrivateAccount(uid)]);
+    if (provenFromFacts({ user, reporter: account?.reporter, now })) {
+      proven = uid;
+      break;
+    }
+  }
+  return partners.map((partner) => ({ ...partner, proven: partner.uid !== undefined && partner.uid === proven }));
 }
 
 /**
@@ -280,20 +325,30 @@ export async function createReport(input: CreateReportRequest, requester: Report
   if (duplicate) return { response: responseOf(duplicate.id, duplicate.priority, true), created: false, hidden: false };
 
   // D11: another reporter on a distinct device and network corroborates the notice: one rank more
-  // urgent (never P0). The strong "multi" signal needs two accounts and a P0 reason (audit D1a-03).
-  const candidate = { ...(reporter.uid ? { uid: reporter.uid } : {}), deviceHash: device, ipPrefixHash: ipPrefix, createdAt: now };
+  // urgent (never P0). The strong "multi" signal needs two proven accounts and a P0 reason (audit
+  // D1a-03, C-4). The excluded reporters (a review's seller) count toward none of them: their
+  // reports are queued like any other.
+  const excluded = new Set(resolved.excludedReporters ?? []);
+  const counts = (uid: string | undefined) => uid === undefined || !excluded.has(uid);
+  const candidateCounts = counts(reporter.uid);
+  const candidate = { ...(reporter.uid ? { uid: reporter.uid } : {}), proven: reporter.proven, deviceHash: device, ipPrefixHash: ipPrefix, createdAt: now };
   const signalReport = (report: ReportRecord) => ({ ...report.reporter, createdAt: report.createdAt });
-  const userReports = open.filter((report) => report.source === "user");
-  const corroborated = isCorroborated(candidate, userReports.map(signalReport), now);
+  const userReports = open.filter((report) => report.source === "user" && counts(report.reporter.uid));
+  const corroborated = candidateCounts && isCorroborated(candidate, userReports.map(signalReport), now);
   const priority = corroborated ? raisePriority(reasonPriority) : reasonPriority;
 
   let signal: StrongSignal | undefined;
-  if (priority === "P0") {
-    const others = userReports.filter((report) => report.priority === "P0").map(signalReport);
-    const multi = options.multiSignal !== false && hasMultiSignal(candidate, others, now);
+  if (priority === "P0" && candidateCounts) {
+    let multi = false;
+    if (options.multiSignal !== false && reporter.proven && !reporter.trusted) {
+      const partners = multiPartners(candidate, userReports.filter((report) => report.priority === "P0").map(signalReport), now);
+      multi = partners.length > 0 && hasMultiSignal(candidate, await withProof(partners, now), now);
+    }
     const auto = !reporter.trusted && resolved.listing ? hasAutoSignal(await nsfwScores(resolved.listing), ai.reports.autoHideNsfwAt) : false;
     signal = strongSignalOf(priority, { trusted: reporter.trusted, auto, multi });
   }
+  // A profile or a review waits for a moderator (AUTO_HIDE_TARGETS): the signal stays on the report as a hint.
+  const hide = signal !== undefined && autoHideAllowed(target.type);
 
   const id = newReportId();
   const doc: ReportDoc = {
@@ -318,12 +373,13 @@ export async function createReport(input: CreateReportRequest, requester: Report
     updatedAt: now,
     purgeAt: reportPurgeAt(now),
   };
-  const { change } = await commitReport({ id, doc, resolved, ...(signal ? { signal } : {}), now });
-  logger.info({ reportId: id, target: target.type, priority, corroborated, signal: signal ?? null }, "report created");
+  const { change } = await commitReport({ id, doc, resolved, ...(signal && hide ? { signal } : {}), now });
+  logger.info({ reportId: id, target: target.type, priority, corroborated, signal: signal ?? null, hide }, "report created");
   const hidden = await afterCommit({
     id,
     doc,
     ...(signal ? { signal } : {}),
+    hide,
     change,
     now,
     // A visitor's typed name is never echoed in the mail (see decisions/notify.ts reporterAddress).
@@ -389,7 +445,8 @@ export async function createSystemReport(input: SystemReportInput): Promise<Syst
   const { change } = await commitReport({ id, doc, resolved, ...(signal ? { signal } : {}), now });
   logger.info({ reportId: id, target: target.type, priority: reason.priority, source: input.source }, "system report created");
   // Authority orders are decided by a human only: no agent triage. The agent's own reports skip it too (triage: false).
-  const hidden = await afterCommit({ id, doc, ...(signal ? { signal } : {}), change, now, triage: input.source === "system" && input.triage !== false });
+  // An authority order is a staff decision (D17): it hides any target type.
+  const hidden = await afterCommit({ id, doc, ...(signal ? { signal } : {}), hide: signal !== undefined, change, now, triage: input.source === "system" && input.triage !== false });
   return { reportId: id, duplicate: false, priority: reason.priority, hidden };
 }
 

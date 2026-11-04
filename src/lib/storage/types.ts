@@ -32,7 +32,7 @@ export interface ObjectHead {
 
 export interface PutOptions {
   contentType: string;
-  /** Cache-Control stored with the object (public media: long, immutable keys). */
+  /** Cache-Control stored with the object (public media: MEDIA_CACHE_CONTROL, a day). */
   cacheControl?: string;
 }
 

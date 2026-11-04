@@ -18,7 +18,7 @@ import { usePublicConfig } from "@/lib/config/client";
 import { createListing, listMine } from "@/lib/listings/client/api";
 import { loadProMe } from "@/lib/pro/client";
 import { daysUntil, formatRelativeDays } from "@/lib/listings/client/format";
-import { photoUrl } from "@/lib/listings/client/photo-url";
+import { ownerMediaBase, photoUrl } from "@/lib/listings/client/photo-url";
 import { wizardPath } from "@/lib/listings/client/routes";
 import { CategoryPicker } from "./category-picker";
 import { useCategoryLabels } from "./labels";
@@ -215,7 +215,7 @@ function DraftChoice({ drafts, full, onResume, onNew }: DraftChoiceProps) {
       </header>
       <ul className="flex flex-col gap-3">
         {drafts.slice(0, DRAFTS_SHOWN).map((draft) => {
-          const thumb = draft.thumb ? photoUrl(mediaBaseUrl, draft.id, draft.thumb.id, "s") : null;
+          const thumb = draft.thumb ? photoUrl(ownerMediaBase(draft, mediaBaseUrl), draft.id, draft.thumb.id, "s") : null;
           const title = draft.title.trim();
           const where = draft.categoryId ? (draft.subcategoryId ? labels.subcategory(draft.categoryId, draft.subcategoryId) : labels.category(draft.categoryId)) : null;
           return (

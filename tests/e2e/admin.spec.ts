@@ -72,7 +72,7 @@ async function seedHeldListing(): Promise<{ id: string; title: string }> {
     const metaPath = `${path.join(MEDIA_ROOT, "meta", ...key)}.json`;
     await Promise.all([mkdir(path.dirname(objectPath), { recursive: true }), mkdir(path.dirname(metaPath), { recursive: true })]);
     await writeFile(objectPath, body);
-    await writeFile(metaPath, JSON.stringify({ contentType: "image/webp", size: body.byteLength, cacheControl: "public, max-age=31536000, immutable", storedAt: new Date().toISOString() }));
+    await writeFile(metaPath, JSON.stringify({ contentType: "image/webp", size: body.byteLength, cacheControl: "public, max-age=86400", storedAt: new Date().toISOString() }));
   }
   const now = new Date();
   await firestore.collection("users").doc(uid).set({

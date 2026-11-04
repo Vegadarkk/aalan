@@ -277,6 +277,8 @@ export interface OwnerListingSummary {
   citySlug: string | null;
   thumb: ListingPhoto | null;
   photoCount: number;
+  /** Refused, removed or hidden: the photos left the media host, the owner reads them through OWNER_MEDIA_BASE (audit C-3). */
+  privatePhotos?: true;
   moderation: { state: ModerationState; flags: ModerationFlag[] };
   createdAt: string;
   updatedAt: string;
@@ -313,6 +315,8 @@ export interface OwnerListing {
   location: ListingLocationInput | null;
   /** Wizard order, processing status merged from `uploads`. */
   photos: OwnerPhoto[];
+  /** Refused, removed or hidden: the photos left the media host, the owner reads them through OWNER_MEDIA_BASE (audit C-3). */
+  privatePhotos?: true;
   contact: { showPhone: boolean; whatsapp: boolean };
   sensitiveDeclaration: { kind: SensitiveDeclarationKind; at: string } | null;
   /** Pro catalogue (lot 4): variants, or the stock of a listing without them. */

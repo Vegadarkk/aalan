@@ -3,9 +3,9 @@ import type { ListingRecord } from "@/lib/db/repositories/listings";
 import type { UploadRecord } from "@/lib/db/repositories/uploads";
 
 // purge-quarantine (hourly :20): stale signed/processing uploads expired with their objects,
-// rejected uploads' quarantine objects swept behind a cursor, removed listings' photos moved from
-// the public media bucket to the private one (scan behind a cursor, backstop in the document
-// purge), unattached documents past purgeAt deleted with their objects, attached ones pushed 30
+// rejected uploads' quarantine objects swept behind a cursor, removed, refused and hidden listings'
+// photos moved from the public media bucket to the private one (scans behind cursors, backstop in
+// the document purge; releaseUpload moves one back), unattached documents past purgeAt deleted with their objects, attached ones pushed 30
 // days on, legal holds (rechecked a day later) and removed listings (rechecked at the listing's
 // purgeAt) left alone, never read again before then. Repositories are mocked; a MemoryObjectStore
 // records the storage calls.
@@ -21,12 +21,14 @@ vi.mock("@/lib/db/repositories/listings", () => ({ getListings: vi.fn(async () =
 vi.mock("@/lib/db/repositories/profiles", () => ({ getUserRecord: vi.fn(async () => null) }));
 vi.mock("@/lib/db/repositories/pro-profiles", () => ({ getProProfile: vi.fn(async () => null) }));
 vi.mock("@/lib/db/repositories/users", () => ({ getUserPrivate: vi.fn(async () => null) }));
-vi.mock("@/lib/db/repositories/retention", () => ({ listListingsChangedBefore: vi.fn(async () => ({ listings: [], read: 0 })) }));
+vi.mock("@/lib/db/repositories/retention", () => ({ listListingsChangedBefore: vi.fn(async () => ({ listings: [], read: 0 })), listListingsHiddenBefore: vi.fn(async () => ({ listings: [], read: 0 })) }));
 vi.mock("@/lib/db/repositories/uploads", () => ({
   UPLOADS_BY_TARGET_LIMIT: 100,
   listUploadsByTarget: vi.fn(async () => []),
   readRetainedScanCursor: vi.fn(async () => null),
   writeRetainedScanCursor: vi.fn(async () => undefined),
+  readHiddenScanCursor: vi.fn(async () => null),
+  writeHiddenScanCursor: vi.fn(async () => undefined),
   listExpiredQuarantine: vi.fn(async () => []),
   listRejectedCreatedBetween: vi.fn(async () => []),
   readRejectedSweepCursor: vi.fn(async () => null),
@@ -43,7 +45,7 @@ const { getListings } = await import("@/lib/db/repositories/listings");
 const { getUserRecord } = await import("@/lib/db/repositories/profiles");
 const { getProProfile } = await import("@/lib/db/repositories/pro-profiles");
 const { getUserPrivate } = await import("@/lib/db/repositories/users");
-const { listListingsChangedBefore } = await import("@/lib/db/repositories/retention");
+const { listListingsChangedBefore, listListingsHiddenBefore } = await import("@/lib/db/repositories/retention");
 const { logger } = await import("@/lib/logging/logger");
 const { alert } = await import("@/lib/alert");
 const { isDegraded } = await import("@/lib/quota");
@@ -63,6 +65,7 @@ const {
   attachedUntil,
   isPublicPhoto,
   purgeQuarantine,
+  releaseUpload,
   retainedUntil,
 } = await import("@/worker/jobs/purge-quarantine");
 
@@ -92,7 +95,7 @@ function upload(id: string, overrides: Partial<UploadRecord> = {}): UploadRecord
 }
 
 function listing(overrides: Partial<ListingRecord> = {}): ListingRecord {
-  return { id: LISTING, status: "draft", photos: [], legalHold: [], ...overrides } as unknown as ListingRecord;
+  return { id: LISTING, status: "draft", photos: [], legalHold: [], moderation: { state: "auto_ok", score: 0, flags: [], openReports: 0 }, ...overrides } as unknown as ListingRecord;
 }
 
 function seedObjects(record: UploadRecord): void {
@@ -115,9 +118,11 @@ beforeEach(() => {
   vi.mocked(getUserPrivate).mockReset().mockResolvedValue(null);
   vi.mocked(repo.listUploadsByTarget).mockResolvedValue([]);
   vi.mocked(repo.readRetainedScanCursor).mockResolvedValue(null);
+  vi.mocked(repo.readHiddenScanCursor).mockResolvedValue(null);
   vi.mocked(repo.transitionUpload).mockImplementation(async (id: string) => ({ ok: true, upload: { id } as UploadRecord }));
   vi.mocked(repo.updateUpload).mockResolvedValue(undefined);
   vi.mocked(listListingsChangedBefore).mockReset().mockResolvedValue({ listings: [], read: 0 });
+  vi.mocked(listListingsHiddenBefore).mockReset().mockResolvedValue({ listings: [], read: 0 });
   vi.mocked(isDegraded).mockResolvedValue(false);
   vi.mocked(recordMediaBytes).mockClear();
   vi.mocked(logger.warn).mockClear();
@@ -375,7 +380,9 @@ describe("purge-quarantine: photos of removed listings leave the public bucket",
     vi.mocked(repo.listUploadsByTarget).mockResolvedValue([attached, unattached]);
 
     expect(await purgeQuarantine(NOW, { store })).toMatchObject({ retained: 2, failed: 0 });
-    expect(listListingsChangedBefore).toHaveBeenCalledWith(["removed"], new Date(NOW.getTime() - RETAINED_SCAN_LAG_MS), RETAINED_SCAN_BATCH, undefined);
+    // Refused listings too (audit C-3), and the hidden ones by their own scan.
+    expect(listListingsChangedBefore).toHaveBeenCalledWith(["rejected", "removed"], new Date(NOW.getTime() - RETAINED_SCAN_LAG_MS), RETAINED_SCAN_BATCH, undefined);
+    expect(listListingsHiddenBefore).toHaveBeenCalledWith(new Date(NOW.getTime() - RETAINED_SCAN_LAG_MS), RETAINED_SCAN_BATCH, undefined);
     expect(repo.listUploadsByTarget).toHaveBeenCalledWith(removed.id, ["ready", "rejected"]);
     expect(store.keys("media")).toEqual([]);
     expect(store.keys("private")).toEqual([privateKey(removed.id, "photo0000001", "l"), privateKey(removed.id, "photo0000001", "s"), privateKey(removed.id, "photo0000002", "l"), privateKey(removed.id, "photo0000002", "s")]);
@@ -567,6 +574,90 @@ describe("purge-quarantine: photos of removed listings leave the public bucket",
     expect(await purgeQuarantine(NOW, { store })).toMatchObject({ purged: 1, failed: 1 });
     // The job completes: the step alerts, since the worker's failed handler never sees it.
     expect(alert).toHaveBeenCalledExactlyOnceWith({ severity: "P2", title: "Tâche système en échec : purge-quarantine", body: expect.stringContaining("retained photos (FAILED_PRECONDITION)") });
+  });
+});
+
+describe("purge-quarantine: photos of refused and hidden listings (audit C-3)", () => {
+  const hiddenBy = { reportId: "report-1", signal: "trusted" as const, at: new Date(NOW.getTime() - 2 * 3_600_000) };
+
+  it("moves a refused listing's public photos to the private bucket like a removed one's", async () => {
+    const refused = removedListing("refusedl", { status: "rejected" });
+    const photo = upload("photo0000001", { status: "ready", targetId: refused.id });
+    seedVariants(refused.id, photo.id);
+    vi.mocked(listListingsChangedBefore).mockResolvedValueOnce(scanPage([refused]));
+    vi.mocked(repo.listUploadsByTarget).mockResolvedValue([photo]);
+    expect(await purgeQuarantine(NOW, { store })).toMatchObject({ retained: 1, failed: 0 });
+    expect(store.keys("media")).toEqual([]);
+    expect(store.keys("private")).toEqual([privateKey(refused.id, photo.id, "l"), privateKey(refused.id, photo.id, "s")]);
+    expect(repo.writeRetainedScanCursor).toHaveBeenCalledWith({ at: refused.updatedAt, id: refused.id }, NOW);
+  });
+
+  it("moves a hidden listing's photos, whatever its status, behind the hidden scan's own cursor (moderation.hiddenBy.at)", async () => {
+    const cursor = { at: new Date(NOW.getTime() - 86_400_000), id: "previous" };
+    vi.mocked(repo.readHiddenScanCursor).mockResolvedValue(cursor);
+    const hidden = listing({ id: "hiddenli", status: "published", updatedAt: new Date(NOW.getTime() - 3_600_000), moderation: { state: "auto_ok", score: 0, flags: [], openReports: 1, hiddenBy } } as Partial<ListingRecord>);
+    const photo = upload("photo0000001", { status: "ready", targetId: hidden.id });
+    seedVariants(hidden.id, photo.id);
+    vi.mocked(listListingsHiddenBefore).mockResolvedValueOnce({ listings: [hidden], read: 1, next: { at: hiddenBy.at, id: hidden.id } });
+    vi.mocked(repo.listUploadsByTarget).mockResolvedValue([photo]);
+
+    expect(await purgeQuarantine(NOW, { store })).toMatchObject({ retained: 1, failed: 0 });
+    expect(listListingsHiddenBefore).toHaveBeenCalledWith(new Date(NOW.getTime() - RETAINED_SCAN_LAG_MS), RETAINED_SCAN_BATCH, cursor);
+    expect(store.keys("media")).toEqual([]);
+    expect(store.opsFor("media", mediaKey(hidden.id, photo.id, "l"))).toEqual(["get", "delete"]);
+    expect(repo.writeHiddenScanCursor).toHaveBeenCalledWith({ at: hiddenBy.at, id: hidden.id }, NOW);
+    expect(repo.writeRetainedScanCursor).not.toHaveBeenCalled();
+  });
+
+  it("skips a listing the scan read that is back in public view, or purged (photos stay where they are)", async () => {
+    const shown = listing({ id: "shownagn", status: "published", updatedAt: new Date(NOW.getTime() - 3_600_000) } as Partial<ListingRecord>);
+    const purged = listing({ id: "purgedli", status: "purged", updatedAt: new Date(NOW.getTime() - 3_600_000), moderation: { state: "auto_ok", score: 0, flags: [], openReports: 0, hiddenBy } } as Partial<ListingRecord>);
+    seedVariants(shown.id, "photo0000001");
+    vi.mocked(listListingsHiddenBefore).mockResolvedValueOnce(scanPage([shown, purged]));
+    expect(await purgeQuarantine(NOW, { store })).toMatchObject({ retained: 0, failed: 0 });
+    expect(repo.listUploadsByTarget).not.toHaveBeenCalled();
+    expect(store.keys("media")).toHaveLength(2);
+    expect(repo.writeHiddenScanCursor).toHaveBeenCalledWith({ at: purged.updatedAt, id: purged.id }, NOW);
+  });
+
+  it("backstops a refused listing's public photo in the document purge, then keeps it with its listing (30 days)", async () => {
+    const refused = removedListing("refusedl", { status: "rejected", photos: [{ id: "photo0000001", w: 1, h: 1, blurhash: BLUR }] });
+    const photo = upload("photo0000001", { status: "ready", targetId: refused.id, purgeAt: new Date(NOW.getTime() - 1_000) });
+    seedVariants(refused.id, photo.id);
+    vi.mocked(repo.listPastPurge).mockResolvedValue([photo]);
+    vi.mocked(getListings).mockResolvedValue([refused]);
+    expect(await purgeQuarantine(NOW, { store })).toMatchObject({ retained: 1, extended: 1, failed: 0 });
+    expect(store.keys("media")).toEqual([]);
+    expect(repo.updateUpload).toHaveBeenCalledWith(photo.id, { purgeAt: attachedUntil(refused, NOW) }, NOW);
+  });
+});
+
+describe("releaseUpload: a photo back in public view", () => {
+  it("moves every variant from the private bucket to the media one with the media cache policy, then records it", async () => {
+    const photo = upload("photo0000001", { status: "ready", bucket: "private", variants: ["l", "m", "s"] });
+    seedVariants(LISTING, photo.id, "private", ["l", "m", "s"]);
+    const put = vi.spyOn(store, "put");
+    expect(await releaseUpload(store, photo, NOW)).toBe(true);
+    expect(store.keys("private")).toEqual([]);
+    expect(store.keys("media")).toEqual([mediaKey(LISTING, photo.id, "l"), mediaKey(LISTING, photo.id, "m"), mediaKey(LISTING, photo.id, "s")]);
+    for (const variant of ["l", "m", "s"]) expect(put).toHaveBeenCalledWith("media", mediaKey(LISTING, photo.id, variant), expect.anything(), { contentType: "image/webp", cacheControl: "public, max-age=86400" });
+    // Copy, check, and only then delete the private copy.
+    expect(store.opsFor("private", privateKey(LISTING, photo.id, "l"))).toEqual(["get", "delete"]);
+    expect(repo.transitionUpload).toHaveBeenCalledWith(photo.id, ["ready"], { bucket: "media", finalKey: `listings/${LISTING}/${photo.id}` }, NOW);
+  });
+
+  it("is idempotent (a rerun finds the public copy) and keeps the private copy when the public one does not check out", async () => {
+    const photo = upload("photo0000001", { status: "ready", bucket: "private" });
+    seedVariants(LISTING, photo.id, "media");
+    expect(await releaseUpload(store, photo, NOW)).toBe(true);
+    expect(store.calls.filter((call) => call.op === "put")).toEqual([]);
+
+    const other = upload("photo0000002", { status: "ready", bucket: "private" });
+    seedVariants(LISTING, other.id, "private");
+    vi.spyOn(store, "put").mockRejectedValueOnce(new Error("R2 500"));
+    await expect(releaseUpload(store, other, NOW)).rejects.toThrow("R2 500");
+    expect(store.has("private", privateKey(LISTING, other.id, "l"))).toBe(true);
+    expect(repo.transitionUpload).not.toHaveBeenCalledWith(other.id, expect.anything(), expect.anything(), NOW);
   });
 });
 

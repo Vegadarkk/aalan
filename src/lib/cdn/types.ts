@@ -1,8 +1,9 @@
 import "server-only";
 
 // CDN cache purge adapter (CLAUDE.md "Adapters"; audit A4-04): a deleted or moved photo answers
-// 404 at R2 at once, but the edge may keep serving a copy cached before, up to the object's max-age
-// (MEDIA_CACHE_CONTROL: one year, immutable). Implementations: cloudflare.ts (zone purge API by
+// 404 at R2 at once, but the edge may keep serving a copy cached before, for a day at most
+// (infra/cloudflare/cache-rules.json; MEDIA_CACHE_CONTROL is a day too, a year on objects stored
+// before 2026-11-04). Implementations: cloudflare.ts (zone purge API by
 // URL), memory.ts (tests). Browser caches cannot be purged by anyone: only the edge is.
 
 export interface CdnPurger {

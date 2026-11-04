@@ -2,9 +2,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 // Strong signals and visibility (design D11, D13 restore, D15) against the Firebase emulators. Exit
 // criterion of phase 5: a lone false P0 hides nothing. A strong signal (trusted reporter, trusted
-// flagger, distinct reporters, nudity score, authority) hides at once: the listing leaves the public
-// page and the index (outbox), an account is restricted with its listings, a message is handed to
-// the messaging lot. Then the decision helpers: closeReportsTx, recordReporterOutcomes (art. 23).
+// flagger, distinct proven reporters, nudity score, authority) hides at once: the listing leaves the
+// public page and the index (outbox), a message is handed to the messaging lot. A profile is never
+// hidden by a report (audit C-4): only hideTarget (the restriction helper) restricts it with its
+// listings. Then the decision helpers: closeReportsTx, recordReporterOutcomes (art. 23).
 
 import type * as Turnstile from "@/lib/security/turnstile";
 
@@ -29,11 +30,11 @@ import { db } from "@/lib/firebase/admin";
 import { getPublicProfile, getPublishedBySlugId } from "@/lib/listings/public";
 import { hideMessage, unhideMessage } from "@/lib/messaging";
 import * as limiter from "@/lib/rate-limit/limiter";
-import { closeReportsTx, createSystemReport, getReport, isTrustedReporter, openReportsForTarget, recordReporterOutcomes, targetKey, unhideTarget } from "@/lib/reports";
+import { closeReportsTx, createSystemReport, getReport, hideTarget, isTrustedReporter, openReportsForTarget, recordReporterOutcomes, targetKey, unhideTarget } from "@/lib/reports";
 import { setAiConfigForTests } from "@/lib/ai/config";
 import { setTriageRequester } from "@/lib/reports/hooks";
 import { notifySearchIndex } from "@/lib/search/queue";
-import { EXPLANATION, listingNotice, makeTrusted, member, publicIdOf, publishedListing, report, seedConversation, visitor, type Member } from "./helpers";
+import { EXPLANATION, listingNotice, makeProven, makeTrusted, member, publicIdOf, publishedListing, report, seedConversation, visitor, type Member } from "./helpers";
 
 const alertMock = vi.mocked(alert);
 
@@ -84,8 +85,8 @@ describe("a lone P0 hides nothing (exit criterion)", () => {
   it("two P0 reports from one network are not distinct reporters", async () => {
     const { id } = await publishedListing();
     const network = ownNetwork();
-    await report(listingNotice(id, "minors"), { as: await member(), headers: network });
-    const second = await report(listingNotice(id, "minors"), { as: await member(), headers: network });
+    await report(listingNotice(id, "minors"), { as: await makeProven(await member()), headers: network });
+    const second = await report(listingNotice(id, "minors"), { as: await makeProven(await member()), headers: network });
     expect((await getReport(second.body.reportId))!.hidden).toBe(false);
     expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
   });
@@ -101,10 +102,31 @@ describe("a lone P0 hides nothing (exit criterion)", () => {
 });
 
 describe("strong signals hide a listing", () => {
-  it("multi: two distinct accounts (uid, device, network) hide it from the page and the index", async () => {
+  it("two fresh or unproven accounts no longer hide it: stored, P0, queued and alerted (audit C-4)", async () => {
+    const { id } = await publishedListing();
+    const fresh = await report(listingNotice(id, "terrorism"), { as: await member({ createdAt: new Date() }), headers: ownNetwork() });
+    // 30 days old but no proof (no verified phone, listing, review or founded report).
+    const unproven = await report(listingNotice(id, "terrorism"), { as: await member(), headers: ownNetwork() });
+    // Proven, but its only partners are not.
+    const proven = await report(listingNotice(id, "terrorism"), { as: await makeProven(await member()), headers: ownNetwork() });
+    expect([fresh.status, unproven.status, proven.status]).toEqual([201, 201, 201]);
+    for (const result of [fresh, unproven, proven]) {
+      const stored = (await getReport(result.body.reportId))!;
+      expect(stored).toMatchObject({ priority: "P0", status: "open", hidden: false });
+      expect(stored.strongSignal).toBeUndefined();
+    }
+    const listing = (await getListing(id))!;
+    expect(listing.moderation.hiddenBy).toBeUndefined();
+    expect(listing.moderation.openReports).toBe(3);
+    expect(await getPublishedBySlugId(listing.slugId!)).not.toBeNull();
+    expect(alertMock).toHaveBeenCalledTimes(3);
+    expect(alertMock.mock.calls.at(-1)![0].body).toContain("Signal fort : non");
+  });
+
+  it("multi: two distinct proven accounts (uid, device, network) hide it from the page and the index", async () => {
     const { id, seller } = await publishedListing();
-    const first = await report(listingNotice(id, "terrorism"), { as: await member(), headers: ownNetwork() });
-    const second = await report(listingNotice(id, "terrorism"), { as: await member(), headers: ownNetwork() });
+    const first = await report(listingNotice(id, "terrorism"), { as: await makeProven(await member()), headers: ownNetwork() });
+    const second = await report(listingNotice(id, "terrorism"), { as: await makeProven(await member()), headers: ownNetwork() });
     expect([first.status, second.status]).toEqual([201, 201]);
     expect((await getReport(first.body.reportId))!.hidden).toBe(false);
     const stored = (await getReport(second.body.reportId))!;
@@ -155,7 +177,7 @@ describe("strong signals hide a listing", () => {
     const anonymous = (reasonId: string) => listingNotice(id, reasonId, { name: "Visiteur Corrobore", email: `corrobore-${reasonId}@example.com` });
     const guest = await report(listingNotice(id, "threat"), { as: visitor(), headers: ownNetwork() });
     expect(guest.body.priority).toBe("P0");
-    const account = await report(listingNotice(id, "threat"), { as: await member(), headers: ownNetwork() });
+    const account = await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
     expect((await getReport(account.body.reportId))!).toMatchObject({ priority: "P0", hidden: false });
     expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
 
@@ -179,8 +201,8 @@ describe("strong signals hide a listing", () => {
     const actual = await vi.importActual<typeof limiter>("@/lib/rate-limit/limiter");
     vi.mocked(limiter.consumeLimit).mockImplementation(async (id, key, points) => (id.startsWith("report.p0.") ? { ok: false, reason: "unavailable" } : actual.consumeLimit(id, key, points)));
     const { id } = await publishedListing();
-    await report(listingNotice(id, "threat"), { as: await member(), headers: ownNetwork() });
-    const second = await report(listingNotice(id, "threat"), { as: await member(), headers: ownNetwork() });
+    await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
+    const second = await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
     expect(second.status).toBe(201);
     expect((await getReport(second.body.reportId))!.hidden).toBe(false);
     expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
@@ -217,14 +239,34 @@ describe("strong signals hide a listing", () => {
 });
 
 describe("strong signals on accounts and messages", () => {
-  it("restricts an account and hides its listings; unhideTarget restores both", async () => {
+  it("never hides a profile: trusted and two proven P0 reports go to the queue, the account stays active (audit C-4)", async () => {
     const { id, seller } = await publishedListing();
+    const publicId = await publicIdOf(seller.uid);
+    const notice = { target: { type: "user", id: publicId }, reasonId: "threat", explanation: EXPLANATION, goodFaith: true };
     const trusted = await member();
     await makeTrusted(trusted);
+    const byTrusted = await report(notice, { as: trusted, headers: ownNetwork() });
+    const first = await report(notice, { as: await makeProven(await member()), headers: ownNetwork() });
+    const second = await report(notice, { as: await makeProven(await member()), headers: ownNetwork() });
+    expect([byTrusted.status, first.status, second.status]).toEqual([201, 201, 201]);
+    // The signal stays on the report as a hint for the moderator; nothing is hidden.
+    expect((await getReport(byTrusted.body.reportId))!).toMatchObject({ priority: "P0", status: "open", strongSignal: "trusted", hidden: false });
+    expect((await getReport(second.body.reportId))!).toMatchObject({ priority: "P0", status: "open", strongSignal: "multi", hidden: false });
+    expect((await db().collection(COLLECTIONS.users).doc(seller.uid).get()).get("status")).toBe("active");
+    expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
+    expect((await getPublicProfile(publicId))?.listings.map((card) => card.id)).toContain(id);
+    expect(await auditActions(seller.uid)).not.toContain("user.restrict");
+    expect(alertMock).toHaveBeenCalledTimes(3);
+    expect(alertMock.mock.calls.at(-1)![0].body).toContain("Signal fort : oui (multi)");
+    expect(alertMock.mock.calls.at(-1)![0].body).toContain("Contenu masqué : non");
+  });
+
+  it("hideTarget restricts an account and hides its listings; unhideTarget restores both", async () => {
+    const { id, seller } = await publishedListing();
     const publicId = await publicIdOf(seller.uid);
-    const result = await report({ target: { type: "user", id: publicId }, reasonId: "threat", explanation: EXPLANATION, goodFaith: true }, { as: trusted, headers: ownNetwork() });
+    const result = await report({ target: { type: "user", id: publicId }, reasonId: "threat", explanation: EXPLANATION, goodFaith: true }, { as: await member(), headers: ownNetwork() });
     expect(result.status).toBe(201);
-    expect((await getReport(result.body.reportId))!).toMatchObject({ strongSignal: "trusted", hidden: true });
+    expect(await hideTarget({ type: "user", id: seller.uid }, "trusted", result.body.reportId)).toBe(true);
     const account = await db().collection(COLLECTIONS.users).doc(seller.uid).get();
     expect(account.get("status")).toBe("restricted");
     expect((await getListing(id))!.moderation.hiddenBy).toMatchObject({ reportId: result.body.reportId, signal: "trusted" });

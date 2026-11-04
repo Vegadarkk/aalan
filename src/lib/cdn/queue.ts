@@ -9,7 +9,8 @@ import { z } from "@/lib/zod";
 import { cdnPurger, isCdnPurgeConfigured, mediaPurgeUrls, PURGE_BATCH } from "./index";
 
 // Queue "cdn" on valkey-queue (audit A4-04): every deletion from the public media bucket (a photo
-// deleted, rejected, moved to the private bucket with its removed listing, purged with it; a
+// deleted, rejected, moved to the private bucket with its removed, refused or hidden listing,
+// purged with it; a
 // replaced Pro logo) asks for its URL to leave the edge cache, after the object is gone (R2 is
 // strongly consistent: the next edge fetch gets the 404). The worker purges one job at a time
 // (src/worker/jobs/cdn-purge.ts), with retries over about eight hours: a Cloudflare outage or a

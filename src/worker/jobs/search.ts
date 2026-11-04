@@ -2,6 +2,7 @@ import { UnrecoverableError, type Job } from "bullmq";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
+import { enqueueListingPhotoSync } from "@/lib/media/photo-sync";
 import { consume, isDegraded } from "@/lib/quota";
 import { boostJobSchema, expireBoost } from "@/lib/search/boosts";
 import { searchEngine } from "@/lib/search/engine";
@@ -10,7 +11,10 @@ import { EXPIRE_BOOST_JOB, INDEX_LISTING_JOB, OUTBOX_POLL_JOB, enqueueIndexJobs,
 import { SearchUnavailableError } from "@/lib/search/types";
 
 // Consumer of the "search" queue (design D9), concurrency 1: the engine's only writer.
-//   index-listing {id, force?}  one listing from its outbox entry (forced: from the listing alone)
+//   index-listing {id, force?}  one listing from its outbox entry (forced: from the listing alone);
+//                               an entry indexed also queues the listing's photo sync (media queue,
+//                               audit C-3: photos of a refused or hidden listing go private, back
+//                               when it returns to public view)
 //   outbox-poll                 every 60 s (job scheduler): oldest entries -> index-listing jobs, lag alert
 //   expire-boost {id, until}    delayed, end of an À la Une period: outbox entry, then indexed here
 // Plus the onSnapshot watch on searchOutbox (lane 2), started by src/worker/index.ts.
@@ -104,6 +108,19 @@ function indexed(id: string, outcome: IndexOutcome): IndexOutcome {
   return outcome;
 }
 
+/**
+ * Queues the photo sync of a listing just indexed: every status or visibility change that writes an
+ * outbox entry passes here, whichever module made it. Never fails the index job (the hourly
+ * purge-quarantine scan backs the hiding direction up).
+ */
+async function queuePhotoSync(id: string, version: number | null): Promise<void> {
+  try {
+    await enqueueListingPhotoSync(id, version);
+  } catch (error) {
+    logger.warn({ listingId: id, err: (error as Error).message }, "listing photo sync not queued");
+  }
+}
+
 /** The poll dispatches only to an engine that answers (an outage would turn each entry into failing jobs). */
 async function engineAnswers(): Promise<boolean> {
   if (Date.now() < engineDownUntil) return false;
@@ -162,7 +179,10 @@ export async function processSearchJob(job: Pick<Job, "name" | "data">): Promise
       const data = indexJobSchema.safeParse(job.data);
       if (!data.success) throw new UnrecoverableError("invalid index-listing job");
       const { id, force } = data.data;
-      return indexed(id, await guarded(() => indexListing(id, { force: force === true })));
+      const outcome = indexed(id, await guarded(() => indexListing(id, { force: force === true })));
+      // A forced pass (nightly reconciliation, reindex) changed nothing about the listing itself.
+      if (!force && outcome.action !== "none") await queuePhotoSync(id, outcome.version);
+      return outcome;
     }
     case OUTBOX_POLL_JOB:
       return poll();

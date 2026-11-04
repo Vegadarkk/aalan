@@ -17,7 +17,7 @@ import { isolate } from "@/lib/i18n/bidi";
 import type { OwnerAction } from "@/lib/listings/client/api";
 import { blurhashDataUrl } from "@/lib/listings/client/blurhash";
 import { daysUntil, formatPrice, formatRelativeDays } from "@/lib/listings/client/format";
-import { photoUrl } from "@/lib/listings/client/photo-url";
+import { ownerMediaBase, photoUrl } from "@/lib/listings/client/photo-url";
 import { wizardPath } from "@/lib/listings/client/routes";
 import { cn } from "@/lib/utils";
 import { primaryAction } from "./buckets";
@@ -71,7 +71,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
   const locale = useLocale() as Locale;
   const city = listing.citySlug ? cityBySlug(listing.citySlug) : undefined;
   const stockKind = catalogueKind(listing.subcategoryId ? subcategoryById(listing.subcategoryId) : undefined);
-  const thumb = listing.thumb ? photoUrl(mediaBaseUrl, listing.id, listing.thumb.id, "s") : null;
+  const thumb = listing.thumb ? photoUrl(ownerMediaBase(listing, mediaBaseUrl), listing.id, listing.thumb.id, "s") : null;
   const placeholder = blurhashDataUrl(listing.thumb?.blurhash);
   const title = listing.title || t("untitled");
   // Inside translated labels the seller's title keeps its own direction (French title, Arabic UI).

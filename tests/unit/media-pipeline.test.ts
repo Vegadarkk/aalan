@@ -64,6 +64,7 @@ vi.mock("@/lib/db/repositories/uploads", () => ({
     },
   ),
 }));
+vi.mock("@/lib/media/photo-sync", () => ({ enqueueListingPhotoSync: vi.fn(async () => true) }));
 vi.mock("@/lib/db/repositories/listings", () => ({
   getListing: vi.fn(async (id: string) => structuredClone(fake.listings.get(id) ?? null)),
 }));
@@ -79,6 +80,7 @@ const { recordModerationDecision } = await import("@/lib/db/repositories/moderat
 const { recordMediaBytes } = await import("@/lib/uploads/storage-gauge");
 const { MEDIA_CACHE_CONTROL, MEDIA_CONTENT_TYPE } = await import("@/lib/media/urls");
 const { MAX_UPLOAD_BYTES } = await import("@/lib/contracts/media");
+const { enqueueListingPhotoSync } = await import("@/lib/media/photo-sync");
 
 const LISTING_ID = "abcdefgh";
 const NOW = new Date("2026-10-16T10:00:00Z");
@@ -119,7 +121,7 @@ function upload(overrides: Partial<UploadRecord> = {}): UploadRecord {
 }
 
 function listing(overrides: Partial<ListingRecord> = {}): void {
-  fake.listings.set(overrides.id ?? LISTING_ID, { id: LISTING_ID, ownerUid: "owner-1", status: "draft", sellerType: "individual", photos: [], legalHold: [], ...overrides });
+  fake.listings.set(overrides.id ?? LISTING_ID, { id: LISTING_ID, ownerUid: "owner-1", status: "draft", sellerType: "individual", photos: [], legalHold: [], moderation: { state: "auto_ok", score: 0, flags: [], openReports: 0 }, ...overrides });
 }
 
 const photo = (id: string): ListingPhoto => ({ id, w: 100, h: 100, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" });
@@ -218,7 +220,7 @@ describe("processUpload: happy path", () => {
     expect(recordModerationDecision).not.toHaveBeenCalled();
   });
 
-  it("stores the variants with the media type and the immutable cache policy", async () => {
+  it("stores the variants with the media type and the media cache policy (a day)", async () => {
     const record = upload();
     seed(record, await plainJpeg());
     const puts: { key: string; contentType: string; cacheControl?: string }[] = [];
@@ -245,6 +247,26 @@ describe("processUpload: happy path", () => {
       expect(body.includes("<?php")).toBe(false);
       expect(body.includes("PK\u0003\u0004", 0, "latin1")).toBe(false);
     }
+  });
+
+  it("queues the photo sync of a refused or hidden listing it adds a photo to (its photos are private, audit C-3), not of a draft", async () => {
+    vi.mocked(enqueueListingPhotoSync).mockClear();
+    const draft = upload();
+    seed(draft, await plainJpeg());
+    expect(await processUpload(draft.id, { store, classifier: clean() })).toMatchObject({ status: "ready" });
+    expect(enqueueListingPhotoSync).not.toHaveBeenCalled();
+    listing({ status: "rejected" });
+    const refused = upload();
+    seed(refused, await plainJpeg());
+    expect(await processUpload(refused.id, { store, classifier: clean() })).toMatchObject({ status: "ready" });
+    expect(enqueueListingPhotoSync).toHaveBeenCalledExactlyOnceWith(LISTING_ID);
+    listing({ status: "published", moderation: { state: "auto_ok", score: 0, flags: [], openReports: 1, hiddenBy: { reportId: "r1", signal: "trusted", at: NOW } } });
+    const hidden = upload();
+    seed(hidden, await plainJpeg());
+    // A queue failure is logged: the photo is ready all the same (the hourly scan moves it).
+    vi.mocked(enqueueListingPhotoSync).mockRejectedValueOnce(new Error("valkey down"));
+    expect(await processUpload(hidden.id, { store, classifier: clean() })).toMatchObject({ status: "ready" });
+    expect(enqueueListingPhotoSync).toHaveBeenCalledTimes(2);
   });
 
   it("does not attach to a live listing (the owner's PATCH re-screens it) but still answers ready", async () => {

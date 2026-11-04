@@ -15,6 +15,7 @@ vi.mock("@/lib/firebase/admin", () => ({ db: vi.fn() }));
 vi.mock("@/lib/search/indexer", () => ({ OUTBOX_POLL_LIMIT: 200, indexListing: vi.fn(async () => ({ acked: true })), processOutbox: vi.fn(async () => ({ pending: 0, lagSeconds: 0, alerted: false })) }));
 vi.mock("@/lib/search/boosts", async (importOriginal) => ({ ...(await importOriginal<typeof Boosts>()), expireBoost: vi.fn(async () => true) }));
 vi.mock("@/lib/search/queue", async (importOriginal) => ({ ...(await importOriginal<typeof Queue>()), enqueueIndexJobs: vi.fn(async () => undefined) }));
+vi.mock("@/lib/media/photo-sync", () => ({ enqueueListingPhotoSync: vi.fn(async () => true) }));
 const ensureReady = vi.fn<() => Promise<{ created: boolean; settingsUpdated: boolean }>>(async () => ({ created: false, settingsUpdated: false }));
 const healthy = vi.fn(async () => true);
 const engineState = { throwOnAccess: false };
@@ -30,6 +31,7 @@ const { indexListing, processOutbox } = await import("@/lib/search/indexer");
 const { expireBoost } = await import("@/lib/search/boosts");
 const { enqueueIndexJobs } = await import("@/lib/search/queue");
 const { logger } = await import("@/lib/logging/logger");
+const { enqueueListingPhotoSync } = await import("@/lib/media/photo-sync");
 const jobs = await import("@/worker/jobs/search");
 
 beforeEach(() => {
@@ -57,6 +59,29 @@ describe("processSearchJob", () => {
     expect(ensureReady).toHaveBeenCalledTimes(1);
     expect(indexListing).toHaveBeenNthCalledWith(1, "abcdefgh", { force: false });
     expect(indexListing).toHaveBeenNthCalledWith(2, "bcdefghj", { force: true });
+  });
+
+  it("index-listing: queues the listing's photo sync after an entry is indexed (audit C-3), never after a forced or empty pass", async () => {
+    vi.mocked(enqueueListingPhotoSync).mockClear();
+    const outcome = { id: "abcdefgh", acked: true, pending: false, passes: 1 };
+    vi.mocked(indexListing).mockResolvedValueOnce({ ...outcome, action: "upsert", version: 4 });
+    await jobs.processSearchJob({ name: "index-listing", data: { id: "abcdefgh" } });
+    vi.mocked(indexListing).mockResolvedValueOnce({ ...outcome, action: "remove", version: null });
+    await jobs.processSearchJob({ name: "index-listing", data: { id: "abcdefgh" } });
+    expect(vi.mocked(enqueueListingPhotoSync).mock.calls).toEqual([
+      ["abcdefgh", 4],
+      ["abcdefgh", null],
+    ]);
+    vi.mocked(indexListing).mockResolvedValueOnce({ ...outcome, action: "none", version: null });
+    await jobs.processSearchJob({ name: "index-listing", data: { id: "abcdefgh" } });
+    vi.mocked(indexListing).mockResolvedValueOnce({ ...outcome, action: "upsert", version: 5 });
+    await jobs.processSearchJob({ name: "index-listing", data: { id: "abcdefgh", force: true } });
+    expect(enqueueListingPhotoSync).toHaveBeenCalledTimes(2);
+    // A queue failure is logged; the index job still succeeds.
+    vi.mocked(enqueueListingPhotoSync).mockRejectedValueOnce(new Error("valkey down"));
+    vi.mocked(indexListing).mockResolvedValueOnce({ ...outcome, action: "upsert", version: 6 });
+    await expect(jobs.processSearchJob({ name: "index-listing", data: { id: "abcdefgh" } })).resolves.toMatchObject({ action: "upsert" });
+    expect(logger.warn).toHaveBeenCalledWith({ listingId: "abcdefgh", err: "valkey down" }, "listing photo sync not queued");
   });
 
   it("rejects malformed and unknown jobs without retries", async () => {

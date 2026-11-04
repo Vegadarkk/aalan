@@ -6,8 +6,15 @@ import { mediaBaseUrl } from "@/lib/storage/keys";
 // (uploadIdSchema, LISTING_ID_PATTERN) and checked again by every ObjectStore (assertObjectKey).
 
 export const MEDIA_CONTENT_TYPE = "image/webp";
-/** Variant keys never change (photoId = uploadId): cache for a year, immutable. */
-export const MEDIA_CACHE_CONTROL = "public, max-age=31536000, immutable";
+/**
+ * Browser cache of a variant (audit C-3): one day, so a takedown (photo deleted, listing refused,
+ * hidden or removed: its variants leave the media bucket) reaches browsers within a day. The keys
+ * never change (photoId = uploadId), but `immutable` and a year would keep a taken-down photo on
+ * screen. The edge keeps a copy one day at most (infra/cloudflare/cache-rules.json) and every
+ * DELETE in the media bucket purges its URL (src/lib/cdn). Objects stored before this change keep
+ * their year-long metadata: the edge purge covers them, browsers that already hold one do not.
+ */
+export const MEDIA_CACHE_CONTROL = "public, max-age=86400";
 
 type MediaEnv = NonNullable<Parameters<typeof mediaBaseUrl>[0]>;
 
@@ -22,13 +29,15 @@ export function listingMediaPrefix(listingId: string): string {
 }
 
 /**
- * Prefix of a removed listing's photos in the private bucket (never public). purge-quarantine
- * moves them there, keeping the rest of the key; retention-purge deletes them with the listing
- * (removal + 12 months). No lifecycle rule may cover it: a legal hold extends the retention.
+ * Prefix of the photos kept off the media host in the private bucket (never public): a removed,
+ * refused or hidden listing's (uploads/policy.ts photosArePrivate). The worker moves them there,
+ * keeping the rest of the key, and back when a refused or hidden listing returns to public view;
+ * retention-purge deletes them with the listing (removal + 12 months). No lifecycle rule may cover
+ * it: a legal hold extends the retention.
  */
 export const RETAINED_MEDIA_PREFIX = "removed/";
 
-/** Buckets that hold photo variants: `media` (public) or `private` (a removed listing's). */
+/** Buckets that hold photo variants: `media` (public) or `private` (a removed, refused or hidden listing's). */
 export type PhotoBucket = "media" | "private";
 
 /** `removed/listings/{listingId}/{photoId}-{variant}.webp` in the private bucket. */

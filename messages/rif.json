@@ -4513,6 +4513,8 @@
     },
     "filters": {
       "label": "Sfeṛ timeslayin",
+      "search": "Arezzu deg timeslayin nnec",
+      "searchPlaceholder": "Isem niɣ annonce",
       "unread": "Ur ttwaɣrent ca",
       "listing": "Annonce n timeslayin",
       "allListings": "Akk annonces",

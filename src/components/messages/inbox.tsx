@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { AppWindow, Ban, CloudOff, Lock, MailOpen, RefreshCw, ShieldAlert, UserX } from "lucide-react";
+import { AppWindow, Ban, CloudOff, Lock, MailOpen, RefreshCw, Search, ShieldAlert, UserX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { Select } from "@/components/post/controls/select";
 import { Button } from "@/components/ui/button";
+import { inputClassName } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
@@ -167,12 +168,39 @@ function useOnScreen(target: RefObject<HTMLElement | null>, active: boolean): bo
   return visible;
 }
 
-/** « Non lues » and the listing picker, under the views. The picker shows from two listings on. */
-function InboxFilters({ rows, filter, onChange }: { rows: readonly ConversationView[]; filter: InboxFilter; onChange: (filter: InboxFilter) => void }) {
+/** The words field shows from this many loaded rows (or with more to load): a short list needs none. */
+export const SEARCH_FROM = 5;
+
+/**
+ * « Non lues » and the listing picker, under the views. The picker shows from two listings on; the
+ * words field (name or listing, audit zone 5 n°21) on a longer list.
+ */
+function InboxFilters({ rows, filter, searchable, onChange }: { rows: readonly ConversationView[]; filter: InboxFilter; searchable: boolean; onChange: (filter: InboxFilter) => void }) {
   const t = useTranslations("Messaging.filters");
   const choices = listingChoices(rows);
   const unread = unreadConversations(rows);
   return (
+    <div className="flex min-w-0 flex-col gap-2">
+      {searchable ? (
+        <div className="relative flex items-center">
+          <label htmlFor="inbox-search" className="sr-only">
+            {t("search")}
+          </label>
+          <Search className="pointer-events-none absolute start-3 size-4 text-foreground-muted" aria-hidden="true" />
+          <input
+            id="inbox-search"
+            type="search"
+            dir="auto"
+            autoComplete="off"
+            enterKeyHint="search"
+            value={filter.query ?? ""}
+            onChange={(event) => onChange({ ...filter, query: event.target.value })}
+            placeholder={t("searchPlaceholder")}
+            data-testid="filter-search"
+            className={cn(inputClassName, "h-9 rounded-full bg-surface-muted ps-9 text-base focus-visible:bg-surface max-sm:h-11 sm:text-sm")}
+          />
+        </div>
+      ) : null}
     <div role="group" aria-label={t("label")} data-testid="inbox-filters" className="flex min-w-0 items-center gap-2">
       <button
         type="button"
@@ -209,6 +237,7 @@ function InboxFilters({ rows, filter, onChange }: { rows: readonly ConversationV
           </Select>
         </div>
       ) : null}
+    </div>
     </div>
   );
 }
@@ -259,7 +288,9 @@ export function Inbox({ selected }: { selected: string | null }) {
             </Link>
           ))}
         </nav>
-        {inbox.kind === "ready" && inbox.rows.length > 0 ? <InboxFilters rows={inbox.rows} filter={filter} onChange={setFilter} /> : null}
+        {inbox.kind === "ready" && inbox.rows.length > 0 ? (
+          <InboxFilters rows={inbox.rows} filter={filter} searchable={inbox.rows.length >= SEARCH_FROM || Boolean(inbox.next) || Boolean(filter.query)} onChange={setFilter} />
+        ) : null}
         {/* One live region for both notices: a busy tab is not offline (audit zone 5 n°7). */}
         <div role="status" className="empty:hidden">
           {live.status === "busy" ? (
@@ -335,7 +366,7 @@ export function Inbox({ selected }: { selected: string | null }) {
               </ul>
             ) : inbox.rows.length > 0 && !inbox.next ? (
               <EmptyState
-                title={filter.unread && !filter.listingId ? t("filteredUnreadTitle") : t("filteredTitle")}
+                title={filter.unread && !filter.listingId && !filter.query?.trim() ? t("filteredUnreadTitle") : t("filteredTitle")}
                 action={
                   <Button type="button" variant="outline" onClick={() => setFilter(NO_FILTER)}>
                     {t("showAll")}

@@ -4513,6 +4513,8 @@
     },
     "filters": {
       "label": "تصفية المحادثات",
+      "search": "ابحث في محادثاتك",
+      "searchPlaceholder": "اسم أو إعلان",
       "unread": "غير مقروءة",
       "listing": "إعلان المحادثات",
       "allListings": "كل الإعلانات",

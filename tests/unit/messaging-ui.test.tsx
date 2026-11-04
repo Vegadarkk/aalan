@@ -192,6 +192,24 @@ describe("inbox filters (audit §7)", () => {
     expect(filterRows(rows, { unread: true, listingId: null }, cid(2)).map((item) => item.cid)).toEqual([cid(1), cid(2), cid(3)]);
   });
 
+  it("finds words in the name or the title, without accents nor case (audit zone 5 n°21)", () => {
+    const named = [
+      row(1, 500, { counterpart: { publicId: "abcdefghjk", displayName: "Élodie Benali" }, listing: { title: "Vélo de route", price: 900, isDonation: false, photo: null } }),
+      row(2, 400, { counterpart: { publicId: "abcdefghjm", displayName: "Karim" }, listing: { title: "Vélo de route", price: 900, isDonation: false, photo: null } }),
+      row(3, 300, { unread: 1, counterpart: { publicId: "abcdefghjn", displayName: "يوسف" }, listing: { title: "Table basse", price: 200, isDonation: false, photo: null } }),
+    ];
+    const found = (query: string, filter: Partial<typeof NO_FILTER> = {}, selected: string | null = null) => filterRows(named, { ...NO_FILTER, ...filter, query }, selected).map((item) => item.cid);
+    expect(found("   ")).toEqual([cid(1), cid(2), cid(3)]);
+    expect(found("ELODIE")).toEqual([cid(1)]);
+    expect(found("route velo")).toEqual([cid(1), cid(2)]);
+    expect(found("velo karim")).toEqual([cid(2)]);
+    expect(found("يُوسف")).toEqual([cid(3)]);
+    expect(found("table", { unread: true })).toEqual([cid(3)]);
+    // The words narrow the open conversation too.
+    expect(found("karim", { unread: true }, cid(1))).toEqual([]);
+    expect(found("elodie", { unread: true }, cid(1))).toEqual([cid(1)]);
+  });
+
   it("lists the listings by number of conversations and counts the unread ones", () => {
     expect(listingChoices(rows)).toEqual([
       { listingId: "velo", title: "Vélo", count: 2 },

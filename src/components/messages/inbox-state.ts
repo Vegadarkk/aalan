@@ -92,9 +92,23 @@ export interface InboxFilter {
   unread: boolean;
   /** The listing (or shop) of the conversations shown; null for all. */
   listingId: string | null;
+  /** Words looked for in the other participant's name and the listing's title (audit zone 5 n°21). */
+  query?: string;
 }
 
-export const NO_FILTER: InboxFilter = { unread: false, listingId: null };
+export const NO_FILTER: InboxFilter = { unread: false, listingId: null, query: "" };
+
+/** Lower case, without accents, Arabic short vowels nor tatweel: « Élodie » finds « elodie ». */
+export function foldText(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").replace(/ـ/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** Every word of the query is in the name or the title. */
+function matchesQuery(row: ConversationView, words: readonly string[]): boolean {
+  if (words.length === 0) return true;
+  const haystack = foldText(`${row.counterpart.displayName} ${row.listing.title}`);
+  return words.every((word) => haystack.includes(word));
+}
 
 export interface ListingChoice {
   listingId: string;
@@ -120,15 +134,18 @@ export function effectiveFilter(filter: InboxFilter, rows: readonly Conversation
   return filter;
 }
 
-export const isFiltering = (filter: InboxFilter) => filter.unread || filter.listingId !== null;
+export const isFiltering = (filter: InboxFilter) => filter.unread || filter.listingId !== null || foldText(filter.query ?? "") !== "";
 
 /**
  * Rows the filter keeps. The open conversation stays while it is open: reading it must not make
- * it vanish from « Non lues » under the person's eyes.
+ * it vanish from « Non lues » under the person's eyes. Words narrow everything, the open one too.
  */
 export function filterRows(rows: readonly ConversationView[], filter: InboxFilter, selected: string | null): ConversationView[] {
   if (!isFiltering(filter)) return [...rows];
-  return rows.filter((row) => row.cid === selected || ((!filter.unread || row.unread > 0) && (!filter.listingId || row.listingId === filter.listingId)));
+  const words = foldText(filter.query ?? "").split(" ").filter(Boolean);
+  return rows.filter(
+    (row) => matchesQuery(row, words) && (row.cid === selected || ((!filter.unread || row.unread > 0) && (!filter.listingId || row.listingId === filter.listingId))),
+  );
 }
 
 /** Conversations with unread messages among the loaded rows. */

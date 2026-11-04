@@ -4523,6 +4523,8 @@
     },
     "filters": {
       "label": "Filtrer les conversations",
+      "search": "Rechercher dans vos conversations",
+      "searchPlaceholder": "Nom ou annonce",
       "unread": "Non lues",
       "listing": "Annonce des conversations",
       "allListings": "Toutes les annonces",

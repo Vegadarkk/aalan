@@ -21,6 +21,7 @@ import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { savePaymentLink } from "@/lib/listings/client/api";
 import { intlLocale } from "@/lib/listings/client/format";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a published or paused Pro listing (catalogue §6): its own « Payer chez le
 // vendeur » link over the shop's, on a payment site Joutiya already checked. A new link needs a
@@ -75,6 +76,8 @@ export function OwnerPaymentLinkRow({ listing, title, onChanged }: OwnerPaymentL
 }
 
 function PaymentLinkDialog({ listing, title, onClose, onChanged }: OwnerPaymentLinkProps & { onClose: () => void }) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(true);
   const t = useTranslations("MyListings.paymentLink");
   const problems = useTranslations("SellerPayment.settings.link.problems");
   const apiMessage = useApiErrorMessage("listing");
@@ -117,6 +120,7 @@ function PaymentLinkDialog({ listing, title, onClose, onChanged }: OwnerPaymentL
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           aria-describedby={descriptionId}
           data-testid="payment-link-dialog"
           className={cn(

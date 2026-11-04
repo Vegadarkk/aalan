@@ -10,6 +10,7 @@ import { isolate } from "@/lib/i18n/bidi";
 import { cn } from "@/lib/utils";
 import { useAppointmentErrorMessage } from "./errors";
 import { SlotPicker, type SlotPickerValue } from "./slot-picker";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // The slot picker in a sheet (mobile) or a dialog: posts the proposal of `cid`. A proposal while
 // an appointment is active reschedules it (the server says so in the thread).
@@ -32,6 +33,8 @@ export interface AppointmentDialogProps {
 }
 
 export function AppointmentDialog({ cid, open, onOpenChange, counterpartName, defaultKind, kinds, rescheduling, startDay, title, onDone }: AppointmentDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("Appointments.dialog");
   const errorMessage = useAppointmentErrorMessage();
   const [busy, setBusy] = useState(false);
@@ -62,6 +65,7 @@ export function AppointmentDialog({ cid, open, onOpenChange, counterpartName, de
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="appointment-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-y-auto rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",

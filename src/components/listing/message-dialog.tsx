@@ -28,6 +28,7 @@ import type { OfferProblem } from "@/lib/offers/rules";
 import { RENTAL_GUESTS_MAX, RENTAL_PICKUP_MAX, rentalRequestProblem } from "@/lib/rental-requests/rules";
 import type { RentalDates } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // First message about a listing (design phase-5 D4, D8): loaded on demand by the contact bar. The
 // text, a Turnstile check (always on the first message of a conversation, AF §6), then POST
@@ -106,6 +107,8 @@ export interface MessageDialogProps {
 type RentalComposeKey = "rentalPlaceholder" | "rentalTitle" | "rentalTitleFallback" | "rentalDates" | "rentalPickup" | "rentalPickupPlaceholder" | "rentalDraft" | "rentalDraftPickup" | "rentalDatesMissing" | "rentalSafety";
 
 export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sellerName, adultsOnly = false, intent = "message", rentalUnit = "day", onSignedOut, initialText, threadQuery, offerPrice, shop = false }: MessageDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("ListingPage.contact.compose");
   const offers = useTranslations("Offers.listing");
   const offerDialog = useTranslations("Offers.dialog");
@@ -211,6 +214,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="message-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-y-auto rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",

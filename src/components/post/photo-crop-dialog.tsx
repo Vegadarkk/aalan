@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { INITIAL_CROP, cropPixels, moveRect, resizeRect, type CropCorner, type CropRect } from "./crop-geometry";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // Crop proposed for a photo where the local check found a face (CGU §7, privacy policy §4.4):
 // the seller keeps the object and leaves the faces out of the frame. The cropped copy is drawn
@@ -31,11 +32,14 @@ const CORNERS: readonly CropCorner[] = ["nw", "ne", "sw", "se"];
 type Drag = { mode: "move" } | { mode: "resize"; corner: CropCorner };
 
 export function PhotoCropDialog({ open, onOpenChange, sources, index, onCropped }: PhotoCropDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="photo-crop-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col gap-4 overflow-y-auto rounded-t-lg border border-border bg-surface p-5 shadow-xl shadow-bab-950/20 outline-none sm:p-6",

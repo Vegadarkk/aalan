@@ -16,6 +16,7 @@ import { isolate } from "@/lib/i18n/bidi";
 import { FREE_TEXT_ISSUES, firstStrictIssue, type FreeTextIssue } from "@/lib/moderation/free-text";
 import { submitReview } from "@/lib/reviews/client";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // The buyer's review of a conversation (vitrine-avis §2), loaded on demand from the thread: a note
 // from 1 to 5, a text of 20 to 1 000 characters screened as it is typed (the API screens it
@@ -40,6 +41,8 @@ export function textLength(text: string): number {
 }
 
 export function ReviewDialog({ open, onOpenChange, cid, sellerName, sellerPublicId, listingTitle, onDone }: ReviewDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("Reviews.dialog");
   const stars = useTranslations("Reviews");
   const issues = useTranslations("FreeText");
@@ -89,6 +92,7 @@ export function ReviewDialog({ open, onOpenChange, cid, sellerName, sellerPublic
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           data-testid="review-dialog"
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",

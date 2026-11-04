@@ -135,10 +135,11 @@ export function FiltersSheet({ params, facets, className }: FiltersSheetProps) {
       }}
     >
       <Dialog.Trigger asChild>
-        <Button type="button" variant="outline" className={cn("h-11 gap-2 px-3.5", count > 0 && "border-structure", className)} aria-label={count > 0 ? t("openCount", { count }) : undefined}>
+        <Button type="button" variant="outline" className={cn("h-11 gap-2 px-3.5", count > 0 && "border-structure", className)} aria-label={count > 0 ? t("openCount", { count, n: String(count) }) : undefined}>
           <SlidersHorizontal aria-hidden="true" />
           {t("open")}
-          {/* A space between the word and the count: the visible text reads « Filtres 1 », inside the name (WCAG 2.5.3). */}
+          {/* A space between the word and the count: the visible text « Filtres 1 » starts the name in every
+              language, the count as the same Latin digits (`n` is a string, never localised: WCAG 2.5.3). */}
           {count > 0 ? " " : null}
           {count > 0 ? (
             <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-structure px-1.5 text-xs font-semibold text-structure-foreground tabular-nums">

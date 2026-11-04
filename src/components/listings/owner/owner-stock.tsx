@@ -13,6 +13,7 @@ import { STOCK_MAX, isSoldOut, stockState, type ListingVariants } from "@/lib/co
 import { isolate } from "@/lib/i18n/bidi";
 import { saveStock } from "@/lib/listings/client/api";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a Pro listing (catalogue §3): its declared stock at a glance, and a dialog
 // that sets it alone (one write, no new moderation). Joutiya never counts sales: the Pro does.
@@ -74,6 +75,8 @@ interface StockDialogProps {
 }
 
 function StockDialog({ listingId, title, catalogue, fleet = false, onClose, onSaved }: StockDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(true);
   const t = useTranslations("MyListings.stock");
   const apiMessage = useApiErrorMessage();
   const names = useVariantLabels();
@@ -101,6 +104,7 @@ function StockDialog({ listingId, title, catalogue, fleet = false, onClose, onSa
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           aria-describedby={descriptionId}
           data-testid="stock-dialog"
           className={cn(

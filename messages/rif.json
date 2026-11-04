@@ -3911,7 +3911,7 @@
   },
   "SearchFilters": {
     "open": "Ifilṭren",
-    "openCount": "Ifilṭren, {count, plural, one {# yexdem} other {# xedmen}}",
+    "openCount": "Ifilṭren {n}, {count, plural, one {yexdem} other {xedmen}}",
     "title": "Ifilṭren",
     "close": "Mdel ifilṭren",
     "apply": "Ẓar igmaḍ",
@@ -4406,7 +4406,7 @@
       "selectTitle": "Xtar tameslayt",
       "selectBody": "Timeslayin nnec d imzenza d imsaɣen ad d-banent da.",
       "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna.",
-      "busy": "Tesɛiḍ yakan {count} n onglets ttwaldin ɣef tebratin: qqen yiwen akken ad d-yuɣal ubeddel nican.",
+      "busy": "Tesɛiḍ yakan {count} n onglets n Aalan ttwaldin: qqen yiwen akken ad d-yuɣal ubeddel nican n tebratin.",
       "refreshLive": "Ɛawed ɛemmer"
     },
     "row": {

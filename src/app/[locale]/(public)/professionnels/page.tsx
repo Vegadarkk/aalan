@@ -6,8 +6,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, pageLocale } from "@/i18n/params";
-import { getPricing } from "@/lib/config/runtime";
+import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { getFlags, getPricing } from "@/lib/config/runtime";
+import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { alternates } from "@/lib/i18n/metadata";
 import { DIRECTORY_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
@@ -54,13 +55,17 @@ const STEPS = ["account", "request", "review"] as const;
 export default async function ProLandingPage({ params }: { params: Params }) {
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
-  const [t, count, pricing] = await Promise.all([
+  const [t, count, pricing, flags] = await Promise.all([
     getTranslations({ locale, namespace: "ProLanding" }),
     // Prints numbers: Tarifit pages format them as French (no Intl data for "rif").
     getNumbersTranslations({ locale, namespace: "ProLanding" }),
     getPricing(),
+    getFlags(),
   ]);
   const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;
+  // Closed-sales wording only while they are closed (zone 6 audit 6-05).
+  const salesOpen = flags.salesEnabled;
+  const offerEnd = offer?.endsAt ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(Date.parse(offer.endsAt)) }).format(new Date(offer.endsAt)) : null;
   const pass = pricing.passes[0] ?? null;
   const essentiel = pricing.pro.essentiel.activeListings;
   return (
@@ -123,16 +128,16 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           </ul>
         </div>
         <div className="flex flex-col gap-4 self-start rounded-lg bg-surface-brand p-5">
-          {offer ? (
+          {offer && (offerEnd || !salesOpen) ? (
             <p className="flex items-start gap-3 text-sm text-pretty">
               <Gift className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
-              <span>{count("offer", { days: offer.noticeDays })}</span>
+              <span>{offerEnd ? t("offerUntil", { date: offerEnd }) : count("offer", { days: offer.noticeDays })}</span>
             </p>
           ) : null}
           {pass ? (
             <p className="flex items-start gap-3 text-sm text-pretty">
               <CalendarDays className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
-              <span>{count("pass", { days: pass.days })}</span>
+              <span>{count(salesOpen ? "passOpen" : "pass", { days: pass.days })}</span>
             </p>
           ) : null}
           <p className="flex items-start gap-3 text-sm text-pretty">

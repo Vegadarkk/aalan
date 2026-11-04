@@ -8,20 +8,17 @@ import { loadListingOptions } from "@/lib/payments/client";
 import { cn } from "@/lib/utils";
 import { PromoteDialog } from "./promote-dialog";
 
-// "Mettre en avant" where a seller looks at the listing (zone 6 audit 6-04): the end of the
-// deposit (the moment classifieds sell their options) and the listing page seen by its owner.
-// Shown only when the options can be bought for this listing (sales open, subcategory with paid
+// "Mettre en avant" at the end of the deposit, the moment classifieds sell their options (zone 6
+// audit 6-04); the public listing page links to "Mes annonces" instead (no payment code there). Shown only when the options can be bought for this listing (sales open, subcategory with paid
 // options, listing online); nothing at all otherwise, failures included.
 
 interface PromoteOfferProps {
   listingId: string;
   title: string;
-  /** "panel": a callout with a sentence (end of the deposit); "button": the button alone. */
-  variant?: "panel" | "button";
   className?: string;
 }
 
-export function PromoteOffer({ listingId, title, variant = "panel", className }: PromoteOfferProps) {
+export function PromoteOffer({ listingId, title, className }: PromoteOfferProps) {
   const t = useTranslations("Options.offer");
   const [offered, setOffered] = useState(false);
   const [open, setOpen] = useState(false);
@@ -42,27 +39,20 @@ export function PromoteOffer({ listingId, title, variant = "panel", className }:
   }, [listingId]);
 
   if (!offered) return null;
-  const action = (
-    <Button ref={button} type="button" variant={variant === "panel" ? "structure" : "outline"} className={cn(variant === "button" && "self-start", "max-sm:h-11")} onClick={() => setOpen(true)}>
-      <TrendingUp aria-hidden="true" />
-      {t("action")}
-    </Button>
-  );
   return (
     <>
-      {variant === "panel" ? (
-        <section aria-labelledby={`promote-${listingId}`} className={cn("flex flex-col gap-3 rounded-lg border border-featured/50 bg-featured/10 p-5 text-start sm:flex-row sm:items-center sm:justify-between", className)}>
-          <div className="flex min-w-0 flex-col gap-1">
-            <h2 id={`promote-${listingId}`} className="font-semibold">
-              {t("title")}
-            </h2>
-            <p className="text-sm text-foreground-muted text-pretty">{t("body")}</p>
-          </div>
-          <div className="shrink-0">{action}</div>
-        </section>
-      ) : (
-        action
-      )}
+      <section aria-labelledby={`promote-${listingId}`} className={cn("flex flex-col gap-3 rounded-lg border border-featured/50 bg-featured/10 p-5 text-start sm:flex-row sm:items-center sm:justify-between", className)}>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 id={`promote-${listingId}`} className="font-semibold">
+            {t("title")}
+          </h2>
+          <p className="text-sm text-foreground-muted text-pretty">{t("body")}</p>
+        </div>
+        <Button ref={button} type="button" variant="structure" className="shrink-0 max-sm:h-11" onClick={() => setOpen(true)}>
+          <TrendingUp aria-hidden="true" />
+          {t("action")}
+        </Button>
+      </section>
       {open ? <PromoteDialog listingId={listingId} title={title} onClose={() => setOpen(false)} returnFocus={() => button.current} /> : null}
     </>
   );

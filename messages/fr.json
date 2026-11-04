@@ -3266,7 +3266,8 @@
         "signInRental": "Connectez-vous pour envoyer une demande de séjour. Vous reviendrez ensuite sur cette annonce."
       },
       "variantText": "Bonjour, « {title} » en {variant} est-il toujours disponible ?",
-      "ownShop": "C'est votre boutique. Les visiteurs voient ici les boutons pour vous contacter."
+      "ownShop": "C'est votre boutique. Les visiteurs voient ici les boutons pour vous contacter.",
+      "promote": "Mettre en avant"
     },
     "safety": {
       "title": "Conseils de sécurité",
@@ -4161,7 +4162,8 @@
       "fleet": "Planning de flotte",
       "sellerPayment": "Paiement chez le vendeur",
       "rentalAgency": "Mon agence de location",
-      "choosePlan": "Choisir une offre"
+      "choosePlan": "Choisir une offre",
+      "invoices": "Mes factures"
     },
     "errors": {
       "pro_signup_closed": "Les demandes de compte Pro sont fermées pour le moment.",
@@ -5118,11 +5120,11 @@
     "expiresFirst": "Votre annonce expire le {date}, avant la fin de cet À la Une : renouvelez-la pour en profiter jusqu'au bout.",
     "today": "aujourd'hui à {time}",
     "onDay": "le {date} à {time}",
-    "shortfall": "{count, plural, one {Il vous manque # crédit} other {Il vous manque # crédits}}",
+    "shortfall": "Il vous manque {count, plural, one {# crédit} other {# crédits}}",
     "shortfallBody": "Achetez un pack de crédits : vous pourrez revenir à cette annonce depuis votre porte-monnaie dès qu'ils sont arrivés.",
     "buyCredits": "Acheter des crédits",
     "confirmIdle": "Choisissez une option",
-    "confirmCredits": "{count, plural, one {Confirmer pour # crédit} other {Confirmer pour # crédits}}",
+    "confirmCredits": "Confirmer pour {count, plural, one {# crédit} other {# crédits}}",
     "confirmIncluded": "Confirmer (inclus dans votre offre)",
     "offer": {
       "title": "Vendez plus vite",
@@ -5138,7 +5140,7 @@
     "loading": "Chargement du porte-monnaie",
     "failed": "Le porte-monnaie n'a pas pu être chargé.",
     "retry": "Réessayer",
-    "unit": "1 crédit = 1 MAD TTC",
+    "unit": "1 crédit = 1 DH TTC",
     "balance": "Crédits achetés",
     "plan": "Crédits de votre offre",
     "planUntil": "Valables jusqu'au {date}, non cumulables",
@@ -5182,7 +5184,7 @@
     "failed": "Les packs n'ont pas pu être chargés.",
     "retry": "Réessayer",
     "closed": "L'achat de crédits n'est pas encore ouvert sur Aalan.",
-    "unavailable": "Le paiement n'est pas disponible pour le moment. Réessayez plus tard.",
+    "unavailable": "Le paiement est momentanément indisponible : réessayez dans quelques minutes. Les packs et leurs prix restent ceux-ci.",
     "legend": "Choisissez un pack",
     "credits": "{count, plural, one {<n>#</n> crédit} other {<n>#</n> crédits}}",
     "bonus": "dont {count, plural, one {# crédit offert} other {# crédits offerts}}",
@@ -5198,7 +5200,7 @@
     "notesTitle": "Avant de payer",
     "notes": {
       "provider": "Le paiement se fait par carte sur la page sécurisée de notre prestataire RevenueCat, avec Stripe. Cette page peut s'afficher en anglais.",
-      "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} MAD par an (Office des Changes).",
+      "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} DH par an (Office des Changes).",
       "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : rétractez-vous depuis votre porte-monnaie, ou écrivez à {email}."
     },
     "consent": {
@@ -5215,7 +5217,13 @@
       "price_changed": "Les packs ont changé : vérifiez votre choix.",
       "turnstile_failed": "La vérification anti-robot a échoué. Réessayez.",
       "unavailable": "Le paiement n'est pas disponible pour le moment. Réessayez plus tard."
-    }
+    },
+    "unit": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
+    "closedBody": "Les packs seront en vente à l'ouverture des ventes. Leurs prix sont déjà affichés sur la page Tarifs.",
+    "seePricing": "Voir les tarifs"
   },
   "Subscription": {
     "metaTitle": "Mon abonnement",
@@ -5277,10 +5285,10 @@
       "yearlyHint": "2 mois offerts"
     },
     "price": {
-      "monthly": "<n>{amount, number}</n> MAD HT par mois",
-      "yearly": "<n>{amount, number}</n> MAD HT par an"
+      "monthly": "<n>{amount, number}</n> DH HT par mois",
+      "yearly": "<n>{amount, number}</n> DH HT par an"
     },
-    "perMonth": "Soit {amount, number, ::.00} MAD HT par mois",
+    "perMonth": "Soit {amount, number, ::.00} DH HT par mois",
     "features": {
       "listings": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
       "unlimited": "Annonces en ligne sans limite",
@@ -5289,7 +5297,7 @@
       "featured": "{count, plural, one {# « À la Une » de 7 jours chaque mois} other {# « À la Une » de 7 jours chaque mois}}",
       "noCredits": "Pas de crédits mensuels",
       "noFeatured": "Pas de « À la Une » inclus",
-      "storefront": "Vitrine de la boutique et badge Pro"
+      "storefront": "Vitrine de la boutique, badge Pro et statistiques"
     },
     "yours": "Votre offre",
     "notesTitle": "Avant de vous abonner",
@@ -5307,8 +5315,8 @@
     },
     "choose": "Choisissez une offre.",
     "submit": {
-      "monthly": "S'abonner : {amount, number} MAD HT par mois",
-      "yearly": "S'abonner : {amount, number} MAD HT par an"
+      "monthly": "S'abonner : {amount, number} DH HT par mois",
+      "yearly": "S'abonner : {amount, number} DH HT par an"
     },
     "submitIdle": "S'abonner",
     "errors": {
@@ -5325,7 +5333,7 @@
     "pass": {
       "title": "Pass Boutique",
       "lead": "Votre boutique en ligne pour {days} jours, en un seul paiement. Pas d'abonnement, pas de renouvellement : idéal pour écouler un stock ou vendre une saison.",
-      "price": "<n>{amount, number}</n> MAD HT pour {days} jours",
+      "price": "<n>{amount, number}</n> DH HT pour {days} jours",
       "features": {
         "listings": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
         "credits": "{count, plural, one {# crédit offert pendant le pass} other {# crédits offerts pendant le pass}}",
@@ -5346,14 +5354,15 @@
         "termsLink": "conditions générales de vente",
         "once": "du Pass Boutique : paiement unique, sans renouvellement ni remboursement au prorata."
       },
-      "submit": "Payer {amount, number} MAD HT",
-      "submitExtend": "Prolonger de {days} jours : {amount, number} MAD HT",
+      "submit": "Payer {amount, number} DH HT",
+      "submitExtend": "Prolonger de {days} jours : {amount, number} DH HT",
       "blocked": {
         "subscribed": "Votre boutique a déjà un abonnement : le Pass Boutique n'est pas nécessaire.",
         "launchOffer": "Votre offre Essentiel est encore offerte : le pass sera disponible à la fin de l'offre.",
         "maxAhead": "Votre pass court déjà loin : vous pourrez le prolonger plus tard.",
-        "unavailable": "Le Pass Boutique n'est pas disponible pour le moment.",
-        "otherPlan": "Votre pass en cours est d'une autre offre : ce pass sera disponible à sa fin."
+        "unavailable": "Le paiement du Pass Boutique n'est pas encore disponible. Réessayez dans quelques minutes ; si cela dure, écrivez-nous depuis l'aide.",
+        "otherPlan": "Votre pass en cours est d'une autre offre : ce pass sera disponible à sa fin.",
+        "salesClosed": "Le Pass Boutique sera en vente à l'ouverture des ventes."
       },
       "success": {
         "pending": "Votre pass s'active dans quelques instants.",
@@ -6127,7 +6136,9 @@
       "review": "Notre équipe vérifie vos identifiants et vous appelle, en général sous deux jours ouvrés. Votre vitrine s'ouvre ensuite."
     },
     "legal": "Les engagements légaux de chaque activité sont rappelés à la création de la vitrine. Vos démarches administratives : <link>le guide des professionnels et coopératives</link>.",
-    "directory": "Voir l'annuaire des boutiques"
+    "directory": "Voir l'annuaire des boutiques",
+    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
   },
   "Directory": {
     "metaTitle": "{heading} · Annuaire des professionnels",
@@ -6213,7 +6224,7 @@
       },
       "options": {
         "title": "Options de visibilité",
-        "note": "Prix standard, puis véhicules et immobilier",
+        "note": "Le premier prix vaut pour toutes les catégories, le second pour Véhicules et Immobilier.",
         "bump": "Remonter en tête : {standard, number} ou {premium, number} crédits",
         "featured7": "À la Une 7 jours : {standard, number} ou {premium, number} crédits",
         "featured30": "À la Une 30 jours : {standard, number} ou {premium, number} crédits"
@@ -6238,18 +6249,21 @@
       "premium": "Premium",
       "recommended": "Recommandé",
       "onQuote": "Sur devis",
-      "credits": "{count, number} crédits de visibilité inclus",
+      "credits": "{count, number} crédits offerts chaque mois",
       "listings": "{count, plural, one {# annonce active} other {# annonces actives}}",
-      "featured": "{count, plural, one {# annonce À la Une incluse} other {# annonces À la Une incluses}}",
+      "featured": "{count, plural, one {# « À la Une » de 7 jours chaque mois} other {# « À la Une » de 7 jours chaque mois}}",
       "activeListings": "annonces actives",
-      "storefront": "Boutique en ligne, page vérifiée et statistiques",
+      "storefront": "Vitrine de la boutique, badge Pro et statistiques",
       "premiumSupport": "Accompagnement dédié et import du stock",
       "payAtSeller": "Paiement chez le vendeur : Aalan ne prend aucune commission sur vos ventes.",
       "cta": "Créer ma boutique",
       "more": "Découvrir l'offre Pro",
       "unlimitedListings": "Annonces actives en illimité",
       "stockImport": "Import du stock par fichier",
-      "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due."
+      "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
+      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+      "passCredits": "{count, number} crédits offerts pendant le pass",
+      "askQuote": "Demander un devis"
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture.",
     "compare": {

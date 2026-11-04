@@ -3,12 +3,11 @@
 import { useEffect, useEffectEvent, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, Phone, RotateCw, Settings2 } from "lucide-react";
+import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, Phone, RotateCw, Settings2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
 import { RENTAL_DATES_EVENT, clearPendingContact, contactFragment, fragmentDates, pendingContact } from "@/components/rental/rental-day";
-import { PromoteOffer } from "@/components/payments/promote-offer";
 import { Button } from "@/components/ui/button";
 import type { RentalUnit } from "@/config/categories";
 import { getPathname, Link } from "@/i18n/navigation";
@@ -113,6 +112,8 @@ export interface ContactBarProps {
    * from the shop's reveal route, and the wide block sits in the storefront's contact card.
    */
   shop?: boolean;
+  /** Options can be bought for this listing (sales open, category with paid options): the owner's view links to them. */
+  promotable?: boolean;
 }
 
 export type ComposeIntent = "message" | "visit" | "test_drive" | "rental" | "offer";
@@ -177,7 +178,7 @@ function BarSpacer({ tall = false }: { tall?: boolean }) {
   return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className={cn(tall ? "h-36" : "h-24", "lg:hidden")} />, document.body) : null;
 }
 
-export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false }: ContactBarProps) {
+export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false, promotable = false }: ContactBarProps) {
   const t = useTranslations("ListingPage.contact");
   const stay = rental === "night";
   const offers = useTranslations("Offers.listing");
@@ -313,8 +314,15 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
               {t("manage")}
             </Link>
           </Button>
-          {/* The owner's way to the options from the page itself (zone 6 audit 6-04). */}
-          {shop ? null : <PromoteOffer listingId={listingId} title={listingTitle ?? ""} variant="button" />}
+          {/* The owner's way to the options from the page itself (zone 6 audit 6-04): "Mes annonces" opens them. */}
+          {promotable && !shop ? (
+            <Button asChild variant="outline" className="self-start">
+              <Link href={`/mes-annonces?promouvoir=${encodeURIComponent(listingId)}`}>
+                <TrendingUp aria-hidden="true" />
+                {t("promote")}
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     );

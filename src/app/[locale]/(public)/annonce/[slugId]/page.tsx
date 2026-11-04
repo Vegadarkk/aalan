@@ -33,7 +33,7 @@ import { SellerCard } from "@/components/listing/seller-card";
 import { ShareButton } from "@/components/listing/share-button";
 import { ListingMapBlock } from "@/components/map/listing-map-block";
 import { ReportButton } from "@/components/report/report-button";
-import { RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, subcategoryById } from "@/config/categories";
+import { RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, paidOptionsAllowed, subcategoryById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
@@ -355,6 +355,7 @@ export default async function ListingPage({ params }: { params: Params }) {
                     testDrive={listing.seller.type === "pro" && VEHICLE_SALE_SUBCATEGORIES.includes(listing.subcategoryId)}
                     rental={datedRental(listing.subcategoryId)?.unit}
                     offer={offer}
+                    promotable={flags.salesEnabled && listing.state === "published" && paidOptionsAllowed(listing.subcategoryId)}
                   />
                 ) : null}
                 {contactable && payment ? <PayAtSeller payment={payment} listingId={listing.id} /> : null}

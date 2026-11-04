@@ -75,6 +75,21 @@ describe("decision catalogue and ladder", () => {
     expect(templateGroups("message").measures.every((item) => item.targets.includes("message"))).toBe(true);
   });
 
+  it("answers a threat message with a proportionate removal: the ladder's step, no P0 ban (zone 7 P3-1)", () => {
+    const threat = template("message.remove.threat");
+    expect(templateGroups("message").measures.map((item) => item.id)).toContain("message.remove.threat");
+    expect(threat).toMatchObject({ action: "remove", outcome: "founded", defaultSanction: "next" });
+    expect(threat.p0).toBeUndefined();
+    const context: DecideContext = { targetType: "message", role: "moderator", priorities: ["P0"], strikes: 0 };
+    expect(templateAllowed(threat, context)).toBe(true);
+    expect(defaultSanction(threat, context)).toBe("warn");
+    expect(defaultSanction(threat, { ...context, strikes: 1 })).toBe("suspend_7");
+    expect(defaultSanction(threat, { ...context, strikes: 2 })).toBe("suspend_30");
+    const body = buildDecideRequest(`message:${"c".repeat(22)}/${"M".repeat(20)}`, { template: threat, details: "", sanction: "suspend_7", manifestlyUnfounded: false }, context, null);
+    expect(body).toEqual({ target: `message:${"c".repeat(22)}/${"M".repeat(20)}`, templateId: "message.remove.threat", sanction: { action: "suspend_account", durationDays: 7 } });
+    expect(decideSchema.safeParse(body).success).toBe(true);
+  });
+
   it("proposes the next ladder step for a sanctioned content measure only", () => {
     expect(defaultSanction(template("listing.remove.scam"), { targetType: "listing", strikes: 0 })).toBe("warn");
     expect(defaultSanction(template("listing.remove.scam"), { targetType: "listing", strikes: 1 })).toBe("suspend_7");

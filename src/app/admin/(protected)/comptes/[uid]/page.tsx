@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
+import { authorityNoticesFor } from "@/lib/decisions/authorities";
 import type { UserModerationView } from "@/lib/decisions/contracts";
 import { userModerationView } from "@/lib/decisions/users";
 import { serverEnv } from "@/lib/env";
@@ -12,6 +13,7 @@ import { ACCOUNT_STATUS_LABEL, ACTION_LABEL, actionTone, APPEAL_STATUS_LABEL, fo
 import { SANCTION_LABEL, stepChoice } from "../../../_components/decide-state";
 import { Facts, linkClassName, Panel } from "../../../_components/panel";
 import { CopyReference } from "../../../_components/copy-reference";
+import { AuthorityNoticeBanner } from "../../../_components/authority-notice-banner";
 import { RevokePhoneButton } from "../../../_components/revoke-phone-button";
 import { listingDetails, listingThumb } from "../../../_lib/target-cards";
 
@@ -68,7 +70,7 @@ function share(value: number | null): string {
 }
 
 export default async function AccountPage({ params }: { params: Promise<{ uid: string }> }) {
-  await requirePageStaff(["moderator", "admin"]);
+  const staff = await requirePageStaff(["moderator", "admin"]);
   const { uid } = await params;
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) notFound();
   const user = await userModerationView(uid);
@@ -76,6 +78,7 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
   const site = serverEnv().SITE_URL.replace(/\/$/, "");
   const { reporter } = user;
   // The listings the decisions are about, by title rather than id (zone 7 P2-8).
+  const notices = await authorityNoticesFor([`user:${user.uid}`]);
   const listings = await listingSummaries(user.decisions.flatMap((decision) => (decision.target.type === "listing" ? [decision.target.id] : []))).catch(() => new Map<string, ListingSummary>());
 
   return (
@@ -102,6 +105,8 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
           .
         </p>
       </div>
+
+      <AuthorityNoticeBanner notices={notices} target={{ type: "user", id: user.uid }} admin={staff.role === "admin"} />
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Panel title="Sanctions">

@@ -258,6 +258,24 @@ export const DECISION_TEMPLATES = [
     defaultSanction: "next",
   },
   {
+    // Proportionate answer to a threat report (audit zone 7 P3-1): the ladder's next step, not the P0 ban.
+    id: "message.remove.threat",
+    label: "Message masqué : menace ou intimidation",
+    action: "remove",
+    targets: MESSAGE,
+    ground: { type: "terms", ref: `${CONDUCT} (menaces)` },
+    facts: {
+      fr: "le message contient une menace ou une intimidation envers son destinataire (violence, représailles ou pression)",
+      ar: "تحتوي الرسالة على تهديد أو ترهيب موجّه إلى المرسَل إليه (عنف أو انتقام أو ضغط)",
+    },
+    explanation: {
+      fr: "nos conditions générales interdisent toute menace ou intimidation envers un autre membre",
+      ar: "تمنع شروطنا العامة أي تهديد أو ترهيب تجاه عضو آخر",
+    },
+    outcome: "founded",
+    defaultSanction: "next",
+  },
+  {
     id: "message.remove.hate",
     label: "Message masqué : discours haineux",
     action: "remove",

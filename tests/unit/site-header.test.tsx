@@ -63,6 +63,8 @@ describe("AccountMenu", () => {
     const html = render(<AccountMenu />, "fr", session);
     const trigger = /<button[^>]*>([\s\S]*?)<\/button>/.exec(html);
     expect(trigger?.[0]).not.toContain("aria-label=");
+    // A navigation dialog of links, not an ARIA menu (audit zone 8, 5.2-3), from the stand-in button on.
+    expect(trigger?.[0]).toContain('aria-haspopup="dialog"');
     expect(trigger?.[1]).toMatch(new RegExp(`^<span class="[^"]*" aria-hidden="true">SB</span><span class="sr-only">${fr.Auth.menu.account}</span>$`));
     expect(trigger?.[0]).toContain("min-w-11");
     expect(trigger?.[0]).toContain("rounded-full");

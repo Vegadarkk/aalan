@@ -122,7 +122,19 @@ test.describe("account", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Mes paramètres" })).toBeVisible();
     await expect(page.getByLabel("Nom affiché")).toHaveValue(name, { timeout: 15_000 });
     // The header shows the account once /api/auth/me has answered ("Fermer mon compte" is on the page too).
-    await expect(page.getByRole("button", { name: /^Mon compte/ })).toBeVisible();
+    const account = page.getByRole("button", { name: /^Mon compte/ });
+    await expect(account).toBeVisible();
+    // The account menu is a navigation dialog of links, not an ARIA menu (audit zone 8, 5.2-3): the
+    // first link takes the focus, Escape gives it back to the trigger.
+    await account.click();
+    const panel = page.getByRole("dialog", { name: "Mon compte" });
+    await expect(panel.getByRole("navigation", { name: "Mon compte" })).toBeVisible();
+    await expect(panel.getByRole("link", { name: "Mes annonces" })).toBeFocused();
+    await expect(panel.getByRole("menuitem")).toHaveCount(0);
+    await expect(panel.getByRole("button", { name: "Déconnexion" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(account).toBeFocused();
 
     // Change the display name.
     await page.getByLabel("Nom affiché").fill("Yasmine B.");
@@ -348,6 +360,24 @@ test.describe("account", () => {
     await signIn(page, email, PASSWORD);
     await expect(page.getByRole("alert").filter({ hasText: "Ce compte a été désactivé." })).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveURL(/\/fr\/connexion/);
+  });
+
+  test("the sign-in page loads neither Turnstile nor Google before the first action", async ({ page }) => {
+    // Turnstile only appears after repeated failures, and Google waits for a first action, as on the
+    // sign-up page (audit zone 8, perf 5).
+    const thirdParty: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.startsWith("https://challenges.cloudflare.com/") || url.startsWith("https://accounts.google.com/gsi/")) thirdParty.push(url);
+    });
+    await page.goto("/fr/connexion");
+    await expect(page.locator('form button[type="submit"]:enabled').first()).toBeVisible({ timeout: 20_000 });
+    // A negative check: give the page a moment after hydration to ask for anything it would load eagerly.
+    await page.waitForTimeout(1_500);
+    expect(thirdParty).toEqual([]);
+    await actOnAuthForm(page);
+    await expect(page.getByRole("button", { name: "Continuer avec Google (stub)" })).toBeVisible();
+    expect(thirdParty.filter((url) => url.startsWith("https://challenges.cloudflare.com/"))).toEqual([]);
   });
 
   test("the Google button hands a rejected credential to the form message, under a device-bound nonce", async ({ page }) => {

@@ -20,6 +20,7 @@ import { ModerationDecisionForm } from "../../../_components/moderation-decision
 import { catalogLabels, formatPrice, waitingFor } from "../../../_components/moderation-labels";
 import { FlagBadges, HOLD_LABEL } from "../../../_components/moderation-queue";
 import { RiskMeter } from "../../../_components/moderation-risk";
+import { SensitiveDeclarationNotice } from "../../../_components/sensitive-declaration";
 import { Facts, Panel } from "../../../_components/panel";
 
 // Review of one listing of the moderation queue (design D9): the listing as the seller wrote it,
@@ -137,6 +138,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
           <time dateTime={listing.updatedAt}>{waitingFor(listing.updatedAt)}</time>.
         </p>
       </div>
+      {pending && moderation.sensitiveDeclaration ? <SensitiveDeclarationNotice kind={moderation.sensitiveDeclaration} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <article className="flex flex-col gap-6">
@@ -179,14 +181,14 @@ export default async function ModerationReviewPage({ params }: { params: Promise
         <aside className="flex flex-col gap-6" aria-label="Signaux, décision et vendeur">
           <Panel title="Signaux">
             <RiskMeter score={moderation.score} />
-            <FlagBadges flags={moderation.flags} />
+            <FlagBadges flags={moderation.flags} declaration={moderation.sensitiveDeclaration} />
             {change.kind !== "none" && screening ? (
               <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-3 text-sm" data-testid="screening-change">
                 <p>{changeSentence(change)}</p>
                 {change.kind === "rescored" || change.rescored ? (
                   <>
                     <RiskMeter score={screening.score} />
-                    <FlagBadges flags={screening.flags} />
+                    <FlagBadges flags={screening.flags} declaration={moderation.sensitiveDeclaration} />
                   </>
                 ) : null}
               </div>

@@ -1,4 +1,5 @@
 import "server-only";
+import { confirmEmailChange } from "@/lib/account/email-change";
 import { actionSchema, type ActionResponse } from "@/lib/contracts/auth";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { auth } from "@/lib/firebase/admin";
@@ -22,7 +23,8 @@ import { sessionSummary } from "./summary";
 // /action links of our mails (§6): the verification code activates the account (role "individual")
 // and signs the person in. On the device that signed up the link alone is enough; on any other
 // device the code is only applied once the account password is given (audit A-1). A reset code is
-// only checked here, the new password goes to /api/auth/password/confirm.
+// only checked here, the new password goes to /api/auth/password/confirm. A change-of-address code
+// moves the account to its new address (src/lib/account/email-change.ts, Z1-10).
 
 async function uidOf(result: OobResult): Promise<string> {
   if (result.localId) return result.localId;
@@ -86,6 +88,12 @@ async function action(request: Request): Promise<Response> {
   if (input.mode === "resetPassword") {
     const email = await checkResetCode(input.oobCode);
     return respond<ActionResponse>(flow, { status: "reset_ok", email });
+  }
+  if (input.mode === "changeEmail") {
+    // Checked, not consumed (Firebase would change the address itself): see confirmEmailChange.
+    const code = await withCodeErrors(() => verifyPasswordResetCode(input.oobCode));
+    const changed = await confirmEmailChange(code, flow.identity.ip);
+    return respond<ActionResponse>(flow, { status: "email_changed", email: changed.email });
   }
 
   // Read first, applied only once the device or the password says the account is this person's.

@@ -185,9 +185,11 @@ describe("sign-up, verification, session, profile, logout", () => {
 
   it("answers a closed account's e-mail like a new one and tells its owner the account is closed, not to sign in (Z1-11)", async () => {
     const email = uniqueEmail();
-    const mail = await signUp(new Jar(), email);
+    // Same device for the link: another device would need the password first (audit A-1).
+    const jar = new Jar();
+    const mail = await signUp(jar, email);
     const uid = (await findUidByEmail(email))!;
-    await verify(new Jar(), mail);
+    await verify(jar, mail);
     // What closeAccount leaves behind (tests/api/account/close.test.ts): dates, status, Auth disabled.
     const closedAt = new Date("2026-11-03T10:00:00.000Z");
     const purgeAt = new Date("2027-11-03T10:00:00.000Z");

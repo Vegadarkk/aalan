@@ -63,6 +63,10 @@ export const RATE_LIMITS = {
   // Personal data export: up to ~2 000 Firestore reads each (Spark: 50 000 a day), 3 per day.
   "account.close.uid": { points: 5, duration: HOUR, policy: "closed", key: "uid" },
   "account.export.uid": { points: 3, duration: DAY, policy: "closed", key: "uid" },
+  // Change of e-mail address (Z1-10): 5 requests a day per account (each one may mail the new
+  // address), and 3 an hour per new address whichever account asks (mail bombing).
+  "account.email.uid": { points: 5, duration: DAY, policy: "closed", key: "uid" },
+  "account.email.target": { points: 3, duration: HOUR, policy: "closed", key: "email" },
   // POST /api/auth/consents (CGU change notice and acceptance, one write and one audit entry): 10 per hour per account.
   // Open: a Valkey outage must not lock members out of the account area behind the panel.
   "consents.uid": { points: 10, duration: HOUR, policy: "open", key: "uid" },

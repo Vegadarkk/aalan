@@ -23,13 +23,13 @@ import { StatusPanel } from "./status-panel";
 import { TurnstileWidget, type TurnstileHandle } from "./turnstile-widget";
 import { useHydrated } from "./use-hydrated";
 
-// /action?mode=verifyEmail|resetPassword&oobCode=...: the code is read in the browser and posted
+// /action?mode=verifyEmail|resetPassword|changeEmail&oobCode=...: the code is read in the browser and posted
 // to /api/auth/action, never fetched server side (it stays out of logs and caches). Once read, it is
 // also removed from the address bar and the history entry: the single-use code should not survive a
 // reload, a shared screenshot or the browser history. A verification link opened on another device
 // than the sign-up's asks for the account password before the code is applied (audit A-1).
 
-type Mode = "verifyEmail" | "resetPassword";
+type Mode = "verifyEmail" | "resetPassword" | "changeEmail";
 
 type State =
   | { kind: "missing" }
@@ -37,13 +37,14 @@ type State =
   | { kind: "verified"; session: SessionSummary | null }
   | { kind: "password"; email: string }
   | { kind: "reset"; email: string }
+  | { kind: "emailChanged"; email: string }
   | { kind: "resetDone" }
   | { kind: "invalid" }
   | { kind: "expired" }
   | { kind: "failed"; error: unknown };
 
 function readMode(value: string | null): Mode | null {
-  return value === "verifyEmail" || value === "resetPassword" ? value : null;
+  return value === "verifyEmail" || value === "resetPassword" || value === "changeEmail" ? value : null;
 }
 
 export function ActionView({ nonce }: { nonce?: string }) {
@@ -79,6 +80,11 @@ export function ActionView({ nonce }: { nonce?: string }) {
       if (answer.status === "verified") onVerified(answer.session);
       else if (answer.status === "reset_ok") setState({ kind: "reset", email: answer.email });
       else if (answer.status === "password_required") setState({ kind: "password", email: answer.email });
+      else if (answer.status === "email_changed") {
+        // Every session of the account was revoked: this browser's one too.
+        setSession(null);
+        setState({ kind: "emailChanged", email: answer.email });
+      }
       // turnstile_required only answers a request that carried a password, which this one did not.
       else setState({ kind: "failed", error: new Error(`unexpected answer ${answer.status}`) });
     } catch (error) {
@@ -105,7 +111,7 @@ export function ActionView({ nonce }: { nonce?: string }) {
     return (
       <div role="status" className="flex items-center gap-3 rounded-lg border border-border bg-surface-muted px-5 py-6 text-foreground-muted">
         <KhatamLoader size="sm" />
-        <span>{mode === "verifyEmail" ? t("verifying") : t("checking")}</span>
+        <span>{mode === "verifyEmail" ? t("verifying") : mode === "changeEmail" ? t("changingEmail") : t("checking")}</span>
       </div>
     );
   }
@@ -176,8 +182,38 @@ export function ActionView({ nonce }: { nonce?: string }) {
       </StatusPanel>
     );
   }
+  if (state.kind === "emailChanged") {
+    return (
+      <StatusPanel
+        icon={CircleCheck}
+        title={t("emailChangedTitle")}
+        actions={
+          <Button asChild>
+            <Link href="/connexion">{t("goSignIn")}</Link>
+          </Button>
+        }
+      >
+        {t.rich("emailChangedBody", { email: () => <bdi dir="ltr">{state.email}</bdi> })}
+      </StatusPanel>
+    );
+  }
   // invalid or expired
   const expired = state.kind === "expired";
+  if (mode === "changeEmail") {
+    return (
+      <StatusPanel
+        icon={expired ? TimerOff : LinkIcon}
+        title={expired ? t("expiredTitle") : t("invalidTitle")}
+        actions={
+          <Button asChild>
+            <Link href="/parametres">{t("goSettings")}</Link>
+          </Button>
+        }
+      >
+        {t("emailChangeInvalidBody")}
+      </StatusPanel>
+    );
+  }
   if (mode === "resetPassword") {
     return (
       <StatusPanel

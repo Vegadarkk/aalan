@@ -109,7 +109,8 @@ export const passwordChangeSchema = z.object({ currentPassword: z.string().min(1
 
 export const actionSchema = z
   .object({
-    mode: z.enum(["verifyEmail", "resetPassword"]),
+    /** changeEmail: the confirmation link of a new address (Z1-10, src/lib/account/email-change.ts). */
+    mode: z.enum(["verifyEmail", "resetPassword", "changeEmail"]),
     oobCode: z.string().min(10).max(512),
     /**
      * verifyEmail from another device than the sign-up's: the account password (the previous answer
@@ -158,6 +159,8 @@ export interface SessionSummary {
    * `effective`: the day it applies to this member (CGU §22.1); `noticed`: the first notice is recorded.
    */
   cguUpdate: { version: string; effective: string; noticed: boolean } | null;
+  /** A change of address waiting for its confirmation link (Z1-10); absent or null: none. */
+  emailChange?: { newEmail: string; expiresAt: string } | null;
 }
 
 export type SignupResponse = { status: "verification_sent" };
@@ -167,6 +170,7 @@ export type ResetRequestResponse = { status: "sent" };
 export type ActionResponse =
   | { status: "verified"; session: SessionSummary | null }
   | { status: "reset_ok"; email: string }
+  | { status: "email_changed"; email: string }
   /** A verification link opened on another device: the code is kept until the account password is given. */
   | { status: "password_required"; email: string }
   | { status: "turnstile_required" };

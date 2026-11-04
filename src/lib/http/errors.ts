@@ -198,6 +198,11 @@ export type ErrorCode =
   | "pro_subscription_active"
   /** Purchased credits are left in the wallet (409). */
   | "wallet_not_empty"
+  // Change of e-mail address (Z1-10). Messages: Auth.errors.
+  /** The new address is the current one (400). */
+  | "same_email"
+  /** A Google-only account has no password to re-authenticate with (409). */
+  | "password_required"
   // Back office (phase 6, D13).
   /** config/legal without a mention art. 1-1 LCEN requires (422; details: { missing }). */
   | "legal_incomplete"

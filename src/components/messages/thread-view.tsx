@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { ArrowLeft, CalendarPlus, HandCoins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -39,6 +39,7 @@ import { formatClock, formatDayLabel } from "./format";
 import { ListingDoor } from "./listing-door";
 import { MessageItem } from "./message-item";
 import { useMessages } from "./messages-provider";
+import { PinnedSummary } from "./pinned-summary";
 import { ThreadActions, type ThreadAction } from "./thread-actions";
 import {
   canWrite,
@@ -46,6 +47,7 @@ import {
   groupByDay,
   lastMineStatus,
   pageCursorOf,
+  settledPins,
   withNewer,
   withOlderPage,
   withReadReceipt,
@@ -151,6 +153,9 @@ export function ThreadView({ cid }: { cid: string }) {
   const [picker, setPicker] = useState<{ open: boolean; kind?: AppointmentKind; kinds?: readonly AppointmentKind[]; startDay?: string; title?: string } | null>(null);
   const [offerForm, setOfferForm] = useState<{ open: boolean; answering?: { id: string; amount: number }; price: number } | null>(null);
   const offerText = useTranslations("Offers");
+  /** The settled pinned cards unfolded under lg (audit zone 5 n°6). */
+  const [pinsOpen, setPinsOpen] = useState(false);
+  const pinsId = useId();
   const scroller = useRef<HTMLDivElement>(null);
   const olderMark = useRef<HTMLDivElement>(null);
 
@@ -482,6 +487,7 @@ export function ThreadView({ cid }: { cid: string }) {
   const mine = lastMineStatus(data.messages);
   const pending = prunePending(view.pending, data.messages);
   const labels = { today: t("today"), yesterday: t("yesterday") };
+  const pins = settledPins(conversation, now);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="thread-view">
@@ -529,9 +535,11 @@ export function ThreadView({ cid }: { cid: string }) {
         <ErrorBanner tone="info" title={t("blockedMe")} className="mx-3 mt-3 lg:mx-5" />
       ) : null}
 
+      {pins ? <PinnedSummary pins={pins} open={pinsOpen} controls={pinsId} onToggle={() => setPinsOpen((open) => !open)} /> : null}
       {/* The pinned cards (request, offer, appointment) scroll on their own past 45 % of the
-          screen: the messages keep the rest (audit L4-23). */}
-      <div data-testid="thread-cards" className="flex max-h-[45dvh] shrink-0 flex-col overflow-y-auto overscroll-contain">
+          screen: the messages keep the rest (audit L4-23). Once settled they fold into the summary
+          line under lg (audit zone 5 n°6). */}
+      <div id={pinsId} data-testid="thread-cards" className={cn("flex max-h-[45dvh] shrink-0 flex-col overflow-y-auto overscroll-contain", pins && !pinsOpen && "max-lg:hidden")}>
         {conversation.rentalRequest ? (
           <RentalRequestCard
             key={conversation.rentalRequest.id}
@@ -614,7 +622,11 @@ export function ThreadView({ cid }: { cid: string }) {
             const label = first ? formatDayLabel(first.createdAt, now, locale, labels) : group.day;
             return (
               <section key={group.day} aria-label={label} className="flex flex-col gap-2">
-                <p className="pointer-events-none sticky top-2 z-10 mx-auto my-2 w-fit rounded-full border border-border bg-surface/95 px-3 py-0.5 text-xs font-medium text-foreground-muted shadow-sm">{label}</p>
+                {/* The day stays on top while its messages scroll under an opaque band that fades out:
+                    no text runs through the pill (audit zone 5 n°5). */}
+                <div className="pointer-events-none sticky top-0 z-10 -mx-3 flex justify-center bg-linear-to-b from-background from-60% to-transparent px-3 pt-2 pb-3 sm:-mx-5 lg:-mx-8" data-testid="thread-day">
+                  <p className="rounded-full border border-border bg-surface px-3 py-0.5 text-xs font-medium text-foreground-muted shadow-sm">{label}</p>
+                </div>
                 <ol className="flex flex-col gap-2">
                   {group.messages.map((message) => (
                     <MessageItem

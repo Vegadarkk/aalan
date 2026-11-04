@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Locale } from "@/config/site";
+import { factKey } from "@/lib/listings/card-facts";
 import type { MapListingLabels } from "./map-listings";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
 
@@ -20,6 +21,9 @@ export async function mapListingLabels(locale: Locale): Promise<MapListingLabels
     today: own("today"),
     per: (unit) => card(`per.${unit}`),
     pinPer: (unit) => units(unit),
-    fact: (id, value) => (card.has(`facts.${id as "surface"}`) ? card(`facts.${id as "surface"}`, { count: value }) : null),
+    fact: (id, value) => {
+      const key = factKey({ id, value }) as "facts.surface";
+      return card.has(key) ? card(key, { count: value as number, text: String(value) }) : null;
+    },
   };
 }

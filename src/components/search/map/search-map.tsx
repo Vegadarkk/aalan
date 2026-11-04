@@ -116,7 +116,8 @@ export default function SearchMap({ onReady }: SearchMapProps) {
   const labels: PinLabels = {
     pin: (listing) =>
       [t("pin.label", { title: listing.title, price: listing.amount }), listing.example ? t("pin.example") : null, listing.featured ? t("pin.featured") : null, listing.today ? t("pin.today") : null].filter(Boolean).join(", "),
-    cluster: (count) => t("pin.cluster", { count }),
+    // The visible count, as written on the bubble, inside its name (WCAG 2.5.3, audit zone 8, 5.2-6).
+    cluster: (count) => t("pin.cluster", { count, n: String(count) }),
   };
   useEffect(() => {
     latest.current = { state, onReady, labels, rtl };

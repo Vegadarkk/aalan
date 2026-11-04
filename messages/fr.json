@@ -33,6 +33,7 @@
     "contact": "Nous contacter",
     "procedures": "Démarches administratives",
     "visitorMenu": "Menu",
+    "floating": "Raccourcis",
     "signUp": "Créer un compte"
   },
   "Locale": {
@@ -156,6 +157,7 @@
     "intro": "Avec {site}, trouvez la bonne affaire près de chez vous : des petites annonces de particuliers et de professionnels partout au Maroc. Voitures, immobilier, location de vacances, emploi, téléphones, meubles, produits du terroir… Déposez une annonce gratuitement pour vendre, louer, donner ou proposer vos services, et échangez en toute sécurité par la messagerie.",
     "categoriesLabel": "Annonces par catégorie",
     "regionsLabel": "Annonces par région",
+    "directoryToggle": "Annonces par catégorie et par région",
     "prosTitle": "Nos solutions Pros",
     "questionsTitle": "Des questions ?",
     "becomePro": "Devenir Pro",
@@ -356,6 +358,7 @@
       "hidePassword": "Masquer le mot de passe",
       "or": "ou",
       "googleLoading": "Chargement du bouton Google…",
+      "googleContinue": "Continuer avec Google",
       "backHome": "Revenir à l'accueil",
       "waitLater": "dans quelques minutes",
       "brandPromise": "Une porte ouverte sur le monde.",
@@ -408,7 +411,9 @@
       "verifyTitle": "Confirmez votre adresse e-mail",
       "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi.",
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
-      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedSuspended": "Votre session a pris fin : votre compte est suspendu jusqu'au {date} (heure du Maroc).",
+      "sessionEndedSuspendedBody": "Reconnectez-vous pour lire vos conversations, voir le motif de la décision et la contester."
     },
     "signUp": {
       "title": "Créer un compte",
@@ -493,6 +498,8 @@
         "displayName": "Nom affiché",
         "displayNameHint": "{count} sur {max} caractères. Visible sur vos annonces et dans la messagerie : ni numéro ni lien.",
         "locale": "Langue de l'interface",
+        "localeHint": "Utilisée sur tous vos appareils et pour nos e-mails.",
+        "localeSaved": "Votre compte est réglé sur {name} : enregistrez pour utiliser cette langue sur tous vos appareils et pour nos e-mails.",
         "save": "Enregistrer",
         "saved": "Profil enregistré"
       },
@@ -3059,7 +3066,20 @@
     "facts": {
       "surface": "{count} m²",
       "rooms": "{count, plural, one {# pièce} other {# pièces}}",
-      "bedrooms": "{count} ch."
+      "bedrooms": "{count} ch.",
+      "year": "{text}",
+      "mileage": "{count, number} km",
+      "fuel": {
+        "diesel": "Diesel",
+        "essence": "Essence",
+        "hybride": "Hybride",
+        "electrique": "Électrique",
+        "gpl": "GPL"
+      },
+      "gearbox": {
+        "manuelle": "Manuelle",
+        "automatique": "Automatique"
+      }
     },
     "example": "Exemple",
     "rentalTotal": "≈ {total} pour {days, plural, one {# jour} other {# jours}}",
@@ -3829,7 +3849,7 @@
       "label": "{title}, {price}",
       "featured": "À la Une · Sponsorisé",
       "today": "publiée aujourd'hui",
-      "cluster": "{count, plural, one {# annonce} other {# annonces}} ici, zoomer pour les voir",
+      "cluster": "{n} {count, plural, one {annonce} other {annonces}} ici, zoomer pour les voir",
       "per": {
         "night": "/nuit",
         "month": "/mois",
@@ -3953,7 +3973,9 @@
     "stayDatesHint": "Les annonceurs déclarent leurs nuits indisponibles : les logements libres sur tout le séjour s'affichent, ceux à confirmer en dernier.",
     "includeSoldOut": "Inclure les articles épuisés",
     "includeSoldOutHint": "Les boutiques laissent en ligne les articles dont le stock est à 0.",
-    "promo": "En promotion"
+    "promo": "En promotion",
+    "modelPickBrand": "Choisissez d'abord une marque.",
+    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche."
   },
   "Pro": {
     "metaTitle": "Espace Pro",
@@ -4367,7 +4389,9 @@
       "archivedEmptyBody": "Une conversation archivée revient dans la boîte de réception dès qu'un nouveau message arrive.",
       "selectTitle": "Choisissez une conversation",
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
-      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion."
+      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
+      "busy": "Vous avez déjà {count} onglets ouverts sur la messagerie : fermez-en un pour reprendre le direct.",
+      "refreshLive": "Actualiser"
     },
     "row": {
       "you": "Vous :",
@@ -4421,7 +4445,9 @@
       "counterpartClosed": "{name} a fermé son compte : vous pouvez relire la conversation, mais plus y écrire.",
       "frozen": "Cette conversation est suspendue : vous pouvez la lire, mais plus y écrire.",
       "suspended": "Votre compte est suspendu : vous pouvez lire vos conversations, mais plus envoyer de message.",
-      "shop": "Voir la boutique « {title} »"
+      "shop": "Voir la boutique « {title} »",
+      "pinsShow": "Afficher le détail de l'offre et du rendez-vous",
+      "pinsHide": "Masquer le détail de l'offre et du rendez-vous"
     },
     "review": {
       "label": "Donner votre avis",
@@ -5154,6 +5180,7 @@
     "failed": "Le porte-monnaie n'a pas pu être chargé.",
     "retry": "Réessayer",
     "unit": "1 crédit = 1 DH TTC",
+    "unitShop": "1 crédit = 1 DH HT",
     "balance": "Crédits achetés",
     "plan": "Crédits de votre offre",
     "planUntil": "Valables jusqu'au {date}, non cumulables",
@@ -5976,7 +6003,7 @@
     "check": {
       "title": "Contrôle de l'agrément sur document",
       "saveFirst": "Enregistrez d'abord votre numéro d'agrément : vous pourrez ensuite envoyer votre décision d'agrément pour obtenir la mention « agrément contrôlé sur document » sur votre vitrine.",
-      "none": "Envoyez votre décision d'agrément (PDF ou photo nette). Si son numéro, la raison sociale ou l'ICE et sa date concordent avec votre compte Pro, votre vitrine affiche « agrément contrôlé sur document ».",
+      "none": "Envoyez votre décision d'agrément (PDF de 5 pages au plus ou photo nette). Si son numéro, l'ICE de votre société et sa date concordent avec votre compte Pro, votre vitrine affiche « agrément contrôlé sur document » ; si la décision ne porte pas d'ICE lisible, notre équipe la vérifie. 5 envois par mois au plus.",
       "pending": "Document reçu : contrôle en cours. Le résultat s'affiche ici en quelques minutes.",
       "review": "Notre équipe vérifie votre document : le résultat s'affichera ici.",
       "verified": "Agrément contrôlé sur document le {date}.",

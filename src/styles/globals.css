@@ -159,6 +159,30 @@
   --float-shadow: rgb(0 0 0 / 0.55);
 }
 
+/*
+ * Toasts (sonner, richColors) on the semantic roles, so light and dark follow the theme. Sonner's
+ * own light colours read 4.26 (success), 4.35 (error, info) and 3.08 (warning) on their washes,
+ * under WCAG AA (axe color-contrast "serious", audit zone 3, 14); these read 5.4 to 17 in both
+ * themes. One more attribute than sonner's theme rule, which is injected after this sheet.
+ */
+:root [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--surface);
+  --normal-border: var(--border-strong);
+  --normal-text: var(--foreground);
+  --success-bg: var(--success-surface);
+  --success-border: color-mix(in srgb, var(--success) 35%, var(--success-surface));
+  --success-text: var(--success);
+  --info-bg: var(--surface-muted);
+  --info-border: var(--border-strong);
+  --info-text: var(--link);
+  --warning-bg: var(--warning-surface);
+  --warning-border: color-mix(in srgb, var(--warning) 35%, var(--warning-surface));
+  --warning-text: var(--warning);
+  --error-bg: var(--danger-surface);
+  --error-border: color-mix(in srgb, var(--danger) 35%, var(--danger-surface));
+  --error-text: var(--danger);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -243,12 +267,18 @@
     0 10px 22px -10px rgb(11 30 31 / 0.55);
 }
 
-/* The sticky header lifts off the page once it scrolls (scroll-driven, no script; static where unsupported). */
+/*
+ * The sticky header lifts off the page once it scrolls (scroll-driven, no script; static where
+ * unsupported). Reduced motion keeps it still: a scroll timeline ignores the global duration
+ * override below, so it is switched off here (audit zone 8, 5.2-4).
+ */
 @utility header-lift {
   @supports (animation-timeline: scroll()) {
-    animation: header-lift linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 4rem;
+    @media (prefers-reduced-motion: no-preference) {
+      animation: header-lift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 4rem;
+    }
   }
 }
 
@@ -257,6 +287,37 @@
     box-shadow:
       0 1px 0 var(--float-edge),
       0 10px 24px -18px var(--float-shadow);
+  }
+}
+
+/*
+ * A <details> folded on phones and open from md (fold-open-md) or lg (fold-open-lg): the summary
+ * steps aside and the content shows whatever the open state (::details-content). Browsers without
+ * that pseudo-element keep the summary, so the content stays one tap away.
+ */
+@utility fold-open-md {
+  @supports selector(::details-content) {
+    @media (width >= 48rem) {
+      & > summary {
+        display: none;
+      }
+      &::details-content {
+        content-visibility: visible;
+      }
+    }
+  }
+}
+
+@utility fold-open-lg {
+  @supports selector(::details-content) {
+    @media (width >= 64rem) {
+      & > summary {
+        display: none;
+      }
+      &::details-content {
+        content-visibility: visible;
+      }
+    }
   }
 }
 
@@ -402,7 +463,7 @@ html[data-welcome]:has(#main:target) body {
 html[data-welcome]:has(#main:target) .welcome {
   display: none;
 }
-/* Focus lands on the page at the end (tabindex -1 while it holds focus): no ring around the whole page. */
+/* Focus lands on the page (skip link, end of the welcome threshold; tabindex -1): no ring around the whole page. */
 #main[tabindex="-1"]:focus {
   outline: none;
 }
@@ -890,6 +951,16 @@ html[data-welcome~="door"] .welcome-glints {
   & .search-toolbar-chips {
     flex-wrap: nowrap;
   }
+  /* The chips row scrolls under the view toggle: its end fades out, a hint that more chips
+     (the dates, « Tout effacer ») follow; phones (audit L4-10) and desktop (search audit P2-3).
+     The fade covers the trailing padding only, so the last chip is clear once scrolled to. */
+  & .search-toolbar-scroll {
+    padding-inline-end: 2rem;
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+  }
+  & .search-toolbar-scroll:dir(rtl) {
+    mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
+  }
 
   @media (width >= 64rem) {
     & .search-panel {
@@ -985,15 +1056,6 @@ html[data-welcome~="door"] .welcome-glints {
       top: 4.25rem;
       inset-inline: 0;
       padding-inline: 1rem;
-    }
-    /* The chips row scrolls under the view toggle: its end fades out, a hint that more chips
-       (the dates, « Tout effacer ») follow (audit L4-10). */
-    & .search-toolbar-scroll {
-      padding-inline-end: 2rem;
-      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
-    }
-    & .search-toolbar-scroll:dir(rtl) {
-      mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
     }
   }
   @media (prefers-reduced-motion: reduce) {

@@ -6,8 +6,10 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { requirePageStaff } from "@/lib/auth/current-user";
 import { HttpError } from "@/lib/http/errors";
 import { listQueue, QUEUE_LIMIT_DEFAULT, type ReportQueueResponse } from "@/lib/reports/admin";
+import { targetSummaries } from "@/lib/reports/summaries";
 import { cn } from "@/lib/utils";
 import { plural, PRIORITY_DELAY } from "../../_lib/moderation-format";
+import { targetCard, type TargetCard } from "../../_lib/target-cards";
 import { ReportQueue } from "../../_components/report-queue";
 
 // Report queues (design D12, D24): open reports grouped by target, past due first, then by
@@ -36,6 +38,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
     throw error;
   }
   const renderedAt = new Date().toISOString();
+  // One line per target in words (title, seller, price, city, photo), not its raw id (zone 7 P2-8).
+  const firsts = queue.groups.flatMap((group) => queue.items.find((item) => item.targetKey === group.targetKey) ?? []);
+  const summaries = await targetSummaries(firsts.map((item) => ({ key: item.targetKey, listingId: item.target.listingId })));
+  const cards: Record<string, TargetCard> = Object.fromEntries(firsts.map((item) => [item.targetKey, targetCard(item.target, summaries[item.targetKey])]));
 
   return (
     <>
@@ -81,7 +87,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
             {plural(queue.groups.length, "contenu", "contenus")}, {plural(queue.items.length, "signalement ouvert", "signalements ouverts")}
             {after ? " sur cette page" : ""}.
           </p>
-          <ReportQueue items={queue.items} groups={queue.groups} renderedAt={renderedAt} />
+          <ReportQueue items={queue.items} groups={queue.groups} renderedAt={renderedAt} cards={cards} />
           <div className="flex flex-wrap gap-4 text-sm">
             {after ? (
               <Link href={base} className="text-link underline underline-offset-4 hover:no-underline">

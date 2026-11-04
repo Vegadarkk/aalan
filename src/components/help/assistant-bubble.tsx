@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { lazyIsland } from "@/components/layout/lazy-island";
@@ -23,12 +23,14 @@ export function AssistantBubble() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const bubble = useRef<HTMLButtonElement>(null);
   if (!showsAssistantBubble(pathname)) return null;
   // Above the « Vendre » arch on a phone, or in the corner where the arch is left out.
   const aboveSell = showsSellButton(pathname);
   return (
     <>
       <button
+        ref={bubble}
         type="button"
         data-testid="assistant-bubble"
         aria-label={t("open")}
@@ -53,7 +55,7 @@ export function AssistantBubble() {
       </button>
       {loaded ? (
         <Suspense fallback={null}>
-          <AssistantPanel open={open} onOpenChange={setOpen} />
+          <AssistantPanel open={open} onOpenChange={setOpen} returnFocus={() => bubble.current} />
         </Suspense>
       ) : null}
     </>

@@ -178,6 +178,8 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
               <RowsArea className="search-rows">
                 <PendingRegion className="flex flex-col gap-3">
                   {hits.length === 0 && featuredRows.length > 0 ? <FeaturedHeading id="featured-rows-title" empty className="px-2 pt-1" /> : null}
+                  {/* The rows' h3 titles sit under a heading of their own, as in the list view (audit zone 8, 5.2-5). */}
+                  {hits.length > 0 ? <h2 className="sr-only">{t("results")}</h2> : null}
                   {/* Lazy: the server renders the list view (B14), where these rows are hidden and must not load. */}
                   {featuredRows.length > 0 ? <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={own("featuredRows")} /> : null}
                   {organicRows.length > 0 ? <ResultRows listings={organicRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={t("results")} /> : null}

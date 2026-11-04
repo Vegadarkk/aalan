@@ -1,10 +1,12 @@
 import "server-only";
+import { carModelOf } from "@/config/car-models";
 import { criterionById, subcategoryById } from "@/config/categories";
 import { cityBySlug, regionByCode } from "@/config/regions";
 import { availableValues, isSoldOut, isVariantCriterion, priceRange, promoSummary } from "@/lib/contracts/catalog";
 import type { ListingStatus, ModerationState } from "@/lib/contracts/listings";
 import type { ListingRecord } from "@/lib/db/repositories/listings";
 import type { ListingDoc } from "@/lib/db/schemas";
+import { exampleSearchTitles } from "@/lib/demo/localized";
 import ar from "../../../messages/ar.json";
 import fr from "../../../messages/fr.json";
 import { blockedDays, freshUntil, moroccoToday } from "@/lib/listings/rental-availability";
@@ -169,6 +171,11 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
     const filterable = criterionValue(criterion.id, value);
     if (filterable !== undefined) attributes[attributeField(criterion.id)] = filterable;
   }
+  // Search-only: the catalogue model read from the free-text model (src/config/car-models.ts).
+  if (criteria.some((criterion) => criterion.id === "model") && criteria.some((criterion) => criterion.id === "car-brand")) {
+    const carModel = carModelOf(listing.attributes["car-brand"], listing.attributes["model"]);
+    if (carModel) attributes[attributeField("car-model")] = carModel;
+  }
   if (listing.condition) attrsText.push(...labels(["Criteria", "condition", "options", listing.condition]));
   // Variants (Pro catalogue §2): a criterion axis filters on the values still sold (« taille 42
   // disponible »), a free axis is searchable text (« 500 g »).
@@ -188,6 +195,8 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
   const title = listing.title.trim();
   const foldedTitle = foldDigits(title);
   if (foldedTitle !== title) attrsText.push(foldedTitle);
+  // An example listing is found in either language (it shows in the page's: src/lib/demo/localized.ts).
+  if (listing.example) attrsText.push(...exampleSearchTitles(listing.id).filter((other) => other !== title));
 
   const photo = listing.photos[0];
   const featuredUntil = listing.boosts.featuredUntil?.getTime();

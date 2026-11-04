@@ -13,11 +13,12 @@ import { shopPaymentAdmin } from "@/lib/pro/seller-payment";
 import { shopSocialAdmin } from "@/lib/pro/social-links";
 import { ProDecisionForm, ProEffectsRerun } from "../../../_components/pro-decision-form";
 import { IDENTIFIER_LABEL, LEGAL_FORM_LABEL, LIFECYCLE_LABEL, PHONE_OUTCOME_LABEL, RENTAL_CHECK_ISSUE_LABEL, RENTAL_CHECK_STATUS_LABEL, SECTOR_LABEL, formatIce } from "../../../_components/pro-labels";
+import { ProNotes, ProSanctionLinks, ProSectorForm } from "../../../_components/pro-lifecycle-panel";
 import { ProPhoneCheckForm } from "../../../_components/pro-phone-check-form";
 import { RentalCheckDecisionForm } from "../../../_components/rental-check-decision-form";
 import { ShopPaymentPanel } from "../../../_components/shop-payment-panel";
 import { ShopSocialPanel } from "../../../_components/shop-social-panel";
-import { formatMorocco } from "../../../_lib/moderation-format";
+import { ACCOUNT_STATUS_LABEL, formatMorocco, targetHref } from "../../../_lib/moderation-format";
 
 // Review of one Pro application (phase 7 design §4): the shop, the legal identifiers to check
 // against the registry, the KYBC pieces (each opening is journaled), the applicant's account, the
@@ -81,6 +82,8 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
   const phoneVerified = owner?.phoneVerified === true;
   const { form, ...identifiers } = review.legal;
   const check = review.kybc.phoneCheck;
+  // A validated shop (publishing, or suspended since): its lifecycle actions (zone 7 audit P2-10).
+  const validated = review.kybc.status === "verified" && review.lifecycle !== "pending_verification" && review.lifecycle !== "rejected";
 
   return (
     <>
@@ -181,7 +184,7 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
                 rows={[
                   ["Nom affiché", <span key="owner" dir="auto">{owner.displayName}</span>],
                   ["Profil", <span key="public" className="font-mono" dir="ltr">{owner.publicId}</span>],
-                  ["Compte", owner.status === "active" ? "Actif" : owner.status],
+                  ["Compte", ACCOUNT_STATUS_LABEL[owner.status] ?? owner.status],
                   ["Inscrit le", formatMorocco(owner.createdAt, "date")],
                   ["E-mail", owner.emailVerified ? "Vérifié" : "Non vérifié"],
                   ["Téléphone", phoneVerified ? "Vérifié" : "Non vérifié"],
@@ -230,6 +233,35 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
               </p>
             </Panel>
           ) : null}
+
+          {validated ? (
+            <section aria-labelledby="pro-lifecycle-title" data-testid="pro-lifecycle" className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5">
+              <h2 id="pro-lifecycle-title" className="text-lg font-semibold">
+                Boutique validée
+              </h2>
+              <Facts
+                rows={[
+                  ["État", LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle],
+                  ["Activité", SECTOR_LABEL[review.sector] ?? review.sector],
+                  ...(review.kybc.registrySource ? ([["Registre consulté", REGISTRY_LABEL[review.kybc.registrySource] ?? review.kybc.registrySource]] as [string, ReactNode][]) : []),
+                ]}
+              />
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                <h3 className="text-sm font-semibold">Corriger l&apos;activité</h3>
+                <ProSectorForm proId={review.proId} sector={review.sector} sectors={review.correctableSectors} />
+              </div>
+              {owner ? (
+                <div className="flex flex-col gap-2 border-t border-border pt-4">
+                  <h3 className="text-sm font-semibold">Suspendre ou fermer</h3>
+                  <ProSanctionLinks ownerUid={owner.uid} decideHref={targetHref(`user:${owner.uid}`)} />
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          <Panel title="Notes de l'équipe">
+            <ProNotes proId={review.proId} notes={review.notes} />
+          </Panel>
         </aside>
       </div>
     </>

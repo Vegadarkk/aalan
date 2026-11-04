@@ -14,6 +14,7 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   verifyEmail: { displayName: "Nadia", actionUrl: ACTION },
   resetPassword: { displayName: "Nadia", actionUrl: ACTION },
   signupExisting: { displayName: "Nadia", loginUrl: `${SITE}/fr/connexion`, resetUrl: `${SITE}/fr/mot-de-passe-oublie` },
+  signupClosed: { displayName: "Nadia", closedAt: "2026-11-03T22:30:00.000Z", reusableFrom: "2027-11-03T22:30:00.000Z" },
   passwordChanged: { displayName: "Nadia", at: "2026-10-16T09:30:00.000Z" },
   staffInvite: { displayName: "Nadia", actionUrl: ACTION, role: "moderator" },
   phoneVerified: { displayName: "Nadia", phone: "+212 6 00 00 00 00" },
@@ -165,8 +166,24 @@ describe("renderMail", () => {
     }
   }
 
+  it("signupClosed: closure day and release day in Casablanca time, a way to reopen, no sign-in link (Z1-11)", () => {
+    // Morocco's day: 23:30 UTC was 00:30 the next day before 20 September 2026 (UTC+1), the same day since (UTC).
+    const data = { displayName: "Nadia", closedAt: "2026-09-10T23:30:00.000Z", reusableFrom: "2027-09-10T23:30:00.000Z" };
+    const fr = renderMail(mail("signupClosed", "fr", data));
+    expect(fr.subject).toBe("Inscription impossible : votre compte Aalan est fermé");
+    expect(fr.text).toContain("fermé le 11 septembre 2026");
+    expect(fr.text).toContain("à partir du 10 septembre 2027");
+    expect(fr.text).toContain("Pour rouvrir votre compte plutôt que d'attendre, écrivez-nous à ");
+    expect(fr.text).toContain(`${SITE}/fr/aide/contact`);
+    expect(fr.text).not.toMatch(/connexion|mot-de-passe-oublie/);
+    const ar = renderMail(mail("signupClosed", "ar", data));
+    expect(ar.text).toContain("لإعادة فتح حسابك");
+    expect(ar.text).toContain(`${SITE}/ar/aide/contact`);
+    expect(renderMail(mail("signupClosed", "rif", data)).text).toContain(`${SITE}/rif/aide/contact`);
+  });
+
   it("ends security mails with the not-you sentence in both languages", () => {
-    for (const template of ["verifyEmail", "resetPassword", "signupExisting"] as const) {
+    for (const template of ["verifyEmail", "resetPassword", "signupExisting", "signupClosed"] as const) {
       expect(renderMail(mail(template, "fr")).text).toContain("Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.");
       expect(renderMail(mail(template, "ar")).text).toContain("إذا لم تكن أنت من قام بهذا الطلب");
     }

@@ -5,9 +5,11 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { LoginForm } from "@/components/auth/login-form";
 import { Link, redirect } from "@/i18n/navigation";
-import { pageLocale } from "@/i18n/params";
+import { numbersLocale, pageLocale } from "@/i18n/params";
 import { currentMember } from "@/lib/auth/current-user";
+import { endedSessionReason } from "@/lib/auth/ended-session";
 import { afterSignInTarget, safeNextPath } from "@/lib/auth/next-path";
+import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { SESSION_COOKIE } from "@/lib/security/cookies";
 import { DEVICE_ID_HEADER, gisNonce } from "@/lib/security/device";
 
@@ -38,8 +40,12 @@ export default async function SignInPage({ params, searchParams }: Props) {
   // A session cookie that no longer signs in: the session was revoked (a shop validated, a
   // suspension, a password change elsewhere) or ended; a sign-out clears it. Said instead of a
   // silent sign-in page (zone 6 audit 6-07).
-  const ended = Boolean((await cookies()).get(SESSION_COOKIE)?.value);
+  const sessionCookie = (await cookies()).get(SESSION_COOKIE)?.value;
+  const ended = Boolean(sessionCookie);
   const toPro = next !== null && /^\/(?:[a-z]{2,3}\/)?pro(?:[/?#]|$)/.test(next);
+  // Ended by a suspension (synthesis §5, zone 7 P2-4): say so, with its end in Morocco's time.
+  const reason = ended ? await endedSessionReason(sessionCookie) : null;
+  const until = reason ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeStyle: "short", timeZone: moroccoTimeZone(reason.until.getTime()) }).format(reason.until) : null;
   return (
     <AuthShell
       title={t("title")}
@@ -53,7 +59,13 @@ export default async function SignInPage({ params, searchParams }: Props) {
         </p>
       }
     >
-      {ended ? <ErrorBanner tone="info" className="mb-6" title={t(toPro ? "sessionEndedPro" : "sessionEnded")} /> : null}
+      {until ? (
+        <ErrorBanner tone="warning" className="mb-6" title={t("sessionEndedSuspended", { date: until })}>
+          {t("sessionEndedSuspendedBody")}
+        </ErrorBanner>
+      ) : ended ? (
+        <ErrorBanner tone="info" className="mb-6" title={t(toPro ? "sessionEndedPro" : "sessionEnded")} />
+      ) : null}
       <LoginForm nonce={nonce} gisNonce={deviceId ? gisNonce(deviceId) : undefined} />
     </AuthShell>
   );

@@ -31,15 +31,9 @@ const ACTIONS = "a[href], button:not([disabled])";
 
 const part = (root: HTMLElement, name: DoorPart) => root.querySelector<HTMLElement>(`[data-welcome-part='${name}']`);
 
-/** Focus moves to the page itself, without scrolling; tabindex only while it holds focus. */
+/** Focus moves to the page itself, without scrolling (#main has tabindex -1, root-shell.tsx). */
 function focusMain(): void {
-  const main = document.getElementById("main");
-  if (!main) return;
-  if (!main.hasAttribute("tabindex")) {
-    main.setAttribute("tabindex", "-1");
-    main.addEventListener("blur", () => main.removeAttribute("tabindex"), { once: true });
-  }
-  main.focus({ preventScroll: true });
+  document.getElementById("main")?.focus({ preventScroll: true });
 }
 
 export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; children: ReactNode }) {

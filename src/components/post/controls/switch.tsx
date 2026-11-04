@@ -23,12 +23,14 @@ export const SwitchField = forwardRef<HTMLButtonElement, SwitchFieldProps>(funct
   const id = useId();
   const hintId = `${id}-hint`;
   return (
-    <div className={cn("relative flex items-start justify-between gap-4 py-2", disabled && "opacity-60", className)}>
+    // Disabled: the switch fades, the texts stay readable (muted, AA): a faded hint read 2.8:1 (audit zone 3, 14).
+    <div className={cn("relative flex items-start justify-between gap-4 py-2", className)}>
       <div className="flex min-w-0 flex-col gap-0.5">
         <label
           htmlFor={id}
           className={cn(
             "text-base font-medium leading-6",
+            disabled && "text-foreground-muted",
             "after:absolute after:inset-x-0 after:top-1/2 after:h-full after:min-h-11 after:-translate-y-1/2 after:content-['']",
             !disabled && "cursor-pointer",
           )}
@@ -52,7 +54,7 @@ export const SwitchField = forwardRef<HTMLButtonElement, SwitchFieldProps>(funct
         className={cn(
           "relative mt-0.5 inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-border-control",
           // Dark structure (bab-800) is a surface tone: a lighter track keeps the dark thumb visible (6.3:1).
-          "transition-colors duration-150 ease-door data-[state=checked]:bg-structure dark:data-[state=checked]:bg-bab-300 disabled:cursor-not-allowed",
+          "transition-colors duration-150 ease-door data-[state=checked]:bg-structure dark:data-[state=checked]:bg-bab-300 disabled:cursor-not-allowed disabled:opacity-60",
           // 44 px touch target without growing the visual control.
           "before:absolute before:-inset-y-2.5 before:-inset-x-1 before:content-['']",
         )}

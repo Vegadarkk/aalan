@@ -1,4 +1,5 @@
-import type { Condition } from "@/config/categories";
+import { CAR_MODELS } from "@/config/car-models";
+import { CAR_BRANDS, CRITERIA, type Condition } from "@/config/categories";
 import { CITIES } from "@/config/regions";
 import { CITY_LEXICON, citySpellings } from "@/config/search/darija";
 import type { SellerTypeFilter } from "@/lib/search/params";
@@ -11,8 +12,13 @@ import { phraseTokens } from "./tokens";
 //
 // Rules for edits:
 // - A "thing" is a generic noun that names a subcategory or a category ("vélo", "tomobil",
-//   "appartement"), never a brand or a model ("iphone", "golf", "dacia" stay words: the engine finds
-//   them in titles, a filter would drop the right listings or keep the wrong ones).
+//   "appartement"), never a brand or a model ("iphone" stays a word: the engine finds it in titles,
+//   a filter would drop the right listings or keep the wrong ones).
+// - Vehicle brands and car models are their own entries (audit lot 7, zone 2 P1-1): where a listing
+//   must state them (car-brand, moto-brand required; the catalogue model read from the model text,
+//   src/config/car-models.ts) they become those filters, and with nothing else named they mean a
+//   car ("Renault Clio") or a motorbike ("Yamaha"). Elsewhere ("pneu renault") they stay words. A
+//   brand or a model that is also a common word ("seat", "golf", "208") needs its brand or a car word.
 // - A word with a second common meaning is left out, or `weak` (needs a rent or sale word: "dar"),
 //   or guarded (a city that is also a word: "safi", "sale", "العيون" need "à", "f", "في", "ب").
 // - Prices, distances and sorts are filters the visitor sees as chips; a vague word never becomes a
@@ -37,6 +43,10 @@ export interface ThingEntry {
 
 export type Entry =
   | ThingEntry
+  /** A vehicle brand: `car` and/or `moto` option ids (src/config/categories.ts). */
+  | { kind: "brand"; car?: string; moto?: string; guarded?: true }
+  /** A catalogue car model (src/config/car-models.ts). */
+  | { kind: "model"; model: string; brand: string; guarded?: true }
   | { kind: "rent" }
   | { kind: "sale" }
   | { kind: "holiday" }
@@ -133,6 +143,8 @@ const THINGS: [string[], ThingEntry][] = [
   sub("betail-moutons", ["vache", "vaches", "بقرة"], { "livestock-type": "vache" }),
   sub("betail-moutons", ["chevre", "chevres", "me3za", "معزة"], { "livestock-type": "chevre" }),
   sub("betail-moutons", ["cheval", "chevaux", "حصان"], { "livestock-type": "cheval" }),
+  // Jobs (audit zone 2 P3-5): the category, offers and seekers alike.
+  [["emploi", "emplois", "job", "jobs", "offre d emploi", "offres d emploi", "khedma", "khdma", "وظيفة", "وظائف", "شغل"], { kind: "thing", category: "emploi" }],
   // Services and local produce.
   sub("cours", ["cours particuliers", "cours particulier", "soutien scolaire", "cours de soutien"]),
   sub("demenagement-transport", ["demenagement", "demenageur", "demenageurs"]),
@@ -167,8 +179,76 @@ const OTHER: [string[], Entry][] = [
   [["enfant", "enfants", "pour enfant", "pour enfants", "junior", "اطفال", "للأطفال", "طفل"], { kind: "modifier", options: { velos: ["bike-type", "enfant"], vetements: ["audience", "enfant"], chaussures: ["audience", "enfant"], "tenues-traditionnelles": ["audience", "enfant"] } }],
   [["femme", "femmes", "pour femme", "pour femmes", "نسائي", "نسائية"], { kind: "modifier", options: { vetements: ["audience", "femme"], chaussures: ["audience", "femme"], "tenues-traditionnelles": ["audience", "femme"], "sacs-accessoires": ["audience", "femme"], "montres-bijoux": ["audience", "femme"] } }],
   [["homme", "hommes", "pour homme", "pour hommes", "رجالي", "رجالية"], { kind: "modifier", options: { vetements: ["audience", "homme"], chaussures: ["audience", "homme"], "tenues-traditionnelles": ["audience", "homme"], "sacs-accessoires": ["audience", "homme"], "montres-bijoux": ["audience", "homme"] } }],
-  [["electrique", "electriques"], { kind: "modifier", options: { velos: ["bike-type", "electrique"] } }],
+  [["electrique", "electriques", "electric"], { kind: "modifier", options: { velos: ["bike-type", "electrique"], ...motorOptions("fuel", "electrique") } }],
+  // A car's fuel and gearbox (Criteria.fuel, Criteria.gearbox).
+  [["diesel", "gasoil", "gazole", "gazoil", "mazout", "ديزل", "مازوط", "غازوال"], { kind: "modifier", options: motorOptions("fuel", "diesel") }],
+  [["essence", "benzine", "lisans", "بنزين", "ليصانص"], { kind: "modifier", options: motorOptions("fuel", "essence") }],
+  [["hybride", "hybrides", "hybrid", "هجين", "هايبرد"], { kind: "modifier", options: motorOptions("fuel", "hybride") }],
+  [["gpl"], { kind: "modifier", options: motorOptions("fuel", "gpl") }],
+  [["automatique", "boite auto", "boite automatique", "bva", "otomatik", "اوتوماتيك", "أوتوماتيك", "اوتوماتيكية"], { kind: "modifier", options: motorOptions("gearbox", "automatique") }],
+  [["manuelle", "boite manuelle", "bvm", "يدوية"], { kind: "modifier", options: motorOptions("gearbox", "manuelle") }],
 ];
+
+/** Subcategories with fuel and gearbox (cars, car rentals, vans). */
+function motorOptions(id: "fuel" | "gearbox", value: string): Record<string, readonly [string, string]> {
+  return Object.fromEntries(["voitures", "location-voitures", "utilitaires-camions"].map((sub) => [sub, [id, value] as const]));
+}
+
+/** Extra spellings of a brand (its id's words are always one). */
+const BRAND_SPELLINGS: Readonly<Record<string, readonly string[]>> = {
+  renault: ["renaut", "رينو", "رونو"],
+  dacia: ["dasia", "داسيا"],
+  peugeot: ["peugot", "pijo", "بيجو"],
+  citroen: ["citroën", "سيتروين", "ستروين"],
+  volkswagen: ["vw", "volks", "فولكسفاغن", "فولكس فاجن"],
+  "mercedes-benz": ["mercedes", "mercedes benz", "merco", "mersedes", "مرسيدس", "مرسيدس بنز"],
+  bmw: ["بي ام"],
+  toyota: ["تويوتا"],
+  hyundai: ["hyndai", "hundai", "هيونداي"],
+  kia: ["كيا"],
+  ford: ["فورد"],
+  fiat: ["فيات"],
+  nissan: ["نيسان"],
+  audi: ["أودي", "اودي"],
+  opel: ["أوبل", "اوبل"],
+  skoda: ["سكودا"],
+  "land-rover": ["landrover"],
+  "alfa-romeo": ["alfa"],
+  "harley-davidson": ["harley"],
+};
+/** Brand words that are also everyday words or other names: understood with a model or a car word only. */
+const GUARDED_BRANDS: ReadonlySet<string> = new Set(["mini", "smart", "seat", "jeep", "ds", "mg", "jac", "docker", "becane"]);
+/** Brands left out: "tata" is a city, "autre" is not a brand. */
+const NO_BRAND_WORD: ReadonlySet<string> = new Set(["tata", "autre"]);
+
+function brandEntries(): [string[], Entry][] {
+  const byId = new Map<string, { car?: string; moto?: string }>();
+  for (const id of CAR_BRANDS) byId.set(id, { ...byId.get(id), car: id });
+  for (const id of CRITERIA["moto-brand"].options ?? []) byId.set(id, { ...byId.get(id), moto: id });
+  const out: [string[], Entry][] = [];
+  for (const [id, brands] of byId) {
+    if (NO_BRAND_WORD.has(id)) continue;
+    out.push([[id.replace(/-/g, " "), ...(BRAND_SPELLINGS[id] ?? [])], { kind: "brand", ...brands, ...(GUARDED_BRANDS.has(id) ? { guarded: true as const } : {}) }]);
+  }
+  return out;
+}
+
+function modelEntries(): [string[], Entry][] {
+  return CAR_MODELS.map((model) => [[...model.spellings], { kind: "model", model: model.id, brand: model.brand, ...(model.guarded ? { guarded: true as const } : {}) }]);
+}
+
+/** Single words of a car ("voiture", "tomobil"): they let a guarded brand or model be understood. */
+export const CAR_WORDS: ReadonlySet<string> = new Set(THINGS.filter(([, entry]) => entry.family === "car").flatMap(([phrases]) => phrases.map((phrase) => phraseTokens(phrase).join(" "))));
+
+/** Words of each brand (normalized phrases), to tell whether a guarded model's brand was typed. */
+export function brandPhrases(): Map<string, string[][]> {
+  const map = new Map<string, string[][]>();
+  for (const [phrases, entry] of brandEntries()) {
+    if (entry.kind !== "brand" || !entry.car) continue;
+    map.set(entry.car, phrases.map(phraseTokens));
+  }
+  return map;
+}
 
 /**
  * City spellings that are also everyday words ("sale", "safi" = enough, "العيون" = the eyes, "ميسور"
@@ -217,7 +297,7 @@ export interface PhraseEntry {
 /** Every phrase of the vocabulary, normalized; cities after the rest (a listed word wins). */
 export function lexiconPhrases(): PhraseEntry[] {
   const out: PhraseEntry[] = [];
-  for (const [phrases, entry] of [...THINGS, ...OTHER, ...cityEntries()]) {
+  for (const [phrases, entry] of [...THINGS, ...OTHER, ...brandEntries(), ...modelEntries(), ...cityEntries()]) {
     for (const phrase of phrases) {
       const tokens = phraseTokens(phrase);
       if (tokens.length > 0) out.push({ tokens, entry, phrase });

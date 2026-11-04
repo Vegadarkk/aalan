@@ -222,7 +222,38 @@ export interface ProReview {
   pieces: ProReviewPiece[];
   /** Car rental agency licence check (decision 5), null when the agency never sent a document. */
   rentalCheck: RentalCheckReview | null;
+  /** Staff notes on the shop, newest first (P2-10). */
+  notes: ProStaffNoteView[];
 }
+
+export interface ProStaffNoteView {
+  at: string;
+  /** The staff member's display name when written. */
+  by: string;
+  text: string;
+}
+
+// Lifecycle of a validated shop in the back office (zone 7 audit P2-10): a staff note, or the
+// correction of its activity, each with its text in the audit log. Suspension and closure go
+// through a motivated decision on the owner's account (statement of reasons, appeal, ladder).
+
+export const PRO_NOTE_MAX = 500;
+export const PRO_NOTES_KEPT = 20;
+export const PRO_LIFECYCLE_REASON_MIN = 10;
+
+export const proLifecycleActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("note"), text: z.string().trim().min(3).max(PRO_NOTE_MAX) }).strict(),
+  z.object({ action: z.literal("sector"), sector: z.enum(PRO_SECTORS), reason: z.string().trim().min(PRO_LIFECYCLE_REASON_MIN).max(PRO_NOTE_MAX) }).strict(),
+]);
+export type ProLifecycleAction = z.infer<typeof proLifecycleActionSchema>;
+
+export interface ProLifecycleResponse {
+  proId: string;
+  sector: ProSector;
+  notes: ProStaffNoteView[];
+}
+
+export const PRO_LIFECYCLE_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/lifecycle`;
 
 export interface ProDecisionResponse {
   proId: string;

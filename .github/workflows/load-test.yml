@@ -13,6 +13,12 @@ name: Load test
 
 on:
   workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Scenarios: all (warmup,pages,searches) or searches alone"
+        type: choice
+        options: ["warmup,pages,searches", "searches"]
+        default: "warmup,pages,searches"
 
 permissions:
   contents: read
@@ -70,6 +76,7 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.STAGING_SCAN_ACCESS_TOKEN }}
           LOADTEST_SECRET: ${{ secrets.LOADTEST_BYPASS_SECRET }}
           SUMMARY: ${{ runner.temp }}/k6-summary.json
+          SCENARIOS: ${{ inputs.scenarios }}
         run: |
           # Exit code 99: a threshold failed (the summary still says which).
           "$RUNNER_TEMP/k6" run --quiet --summary-mode=compact --no-usage-report load/k6.js

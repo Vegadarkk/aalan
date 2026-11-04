@@ -64,7 +64,7 @@ import { planPromo, promoEnd } from "./promo";
 import { assessReadiness } from "./readiness";
 import { needsRealEstateAttestation } from "./real-estate";
 import { revalidateListingPaths } from "./revalidate";
-import { screen, sellerFacts, type ScreeningResult } from "./screening";
+import { contentFingerprint, screen, sellerFacts, type ScreeningResult } from "./screening";
 
 // Listing service (design §4 service.ts): drafts, edits, publication, status changes. Every entry
 // point takes the signed-in `AuthContext` (ownership answers 404, never 403) and the clear IP for
@@ -852,7 +852,8 @@ async function commit(listing: ListingRecord, patch: ListingFieldPatch, effects:
       if (ctx.maxDrafts !== undefined && (await countDraftsTx(tx, listing.ownerUid)) >= ctx.maxDrafts) throw new DraftLimitError();
       if (typeof ctx.maxActive === "number" && !withinQuota(ctx.maxActive, await countActiveTx(tx, listing.ownerUid))) throw new ActiveLimitError();
       // Reads above, writes below (Firestore transactions). A retry records a fresh decision id.
-      if (ctx.hold) full.moderation = { ...(full.moderation ?? current.moderation), lastDecisionId: recordModerationDecisionTx(tx, ctx.hold) };
+      // The held content's fingerprint: the review tells a seller's edit from a context-only score move.
+      if (ctx.hold) full.moderation = { ...(full.moderation ?? current.moderation), lastDecisionId: recordModerationDecisionTx(tx, ctx.hold), heldContent: contentFingerprint(applyPatch(current, patch)) };
       updateListingTx(tx, listing.id, full);
       if (effects.search) enqueueSearchOutboxTx(tx, listing.id, effects.search, version, ctx.now);
       if (effects.contentOp && ctx.actor.ip) recordContentOpTx(tx, { uid: ctx.actor.auth.user.uid, op: effects.contentOp.op, contentRef: listingContentRef(listing.id), ip: ctx.actor.ip, now: ctx.now });

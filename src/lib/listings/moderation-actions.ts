@@ -27,7 +27,7 @@ import { notifySearchIndex } from "@/lib/search/queue";
 import { buildSlugId } from "./ids";
 import { IllegalTransitionError, approvalOutcome, approveHold, holdKind, transition, type ApprovalOutcome, type HoldKind, type TransitionResult } from "./lifecycle";
 import { revalidateListingPaths } from "./revalidate";
-import { screen, sellerFacts } from "./screening";
+import { contentFingerprint, screen, sellerFacts } from "./screening";
 
 // Minimal moderation queue of the back office (design D9, architecture §7 step 8, phase 5
 // preview): the listings held by the pre-moderation, a review view, and the moderator's approval
@@ -106,6 +106,8 @@ export interface ModerationReview {
     /** The decision that put the listing here (automated hold) or the last one taken. */
     lastDecision: { action: ModerationDecisionDoc["action"]; facts: string; ground: string; automated: boolean; createdAt: string } | null;
     reviewedAt: string | null;
+    /** The seller changed the text, price or photos since the last automated hold; null when the hold predates the fingerprint. */
+    contentChanged: boolean | null;
   };
   /** What an approval would give (published, or back to paused / expired); null when not pending. */
   approval: ApprovalOutcome | null;
@@ -218,6 +220,7 @@ export async function moderationReview(id: string, now = new Date()): Promise<Mo
         ? { action: lastDecision.action, facts: lastDecision.facts, ground: lastDecision.ground.ref, automated: lastDecision.automation.decision, createdAt: lastDecision.createdAt.toISOString() }
         : null,
       reviewedAt: iso(listing.moderation.reviewedAt),
+      contentChanged: listing.moderation.heldContent ? listing.moderation.heldContent !== contentFingerprint(listing) : null,
     },
     approval: listing.status === "pending_review" ? approvalOutcome(listing, now) : null,
     screening,

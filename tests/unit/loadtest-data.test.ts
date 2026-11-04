@@ -105,8 +105,9 @@ describe("seed-loadtest", () => {
   }
 
   it("parses its flags", () => {
-    expect(parseSeedCli([])).toEqual({ remove: false, apply: false });
-    expect(parseSeedCli(["--remove", "--apply"])).toEqual({ remove: true, apply: true });
+    expect(parseSeedCli([])).toEqual({ remove: false, apply: false, indexOnly: false });
+    expect(parseSeedCli(["--remove", "--apply"])).toEqual({ remove: true, apply: true, indexOnly: false });
+    expect(parseSeedCli(["--index-only", "--apply"])).toEqual({ remove: false, apply: true, indexOnly: true });
     expect(() => parseSeedCli(["--all"])).toThrow();
   });
 
@@ -118,6 +119,16 @@ describe("seed-loadtest", () => {
     expect(target.index.size).toBe(LOADTEST_LISTINGS + LOADTEST_INDEX_ONLY);
     expect(await removeSeed(target)).toEqual({ documents: LOADTEST_LISTINGS + 1, unindexed: LOADTEST_LISTINGS + LOADTEST_INDEX_ONLY });
     expect(target.docs.size).toBe(0);
+    expect(target.index.size).toBe(0);
+  });
+
+  it("with --index-only, writes and removes the index documents alone (search-only test)", async () => {
+    const target = fakeTarget();
+    expect(await seed(target, NOW, { indexOnly: true })).toEqual({ documents: 0, indexed: LOADTEST_LISTINGS + LOADTEST_INDEX_ONLY });
+    expect(target.batches).toEqual([]);
+    expect(target.docs.size).toBe(0);
+    expect(await removeSeed(target, { indexOnly: true })).toEqual({ documents: 0, unindexed: LOADTEST_LISTINGS + LOADTEST_INDEX_ONLY });
+    expect(target.batches).toEqual([]);
     expect(target.index.size).toBe(0);
   });
 });

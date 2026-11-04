@@ -9,6 +9,7 @@ import { TurnstileWidget, type TurnstileHandle } from "@/components/auth/turnsti
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { InlineError } from "@/components/feedback/inline-error";
 import { Button } from "@/components/ui/button";
+import { useReturnFocus } from "@/components/ui/return-focus";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
@@ -27,6 +28,8 @@ import { cn } from "@/lib/utils";
 export interface AssistantPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The button that opens the panel: it takes the focus back on close (audit zone 5, 17). */
+  returnFocus?: () => HTMLElement | null;
 }
 
 type Turn = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; response: AssistantResponse };
@@ -63,7 +66,7 @@ function Sources({ title, articles, onNavigate }: { title?: string; articles: re
   );
 }
 
-export default function AssistantPanel({ open, onOpenChange }: AssistantPanelProps) {
+export default function AssistantPanel({ open, onOpenChange, returnFocus }: AssistantPanelProps) {
   // Plurals print numbers: French formatting on Tarifit pages (no Tarifit text here).
   const t = useNumbersTranslations("Help.assistant");
   const generic = useApiErrorMessage();
@@ -149,7 +152,17 @@ export default function AssistantPanel({ open, onOpenChange }: AssistantPanelPro
     setText("");
   }
 
-  const close = () => onOpenChange(false);
+  // An article link closes the panel on its way to the article: the new page keeps the focus then.
+  const navigating = useRef(false);
+  const returnToOpener = useReturnFocus(open, returnFocus);
+  const onCloseAutoFocus = (event: Event) => {
+    if (navigating.current) navigating.current = false;
+    else returnToOpener(event);
+  };
+  const leave = () => {
+    navigating.current = true;
+    onOpenChange(false);
+  };
   const remaining = ASSISTANT_QUESTION_MAX - text.length;
 
   return (
@@ -159,6 +172,7 @@ export default function AssistantPanel({ open, onOpenChange }: AssistantPanelPro
         <Dialog.Content
           aria-describedby={undefined}
           // The question field, not the close button, takes the focus.
+          onCloseAutoFocus={onCloseAutoFocus}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             input.current?.focus();
@@ -217,7 +231,7 @@ export default function AssistantPanel({ open, onOpenChange }: AssistantPanelPro
                   <p dir="auto" className="text-sm leading-6 whitespace-pre-line">
                     {turn.response.answer}
                   </p>
-                  <Sources title={t("sources")} articles={turn.response.articles} onNavigate={close} />
+                  <Sources title={t("sources")} articles={turn.response.articles} onNavigate={leave} />
                 </div>
               ) : (
                 <div key={turn.id} className="flex flex-col gap-3 rounded-lg rounded-es-sm border border-warning/40 bg-warning-surface/50 px-3.5 py-3" data-testid="assistant-degraded">
@@ -225,7 +239,7 @@ export default function AssistantPanel({ open, onOpenChange }: AssistantPanelPro
                     <p className="font-semibold">{t("degradedTitle")}</p>
                     <p className="text-foreground-muted">{turn.response.articles.length > 0 ? t("degradedBody") : t("degradedEmpty")}</p>
                   </div>
-                  <Sources articles={turn.response.articles} onNavigate={close} />
+                  <Sources articles={turn.response.articles} onNavigate={leave} />
                 </div>
               ),
             )}

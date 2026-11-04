@@ -29,13 +29,31 @@ const LANGUAGES = [
 type DataHost = LegalConfig["dataHosts"][number];
 const EMPTY_HOST: DataHost = { name: "", region: "", address: "", phone: "" };
 
+/** What a field with a set format expects, said instead of a bare "Valeur invalide" (zone 7 audit P3-10). */
+const FORMAT_ERROR: Record<string, string> = {
+  siren: "9 chiffres attendus, sans espace.",
+  siret: "14 chiffres attendus, sans espace, ou laissez vide.",
+  vatNumber: "FR suivi de 11 caractères attendu (ex. FR12345678901), ou laissez vide.",
+  email: "Adresse e-mail attendue (nom@domaine).",
+  dsaContactEmail: "Adresse e-mail attendue (nom@domaine).",
+  abuseEmail: "Adresse e-mail attendue (nom@domaine).",
+};
+
+/** The message for an invalid field of the legal configuration. */
+export function invalidFieldMessage(path: string): string {
+  return FORMAT_ERROR[path] ?? "Valeur invalide.";
+}
+
 /** Field errors from the API: invalid paths of the body, then the missing mentions. */
 function fieldErrors(cause: unknown): Record<string, string> {
   if (!(cause instanceof ApiError)) return {};
   const errors: Record<string, string> = {};
   if (cause.code === "invalid_body" && Array.isArray(cause.details)) {
     for (const issue of cause.details as { path?: string }[]) {
-      if (issue.path?.startsWith("config.")) errors[issue.path.slice("config.".length)] = "Valeur invalide.";
+      if (issue.path?.startsWith("config.")) {
+        const path = issue.path.slice("config.".length);
+        errors[path] = invalidFieldMessage(path);
+      }
     }
   }
   if (cause.code === "legal_incomplete") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { lazyIsland } from "@/components/layout/lazy-island";
@@ -19,6 +19,7 @@ export function AssistantLauncher({ className, variant = "structure" }: { classN
   const t = useTranslations("Help.assistant");
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
 
   const show = useCallback(() => {
     setLoaded(true);
@@ -46,13 +47,13 @@ export function AssistantLauncher({ className, variant = "structure" }: { classN
 
   return (
     <>
-      <Button type="button" variant={variant} size="lg" onClick={show} onPointerEnter={() => setLoaded(true)} className={cn("h-auto min-h-13 w-full py-2.5 whitespace-normal sm:w-auto", className)}>
+      <Button ref={button} type="button" variant={variant} size="lg" onClick={show} onPointerEnter={() => setLoaded(true)} className={cn("h-auto min-h-13 w-full py-2.5 whitespace-normal sm:w-auto", className)}>
         <MessageCircleQuestion aria-hidden="true" />
         {t("open")}
       </Button>
       {loaded ? (
         <Suspense fallback={null}>
-          <AssistantPanel open={open} onOpenChange={onOpenChange} />
+          <AssistantPanel open={open} onOpenChange={onOpenChange} returnFocus={() => button.current} />
         </Suspense>
       ) : null}
     </>

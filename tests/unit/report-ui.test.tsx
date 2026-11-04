@@ -111,6 +111,12 @@ describe("report steps", () => {
     expect(html.match(/type="radio"/g)?.length).toBe(reasonGroups("listing").flatMap((group) => group.reasons).length);
     expect(text(html)).toContain(fr.Report.ground);
     expect(html.match(/<bdi lang="fr">/g)?.length).toBe(1);
+    // Each radio is named by its reason and described by its hint (audit zone 8, 5.2-8).
+    const radio = /<input type="radio"[^>]*value="scam"[^>]*>/.exec(html)?.[0] ?? "";
+    const labelId = /aria-labelledby="([^"]+)"/.exec(radio)?.[1];
+    const hintId = /aria-describedby="([^"]+)"/.exec(radio)?.[1];
+    expect(text(/<span id="([^"]+)"[^>]*>([\s\S]*?)<\/span>/.exec(html.slice(html.indexOf(`id="${labelId}"`) - 9))?.[2] ?? "")).toContain("Arnaque ou tentative d'escroquerie");
+    expect(text(/<span id="[^"]+"[^>]*>([^<]*)<\/span>/.exec(html.slice(html.indexOf(`id="${hintId}"`) - 9))?.[1] ?? "")).toContain("Demande d'acompte");
     const arabic = render(<ReasonStep groups={reasonGroups("listing")} value={null} onChange={() => {}} error="x" />, "ar");
     expect(text(arabic)).toContain(ar.Report.reasonLegend);
     expect(arabic).toContain('role="alert"');

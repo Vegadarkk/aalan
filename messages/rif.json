@@ -33,6 +33,7 @@
     "contact": "Ari-d aneɣ",
     "procedures": "Lewraq n lidara",
     "visitorMenu": "Tabdart",
+    "floating": "Iberdan iwezlen",
     "signUp": "Snulfu amiḍan"
   },
   "Locale": {
@@ -146,6 +147,7 @@
     "intro": "S {site}, af lhemza ɣer tama nnec : annonces n imdanen d Pro deg marra Lmeɣrib. Ṭumubilat, lɛeqqar, akra i lɛuṭla, axeddim, tilifunat, lmeɛdat n uxxam, tiɣawsiwin n tmurt… Ssuffeɣ annonce bla idrimen ḥima ad tzenzeḍ, ad tekreḍ, ad tefkeḍ niɣ ad tessekneḍ lxedmat nnec, d mmeslay s laman s tebratin.",
     "categoriesLabel": "Annonces s taggayt",
     "regionsLabel": "Annonces s tmnaḍt",
+    "directoryToggle": "Annonces s taggayt d tmnaḍt",
     "prosTitle": "Ayen nesɛa i Pro",
     "questionsTitle": "Tesɛiḍ isteqsiyen ?",
     "becomePro": "Ili d Pro",
@@ -346,6 +348,7 @@
       "hidePassword": "Ffer awal n uɛeddi",
       "or": "niɣ",
       "googleLoading": "Taqeffalt n Google ad tettwaɛemmar…",
+      "googleContinue": "Kemmel s Google",
       "backHome": "Uɣal ɣer tasna tamezwarut",
       "waitLater": "deg kra n tesdidin",
       "brandPromise": "Tawwurt yerẓmen ɣer ddunit.",
@@ -398,7 +401,9 @@
       "verifyTitle": "Sentem adres n e-mail nnec",
       "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu.",
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
-      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedSuspended": "Tukcimt nnec tekmel: amiḍan nnec yettwaḥbes ar {date} (tasaɛt n Lmeɣrib).",
+      "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s."
     },
     "signUp": {
       "title": "Snulfu amiḍan",
@@ -483,6 +488,8 @@
         "displayName": "Isem i ɣa yban",
         "displayNameHint": "{count} zi {max} n yisekkilen. Ad yban deg annonces nnec d deg tibratin : war uṭṭun war asaɣ.",
         "locale": "Tutlayt n usit",
+        "localeHint": "Ad tettwasexdem deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
+        "localeSaved": "Amiḍan nnec iqqim x {name} : ḥrez ḥima ad tesxedmeḍ tutlayt-a deg marra ttilifunat d iselkimen nnec d deg ye-mailen nneɣ.",
         "save": "Ḥrez",
         "saved": "Profil yettwaḥrez"
       },
@@ -3049,7 +3056,20 @@
     "facts": {
       "surface": "{count} m²",
       "rooms": "{count, plural, one {# texxamt} other {# n texxamin}}",
-      "bedrooms": "{count} ch."
+      "bedrooms": "{count} ch.",
+      "year": "{text}",
+      "mileage": "{count, number} km",
+      "fuel": {
+        "diesel": "Gazwal",
+        "essence": "Lisans",
+        "hybride": "Hybride",
+        "electrique": "S trisinti",
+        "gpl": "GPL"
+      },
+      "gearbox": {
+        "manuelle": "S ufus",
+        "automatique": "Utumatik"
+      }
     },
     "example": "Amedya",
     "rentalTotal": "≈ {total} i {days, plural, one {# n wass} other {# n wussan}}",
@@ -3819,7 +3839,7 @@
       "label": "{title}, {price}",
       "featured": "Deg uqerru · Yettwaxelleṣ",
       "today": "tettwassufeɣ assa",
-      "cluster": "{count, plural, one {# n annonce} other {# n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
+      "cluster": "{n} {count, plural, one {n annonce} other {n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
       "per": {
         "night": "/iḍ",
         "month": "/ayyur",
@@ -3943,7 +3963,9 @@
     "stayDatesHint": "Imessufeɣ ttinin iḍan ideg war yelli ca uxxam: ixxamen ixwan deg marra aqqimi ad d-banen, wid ixsen asentem deg taggara.",
     "includeSoldOut": "Rnu tiɣawsiwin yekmelen",
     "includeSoldOutHint": "Tiḥuna ttejjint deg internet tiɣawsiwin ideg stock d 0.",
-    "promo": "S promotion"
+    "promo": "S promotion",
+    "modelPickBrand": "Xtar tamarka zi tazwara.",
+    "modelNone": "Ulac tabdart n imudilen i tmarka-ya: ari amudil deg unadi."
   },
   "Pro": {
     "metaTitle": "Amkan n Pro",
@@ -4357,7 +4379,9 @@
       "archivedEmptyBody": "Tameslayt deg archive ad d-tuɣal ɣer tebratin i d-yewḍen xmi ad d-taweḍ tebrat tamaynut.",
       "selectTitle": "Xtar tameslayt",
       "selectBody": "Timeslayin nnec d imzenza d imsaɣen ad d-banent da.",
-      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna."
+      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna.",
+      "busy": "Tesɛiḍ yakan {count} n onglets ttwaldin ɣef tebratin: qqen yiwen akken ad d-yuɣal ubeddel nican.",
+      "refreshLive": "Ɛawed ɛemmer"
     },
     "row": {
       "you": "Cek:",
@@ -4411,7 +4435,9 @@
       "counterpartClosed": "{name} yeqqen amiḍan nnes: tzemmreḍ ad tɛawdeḍ ad teɣreḍ tameslayt, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "frozen": "Tameslayt-a tettwaḥbes: tzemmreḍ ad tt-teɣreḍ, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "suspended": "Amiḍan nnec yettwaḥbes: tzemmreḍ ad teɣreḍ timeslayin nnec, maca war tzemmreḍ ca ad tazneḍ tabrat.",
-      "shop": "Ẓar taḥanut « {title} »"
+      "shop": "Ẓar taḥanut « {title} »",
+      "pinsShow": "Sken ttafaṣil n usumer d umyafa",
+      "pinsHide": "Ffer ttafaṣil n usumer d umyafa"
     },
     "review": {
       "label": "Efk tamuɣli nnec",
@@ -5144,6 +5170,7 @@
     "failed": "Tasakkut n idrimen war tettwaɛemmar ca.",
     "retry": "Ɛawed",
     "unit": "1 n crédit = 1 DH TTC",
+    "unitShop": "1 n crédit = 1 DH HT",
     "balance": "Crédits i taɣeḍ",
     "plan": "Crédits n abonnement nnec",
     "planUntil": "Ṣeḥḥan ar {date}, war ttemyernan",

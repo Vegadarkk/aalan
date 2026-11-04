@@ -3,7 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { stubGoogleScript } from "./gsi-stub";
-import { ownClientIp } from "./helpers";
+import { actOnAuthForm, ownClientIp } from "./helpers";
 
 // The auth pages render the Google button (stub client id): never the real script.
 test.beforeEach(({ page }) => stubGoogleScript(page));
@@ -173,8 +173,7 @@ async function waitForMail(request: APIRequestContext, to: string, template: str
 async function signUpAndIn(page: Page, request: APIRequestContext, email: string): Promise<void> {
   await ownClientIp(page);
   await page.goto("/fr/inscription");
-  // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-  await expect(page.locator("[data-turnstile]").first()).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
+  await actOnAuthForm(page);
   await page.getByLabel("Nom affiché").fill("Karim Test");
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
@@ -454,6 +453,31 @@ test.describe("favorites and saved searches", () => {
     await page.goto(`/fr/recherche?q=${WORD}`);
     await results(page).getByTestId("results-grid").getByTestId("favorite-button").first().click();
     await expect(page).toHaveURL(/\/fr\/connexion\?next=/);
+  });
+
+  test("the heart clicked before signing in is set once back from sign-in", async ({ page, request }) => {
+    const email = `e2e-fav-${randomFrom(ALPHABET, 10)}@joutiya.test`;
+    await signUpAndIn(page, request, email);
+    await page.context().clearCookies();
+
+    await ownClientIp(page);
+    await page.goto(`/fr/recherche?q=${WORD}&categorie=vehicules`);
+    const card = () => results(page).getByTestId("results-grid").getByRole("listitem").filter({ hasText: listings.bike.title });
+    await card().getByTestId("favorite-button").click();
+    await expect(page).toHaveURL(/\/fr\/connexion\?next=.*favori%3D/);
+    await page.getByLabel("Adresse e-mail").fill(email);
+    await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
+    const widget = page.locator("[data-turnstile]");
+    if ((await widget.count()) > 0) await expect(widget.first()).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
+    await page.getByRole("button", { name: "Se connecter" }).click();
+
+    // Back on the results (audit zone 5 n°8): the listing is a favorite without a second click,
+    // and the key has left the address bar.
+    await expect(page).toHaveURL(/\/fr\/recherche\?/);
+    await expect(card().getByTestId("favorite-button")).toHaveAttribute("aria-pressed", "true", { timeout: 15_000 });
+    await expect(page).not.toHaveURL(/favori=/);
+    await page.goto("/fr/favoris");
+    await expect(page.getByRole("link", { name: new RegExp(listings.bike.title) }).first()).toBeVisible();
   });
 
   test("a member saves a listing and a search, then finds both in the account", async ({ page, request }) => {

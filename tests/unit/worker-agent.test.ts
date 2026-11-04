@@ -90,6 +90,7 @@ vi.mock("@/worker/jobs", async () => {
 vi.mock("@/worker/system-queue", () => ({ onSystemJobFailed: vi.fn(async () => undefined), syncSchedulers: vi.fn(async () => []) }));
 vi.mock("@/worker/jobs/media", () => ({ onMediaJobFailed: vi.fn(async () => false), processMediaJob: vi.fn() }));
 vi.mock("@/worker/jobs/billing", () => ({ onBillingJobFailed: mocks.onBillingJobFailed, processBillingJob: vi.fn() }));
+vi.mock("@/worker/jobs/cdn-purge", () => ({ onCdnPurgeJobFailed: mocks.onBillingJobFailed, processCdnPurgeJob: vi.fn() }));
 vi.mock("@/worker/jobs/search", () => ({
   ensureEngineReady: vi.fn(async () => undefined),
   holdFailedListing: vi.fn(),
@@ -122,13 +123,13 @@ beforeAll(async () => {
 
 describe("worker bootstrap", () => {
   it("starts the agent consumer on the shared connection, at concurrency 1, and lists its queue", () => {
-    expect(workers().map((worker) => worker.name)).toEqual(["system", "mail", "media", "search", "agent", "billing"]);
+    expect(workers().map((worker) => worker.name)).toEqual(["system", "mail", "media", "search", "agent", "billing", "cdn"]);
     const agent = agentWorker()!;
     const system = workers()[0]!;
     expect(agent.options).toMatchObject({ concurrency: 1 });
     expect(agent.options.connection).toBeInstanceOf(mocks.FakeRedis);
     expect(agent.options.connection).toBe(system.options.connection);
-    expect(started).toEqual({ queues: ["system", "mail", "media", "search", "agent", "billing"] });
+    expect(started).toEqual({ queues: ["system", "mail", "media", "search", "agent", "billing", "cdn"] });
   });
 
   it("logs every failure and reports the final one (or an unrecoverable payload) to Sentry", () => {
@@ -154,6 +155,19 @@ describe("worker bootstrap", () => {
     expect(mocks.captureServerException).not.toHaveBeenCalledWith(error, expect.anything());
     failed({ name: "revenuecat-event", data: { eventId: "e1" }, attemptsMade: 8, opts: { attempts: 8 } }, error);
     await vi.waitFor(() => expect(mocks.captureServerException).toHaveBeenCalledWith(error, { queue: "billing", job: "revenuecat-event" }));
+  });
+
+  it("consumes the CDN purge queue one request at a time and reports its last failed attempt only", async () => {
+    const cdn = workers().find((worker) => worker.name === "cdn")!;
+    expect(cdn.options).toMatchObject({ concurrency: 1 });
+    expect(cdn.options.connection).toBe(workers()[0]!.options.connection);
+    const failed = cdn.listeners.get("failed")!;
+    const error = new Error("CDN purge failed with HTTP 503");
+    failed({ name: "purge-media", data: { keys: ["listings/l1/p-l.webp"] }, attemptsMade: 2, opts: { attempts: 10 } }, error);
+    await Promise.resolve();
+    expect(mocks.captureServerException).not.toHaveBeenCalledWith(error, expect.anything());
+    failed({ name: "purge-media", data: { keys: ["listings/l1/p-l.webp"] }, attemptsMade: 10, opts: { attempts: 10 } }, error);
+    await vi.waitFor(() => expect(mocks.captureServerException).toHaveBeenCalledWith(error, { queue: "cdn", job: "purge-media" }));
   });
 
   it("runs the task with `final` on the last attempt only and never retries a malformed payload", async () => {

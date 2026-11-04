@@ -24,7 +24,7 @@ vi.mock("@/lib/search/service", () => ({ runSearch: mocks.runSearch }));
 vi.mock("@/lib/search/limits", () => ({ enforceSearchLimit: mocks.enforceSearchLimit }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "user-agent": "vitest", "cf-connecting-ip": "203.0.113.7" }) }));
 vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() } }));
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 // The map panel's legal foot reopens the consent panel; its provider lives in the root shell.
 vi.mock("@/components/consent/consent-link", () => ({ ConsentLink: () => <button type="button">cookies</button> }));
 vi.mock("next/navigation", async (importOriginal) => ({

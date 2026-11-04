@@ -9,7 +9,7 @@ import { serverEnv, type ServerEnv } from "@/lib/env";
 /** Development placeholder, digits only (wa.me target); never a real subscriber. */
 export const DEV_DISPLAY_NUMBER = "212600000000";
 
-/** Joutiya's WhatsApp number in international format, digits only, or undefined when unset. */
+/** Aalan's WhatsApp number in international format, digits only, or undefined when unset. */
 export function whatsappDisplayNumber(env: ServerEnv = serverEnv()): string | undefined {
   if (env.WHATSAPP_DISPLAY_NUMBER) return env.WHATSAPP_DISPLAY_NUMBER.replace(/\D/g, "") || undefined;
   return env.APP_ENV === "dev" ? DEV_DISPLAY_NUMBER : undefined;

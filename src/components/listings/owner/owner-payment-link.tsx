@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a published or paused Pro listing (catalogue §6): its own « Payer chez le
-// vendeur » link over the shop's, on a payment site Joutiya already checked. A new link needs a
+// vendeur » link over the shop's, on a payment site Aalan already checked. A new link needs a
 // recent sign-in, is mailed to the owner and opens 24 hours after saving; going back to the link
 // in force or removing it is immediate. The server checks every rule again.
 

@@ -18,7 +18,7 @@ describe("dev-verify-phone", () => {
   });
 
   it("parses the CLI, lower-cases the e-mail and defaults to a dry run", () => {
-    expect(parseCli(["--email", "Test@Joutiya.MA", "--phone", "06 12 34 56 78"])).toEqual({ email: "test@joutiya.ma", phone: "+212612345678", apply: false });
+    expect(parseCli(["--email", "Test@Aalan.MA", "--phone", "06 12 34 56 78"])).toEqual({ email: "test@aalan.ma", phone: "+212612345678", apply: false });
     expect(parseCli(["--email", "a@b.co", "--phone", "+212712345678", "--apply"]).apply).toBe(true);
     expect(() => parseCli(["--phone", "0612345678"])).toThrow(/usage/);
     expect(() => parseCli(["--email", "nope", "--phone", "0612345678"])).toThrow(/usage/);

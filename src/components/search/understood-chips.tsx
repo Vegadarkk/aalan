@@ -15,7 +15,7 @@ import { SearchLink } from "./search-navigation";
 // the row; « Chercher le texte exact » searches the whole sentence as words. A « près de moi »
 // waits for « Utiliser ma position ».
 
-/** Dark green: what Joutiya read, apart from the filters set by hand. */
+/** Dark green: what Aalan read, apart from the filters set by hand. */
 const understoodChip = cn(
   "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full bg-structure ps-3.5 pe-2.5 text-sm font-medium text-structure-foreground sm:min-h-9 dark:bg-bab-600",
   "transition-[background-color,scale] duration-150 ease-door hover:bg-bab-800 active:scale-[0.98] dark:hover:bg-bab-500",

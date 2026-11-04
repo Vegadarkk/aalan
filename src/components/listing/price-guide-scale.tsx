@@ -2,7 +2,7 @@ import type { PriceGuideView } from "@/lib/price-guide/view";
 
 // Markup of the « Prix repère » (Carte vivante lot 5), from a PriceGuideView worked out on the
 // server: the scale of the comparable prices (outliers dropped), the typical range (P25-P75) as a
-// deeper band, the listing's price as a marker, how many listings and where. Joutiya is a neutral
+// deeper band, the listing's price as a marker, how many listings and where. Aalan is a neutral
 // host: it positions the price, it never says "bon prix" or "trop cher". The scale follows the
 // reading direction (low price on the right in Arabic). No hook: the listing page renders it on
 // the server, the map's detail panel in the browser.

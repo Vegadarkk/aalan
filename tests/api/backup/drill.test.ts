@@ -116,10 +116,10 @@ describe("nightly config and the restore drill", () => {
 
 describe("Firebase Auth export", () => {
   it("exports the accounts encrypted with the backup and recreates them without passwords", async () => {
-    const email = `drill-${run}@joutiya.test`;
+    const email = `drill-${run}@aalan.test`;
     const pro = await auth().createUser({ email, emailVerified: true, password: ["Porte", "Ocre", "2026"].join("-"), displayName: "Pro Drill" });
     await auth().setCustomUserClaims(pro.uid, { role: "pro" });
-    const disabled = await auth().createUser({ email: `drill-off-${run}@joutiya.test`, disabled: true });
+    const disabled = await auth().createUser({ email: `drill-off-${run}@aalan.test`, disabled: true });
     const ours = new Set([pro.uid, disabled.uid]);
 
     const db = database();
@@ -169,7 +169,7 @@ describe("Firebase Auth export", () => {
 
 describe("scripts/restore-drill.ts", () => {
   it("restores a downloaded backup into a fresh emulator project and reports a passed drill, counts only", async () => {
-    const pro = await auth().createUser({ email: `drill-script-${run}@joutiya.test`, emailVerified: true });
+    const pro = await auth().createUser({ email: `drill-script-${run}@aalan.test`, emailVerified: true });
     const db = database();
     await seed(db, new Date());
     const store = new MemoryObjectStore();

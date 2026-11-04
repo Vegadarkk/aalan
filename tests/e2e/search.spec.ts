@@ -489,7 +489,7 @@ test.describe("favorites and saved searches", () => {
   });
 
   test("the heart clicked before signing in is set once back from sign-in", async ({ page, request }) => {
-    const email = `e2e-fav-${randomFrom(ALPHABET, 10)}@joutiya.test`;
+    const email = `e2e-fav-${randomFrom(ALPHABET, 10)}@aalan.test`;
     await signUpAndIn(page, request, email);
     await page.context().clearCookies();
 
@@ -514,7 +514,7 @@ test.describe("favorites and saved searches", () => {
   });
 
   test("a member saves a listing and a search, then finds both in the account", async ({ page, request }) => {
-    const email = `e2e-search-${randomFrom(ALPHABET, 10)}@joutiya.test`;
+    const email = `e2e-search-${randomFrom(ALPHABET, 10)}@aalan.test`;
     await signUpAndIn(page, request, email);
 
     await page.goto(`/fr/recherche?q=${WORD}&categorie=vehicules`);

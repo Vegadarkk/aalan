@@ -9,7 +9,7 @@ import { randomId, signUpAndIn } from "./helpers";
 test.beforeEach(({ page }) => stubGoogleScript(page));
 
 test("a member sets up their storefront and sees it on their profile", async ({ page, request }) => {
-  await signUpAndIn(page, request, `vitrine-${randomId(8)}@joutiya.test`, "Nadia Vitrine");
+  await signUpAndIn(page, request, `vitrine-${randomId(8)}@aalan.test`, "Nadia Vitrine");
   await page.goto("/fr/parametres");
   const section = page.locator("section", { has: page.getByRole("heading", { level: 2, name: "Ma vitrine" }) });
   await expect(section.getByRole("radio", { name: "Zellige vert" })).toHaveAttribute("aria-checked", "true");

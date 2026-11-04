@@ -17,7 +17,7 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 const admin = "http://admin.localhost:3100";
-const STAFF_EMAIL = "moderator.pro.e2e@joutiya.test";
+const STAFF_EMAIL = "moderator.pro.e2e@aalan.test";
 const STAFF_PASSWORD = ["Porte", "Ouverte", "2026"].join("-");
 const ADMIN_EMAIL = "admin.pro.e2e@joutiya.test";
 const PASSWORD = ["Souk", "Tanger", "2026!"].join("-");
@@ -159,7 +159,7 @@ test.describe("Pro accounts", () => {
   test("a member applies, a moderator validates, the shop opens its storefront", async ({ page, request, browser }) => {
     test.setTimeout(180_000);
     const errors = await watchErrors(page);
-    const email = `pro-${randomId(10)}@joutiya.test`;
+    const email = `pro-${randomId(10)}@aalan.test`;
     const shopName = `Atelier ${randomId(6)}`;
     await signUpAndIn(page, request, email);
 

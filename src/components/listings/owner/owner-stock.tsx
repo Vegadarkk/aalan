@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a Pro listing (catalogue §3): its declared stock at a glance, and a dialog
-// that sets it alone (one write, no new moderation). Joutiya never counts sales: the Pro does.
+// that sets it alone (one write, no new moderation). Aalan never counts sales: the Pro does.
 
 type Catalogue = { stock: number | null; variants: ListingVariants | null };
 

@@ -2,7 +2,7 @@ import { isolateLtr } from "@/lib/i18n/bidi";
 
 // Phone numbers on /verifications, in the national form the API answers with ("06 12 34 56 78",
 // displayPhone in src/lib/phone/normalize.ts), whether the value is what the person typed, the
-// status answer or Joutiya's number (international digits). Kept apart from normalize.ts so the
+// status answer or Aalan's number (international digits). Kept apart from normalize.ts so the
 // browser bundle does not carry libphonenumber's metadata;
 // tests/unit/auth-verifications-phone.test.tsx checks both give the same text.
 

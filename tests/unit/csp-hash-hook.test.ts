@@ -87,7 +87,7 @@ function raw(path: string): Promise<{ headers: IncomingHttpHeaders; rawHeaders: 
 
 describe("CSP hash hook", () => {
   it("flags itself as loaded", () => {
-    expect((globalThis as { __joutiyaCspHashHook?: boolean }).__joutiyaCspHashHook).toBe(true);
+    expect((globalThis as { __aalanCspHashHook?: boolean }).__aalanCspHashHook).toBe(true);
   });
 
   for (const path of ["/streamed", "/write-head"]) {

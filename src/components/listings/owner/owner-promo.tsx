@@ -36,7 +36,7 @@ import { useReturnFocus } from "@/components/ui/return-focus";
 
 // "Mes annonces" row of a published or paused Pro listing (catalogue §4): its promotion at a
 // glance, and a dialog that launches one (kind, cut, period, preview against the struck-out price
-// Joutiya computed) or stops the current one. The server re-checks every rule (planPromo).
+// Aalan computed) or stops the current one. The server re-checks every rule (planPromo).
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PROMO_ROW_STATUSES: readonly OwnerListingSummary["status"][] = ["published", "paused"];

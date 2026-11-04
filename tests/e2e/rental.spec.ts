@@ -81,7 +81,7 @@ const next = (page: Page) => page.getByRole("button", { name: "Continuer" }).cli
 test.describe("Car rental", () => {
   test("an agency posts a car with its rental terms and its attestation", async ({ browser, page, request }) => {
     test.setTimeout(300_000);
-    const email = `rental-${randomId(10)}@joutiya.test`;
+    const email = `rental-${randomId(10)}@aalan.test`;
     const title = `Dacia Logan ou similaire ${randomId(4)}`;
     await signUpAndIn(page, request, email, "Océan Rent");
     const storefront = await seedAgency(email);
@@ -280,7 +280,7 @@ test.describe("Car rental", () => {
       // those days; the agency answers "Disponible" on the card, which blocks them on the listing.
       const renterContext = await browser.newContext();
       const renter = await renterContext.newPage();
-      await signUpAndIn(renter, request, `rental-renter-${randomId(10)}@joutiya.test`, "Youssef Locataire");
+      await signUpAndIn(renter, request, `rental-renter-${randomId(10)}@aalan.test`, "Youssef Locataire");
       await renter.goto(`/fr/recherche?sous-categorie=location-voitures&q=${word}&du=${day(6)}&au=${day(9)}`);
       await renter.locator("#main").getByRole("link", { name: title }).click();
       await expect(renter).toHaveURL(new RegExp(`#du=${day(6)}&au=${day(9)}$`));

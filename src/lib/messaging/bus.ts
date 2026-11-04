@@ -217,7 +217,7 @@ function quietly(run: () => void): void {
   }
 }
 
-const BUS_KEY = Symbol.for("joutiya.messaging.bus");
+const BUS_KEY = Symbol.for("aalan.messaging.bus");
 type GlobalBus = typeof globalThis & { [BUS_KEY]?: MessagingBus };
 
 let busForTests: MessagingBus | null | undefined;
@@ -230,7 +230,7 @@ export function setMessagingBusForTests(bus: MessagingBus | null | undefined): v
 function createValkeyBus(url: string): MessagingBus {
   // Subscriber mode: no offline queue (an open fails fast while Valkey is down), and no automatic
   // resubscription (the bus closed every stream on the loss; reopened streams subscribe again).
-  const connection = new Redis(url, clientOptions("queue", { connectionName: "joutiya-queue-events", lazyConnect: false, enableOfflineQueue: false, autoResubscribe: false, maxRetriesPerRequest: 1 }));
+  const connection = new Redis(url, clientOptions("queue", { connectionName: "aalan-queue-events", lazyConnect: false, enableOfflineQueue: false, autoResubscribe: false, maxRetriesPerRequest: 1 }));
   connection.on("error", (error: Error) => logger.warn({ err: error.message }, "messaging bus: valkey connection error"));
   return new MessagingBus(connection);
 }

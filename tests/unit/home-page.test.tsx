@@ -28,7 +28,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/components/i18n/page-messages", () => ({ PageMessages: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/search/service", () => ({ featuredListings: mocks.featuredListings, latestListings: mocks.latestListings }));
 vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: mocks.warn, error: vi.fn(), debug: vi.fn(), fatal: vi.fn() } }));
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 // The map panel's legal foot reopens the consent panel; its provider lives in the root shell.
 vi.mock("@/components/consent/consent-link", () => ({ ConsentLink: () => <button type="button">cookies</button> }));
 // In production the server components translate from the request's whole catalog; rendered here in
@@ -93,7 +93,7 @@ async function renderPage(locale: TestLocale = "fr"): Promise<string> {
 
 /** Renders with a basemap configured: the living map's panel. */
 async function withMap<T>(run: () => Promise<T>): Promise<T> {
-  process.env.MAP_PMTILES_URL = "https://media.joutiya.test/maps/morocco.pmtiles";
+  process.env.MAP_PMTILES_URL = "https://media.aalan.test/maps/morocco.pmtiles";
   resetServerEnv();
   try {
     return await run();

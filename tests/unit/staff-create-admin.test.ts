@@ -28,7 +28,7 @@ describe("create-admin", () => {
   });
 
   it("parses the CLI, lower-cases the e-mail and defaults to a dry run", () => {
-    expect(parseCli(["--email", "Owner@Joutiya.MA", "--name", " Adark "])).toEqual({ email: "owner@joutiya.ma", name: "Adark", apply: false });
+    expect(parseCli(["--email", "Owner@Aalan.MA", "--name", " Adark "])).toEqual({ email: "owner@aalan.ma", name: "Adark", apply: false });
     expect(parseCli(["--email", "a@b.co", "--name", "Ab", "--apply"]).apply).toBe(true);
     expect(() => parseCli(["--name", "Adark"])).toThrow(/usage/);
     expect(() => parseCli(["--email", "nope", "--name", "Adark"])).toThrow(/usage/);

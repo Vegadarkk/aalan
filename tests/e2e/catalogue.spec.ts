@@ -184,7 +184,7 @@ async function seedShop(email: string): Promise<Seeded> {
 test.describe("shop catalogue", () => {
   test("sizes with their stock at the Prix step, then a size sold out from Mes annonces", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const email = `catalogue-${randomId(10)}@joutiya.test`;
+    const email = `catalogue-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Lalla Atelier");
     const { draftId, published } = await seedShop(email);
 
@@ -243,12 +243,12 @@ test.describe("shop catalogue", () => {
 
   test("a buyer picks a size and a colour, sees price and stock, and the first message names them", async ({ page, request, browser }) => {
     test.setTimeout(120_000);
-    const email = `catalogue-${randomId(10)}@joutiya.test`;
+    const email = `catalogue-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Lalla Atelier");
     const { dress } = await seedShop(email);
 
     const buyer = await (await browser.newContext()).newPage();
-    await signUpAndIn(buyer, request, `acheteuse-${randomId(10)}@joutiya.test`, "Samira Test");
+    await signUpAndIn(buyer, request, `acheteuse-${randomId(10)}@aalan.test`, "Samira Test");
     await buyer.goto(`/fr/annonce/${dress.slugId}`);
     await expect(buyer.getByTestId("price-tag").first()).toContainText(/À partir de\s*420/);
 
@@ -271,7 +271,7 @@ test.describe("shop catalogue", () => {
 
   test("a shop launches a promotion from Mes annonces, and buyers see it with its struck-out price", async ({ page, request, browser }) => {
     test.setTimeout(120_000);
-    const email = `catalogue-${randomId(10)}@joutiya.test`;
+    const email = `catalogue-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Lalla Atelier");
     const { jacket } = await seedShop(email);
 
@@ -313,7 +313,7 @@ test.describe("shop catalogue", () => {
 
   test("a shop files a listing under a section, and its storefront shows the section and promotions as tabs", async ({ page, request, browser }) => {
     test.setTimeout(120_000);
-    const email = `catalogue-${randomId(10)}@joutiya.test`;
+    const email = `catalogue-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Lalla Atelier");
     const { proId, published, jacket } = await seedShop(email);
     const now = Date.now();
@@ -381,7 +381,7 @@ test.describe("shop catalogue", () => {
 
   test("a shop gives a listing its own payment link from Mes annonces, then goes back to the shop's", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const email = `catalogue-${randomId(10)}@joutiya.test`;
+    const email = `catalogue-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Lalla Atelier");
     const { proId, jacket } = await seedShop(email);
     const firestore = getFirestore(firebase());

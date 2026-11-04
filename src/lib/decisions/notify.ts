@@ -97,7 +97,7 @@ export interface OutcomeInput {
   outcome: "actioned" | "dismissed";
   automation: DecisionAutomation;
   appealDeadline: Date;
-  /** Authority orders: no appeal through Joutiya. */
+  /** Authority orders: no appeal through Aalan. */
   appealable: boolean;
 }
 

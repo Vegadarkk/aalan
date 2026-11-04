@@ -108,7 +108,7 @@ export async function accessIdentity(request: Request): Promise<{ email: string 
   const env = serverEnv();
   if (env.APP_ENV === "dev" && !env.CF_ACCESS_AUD) {
     const devEmail = request.headers.get("x-dev-access-email");
-    return { email: (devEmail ?? "dev@joutiya.test").toLowerCase() };
+    return { email: (devEmail ?? "dev@aalan.test").toLowerCase() };
   }
   const identity = await verifyAccessJwt(request.headers.get(ACCESS_JWT_HEADER), {
     teamDomain: env.CF_ACCESS_TEAM_DOMAIN ?? "",

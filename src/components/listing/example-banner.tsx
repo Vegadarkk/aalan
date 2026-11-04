@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
-// Example listing or shop (owner decision of 2026-10-28, src/lib/demo): written by Joutiya to show
+// Example listing or shop (owner decision of 2026-10-28, src/lib/demo): written by Aalan to show
 // what a good listing or a Pro storefront looks like. The page says so, and the contact actions are
 // gone (the API refuses them too: acceptsContact). On an example shop, `data-example-page` keeps its
 // own listings in view when the visitor hides the examples (globals.css): they asked for this shop.

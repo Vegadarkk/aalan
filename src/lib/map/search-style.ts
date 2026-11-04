@@ -7,8 +7,8 @@ import { buildHouseStyle } from "./style";
 // tiles' boundaries nor our regions), and the results as one clustered GeoJSON source. The pins
 // themselves are HTML markers drawn by the island; the style only adds a soft density halo.
 
-export const PINS_SOURCE = "joutiya-pins";
-export const HALO_LAYER = "joutiya-pins-halo";
+export const PINS_SOURCE = "aalan-pins";
+export const HALO_LAYER = "aalan-pins-halo";
 
 /** The search map may zoom past the z12 extract (vector tiles overzoom cleanly). */
 export const SEARCH_ZOOM = { min: 5, max: 13.5, clusterMax: 13, fit: 12, city: 10 } as const;

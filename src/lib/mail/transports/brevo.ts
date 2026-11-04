@@ -40,7 +40,7 @@ export class BrevoTransport implements MailTransport {
   constructor(
     private readonly apiKey: string,
     private readonly fetchImpl: typeof fetch = fetch,
-    private readonly userAgent = `joutiya/${serverEnv().RELEASE ?? "dev"}`,
+    private readonly userAgent = `aalan/${serverEnv().RELEASE ?? "dev"}`,
   ) {}
 
   async send(mail: RenderedMail): Promise<SendResult> {

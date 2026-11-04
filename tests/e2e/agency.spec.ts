@@ -95,7 +95,7 @@ async function seedAgency(email: string, shopName: string): Promise<{ segment: s
 test.describe("real-estate agency", () => {
   test("a shop becomes an agency: sector, fee schedule, storefront, property listing", async ({ page, request, browser }) => {
     test.setTimeout(120_000);
-    const email = `agence-${randomId(10)}@joutiya.test`;
+    const email = `agence-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Nadia Agence");
     const shopName = `Atlas Immobilier ${randomId(4)}`;
     const { segment, slugId } = await seedAgency(email, shopName);

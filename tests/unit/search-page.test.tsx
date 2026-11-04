@@ -26,7 +26,7 @@ vi.mock("@/lib/search/service", () => ({ runSearch: mocks.runSearch, NOT_EXAMPLE
 vi.mock("@/lib/search/limits", () => ({ enforceSearchLimit: mocks.enforceSearchLimit }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers(mocks.requestHeaders) }));
 vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() } }));
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 // The map panel's legal foot reopens the consent panel; its provider lives in the root shell.
 vi.mock("@/components/consent/consent-link", () => ({ ConsentLink: () => <button type="button">cookies</button> }));
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -164,7 +164,7 @@ describe("search page states", () => {
   });
 
   it("renders the list view with the map rows beside it when a basemap is configured (B14: phones start on the list)", async () => {
-    process.env.MAP_PMTILES_URL = "https://media.joutiya.test/maps/morocco.pmtiles";
+    process.env.MAP_PMTILES_URL = "https://media.aalan.test/maps/morocco.pmtiles";
     resetServerEnv();
     try {
       mocks.runSearch.mockImplementation(async (params) =>
@@ -190,7 +190,7 @@ describe("search page states", () => {
   });
 
   it("labels an example listing in the map rows, as the grid card does", async () => {
-    process.env.MAP_PMTILES_URL = "https://media.joutiya.test/maps/morocco.pmtiles";
+    process.env.MAP_PMTILES_URL = "https://media.aalan.test/maps/morocco.pmtiles";
     resetServerEnv();
     try {
       mocks.runSearch.mockImplementation(async (params) =>

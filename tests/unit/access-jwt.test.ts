@@ -25,7 +25,7 @@ describe("verifyAccessJwt", () => {
   });
 
   it("returns the identity of a valid token", async () => {
-    expect(await verifyAccessJwt(await token({ email: "Owner@Joutiya.ma", sub: "u1" }), options)).toEqual({ email: "owner@joutiya.ma", subject: "u1" });
+    expect(await verifyAccessJwt(await token({ email: "Owner@Aalan.ma", sub: "u1" }), options)).toEqual({ email: "owner@aalan.ma", subject: "u1" });
   });
 
   it("rejects missing, foreign, expired and service tokens", async () => {

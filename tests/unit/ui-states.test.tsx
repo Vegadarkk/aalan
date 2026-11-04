@@ -191,7 +191,7 @@ describe("controls", () => {
       { id: "photo0001", w: 1600, h: 1200, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
       { id: "photo0002", w: 1600, h: 1200, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" },
     ];
-    const html = render(<Gallery listingId="abcd2345" title="Vélo" photos={photos} mediaBaseUrl="https://media.joutiya.test" />);
+    const html = render(<Gallery listingId="abcd2345" title="Vélo" photos={photos} mediaBaseUrl="https://media.aalan.test" />);
     const band = "focus-visible:after:shadow-[inset_0_0_0_2px_var(--ring),inset_0_0_0_4px_var(--surface)]";
     for (const classes of [classOf(html, "button", "cursor-zoom-in"), classOf(html, "button", 'aria-current="true"')]) {
       expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-none", "focus-visible:after:absolute", "focus-visible:after:inset-0", band]));

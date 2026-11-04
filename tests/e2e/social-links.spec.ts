@@ -50,7 +50,7 @@ async function seedShop(email: string, shopName: string): Promise<string> {
 
 test("a shop adds its social links and a visitor finds them on its storefront", async ({ page, request, browser }) => {
   test.setTimeout(120_000);
-  const email = `reseaux-${randomId(10)}@joutiya.test`;
+  const email = `reseaux-${randomId(10)}@aalan.test`;
   await signUpAndIn(page, request, email, "Nadia Argan");
   const segment = await seedShop(email, `Dar Argan ${randomId(4)}`);
 

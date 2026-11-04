@@ -33,8 +33,8 @@ vi.mock("@/lib/firebase/admin", () => {
   const query = { where: () => query, count: () => ({ get: async () => ({ data: () => ({ count: 4 }) }) }) };
   return { db: () => ({ collection: () => query }) };
 });
-vi.mock("@/lib/legal/config", () => ({ getLegalConfig: async () => ({ dsaContactEmail: "dsa@joutiya.test" }) }));
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/legal/config", () => ({ getLegalConfig: async () => ({ dsaContactEmail: "dsa@aalan.test" }) }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 vi.mock("@/components/map/listing-map-block", () => ({
   ListingMapBlock: ({ citySlug, seed, className }: { citySlug: string; seed: string; className?: string }) => <div data-testid="map-block" data-city={citySlug} data-seed={seed} className={className} />,
 }));
@@ -426,7 +426,7 @@ describe("JSON-LD", () => {
       "@type": "Product",
       name: "Vélo de ville",
       url: `https://joutiya.ma/fr/annonce/${SLUG_ID}`,
-      image: ["https://media.joutiya.test/listings/abcd2345/photo0001-l.webp", "https://media.joutiya.test/listings/abcd2345/photo0002-l.webp"],
+      image: ["https://media.aalan.test/listings/abcd2345/photo0001-l.webp", "https://media.aalan.test/listings/abcd2345/photo0002-l.webp"],
       offers: { "@type": "Offer", price: "1500", priceCurrency: "MAD", availability: "https://schema.org/InStock", itemCondition: "https://schema.org/UsedCondition" },
     });
     const block = JSON.stringify(data);
@@ -452,7 +452,7 @@ describe("metadata", () => {
       canonical: `/fr/annonce/${SLUG_ID}`,
       languages: { "fr-MA": `/fr/annonce/${SLUG_ID}`, "ar-MA": `/ar/annonce/${SLUG_ID}`, "x-default": `/fr/annonce/${SLUG_ID}` },
     });
-    expect(metadata.openGraph).toMatchObject({ url: `/fr/annonce/${SLUG_ID}`, images: [{ url: "https://media.joutiya.test/listings/abcd2345/photo0001-l.webp", width: 1600, height: 1200 }] });
+    expect(metadata.openGraph).toMatchObject({ url: `/fr/annonce/${SLUG_ID}`, images: [{ url: "https://media.aalan.test/listings/abcd2345/photo0001-l.webp", width: 1600, height: 1200 }] });
     expect(metadata.robots).toBeUndefined();
   });
 

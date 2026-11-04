@@ -6,7 +6,7 @@ import { hmacBase64Url, safeEqual } from "./hash";
 // set in a readable __Host- cookie and must come back in the X-CSRF-Token header of every
 // authenticated mutation, on top of the mandatory Origin check (src/lib/security/origin.ts).
 
-const DEV_SECRET = "joutiya-dev-csrf-secret-not-a-secret";
+const DEV_SECRET = "aalan-dev-csrf-secret-not-a-secret";
 
 export function csrfToken(session: string): string {
   return hmacBase64Url(serverEnv().CSRF_SECRET ?? DEV_SECRET, `csrf:${session}`);

@@ -39,7 +39,7 @@ function adminApp(): App {
 // The standalone build evaluates this module once per server chunk (instrumentation, pages, API
 // routes) while the SDK stays a process-wide singleton: a module-level cache would call
 // `settings()` a second time on the same instance, which throws. The cache lives on globalThis.
-const FIRESTORE_KEY = Symbol.for("joutiya.firestore");
+const FIRESTORE_KEY = Symbol.for("aalan.firestore");
 type GlobalCache = typeof globalThis & { [FIRESTORE_KEY]?: Firestore };
 
 let adminAuth: Auth | undefined;

@@ -13,7 +13,7 @@ import type { SearchCard } from "@/lib/search/types";
 // its punctuation and ellipsis on the right) yet aligns with the page; the À la Une band fills its
 // row from md with wide cards, and the organic grid never repeats a card of the band.
 
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 
 function render(node: ReactNode, locale: Locale = "fr") {
   return renderToStaticMarkup(
@@ -43,7 +43,7 @@ function card(id: string, overrides: Partial<SearchCard> = {}): SearchCard {
   };
 }
 
-const MEDIA = "https://media.joutiya.test";
+const MEDIA = "https://media.aalan.test";
 
 describe("ListingCard title", () => {
   it("lets the title pick its own direction and aligns it with the page side", () => {

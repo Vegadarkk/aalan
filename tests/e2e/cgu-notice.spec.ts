@@ -9,7 +9,7 @@ import { firebase, randomId, signUpAndIn } from "./helpers";
 process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 
 test("a member who accepted older CGU sees the notice until they acknowledge it", async ({ page, request }) => {
-  const email = `cgu-${randomId(10)}@joutiya.test`;
+  const email = `cgu-${randomId(10)}@aalan.test`;
   await signUpAndIn(page, request, email);
   const { uid } = await getAuth(firebase()).getUserByEmail(email);
   const account = getFirestore(firebase()).collection("users").doc(uid).collection("private").doc("account");

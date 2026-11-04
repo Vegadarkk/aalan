@@ -125,7 +125,7 @@ const schema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: optional,
   WHATSAPP_APP_SECRET: optional,
   WHATSAPP_VERIFY_TOKEN: optional,
-  /** Joutiya's WhatsApp number in international format, digits only (wa.me link). */
+  /** Aalan's WhatsApp number in international format, digits only (wa.me link). */
   WHATSAPP_DISPLAY_NUMBER: optional,
   SENTRY_DSN: optional,
   /** age public key of the nightly Firestore backups (D17); the private key stays offline. */
@@ -138,7 +138,7 @@ const schema = z.object({
   MEILI_URL: optionalUrl,
   MEILI_SEARCH_KEY: optional,
   MEILI_INDEX_KEY: optional,
-  // Payments (phase 7, design §6), behind config/flags `salesEnabled`. RevenueCat project "Joutiya"
+  // Payments (phase 7, design §6), behind config/flags `salesEnabled`. RevenueCat project "Aalan"
   // (sandbox outside prod): the v2 secret key reads a customer's purchases, every webhook carries
   // the static Authorization value and the HMAC signature, and the purchase link is the Web
   // Purchase Link of the credit packs offering (`https://pay.rev.cat/<token>`).

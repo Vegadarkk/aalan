@@ -32,8 +32,8 @@ vi.mock("@/lib/firebase/admin", () => {
 });
 const shops = vi.hoisted(() => ({ getProProfile: vi.fn() }));
 vi.mock("@/lib/db/repositories/pro-profiles", () => ({ getProProfile: shops.getProProfile }));
-vi.mock("@/lib/legal/config", () => ({ getLegalConfig: async () => ({ dsaContactEmail: "dsa@joutiya.test" }) }));
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/legal/config", () => ({ getLegalConfig: async () => ({ dsaContactEmail: "dsa@aalan.test" }) }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof NextNavigation>()),
   notFound: () => {

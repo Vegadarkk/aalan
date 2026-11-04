@@ -15,7 +15,7 @@ vi.mock("react", async (importOriginal) => {
 });
 vi.mock("@/lib/map/webgl", () => ({ supportsWebGL2: () => true }));
 vi.mock("@/lib/config/client", () => ({
-  usePublicConfig: () => ({ map: { pmtilesUrl: "https://media.joutiya.test/maroc.pmtiles", attribution: "© OpenStreetMap" } }),
+  usePublicConfig: () => ({ map: { pmtilesUrl: "https://media.aalan.test/maroc.pmtiles", attribution: "© OpenStreetMap" } }),
 }));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 

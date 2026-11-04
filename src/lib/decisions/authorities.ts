@@ -19,7 +19,7 @@ import { conversationRef, privateFromSnapshot, privateRef } from "./repository";
 // account legalHold: the retention purges skip them) and freezes the scoped conversations (nobody
 // can write); closing it removes them. A removal order hides each scoped listing at once through
 // an `authority` report (strong signal) and removes it by a decision with origin `authority_order`
-// (not appealable on Joutiya: the order is challenged before the issuing State's courts).
+// (not appealable on Aalan: the order is challenged before the issuing State's courts).
 
 export const AUTHORITY_RETENTION_YEARS = 5;
 export const AUTHORITY_LIST_LIMIT = 50;

@@ -9,7 +9,7 @@ import { SearchUnavailableError, type SearchEngine } from "./types";
 // rebuild route share it across Next bundles and reloads); elsewhere SearchUnavailableError, which
 // callers turn into 503 `search_unavailable` or an error state.
 
-const DEV_MEMORY = Symbol.for("joutiya.search.devMemoryEngine");
+const DEV_MEMORY = Symbol.for("aalan.search.devMemoryEngine");
 type GlobalWithEngine = typeof globalThis & { [DEV_MEMORY]?: MemoryEngine };
 
 /** The development memory engine of this process (created on first use). */

@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // Safety advice of the listing page (§10 "conseils de sécurité") and the neutral-host statement:
-// Joutiya hosts the listing and is party to no transaction (LCEN art. 6 / DSA art. 6 hosting).
+// Aalan hosts the listing and is party to no transaction (LCEN art. 6 / DSA art. 6 hosting).
 
 const TIPS = {
   goods: [

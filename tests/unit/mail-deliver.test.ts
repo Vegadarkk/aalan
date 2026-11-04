@@ -13,7 +13,7 @@ vi.mock("@/lib/quota", async (importOriginal) => ({
 }));
 vi.mock("@/lib/alert", () => ({ alert: vi.fn(async () => true) }));
 vi.mock("@/lib/valkey/clients", () => ({ isValkeyConfigured: () => false, valkey: () => ({}), clientOptions: () => ({}) }));
-vi.mock("@/lib/auth/links", () => ({ generateActionUrl: vi.fn(async () => "https://joutiya.test/fr/action?mode=verifyEmail&oobCode=fresh") }));
+vi.mock("@/lib/auth/links", () => ({ generateActionUrl: vi.fn(async () => "https://aalan.test/fr/action?mode=verifyEmail&oobCode=fresh") }));
 vi.mock("@/lib/legal/config", () => ({ getLegalConfig: vi.fn(async () => ({ companyName: "Adark Prime", hqAddress: "6 rue d'Armaillé, 75017 Paris" })) }));
 
 const { isSuppressed } = await import("@/lib/mail/suppressions");
@@ -28,7 +28,7 @@ const MAIL: TemplateMail<"verifyEmail"> = {
   template: "verifyEmail",
   locale: "fr",
   to: "Nadia@Example.com",
-  data: { displayName: "Nadia", actionUrl: "https://joutiya.test/fr/action?mode=verifyEmail&oobCode=1" },
+  data: { displayName: "Nadia", actionUrl: "https://aalan.test/fr/action?mode=verifyEmail&oobCode=1" },
   priority: "transactional",
   idempotencyKey: "verify-uid-1",
 };
@@ -38,7 +38,7 @@ const ENV_KEYS = ["APP_ENV", "DEV_MAILBOX", "MAIL_API_KEY", "MAIL_FALLBACK_API_K
 
 function setEnv(values: Partial<Record<(typeof ENV_KEYS)[number], string>>): void {
   for (const key of ENV_KEYS) delete process.env[key];
-  Object.assign(process.env, { SITE_URL: "https://joutiya.test", ...values });
+  Object.assign(process.env, { SITE_URL: "https://aalan.test", ...values });
   resetServerEnv();
 }
 
@@ -92,7 +92,7 @@ afterEach(() => {
 });
 
 describe("deliverMail action links", () => {
-  const LINK = { action: "verifyEmail" as const, url: "https://joutiya.test/fr/action?mode=verifyEmail", continueUrl: "https://joutiya.test/fr/action" };
+  const LINK = { action: "verifyEmail" as const, url: "https://aalan.test/fr/action?mode=verifyEmail", continueUrl: "https://aalan.test/fr/action" };
 
   it("generates the link at delivery: the job carries only the request", async () => {
     setEnv({ APP_ENV: "dev", DEV_MAILBOX: "true" });
@@ -100,14 +100,14 @@ describe("deliverMail action links", () => {
     expect(outcome).toMatchObject({ provider: "memory" });
     expect(generateActionUrl).toHaveBeenCalledWith("link@example.com", LINK);
     const [sent] = memoryMailbox().list({ to: "link@example.com" });
-    expect(sent?.data).toEqual({ displayName: "Nadia", actionUrl: "https://joutiya.test/fr/action?mode=verifyEmail&oobCode=fresh" });
+    expect(sent?.data).toEqual({ displayName: "Nadia", actionUrl: "https://aalan.test/fr/action?mode=verifyEmail&oobCode=fresh" });
     expect(sent?.text).toContain("oobCode=fresh");
   });
 
   it("dates the staff invitation's link from its delivery (one hour, audit zone 7 P3-5)", async () => {
     setEnv({ APP_ENV: "dev", DEV_MAILBOX: "true" });
     const before = Date.now();
-    const link = { action: "resetPassword" as const, url: "https://admin.joutiya.test/connexion?mode=setPassword", continueUrl: "https://admin.joutiya.test/connexion" };
+    const link = { action: "resetPassword" as const, url: "https://admin.aalan.test/connexion?mode=setPassword", continueUrl: "https://admin.aalan.test/connexion" };
     await deliverMail({ ...MAIL, template: "staffInvite", to: "invite@example.com", data: { displayName: "Nadia", role: "moderator", actionLink: link } });
     const [sent] = memoryMailbox().list({ to: "invite@example.com" });
     const expiresAt = Date.parse(String((sent?.data as { expiresAt?: string }).expiresAt));
@@ -143,7 +143,7 @@ describe("deliverMail in development", () => {
     setEnv({ APP_ENV: "dev", DEV_MAILBOX: "true", MAIL_API_KEY: "re_dev" });
     const calls = stubFetch();
     const first = await deliverMail(MAIL);
-    const second = await deliverMail({ ...MAIL, to: "other@example.com", template: "resetPassword", data: { displayName: "O", actionUrl: "https://joutiya.test/r" } });
+    const second = await deliverMail({ ...MAIL, to: "other@example.com", template: "resetPassword", data: { displayName: "O", actionUrl: "https://aalan.test/r" } });
     expect(first).toMatchObject({ provider: "memory" });
     expect(second).toMatchObject({ provider: "memory" });
     expect(calls).toHaveLength(0);

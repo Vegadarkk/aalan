@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
 
 // Help centre home (design phase-5 D25): search over the locale's articles, the themes with their
-// articles, and the Assistant Joutiya. ISR like the legal pages: a limit read from config/legal
+// articles, and the Assistant Aalan. ISR like the legal pages: a limit read from config/legal
 // (the listing lifetime) reaches the text within 5 minutes.
 export const revalidate = 300;
 

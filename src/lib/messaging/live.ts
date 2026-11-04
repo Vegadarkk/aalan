@@ -87,7 +87,7 @@ export const BUSY_PROBE_MS = 60_000;
  *  disconnection), plus up to the same again: the waiting tabs do not all race for it at once. */
 export const SLOT_FREED_DELAY_MS = 1_000;
 /** The BroadcastChannel of the tabs' live streams. */
-export const LIVE_CHANNEL = "joutiya-messaging-live";
+export const LIVE_CHANNEL = "aalan-messaging-live";
 /** Every MessagingEventType (checked by the compiler; no value import of the zod contracts here). */
 const EVENT_TYPES: Readonly<Record<MessagingEventType, true>> = { ready: true, resync: true, message: true, message_updated: true, read: true, conversation: true, unread: true, revoked: true };
 

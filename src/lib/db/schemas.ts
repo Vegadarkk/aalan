@@ -304,7 +304,7 @@ export type PriceLogEntry = z.infer<typeof priceLogEntrySchema>;
 
 /**
  * A promotion of a Pro listing (catalogue §4): its prices per key ("" the listing, else a
- * combination) with the struck-out price Joutiya computed at saving (lowest of the 30 days before,
+ * combination) with the struck-out price Aalan computed at saving (lowest of the 30 days before,
  * null for a younger listing). Readers ignore it once ended; a price change ends it.
  */
 export const listingPromoSchema = z

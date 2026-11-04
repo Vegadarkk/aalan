@@ -271,7 +271,7 @@ export interface ActionLinkRequest {
   action: "verifyEmail" | "resetPassword" | "changeEmail";
   /** changeEmail only: the account's address the code moves away from. */
   currentEmail?: string;
-  /** The Joutiya page the code is appended to, its other query parameters included (`mode`). */
+  /** The Aalan page the code is appended to, its other query parameters included (`mode`). */
   url: string;
   continueUrl: string;
 }

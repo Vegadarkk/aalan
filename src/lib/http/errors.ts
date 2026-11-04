@@ -38,6 +38,8 @@ export type ErrorCode =
   | "listing_limit"
   /** A Pro without a plan (none, or suspended): no active slot at all (zone 6 audit 6-02). */
   | "no_plan"
+  /** Moderator approval of a listing whose shop is back under KYBC review (validation withdrawn, zone 7 P2-10). */
+  | "pro_revalidation"
   /** 5 listings created per day (individuals). */
   | "listing_daily_limit"
   /** Photos per listing (10, Pro 20). */

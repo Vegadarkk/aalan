@@ -31,6 +31,7 @@ const MESSAGES: Record<string, string> = {
   forbidden: "Réservé aux modérateurs et aux admins.",
   rate_limited: "Trop de décisions en peu de temps. Réessayez dans quelques minutes.",
   account_suspended: "Le compte du vendeur n'est pas actif (suspendu ou fermé) : l'annonce ne peut pas être publiée. Refusez-la ou laissez-la en attente.",
+  pro_revalidation: "La validation de cette boutique Pro a été retirée : l'annonce ne peut pas être publiée avant la nouvelle vérification. Refusez-la ou laissez-la en attente.",
 };
 
 type Choice = "approve" | "reject";

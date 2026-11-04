@@ -296,6 +296,12 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
   if (approve) {
     const owner = await getUserRecord(listing.ownerUid);
     if (!owner || owner.status !== "active") throw new HttpError(409, "account_suspended", "the seller's account is not active");
+    // Same for a shop whose validation was withdrawn: its published listings are paused until the
+    // new KYBC validation, so one still held at that time must not go live through the queue.
+    if (listing.proId) {
+      const shop = await getProProfile(listing.proId);
+      if (shop?.lifecycle === "revalidation_required") throw new HttpError(409, "pro_revalidation", "the seller's shop is back under verification");
+    }
   }
 
   const ctx = { now, lifetime: listingLifetime(legal) };

@@ -200,12 +200,17 @@ describe("strong signals hide a listing", () => {
   it("multi is off when the P0 limiters could not count (rate-limit store down)", async () => {
     const actual = await vi.importActual<typeof limiter>("@/lib/rate-limit/limiter");
     vi.mocked(limiter.consumeLimit).mockImplementation(async (id, key, points) => (id.startsWith("report.p0.") ? { ok: false, reason: "unavailable" } : actual.consumeLimit(id, key, points)));
-    const { id } = await publishedListing();
-    await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
-    const second = await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
-    expect(second.status).toBe(201);
-    expect((await getReport(second.body.reportId))!.hidden).toBe(false);
-    expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
+    try {
+      const { id } = await publishedListing();
+      await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
+      const second = await report(listingNotice(id, "threat"), { as: await makeProven(await member()), headers: ownNetwork() });
+      expect(second.status).toBe(201);
+      expect((await getReport(second.body.reportId))!.hidden).toBe(false);
+      expect((await getListing(id))!.moderation.hiddenBy).toBeUndefined();
+    } finally {
+      // restoreMocks does not undo a module automock's implementation: later tests count again.
+      vi.mocked(limiter.consumeLimit).mockImplementation(actual.consumeLimit);
+    }
   });
 
   it("trusted: one P0 from a trusted reporter hides at once", async () => {

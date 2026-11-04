@@ -263,9 +263,18 @@ test.describe("listing page", () => {
     await expect(map).toBeVisible();
     await expect(map).toContainText("OpenStreetMap");
     await expect(page.getByTestId("safety-tips")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Signaler l'annonce" })).toBeVisible();
+    const report = page.getByRole("button", { name: "Signaler l'annonce" });
+    await expect(report).toBeVisible();
 
     await page.waitForLoadState("networkidle");
+    // The notice form gives the focus back to its button on Escape (audit zone 8, 5.2-1).
+    await report.click();
+    const notice = page.getByTestId("report-dialog");
+    await expect(notice).toBeVisible();
+    await expect(notice.getByRole("radio", { name: "Arnaque ou tentative d'escroquerie" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(notice).toBeHidden();
+    await expect(report).toBeFocused();
     expect(violations).toEqual([]);
   });
 

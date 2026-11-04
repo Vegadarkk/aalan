@@ -50,6 +50,9 @@ export function ReasonStep({ groups, value, onChange, error }: ReasonStepProps) 
             {group.reasons.map((reason) => {
               const text = reasonText(reason, locale);
               const checked = value === reason.id;
+              // Named by the reason alone, its hint as the description: the whole label as a name was a
+              // long run of text where the reason got lost (audit zone 8, 5.2-8).
+              const ids = `${name}-${reason.id}`;
               return (
                 <li key={reason.id}>
                   <label
@@ -59,13 +62,24 @@ export function ReasonStep({ groups, value, onChange, error }: ReasonStepProps) 
                       checked ? "border-structure bg-bab-50 dark:border-gold-300 dark:bg-surface-muted" : "border-border hover:border-border-strong",
                     )}
                   >
-                    <input type="radio" name={name} value={reason.id} checked={checked} onChange={() => onChange(reason.id)} className="mt-1 size-4 shrink-0 cursor-pointer accent-structure" />
+                    <input
+                      type="radio"
+                      name={name}
+                      value={reason.id}
+                      checked={checked}
+                      onChange={() => onChange(reason.id)}
+                      aria-labelledby={`${ids}-label`}
+                      aria-describedby={`${ids}-hint`}
+                      className="mt-1 size-4 shrink-0 cursor-pointer accent-structure"
+                    />
                     <span className="flex min-w-0 flex-col gap-0.5">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+                      <span id={`${ids}-label`} className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                         {text.label}
                         {reason.priority === "P0" ? <Badge variant="warning">{t("urgent")}</Badge> : null}
                       </span>
-                      <span className="text-sm text-foreground-muted text-pretty">{text.hint}</span>
+                      <span id={`${ids}-hint`} className="text-sm text-foreground-muted text-pretty">
+                        {text.hint}
+                      </span>
                       {checked ? (
                         <span className="text-xs text-foreground-muted">
                           {t("ground")}{" "}

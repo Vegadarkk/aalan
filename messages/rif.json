@@ -33,6 +33,7 @@
     "contact": "Ari-d aneɣ",
     "procedures": "Lewraq n lidara",
     "visitorMenu": "Tabdart",
+    "floating": "Iberdan iwezlen",
     "signUp": "Snulfu amiḍan"
   },
   "Locale": {
@@ -3815,7 +3816,7 @@
       "label": "{title}, {price}",
       "featured": "Deg uqerru · Yettwaxelleṣ",
       "today": "tettwassufeɣ assa",
-      "cluster": "{count, plural, one {# n annonce} other {# n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
+      "cluster": "{n} {count, plural, one {n annonce} other {n annonces}} dagi, semɣer ḥima ad tent-teẓreḍ",
       "per": {
         "night": "/iḍ",
         "month": "/ayyur",

@@ -78,7 +78,7 @@ describe("AccountMenu", () => {
     expect(html).toContain('href="/fr/favoris"');
     expect(html).not.toContain(`aria-label="${fr.Auth.menu.messagesLink}"`);
     // Below lg: the visitor menu (sign in, create an account, the rentals, the Pro space), a plain 44 px button until its chunk runs.
-    const menu = /<button type="button" aria-haspopup="menu" aria-expanded="false" aria-label="([^"]+)" data-testid="visitor-menu" class="([^"]*)"/.exec(html);
+    const menu = /<button type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="([^"]+)" data-testid="visitor-menu" class="([^"]*)"/.exec(html);
     expect(menu?.[1]).toBe(fr.Nav.visitorMenu);
     expect(menu?.[2]).toContain("min-w-11");
     expect(menu?.[2]).toContain("lg:hidden");

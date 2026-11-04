@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Flag, RotateCw } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -70,6 +70,7 @@ export function ReportButton({ target, subject, ownerPublicId, quote, compact, e
   const { status, session } = useSession();
   const [state, setState] = useState<"closed" | "checking" | "open">("closed");
   const [mounted, setMounted] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
   const context = target.type;
 
   if (ownerPublicId && status === "ready" && session?.publicId === ownerPublicId) return null;
@@ -90,6 +91,7 @@ export function ReportButton({ target, subject, ownerPublicId, quote, compact, e
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <Button
+        ref={button}
         type="button"
         variant="ghost"
         loading={state === "checking"}
@@ -112,6 +114,7 @@ export function ReportButton({ target, subject, ownerPublicId, quote, compact, e
           {...(quote ? { quote } : {})}
           fallbackEmail={email}
           pageUrl={url}
+          returnFocus={() => button.current}
         />
       ) : null}
     </div>

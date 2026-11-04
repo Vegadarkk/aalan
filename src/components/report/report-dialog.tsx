@@ -7,6 +7,7 @@ import { Dialog } from "radix-ui";
 import { formatWait, FormMessage } from "@/components/auth/form-message";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/auth/turnstile-widget";
 import { Button } from "@/components/ui/button";
+import { useReturnFocus } from "@/components/ui/return-focus";
 import { Link, usePathname } from "@/i18n/navigation";
 import { ApiError, useSession } from "@/lib/auth/client";
 import { isolate } from "@/lib/i18n/bidi";
@@ -45,11 +46,13 @@ export interface ReportDialogProps {
   quote?: string;
   /** DSA point of contact (config/legal), offered when the form cannot send. */
   fallbackEmail?: string;
+  /** The button that opened the form: it takes the focus back on close (no Dialog.Trigger here). */
+  returnFocus?: () => HTMLElement | null;
 }
 
 type Step = "reason" | "details" | "done";
 
-export function ReportDialog({ open, onOpenChange, target, context, subject, quote, fallbackEmail }: ReportDialogProps) {
+export function ReportDialog({ open, onOpenChange, target, context, subject, quote, fallbackEmail, returnFocus }: ReportDialogProps) {
   const t = useTranslations("Report");
   const locale = useLocale();
   const pathname = usePathname();
@@ -69,6 +72,7 @@ export function ReportDialog({ open, onOpenChange, target, context, subject, quo
   const [challengeMissing, setChallengeMissing] = useState(false);
   const [receipt, setReceipt] = useState<ReportReceipt | null>(null);
 
+  const onCloseAutoFocus = useReturnFocus(open, returnFocus);
   const reason = chosenReason(draft, groups);
   const needsChallenge = !signedIn || challenged;
 
@@ -149,6 +153,7 @@ export function ReportDialog({ open, onOpenChange, target, context, subject, quo
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
           data-testid="report-dialog"
+          onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-lg border border-border bg-surface shadow-xl shadow-bab-950/20 outline-none",
             "sm:inset-x-auto sm:start-1/2 sm:top-1/2 sm:bottom-auto sm:max-h-[88dvh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg rtl:sm:translate-x-1/2",

@@ -19,10 +19,10 @@ const COPY: Record<MailLocale, { subject: string; title: string; body: (closed: 
     reopen: (contact) => `Pour rouvrir votre compte plutôt que d'attendre, écrivez-nous à ${contact}.`,
   },
   ar: {
-    subject: "تعذّر التسجيل: حسابك على Aalan مغلق",
+    subject: "تعذّر التسجيل: حسابك على أعلان مغلق",
     title: "تم إغلاق هذا الحساب",
     body: (closed, reusable) => [
-      "حاول شخص ما، وربما كنت أنت، إنشاء حساب على Aalan بعنوان البريد الإلكتروني هذا.",
+      "حاول شخص ما، وربما كنت أنت، إنشاء حساب على أعلان بعنوان البريد الإلكتروني هذا.",
       `تم إغلاق الحساب المرتبط بهذا العنوان بتاريخ ${closed}. لا يمكن استعماله لحساب جديد ما دمنا نحتفظ ببيانات الحساب القديم: يمكن استعماله من جديد ابتداءً من ${reusable}.`,
     ],
     button: "اتصل بنا",

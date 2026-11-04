@@ -1,4 +1,4 @@
-import { SITE_NAME } from "@/config/site";
+import { BRAND, SITE_NAME } from "@/config/site";
 import type { TemplateData } from "../types";
 import { formatDay, GREETING, pageUrl, renderLayout, type BuiltMail, type MailLocale, type TemplateContext } from "./layout";
 
@@ -64,7 +64,7 @@ const COPY: Record<MailLocale, Copy> = {
         : `عدد الإعلانات الموقوفة مؤقتًا: ${count}. لم تُحذف: أعد نشرها من «إعلاناتي» بعد أخذ عرض أو باقة.`,
     storefront: "لم يعد متجرك ظاهرًا. عرض جديد أو اشتراك يعيده فورًا.",
     button: "تمديد متجري",
-    closing: `للدفع، مرّ دائمًا عبر فضائك المهني على ${SITE_NAME}: لن نطلب منك أي دفع عبر الرسائل.`,
+    closing: `للدفع، مرّ دائمًا عبر فضائك المهني على ${BRAND.arabic}: لن نطلب منك أي دفع عبر الرسائل.`,
   },
 };
 

@@ -39,7 +39,7 @@ export const REJECT_REASONS: Record<RejectReasonCode, RejectReason> = {
     label: "Objet ou service interdit",
     facts: {
       fr: "l'annonce propose un objet ou un service interdit sur Aalan (voir la page « Objets interdits »)",
-      ar: "يعرض الإعلان غرضًا أو خدمة ممنوعة على Aalan (انظر صفحة «الأغراض الممنوعة»)",
+      ar: "يعرض الإعلان غرضًا أو خدمة ممنوعة على أعلان (انظر صفحة «الأغراض الممنوعة»)",
     },
     ground: { type: "terms", ref: `${LISTING_RULES}, objets interdits` },
   },
@@ -89,7 +89,7 @@ export const REJECT_REASONS: Record<RejectReasonCode, RejectReason> = {
     label: "Suspicion d'arnaque",
     facts: {
       fr: "l'annonce présente des signes d'arnaque (paiement d'avance, prix irréaliste, contact hors d'Aalan)",
-      ar: "يحمل الإعلان مؤشرات احتيال (دفع مسبق، سعر غير واقعي، تواصل خارج Aalan)",
+      ar: "يحمل الإعلان مؤشرات احتيال (دفع مسبق، سعر غير واقعي، تواصل خارج أعلان)",
     },
     ground: { type: "terms", ref: "CGU « Modération », risque d'arnaque" },
   },

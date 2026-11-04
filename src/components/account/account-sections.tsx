@@ -5,7 +5,7 @@ import { Dialog } from "radix-ui";
 import { Download, KeyRound, LogOut } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
+import { FormMessage, formatWait, useApiErrorMessage } from "@/components/auth/form-message";
 import { Section } from "@/components/auth/settings-section";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ErrorBanner } from "@/components/feedback/error-banner";
@@ -45,6 +45,18 @@ function exportName(): string {
   return `aalan-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
 }
 
+/**
+ * The export's refusal. The fourth download of the day (rate limit `account.export.uid`) names the
+ * limit and when it lifts, not the generic "too many attempts" (zone 1 Z1-23).
+ */
+export function ExportError({ error }: { error: unknown }) {
+  const t = useTranslations("Account.data");
+  const common = useTranslations("Auth.common");
+  const locale = useLocale();
+  const title = isApiError(error, "rate_limited") ? t("limitReached", { wait: formatWait(locale, error.retryAfter, common("waitLater")) }) : undefined;
+  return <FormMessage error={error} title={title} />;
+}
+
 export function DataSection() {
   const t = useTranslations("Account.data");
   const [busy, setBusy] = useState(false);
@@ -67,7 +79,7 @@ export function DataSection() {
   return (
     <Section id="data" title={t("title")} body={t("body")}>
       <div className="flex flex-col items-start gap-4">
-        <FormMessage error={error} />
+        <ExportError error={error} />
         <p className="text-sm text-pretty">{t("contents")}</p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Button type="button" variant="outline" loading={busy} onClick={() => void download()}>

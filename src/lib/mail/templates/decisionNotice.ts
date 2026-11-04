@@ -69,11 +69,11 @@ const COPY: Record<MailLocale, Copy> = {
         case "restrict_visibility":
           return `تم تقييد ظهور إعلانك${quoted("ar", data.title)}`;
         case "warn":
-          return "إنذار بخصوص حسابك على Aalan";
+          return "إنذار بخصوص حسابك على أعلان";
         case "suspend_account":
-          return `تم توقيف حسابك على Aalan إلى غاية ${until}`;
+          return `تم توقيف حسابك على أعلان إلى غاية ${until}`;
         case "ban":
-          return "تم إغلاق حسابك على Aalan";
+          return "تم إغلاق حسابك على أعلان";
       }
     },
     title: { remove: "سحب محتوى", restrict_visibility: "تقييد الظهور", warn: "إنذار", suspend_account: "توقيف الحساب", ban: "إغلاق الحساب" },
@@ -81,7 +81,7 @@ const COPY: Record<MailLocale, Copy> = {
       switch (data.action) {
         case "remove":
           if (data.targetType === "review") return `الإجراء: تم إخفاء تقييمك${about("ar", data.title)}، ولم يعد ظاهرًا ولا يُحتسب في تقييم البائع.`;
-          return data.targetType === "message" ? "الإجراء: تم إخفاء إحدى رسائلك، ولم يعد بإمكان محاورك قراءتها." : `الإجراء: تم سحب إعلانك${quoted("ar", data.title)}، ولم يعد ظاهرًا على Aalan.`;
+          return data.targetType === "message" ? "الإجراء: تم إخفاء إحدى رسائلك، ولم يعد بإمكان محاورك قراءتها." : `الإجراء: تم سحب إعلانك${quoted("ar", data.title)}، ولم يعد ظاهرًا على أعلان.`;
         case "restrict_visibility":
           return `الإجراء: لم يعد إعلانك${quoted("ar", data.title)} يظهر في نتائج البحث ولا في صفحته العامة.`;
         case "warn":
@@ -89,7 +89,7 @@ const COPY: Record<MailLocale, Copy> = {
         case "suspend_account":
           return `الإجراء: تم توقيف حسابك لمدة ${arabicDays(data.durationDays ?? 0)} إلى غاية ${until}. خلال التوقيف يمكنك قراءة محادثاتك والطعن في هذا القرار؛ وتُوقف إعلاناتك المنشورة مؤقتًا وتُستأنف عند نهاية التوقيف إن لم تنته صلاحيتها.`;
         case "ban":
-          return "الإجراء: تم إغلاق حسابك على Aalan نهائيًا. سُحبت إعلاناتك ولم يعد بإمكانك تسجيل الدخول.";
+          return "الإجراء: تم إغلاق حسابك على أعلان نهائيًا. سُحبت إعلاناتك ولم يعد بإمكانك تسجيل الدخول.";
       }
     },
     rulesButton: "قراءة الشروط العامة",

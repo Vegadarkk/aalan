@@ -1,4 +1,4 @@
-import { LOCALE_TAGS, SITE_NAME } from "@/config/site";
+import { BRAND, LOCALE_TAGS, SITE_NAME } from "@/config/site";
 import type { TemplateData } from "../types";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { GREETING, pageUrl, renderLayout, type BuiltMail, type MailLocale, type TemplateContext } from "./layout";
@@ -47,7 +47,7 @@ const COPY: Record<MailLocale, Copy> = {
     maskedLink: "[رابط مخفي]",
     kinds: { meeting: "اللقاء", visit: "الزيارة", test_drive: "التجربة", pickup: "تسليم السيارة", check_in: "الوصول" },
     button: "فتح المحادثة",
-    safety: `لسلامتك، التقِ في مكان عام أو مزدحم ولا تدفع أي عربون. ${SITE_NAME} ليست طرفا في المعاملة.`,
+    safety: `لسلامتك، التقِ في مكان عام أو مزدحم ولا تدفع أي عربون. ${BRAND.arabic} ليست طرفا في المعاملة.`,
     closing: "لن تتمكن من الحضور؟ ألغِ الموعد أو أجّله من المحادثة لإخبار العضو الآخر.",
     settings: "اختر تلقي رسائل المراسلة أو إيقافها من إعدادات حسابك:",
   },

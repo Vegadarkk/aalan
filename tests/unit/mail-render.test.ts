@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Locale } from "@/config/site";
+import { BRAND, type Locale } from "@/config/site";
 import { resetServerEnv } from "@/lib/env";
 import { renderMail, TEMPLATE_IDS, isTemplateMail } from "@/lib/mail/render";
 import { escapeHtml, formatDate } from "@/lib/mail/templates/layout";
@@ -157,7 +157,10 @@ describe("renderMail", () => {
         expect(rendered.html).not.toContain("http://");
         if (locale === "ar") {
           expect(rendered.html).toContain('<html lang="ar" dir="rtl">');
-          expect(rendered.text).toContain("Aalan");
+          // The brand in Arabic script (Z1-17): the Latin wordmark of the header is the only "Aalan".
+          expect(rendered.text).toContain(BRAND.arabic);
+          expect(rendered.text).not.toContain("Aalan");
+          expect(rendered.html.match(/Aalan/g)).toHaveLength(1);
           expect(rendered.text).toMatch(/[؀-ۿ]/);
         } else {
           expect(rendered.html).toContain('<html lang="fr" dir="ltr">');

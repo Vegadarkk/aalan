@@ -78,7 +78,7 @@ export const DECISION_TEMPLATES = [
     action: "remove",
     targets: LISTING,
     ground: { type: "terms", ref: PROHIBITED },
-    facts: { fr: "l'annonce propose un objet ou un service interdit sur Aalan", ar: "يعرض الإعلان غرضًا أو خدمة ممنوعة على Aalan" },
+    facts: { fr: "l'annonce propose un objet ou un service interdit sur Aalan", ar: "يعرض الإعلان غرضًا أو خدمة ممنوعة على أعلان" },
     explanation: {
       fr: "nos conditions générales interdisent la vente de ces objets et services (voir la page « Objets interdits »)",
       ar: "تمنع شروطنا العامة بيع هذه الأغراض والخدمات (انظر صفحة «الأغراض الممنوعة»)",
@@ -94,7 +94,7 @@ export const DECISION_TEMPLATES = [
     ground: { type: "terms", ref: "CGU, modération (arnaques)" },
     facts: {
       fr: "l'annonce présente des signes d'arnaque (paiement demandé d'avance, objet inexistant, prix irréaliste ou contact hors d'Aalan)",
-      ar: "يحمل الإعلان مؤشرات احتيال (طلب الدفع مسبقًا، غرض غير موجود، سعر غير واقعي أو تواصل خارج Aalan)",
+      ar: "يحمل الإعلان مؤشرات احتيال (طلب الدفع مسبقًا، غرض غير موجود، سعر غير واقعي أو تواصل خارج أعلان)",
     },
     explanation: {
       fr: "nos conditions générales interdisent les annonces trompeuses destinées à obtenir un paiement ou des données",

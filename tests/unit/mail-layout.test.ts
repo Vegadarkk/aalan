@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_LEGAL } from "@/config/legal";
+import { BRAND } from "@/config/site";
 import { mailPublisher, PUBLISHER_ADDRESS, renderLayout, setMailPublisher } from "@/lib/mail/templates/layout";
 
 // S8: the footer identity comes from config/legal (setMailPublisher in deliverMail), never from
@@ -27,7 +28,19 @@ describe("renderLayout footer", () => {
     expect(fr.html).toContain(`Édité par Société Test · ${PUBLISHER_ADDRESS}`);
     expect(fr.html).not.toContain(DEFAULT_LEGAL.companyName);
     const ar = renderLayout({ ...INPUT, lang: "ar" });
-    expect(ar.text).toContain(`الناشر: Société Test · ${PUBLISHER_ADDRESS}`);
+    expect(ar.text).toContain(`الناشر: \u2068Société Test · ${PUBLISHER_ADDRESS}\u2069`);
+  });
+
+  it("isolates the Latin identity, host and URL inside the Arabic footer (Z1-17)", () => {
+    setMailPublisher({ companyName: "Société Test", hqAddress: PUBLISHER_ADDRESS });
+    const ar = renderLayout({ ...INPUT, lang: "ar" });
+    expect(ar.html).toContain(`الناشر: <span dir="ltr">Société Test · ${PUBLISHER_ADDRESS}</span>`);
+    expect(ar.html).toContain(`الذهاب إلى ${BRAND.arabic}</a> · <span dir="ltr">joutiya.test</span>`);
+    expect(ar.text).toContain(`الذهاب إلى ${BRAND.arabic}: \u2068https://joutiya.test\u2069`);
+    // French copy needs no isolation.
+    const fr = renderLayout(INPUT);
+    expect(fr.html).not.toContain('dir="ltr">Société');
+    expect(fr.text).not.toMatch(/[\u2068\u2069]/);
   });
 
   it("escapes the publisher name and lets a template pass its own", () => {

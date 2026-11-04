@@ -25,7 +25,17 @@ interface Row {
 const text = (value: unknown): string | undefined => (typeof value === "string" && value.trim() ? value.trim() : undefined);
 const integer = (value: unknown): number | undefined => (typeof value === "number" && Number.isInteger(value) ? value : undefined);
 
-export function PropertyTerms({ attributes, locale, holidayRental = false, className }: { attributes: ListingAttributes; locale: Locale; holidayRental?: boolean; className?: string }) {
+/**
+ * The agency fees wording: a long-term rental names the rent and the tenant (zone 3 audit P3-5),
+ * a sale the price and the client.
+ */
+export function feesKey(fees: "en-sus" | "inclus" | "sans-frais", withAmount: boolean, rent: boolean) {
+  if (fees === "sans-frais") return rent ? "feesNoneRent" : "feesNone";
+  const base = fees === "en-sus" ? (rent ? "feesOnTopRent" : "feesOnTop") : rent ? "feesIncludedRent" : "feesIncluded";
+  return withAmount ? (`${base}Amount` as const) : base;
+}
+
+export function PropertyTerms({ attributes, locale, holidayRental = false, rent = false, className }: { attributes: ListingAttributes; locale: Locale; holidayRental?: boolean; /** A long-term rental (monthly rent). */ rent?: boolean; className?: string }) {
   const t = useTranslations("ListingPage.terms");
   const rows: Row[] = [];
   const mandate = text(attributes["mandate"]);
@@ -34,9 +44,10 @@ export function PropertyTerms({ attributes, locale, holidayRental = false, class
   if (reference) rows.push({ id: "reference", label: t("reference"), value: reference, userText: true });
   const fees = text(attributes["agency-fees"]);
   const amount = integer(attributes["agency-fees-amount"]);
-  if (fees === "en-sus") rows.push({ id: "fees", label: t("fees"), value: amount !== undefined ? t("feesOnTopAmount", { amount: formatPrice(amount, locale) }) : t("feesOnTop") });
-  else if (fees === "inclus") rows.push({ id: "fees", label: t("fees"), value: amount !== undefined ? t("feesIncludedAmount", { amount: formatPrice(amount, locale) }) : t("feesIncluded") });
-  else if (fees === "sans-frais") rows.push({ id: "fees", label: t("fees"), value: t("feesNone") });
+  if (fees === "en-sus" || fees === "inclus" || fees === "sans-frais") {
+    const key = feesKey(fees, amount !== undefined, rent);
+    rows.push({ id: "fees", label: t("fees"), value: t(key, { amount: amount !== undefined ? formatPrice(amount, locale) : "" }) });
+  }
   if (attributes["off-plan"] === true) {
     const year = integer(attributes["delivery-year"]);
     rows.push({ id: "off-plan", label: t("offPlan"), value: year !== undefined ? t("delivery", { year: String(year) }) : t("offPlanYes") });

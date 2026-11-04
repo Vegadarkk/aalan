@@ -163,7 +163,8 @@ export function Gallery({ listingId, title, photos, mediaBaseUrl, placeholder, c
 
         {count > 1 ? (
           <>
-            <span aria-hidden="true" data-testid="gallery-counter" className="pointer-events-none absolute bottom-3 end-3 rounded-full bg-bab-950/75 px-3 py-1 text-sm font-medium text-cream-100 tabular-nums">
+            {/* "2 / 5" in every locale: in an Arabic page the numbers would swap sides (zone 3 audit P3-7). */}
+            <span aria-hidden="true" dir="ltr" data-testid="gallery-counter" className="pointer-events-none absolute bottom-3 end-3 rounded-full bg-bab-950/75 px-3 py-1 text-sm font-medium text-cream-100 tabular-nums">
               {index + 1} / {count}
             </span>
             <ArrowButton direction="previous" label={t("previous")} disabled={index === 0} onClick={() => goTo(at() - 1)} className="start-3" />

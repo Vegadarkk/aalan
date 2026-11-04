@@ -153,14 +153,16 @@ test.describe("notice and appeal", () => {
     const seller = await session(sellerPage);
     const listing = await seedListing(seller);
 
-    // The owner has no report button on his own listing.
+    // The owner has no report button and no favourite on his own listing, but a way to edit it (zone 3 audit P3-9).
     await sellerPage.goto(`/fr/annonce/${listing.slugId}`);
     await expect(sellerPage.getByRole("heading", { level: 1, name: listing.title })).toBeVisible();
+    await expect(sellerPage.getByTestId("contact-bar").getByRole("link", { name: "Modifier l'annonce" })).toHaveAttribute("href", `/fr/deposer/${listing.id}`, { timeout: 15_000 });
     await expect(sellerPage.getByRole("button", { name: "Signaler l'annonce" })).toHaveCount(0);
+    await expect(sellerPage.getByTestId("favorite-button")).toHaveCount(0);
 
     // The member reports it: reason, facts, good faith; no name, e-mail or check asked.
     await reporterPage.goto(`/fr/annonce/${listing.slugId}`);
-    await reporterPage.getByRole("button", { name: "Signaler l'annonce" }).click();
+    await reporterPage.locator("#signaler").getByRole("button", { name: "Signaler l'annonce" }).click();
     const dialog = reporterPage.getByTestId("report-dialog");
     await expect(dialog).toBeVisible({ timeout: 15_000 });
     await dialog.getByRole("button", { name: "Continuer" }).click();

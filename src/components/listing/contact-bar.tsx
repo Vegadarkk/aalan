@@ -3,7 +3,7 @@
 import { useEffect, useEffectEvent, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, Phone, RotateCw, Settings2, TrendingUp } from "lucide-react";
+import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, MessagesSquare, PencilLine, Phone, RotateCw, Settings2, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
@@ -16,8 +16,9 @@ import type { SessionSummary } from "@/lib/contracts/auth";
 import { LISTING_API, MESSAGING_API } from "@/lib/contracts/endpoints";
 import type { PhoneRevealResponse } from "@/lib/contracts/listings";
 import { isolateLtr } from "@/lib/i18n/bidi";
-import { findListingConversation, findRentalConversation, findShopConversation } from "@/lib/messaging/client";
+import { findBuyerConversation, findListingConversation, findShopConversation } from "@/lib/messaging/client";
 import { RentalRequestBanner, shownRentalRequest } from "@/components/rental/rental-request-banner";
+import { ConversationStatusBanner, listingConversationStatus, type ListingConversationStatus } from "./conversation-status";
 import type { RentalRequestView } from "@/lib/contracts/rental-requests";
 import { cn } from "@/lib/utils";
 import type { RevealChallengeProps, RevealErrorProps } from "./contact-feedback";
@@ -35,7 +36,10 @@ export { isWhatsappUrl, REVEAL_ERROR_KEYS, revealFailure, type RevealErrorKey } 
 // WhatsApp is parked, so messaging is then the only channel). The message is the main action
 // (ochre) and the phone the secondary one: messaging is the platform's channel, the number an
 // option of the seller (UX audit, 29 Oct 2026). Anonymous visitors get a sign-in link, shown
-// under the buttons, that brings them back here; the seller sees a link to their listings instead.
+// under the buttons, that brings them back here; the seller sees links to edit the listing and to
+// their listings instead. A signed-in buyer who already wrote about the listing gets « Voir la
+// conversation » and a reminder of a pending or accepted offer and of a confirmed appointment
+// (audit zone 5 n°14), from the first page of their inbox: the page itself is cached for everyone.
 // On phones the actions sit in a bar fixed to the bottom of the screen: the message and the listing's own
 // action (dates, visit, test drive or offer), the number as an icon beside them; from lg they sit in the seller card. The
 // dialog, the challenge and the refusal messages load on demand: most visitors never need them.
@@ -281,21 +285,29 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
   });
   const signedIn = status === "ready" && session !== null;
 
-  /** The renter's request about this listing, once signed in (audit L4-09). */
-  const [myRequest, setMyRequest] = useState<{ cid: string; request: RentalRequestView } | null>(null);
+  /**
+   * The buyer's conversation about this listing, once signed in: its id (« Voir la conversation »),
+   * the renter's request (audit L4-09), the offer and the appointment (audit zone 5 n°14).
+   */
+  const [mine, setMine] = useState<{ cid: string; request: RentalRequestView | null; status: ListingConversationStatus | null } | null>(null);
   useEffect(() => {
-    if (!rental || !signedIn || own || shop) return;
+    if (!signedIn || own || shop) return;
     let live = true;
-    findRentalConversation(listingId)
+    findBuyerConversation(listingId)
       .then((conversation) => {
-        const request = conversation ? shownRentalRequest(conversation, Date.now()) : null;
-        if (live) setMyRequest(conversation && request ? { cid: conversation.cid, request } : null);
+        if (!live) return;
+        const now = Date.now();
+        setMine(conversation ? { cid: conversation.cid, request: rental ? shownRentalRequest(conversation, now) : null, status: listingConversationStatus(conversation, now) } : null);
       })
       .catch(() => undefined);
     return () => {
       live = false;
     };
   }, [rental, signedIn, own, shop, listingId]);
+  const myRequest = mine?.request ? { cid: mine.cid, request: mine.request } : null;
+  // The rental request has its own banner; the offer and appointment reminder shows otherwise.
+  const myStatus = !myRequest && mine?.status ? mine.status : null;
+  const conversationCid = mine?.cid ?? null;
   useEffect(() => {
     if (!signedIn || own) return;
     // After the commit, and once (a strict-mode remount clears the first timer).
@@ -308,6 +320,15 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       <div data-testid="contact-bar" className="flex flex-col gap-3 rounded-md bg-surface-muted p-4">
         <p className="text-sm text-pretty">{shop ? t("ownShop") : t("own")}</p>
         <div className="flex flex-wrap gap-2">
+          {/* The owner's own actions instead of the buyer's (zone 3 audit P3-9); the wizard path of lib/listings/client/routes. */}
+          {shop ? null : (
+            <Button asChild variant="primary" className="self-start">
+              <Link href={`/deposer/${encodeURIComponent(listingId)}`}>
+                <PencilLine aria-hidden="true" />
+                {t("edit")}
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline" className="self-start">
             <Link href={shop ? "/pro" : "/mes-annonces"}>
               <Settings2 aria-hidden="true" />
@@ -369,20 +390,29 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
 
   // `compact`: the narrow half of the phone bar ("Message" instead of "Envoyer un message"); `wide`:
   // alone in the phone bar.
-  const messageButton = (compact: boolean, wide = false) => (
-    <Button
-      type="button"
-      variant="primary"
-      onClick={() => void openComposer()}
-      loading={compose === "checking" && intent === "message"}
-      aria-describedby={hintId}
-      aria-haspopup="dialog"
-      className={cn(compact && "min-w-0 flex-1 px-3", wide && "min-w-0 flex-1")}
-    >
-      <MessageSquare aria-hidden="true" />
-      {compact ? t("messageShort") : t("message")}
-    </Button>
-  );
+  // With a conversation already there, the button opens it (a document load, as from the dialog).
+  const messageButton = (compact: boolean, wide = false) =>
+    conversationCid ? (
+      <Button asChild variant="primary" aria-describedby={hintId} className={cn(compact && "min-w-0 flex-1 px-3", wide && "min-w-0 flex-1")}>
+        <a href={getPathname({ href: threadHref(conversationCid, "message"), locale })} data-testid="conversation-link">
+          <MessagesSquare aria-hidden="true" />
+          {compact ? t("conversationShort") : t("conversation")}
+        </a>
+      </Button>
+    ) : (
+      <Button
+        type="button"
+        variant="primary"
+        onClick={() => void openComposer()}
+        loading={compose === "checking" && intent === "message"}
+        aria-describedby={hintId}
+        aria-haspopup="dialog"
+        className={cn(compact && "min-w-0 flex-1 px-3", wide && "min-w-0 flex-1")}
+      >
+        <MessageSquare aria-hidden="true" />
+        {compact ? t("messageShort") : t("message")}
+      </Button>
+    );
 
   const visitButton = (compact: boolean) =>
     visit ? (
@@ -448,7 +478,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
 
   const hint = (
     <p id={hintId} className="text-xs text-foreground-muted text-pretty">
-      {t("messageHint")}
+      {conversationCid ? t("conversationHint") : t("messageHint")}
     </p>
   );
 
@@ -457,6 +487,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       {/* lg and up: inside the seller card. The sign-in prompt, the challenge and the errors come
           under the buttons, so the one just clicked stays in place. */}
       <div className="hidden flex-col gap-3 lg:flex">
+        {myStatus ? <ConversationStatusBanner status={myStatus} /> : null}
         {messageButton(false)}
         {canReveal ? <div className="flex flex-col gap-2">{phoneActions(false)}</div> : null}
         {visitButton(false)}
@@ -517,6 +548,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(11_30_31/0.35)] lg:hidden">
         <div className="mx-auto flex max-w-xl flex-col gap-2">
           {myRequest && compose !== "signin" ? <RentalRequestBanner cid={myRequest.cid} request={myRequest.request} compact /> : null}
+          {myStatus && compose !== "signin" ? <ConversationStatusBanner status={myStatus} compact /> : null}
           {feedback(false)}
           <div className="flex gap-2">
             {revealed ? null : canReveal || barIntent ? messageButton(true) : messageButton(false, true)}
@@ -525,7 +557,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
           </div>
         </div>
       </div>
-      <BarSpacer tall={myRequest !== null} />
+      <BarSpacer tall={myRequest !== null || myStatus !== null} />
       {composeMounted ? (
         <MessageDialog
           // A fresh form per intent (the visit request comes with its own draft) and per picked combination.

@@ -18,7 +18,8 @@ import { PhotoCropDialog } from "./photo-crop-dialog";
 // accepts camera capture on phones (OS camera app: no getUserMedia, which Permissions-Policy
 // denies). Moves are announced to screen readers and keep the focus on the moved photo. A ready
 // photo where the local check found a face says so and offers a crop (PhotoCropDialog); kept as
-// is, it sends the listing to a moderator before publication (CGU §7).
+// is, it sends the listing to a moderator before publication (CGU §7). Every ready photo can be
+// cropped or turned a quarter at a time (audit §7), from the button on its bottom corner.
 
 interface PhotoUploaderProps {
   photos: PhotoItem[];
@@ -32,7 +33,7 @@ interface PhotoUploaderProps {
   keepOne?: boolean;
   /** Photos optional (job ads): an invitation instead of the "at least one" warning. */
   optional?: boolean;
-  /** Uploads a cropped copy in place of the photo (faces found); absent: no crop offered. */
+  /** Uploads an edited copy in place of the photo (crop or quarter turns, audit §7; the proposed crop where faces were found); absent: no edit offered. */
   onCrop?: (key: string, file: File) => void;
   /** Published large variant of a ready photo: the crop source once the local file is gone. */
   largeUrlOf?: (item: PhotoItem) => string | null;
@@ -238,6 +239,7 @@ export function PhotoUploader({ photos, maxPhotos, onAdd, onRemove, onRetry, onR
           }}
           sources={cropItem ? cropSources(cropItem, largeUrlOf) : []}
           index={cropIndex + 1}
+          mode={cropItem && hasFaces(cropItem) ? "faces" : "edit"}
           onCropped={(file) => {
             if (cropItem) onCrop(cropItem.key, file);
           }}
@@ -325,7 +327,7 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
           </Badge>
         ) : null}
         {faces && !busy ? (
-          <span className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 px-2.5 py-1.5 text-xs font-medium text-cream-100" data-testid="photo-face">
+          <span className={cn("absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-bab-950/75 py-1.5 ps-2.5 text-xs font-medium text-cream-100", onCrop ? "pe-12" : "pe-2.5")} data-testid="photo-face">
             <ScanFace className="size-3.5 shrink-0 text-gold-300" aria-hidden="true" />
             {t("faces.tile")}
           </span>
@@ -352,6 +354,19 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
               </span>
             ) : null}
           </div>
+        ) : null}
+        {ready && onCrop && !failureMessage ? (
+          <button
+            type="button"
+            onClick={() => onCrop(item.key)}
+            aria-label={faces ? t("faces.crop", { index: n }) : t("edit", { index: n })}
+            data-testid="photo-edit"
+            className="absolute end-1 bottom-0 flex size-11 items-center justify-center rounded-full focus-visible:outline-none [&:focus-visible>span]:outline-2 [&:focus-visible>span]:outline-offset-0 [&:focus-visible>span]:outline-ring"
+          >
+            <span className={cn("flex size-8 items-center justify-center rounded-full shadow-sm transition-colors duration-150 ease-door", faces ? "bg-gold-300 text-bab-950 hover:bg-gold-200" : "bg-surface/90 text-foreground hover:bg-surface")}>
+              <Crop className="size-4" aria-hidden="true" />
+            </span>
+          </button>
         ) : null}
         {!item.removing ? (
           <button
@@ -388,11 +403,7 @@ function PhotoTile({ item, index, total, canRemove, onRemove, onRetry, canRetry,
             ) : null}
           </span>
         )}
-        {faces && onCrop && !failureMessage ? (
-          <TileButton label={t("faces.crop", { index: n })} onClick={() => onCrop(item.key)}>
-            <Crop className="size-4" aria-hidden="true" />
-          </TileButton>
-        ) : (item.status === "failed" || item.status === "rejected") && item.file && !item.errorCode?.startsWith("remove") ? (
+        {(item.status === "failed" || item.status === "rejected") && item.file && !item.errorCode?.startsWith("remove") ? (
           <TileButton label={t("retry", { index: n })} disabled={!canRetry} onClick={() => onRetry(item.key)}>
             <RotateCcw className="size-4" aria-hidden="true" />
           </TileButton>

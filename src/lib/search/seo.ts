@@ -53,14 +53,15 @@ export function seoSearchParams(target: SeoTarget): SearchParams {
 export type SeoVerdict = "index" | "noindex" | "notFound";
 
 /**
- * D15: /c/{category} always answers 200 (the home links it), noindex below SEO_MIN_LISTINGS.
+ * D15: /c/{category} always answers 200 (the home links it) and is always indexable, whatever its
+ * count (owner, 4 Nov 2026: the top-level categories are in Google from the opening day).
  * Deeper pages: 0 listings = 404 (Google: 404 for empty facets), 1-2 = noindex, follow.
- * `indexable`: the real listings among `total` (example listings never make a page indexable).
+ * `indexable`: the real listings among `total` (example listings never make a deeper page indexable).
  */
 export function seoVerdict(target: SeoTarget, total: number, indexable = total): SeoVerdict {
-  if (indexable >= SEO_MIN_LISTINGS) return "index";
   const deeper = Boolean(target.subcategory || target.city);
-  return deeper && total === 0 ? "notFound" : "noindex";
+  if (!deeper || indexable >= SEO_MIN_LISTINGS) return "index";
+  return total === 0 ? "notFound" : "noindex";
 }
 
 /** Great-circle distance in km (city centroids). */

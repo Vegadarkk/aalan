@@ -93,11 +93,12 @@ describe("landing segments", () => {
 });
 
 describe("landing thresholds", () => {
-  it("keeps the category page at 200, 404s empty deeper pages, noindexes thin ones", () => {
+  it("always indexes the category page, 404s empty deeper pages, noindexes thin ones", () => {
     const category = { category: "vehicules" };
     const deeper = { category: "vehicules", city: "casablanca" };
     expect(SEO_MIN_LISTINGS).toBe(3);
-    expect([0, 1, 2, 3, 40].map((total) => seoVerdict(category, total))).toEqual(["noindex", "noindex", "noindex", "index", "index"]);
+    expect([0, 1, 2, 3, 40].map((total) => seoVerdict(category, total))).toEqual(["index", "index", "index", "index", "index"]);
+    expect(seoVerdict(category, 5, 0)).toBe("index");
     expect([0, 1, 2, 3].map((total) => seoVerdict(deeper, total))).toEqual(["notFound", "noindex", "noindex", "index"]);
     expect(seoVerdict({ category: "vehicules", subcategory: "voitures" }, 0)).toBe("notFound");
   });

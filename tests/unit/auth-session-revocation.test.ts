@@ -152,6 +152,15 @@ describe("password change and reset", () => {
     before(m.publishRevoked, m.createSessionForUid);
   });
 
+  it("refuses a password change once the account reached 20 failures in the hour (audit A-3)", async () => {
+    m.requireUser.mockResolvedValue({ user: { uid: UID, email: EMAIL } });
+    const limiter = await import("@/lib/rate-limit/limiter");
+    vi.mocked(limiter.consumedPoints).mockResolvedValueOnce(RATE_LIMITS["login.fail.account"].points);
+    await expect(handlePasswordChange(jsonRequest("/api/auth/password/change", { currentPassword: CURRENT, password: NEW_PASSWORD }))).rejects.toMatchObject({ status: 429, code: "account_locked" });
+    expect(m.signInWithPassword).not.toHaveBeenCalled();
+    expect(m.updateUser).not.toHaveBeenCalled();
+  });
+
   it("closes the open streams after revoking the sessions on a reset, and activates a pending account", async () => {
     m.getUserByEmail.mockResolvedValue({ uid: UID, email: EMAIL, disabled: false, customClaims: {} });
     const response = await handleResetConfirm(jsonRequest("/api/auth/password/confirm", { oobCode: "reset-code-0123456789", password: NEW_PASSWORD }));

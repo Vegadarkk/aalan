@@ -38,6 +38,7 @@ export const MODERATION_FLAGS = [
   "price_outlier",
   "dup_text",
   "dup_photo",
+  "dup_photo_other",
   "new_account",
   "volume",
   "restricted_category",
@@ -330,7 +331,8 @@ export type CreateListingResponse = { id: string };
 /** `sections`: the shop's storefront sections (catalogue §5), for a Pro owner that has some. */
 /** `paymentReady`: the shop's « Payer chez le vendeur » is shown, so a listing may have its own link (catalogue §6). */
 /** `pinned`: the shop's « Sélection de la boutique » (UX audit lot 3), present for a shop that publishes. */
-export type OwnerListingsResponse = { listings: OwnerListingSummary[]; salesOpen: boolean; sections?: ShopSection[]; paymentReady?: boolean; pinned?: string[] };
+/** `duplicate`: the rows offer « Dupliquer » (a shop that publishes, audit §7). */
+export type OwnerListingsResponse = { listings: OwnerListingSummary[]; salesOpen: boolean; sections?: ShopSection[]; paymentReady?: boolean; pinned?: string[]; duplicate?: true };
 export type ListingResponse = { listing: OwnerListing };
 /** A change made in place from « Mes annonces » (promotion, section): the row (status included: a deep cut is held). */
 export type OwnerRowResponse = { listing: OwnerListingSummary };

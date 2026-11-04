@@ -9,7 +9,7 @@ import {
   listRecentPackCheckouts,
   listStuckBillingEvents,
 } from "@/lib/db/repositories/billing";
-import type { BillingEventDoc } from "@/lib/db/schemas";
+import type { BillingEventDoc, OrderDoc } from "@/lib/db/schemas";
 import { serverEnv } from "@/lib/env";
 import { logger } from "@/lib/logging/logger";
 import { expectedEnvironment } from "./billing-common";
@@ -54,7 +54,7 @@ const MAX_PROBLEMS = 15;
 const STRIPE_RUNNING: ReadonlySet<string> = new Set(["active", "trialing", "past_due"]);
 /** Receive outcomes that repair nothing: known already, or not ours. */
 const NOTHING_TO_REPAIR: ReadonlySet<StripeReceiveOutcome> = new Set(["duplicate", "ignored_type", "wrong_environment", "unreadable"]);
-const PACK_REPAIRED: ReadonlySet<ProcessOutcome> = new Set(["credited", "refunded", "already_refunded"]);
+const PACK_REPAIRED: ReadonlySet<ProcessOutcome> = new Set(["credited", "refunded", "already_refunded", "reversed"]);
 
 export interface ReconcileRun {
   /** Stuck events processed again. */
@@ -156,9 +156,17 @@ async function checkStripeSubscriptions(run: ReconcileRun, now: Date, deps: Reco
 
 const FINISHED = new Set(["processed", "ignored"]);
 
+/**
+ * A fully refunded order whose purchase RevenueCat shows owned again: the refund was taken back (a
+ * dispute won). A withdrawal's or a partial refund leaves the purchase owned in RevenueCat: never these.
+ */
+function reversible(order: OrderDoc): boolean {
+  return order.status === "refunded" && !order.withdrawal && order.refundedMinor === undefined;
+}
+
 /** The recorded event that replays `purchase` (a credit or a refund), or null when one exists already. */
-async function packEvent(purchase: RevenueCatPurchase & { storePurchaseIdentifier: string }, type: "NON_RENEWING_PURCHASE" | "CANCELLATION", appUserId: string, now: Date, deps: ReconcileDeps): Promise<BillingEventDoc | null> {
-  const eventId = `reconcile_${purchase.id.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100)}_${type === "CANCELLATION" ? "refund" : "purchase"}`;
+async function packEvent(purchase: RevenueCatPurchase & { storePurchaseIdentifier: string }, type: "NON_RENEWING_PURCHASE" | "CANCELLATION" | "REFUND_REVERSED", appUserId: string, now: Date, deps: ReconcileDeps): Promise<BillingEventDoc | null> {
+  const eventId = `reconcile_${purchase.id.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100)}_${type === "CANCELLATION" ? "refund" : type === "REFUND_REVERSED" ? "reversal" : "purchase"}`;
   // An event of this purchase already recorded is the queue's or the sweep's, or was alerted. A
   // refund recorded and finished while the order is still paid did not refund it (one taken for a
   // subscription's before #302): this replay applies it, once.
@@ -202,7 +210,7 @@ async function checkRecentPacks(run: ReconcileRun, now: Date, deps: ReconcileDep
       if (!transactionId || (purchase.status !== "owned" && purchase.status !== "refunded")) continue;
       try {
         const order = await getOrder(transactionId);
-        const type = purchase.status === "owned" ? (order ? null : "NON_RENEWING_PURCHASE") : order?.status === "paid" ? "CANCELLATION" : null;
+        const type = purchase.status === "owned" ? (!order ? "NON_RENEWING_PURCHASE" : reversible(order) ? "REFUND_REVERSED" : null) : order?.status === "paid" ? "CANCELLATION" : null;
         if (!type) continue;
         const event = await packEvent({ ...purchase, storePurchaseIdentifier: transactionId }, type, account.rcAppUserId, now, deps);
         if (!event) continue;
@@ -247,7 +255,7 @@ export async function reconcileBilling(now = new Date(), deps: ReconcileDeps = {
     await alert({
       severity: "P2",
       title: `Paiements rattrapés cette nuit (${repaired})`,
-      body: `Événements relancés : ${run.swept}. Événements Stripe non livrés rejoués : ${run.stripeEvents}. Abonnements resynchronisés : ${run.subscriptions}. Packs crédités ou remboursés : ${run.packs}. Vérifier pourquoi les webhooks ne sont pas arrivés.`,
+      body: `Événements relancés : ${run.swept}. Événements Stripe non livrés rejoués : ${run.stripeEvents}. Abonnements resynchronisés : ${run.subscriptions}. Packs crédités, remboursés ou rendus : ${run.packs}. Vérifier pourquoi les webhooks ne sont pas arrivés.`,
     });
   }
   if (run.failed > 0) {

@@ -14,6 +14,7 @@ import { DEFAULT_PRICING } from "@/config/pricing";
 import { cityBySlug } from "@/config/regions";
 import { POST as create } from "@/app/api/listings/route";
 import { PATCH as patch } from "@/app/api/listings/[id]/route";
+import { POST as duplicate } from "@/app/api/listings/[id]/duplicate/route";
 import { POST as pause } from "@/app/api/listings/[id]/pause/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
 import { POST as resume } from "@/app/api/listings/[id]/resume/route";
@@ -351,5 +352,51 @@ describe("Pro catalogue: shop sections", () => {
     expect(individual.body.error.details).toEqual([{ path: "sectionId", code: "section_pro_only" }]);
     const settings = await save(seller, [{ name: "Ramadan" }]);
     expect(settings.status).toBe(409);
+  });
+});
+
+describe("« Dupliquer » (audit §7)", () => {
+  it("copies a shop's listing into a new draft without its photos, and offers it in « Mes annonces »", async () => {
+    const owner = await shop();
+    const { id } = await shirtDraft(owner);
+    await api(publish, "POST", `/api/listings/${id}/publish`, { member: owner, body: { acceptRules: true } });
+    const listed = await api<OwnerListingsResponse>(mine, "GET", "/api/listings/mine?status=active", { member: owner, params: {} });
+    expect(listed.body.duplicate).toBe(true);
+
+    const copied = await api<CreateListingResponse & ErrorBody>(duplicate, "POST", `/api/listings/${id}/duplicate`, { member: owner, body: {} });
+    expect(copied.status, JSON.stringify(copied.body)).toBe(201);
+    expect(copied.body.id).not.toBe(id);
+    const source = (await getListing(id))!;
+    const copy = (await getListing(copied.body.id))!;
+    expect(copy.status).toBe("draft");
+    expect(copy.ownerUid).toBe(owner.uid);
+    expect(copy.proId).toBe(source.proId);
+    expect(copy.photos).toEqual([]);
+    expect({ title: copy.title, description: copy.description, subcategoryId: copy.subcategoryId, attributes: copy.attributes, condition: copy.condition, price: copy.price, variants: copy.variants }).toEqual({
+      title: source.title,
+      description: source.description,
+      subcategoryId: source.subcategoryId,
+      attributes: source.attributes,
+      condition: source.condition,
+      price: source.price,
+      variants: source.variants,
+    });
+    expect(copy.location?.citySlug).toBe(source.location?.citySlug);
+    // The source is untouched.
+    expect(source.status).toBe("published");
+    expect(source.photos).toHaveLength(1);
+  });
+
+  it("is a Pro tool, on the owner's own listings only", async () => {
+    const individual = await member();
+    const created = await api<CreateListingResponse>(create, "POST", "/api/listings", { member: individual, body: {} });
+    const listed = await api<OwnerListingsResponse>(mine, "GET", "/api/listings/mine?status=drafts", { member: individual, params: {} });
+    expect(listed.body.duplicate).toBeUndefined();
+    const refused = await api<ErrorBody>(duplicate, "POST", `/api/listings/${created.body.id}/duplicate`, { member: individual, body: {} });
+    expect(refused.status).toBe(403);
+
+    const owner = await shop();
+    const foreign = await api<ErrorBody>(duplicate, "POST", `/api/listings/${created.body.id}/duplicate`, { member: owner, body: {} });
+    expect(foreign.status).toBe(404);
   });
 });

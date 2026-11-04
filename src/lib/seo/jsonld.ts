@@ -70,3 +70,56 @@ export function storefrontJsonLd(input: StorefrontJsonLdInput): Record<string, u
       : {}),
   };
 }
+
+// The site itself on the home page (audit zone 2, P3-2): a WebSite with its search box
+// (SearchAction on /recherche?q=) and the Organization behind the brand, linked in one graph.
+// URLs come from the canonical origin, like the canonical links, so they follow the domain switch.
+
+export interface SiteJsonLdInput {
+  /** Canonical origin, e.g. https://aalan.ma (no trailing slash). */
+  origin: string;
+  /** Locale prefix of the page, e.g. "fr". */
+  locale: string;
+  /** BCP 47 tag of the page language, e.g. "fr-MA". */
+  inLanguage: string;
+  name: string;
+  /** Other spellings of the brand (Arabic, Tifinagh). */
+  alternateNames: readonly string[];
+  description: string;
+  /** Path of the search page, without the locale prefix. */
+  searchPath: string;
+}
+
+export function siteJsonLd(input: SiteJsonLdInput): Record<string, unknown> {
+  const origin = input.origin.replace(/\/+$/, "");
+  const home = `${origin}/${input.locale}`;
+  const organization = `${origin}/#organization`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${home}#website`,
+        url: home,
+        name: input.name,
+        alternateName: [...input.alternateNames],
+        description: input.description,
+        inLanguage: input.inLanguage,
+        publisher: { "@id": organization },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: { "@type": "EntryPoint", urlTemplate: `${home}${input.searchPath}?q={search_term_string}` },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": organization,
+        name: input.name,
+        alternateName: [...input.alternateNames],
+        url: origin,
+        logo: `${origin}/brand/icon-512.png`,
+      },
+    ],
+  };
+}

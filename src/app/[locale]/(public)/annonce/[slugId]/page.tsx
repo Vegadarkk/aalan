@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { CalendarDays, Flag, MapPin, ShieldAlert } from "lucide-react";
+import { CalendarDays, MapPin, ShieldAlert } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { Container } from "@/components/layout/container";
@@ -49,7 +49,6 @@ import { photoUrl } from "@/lib/listings/client/photo-url";
 import { listingJsonLd } from "@/lib/listings/jsonld";
 import { localizeExample } from "@/lib/demo/localized";
 import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
-import { quietLinkClassName } from "@/components/ui/text-link";
 import { offerAllowed } from "@/lib/offers/eligibility";
 import { offerReferencePrice } from "@/lib/offers/rules";
 import { priceGuideFor } from "@/lib/price-guide/service";
@@ -311,7 +310,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             {listing.catalogue && published && catalogueKind(subcategory) !== "none" ? (
               <ListingCatalogue listingId={listing.id} catalogue={listing.catalogue} axes={pickerAxes} price={listing.price} locale={locale} renderedAt={renderedAt} fleet={catalogueKind(subcategory) === "fleet"} />
             ) : null}
-            {realEstate ? <PropertyTerms attributes={listing.attributes} locale={locale} holidayRental={listing.subcategoryId === "location-vacances"} className="self-stretch sm:max-w-xl" /> : null}
+            {realEstate ? <PropertyTerms attributes={listing.attributes} locale={locale} holidayRental={listing.subcategoryId === "location-vacances"} rent={subcategory?.priceUnit === "month"} className="self-stretch sm:max-w-xl" /> : null}
             {subcategory?.adultsOnly ? (
               <p data-testid="adults-only-notice" className="flex items-start gap-2 self-start rounded-md border border-warning/30 bg-warning-surface px-3 py-2 text-sm text-foreground text-pretty">
                 <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
@@ -336,7 +335,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             </div>
             {contactable ? (
               <div className="flex flex-wrap gap-2 self-start">
-                <FavoriteButton listingId={listing.id} variant="inline" />
+                <FavoriteButton listingId={listing.id} variant="inline" ownerPublicId={listing.seller.publicId} />
                 <ShareButton url={canonicalUrl} title={listing.title} />
               </div>
             ) : null}
@@ -366,12 +365,10 @@ export default async function ListingPage({ params }: { params: Params }) {
                   />
                 ) : null}
                 {contactable && payment ? <PayAtSeller payment={payment} listingId={listing.id} /> : null}
-                {/* The report control within reach of the contact (DSA art. 16, UX journeys 8); the dialog itself stays below. */}
+                {/* The report control within reach of the contact (DSA art. 16, UX journeys 8): it opens the
+                    form itself (zone 3 audit P3-6) and hides from the owner (P3-9), like the one below. */}
                 {contactable ? (
-                  <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 self-start text-sm text-foreground-muted ${quietLinkClassName}`}>
-                    <Flag className="size-4 shrink-0" aria-hidden="true" />
-                    {t("reportLink")}
-                  </a>
+                  <ReportButton target={{ type: "listing", id: listing.id, categoryId: listing.categoryId }} subject={listing.title} ownerPublicId={listing.seller.publicId} email={legal.dsaContactEmail} url={canonicalUrl} hint={false} />
                 ) : null}
               </SellerCard>
             </div>

@@ -6,6 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import ar from "../../messages/ar.json";
 import fr from "../../messages/fr.json";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
+import { InitialSessionContext } from "@/lib/auth/client";
+import type { SessionSummary } from "@/lib/contracts/auth";
 import { FavoriteCard, formatSavedDate } from "@/components/favorites/favorite-card";
 import { FavoritesGrid, FavoritesView, type FavoritesList } from "@/components/favorites/favorites-view";
 import { RESULTS_GRID_CLASS } from "@/components/search/grid";
@@ -81,6 +83,21 @@ describe("FavoriteButton", () => {
     expect(text(html)).toBe(fr.Favorites.button.add);
     expect(html).not.toContain("aria-label");
     expect(text(render(<FavoriteButton listingId="abcd2345" variant="inline" />, "ar"))).toBe(ar.Favorites.button.add);
+  });
+
+  it("hides from the seller on their own listing, once the session is known (zone 3 audit P3-9)", () => {
+    const heart = (session: SessionSummary | null | undefined) =>
+      render(
+        <InitialSessionContext.Provider value={session}>
+          <FavoriteButton listingId="abcd2345" variant="inline" ownerPublicId="abcdefghjk" />
+        </InitialSessionContext.Provider>,
+      );
+    const owner = { uid: "u1", publicId: "abcdefghjk", role: "individual" } as unknown as SessionSummary;
+    expect(heart(owner)).toBe("");
+    expect(text(heart({ ...owner, publicId: "zzzzzzzzzz" }))).toBe(fr.Favorites.button.add);
+    expect(text(heart(null))).toBe(fr.Favorites.button.add);
+    // Unknown session (the cached HTML): the heart renders, neutral.
+    expect(text(heart(undefined))).toBe(fr.Favorites.button.add);
   });
 });
 

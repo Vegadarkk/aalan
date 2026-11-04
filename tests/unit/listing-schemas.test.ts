@@ -116,7 +116,7 @@ describe("listingSchema", () => {
   it("exposes the enums of §5 and the design", () => {
     expect(LISTING_STATUSES).toEqual(["draft", "pending_review", "published", "paused", "sold", "expired", "rejected", "removed", "purged"]);
     expect(MODERATION_STATES).toEqual(["auto_ok", "needs_review", "auto_rejected", "human_ok", "human_rejected"]);
-    expect(MODERATION_FLAGS).toEqual(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "face", "nsfw_review", "price_outlier", "dup_text", "dup_photo", "new_account", "volume", "restricted_category", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad", "offsite_payment", "phone_in_words", "sensitive_declared"]);
+    expect(MODERATION_FLAGS).toEqual(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "face", "nsfw_review", "price_outlier", "dup_text", "dup_photo", "dup_photo_other", "new_account", "volume", "restricted_category", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad", "offsite_payment", "phone_in_words", "sensitive_declared"]);
     expect(UPLOAD_STATUSES).toEqual(["signed", "processing", "ready", "rejected"]);
     expect(UPLOAD_REJECT_REASONS).toEqual(["too_large", "bad_type", "decode_failed", "nsfw", "expired", "quota", "active_content"]);
     expect(CONDITIONS).toEqual(["new_tagged", "like_new", "very_good", "good", "for_parts"]);
@@ -261,6 +261,8 @@ describe("firestore.indexes.json", () => {
     }
     const exempt = file.fieldOverrides.filter((o) => o.collectionGroup === "listings" && o.indexes.length === 0).map((o) => o.fieldPath).sort();
     expect(exempt).toEqual(["attributes", "description", "photos"]);
+    // The cross-account photo lookup is an array-contains-any on photoKeys: the contains index only.
+    expect(file.fieldOverrides.find((o) => o.collectionGroup === "listings" && o.fieldPath === "photoKeys")?.indexes).toEqual([{ arrayConfig: "CONTAINS", queryScope: "COLLECTION" }]);
     expect(file.fieldOverrides.some((o) => o.collectionGroup === "private" && o.fieldPath === "phoneE164")).toBe(true);
   });
 

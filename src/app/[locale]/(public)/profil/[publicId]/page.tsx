@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { CalendarDays, Flag, MapPin, Search } from "lucide-react";
+import { CalendarDays, MapPin, Search } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FavoriteButton } from "@/components/favorites/favorite-button";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -16,7 +16,6 @@ import { ReportButton } from "@/components/report/report-button";
 import { RatingLink } from "@/components/reviews/rating-link";
 import { SellerReviews } from "@/components/reviews/seller-reviews";
 import { Button } from "@/components/ui/button";
-import { quietLinkClassName } from "@/components/ui/text-link";
 import { subcategoryById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName } from "@/config/regions";
@@ -128,11 +127,16 @@ export default async function ProfilePage({ params }: { params: Params }) {
                   </span>
                 ) : null}
                 <RatingLink rating={profile.rating} locale={locale} />
-                {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review); the dialog itself stays below. */}
-                <a href="#signaler" className={`inline-flex min-h-11 items-center gap-1.5 ${quietLinkClassName}`}>
-                  <Flag className="size-4 shrink-0" aria-hidden="true" />
-                  {t("reportLink")}
-                </a>
+                {/* "Signaler" within reach of the header (DSA art. 16(1), Phase 6 review): it opens the form
+                    itself (zone 3 audit P3-6), like the button at the bottom of the page. */}
+                <ReportButton
+                  target={{ type: "user", id: profile.publicId }}
+                  subject={profile.displayName}
+                  ownerPublicId={profile.publicId}
+                  email={legal.dsaContactEmail}
+                  url={`${CANONICAL_ORIGIN}${profilePath(locale, profile.publicId)}`}
+                  hint={false}
+                />
               </div>
               <SellerBadges badges={profile.badges} sellerType={profile.sellerType} className="mt-1" />
             </div>

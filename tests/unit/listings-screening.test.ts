@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ListingDoc } from "@/lib/db/schemas";
 import { screeningChange } from "@/lib/listings/screening-change";
-import { contentFingerprint, screen, sellerFacts } from "@/lib/listings/screening";
+import { contentFingerprint, detectDuplicates, screen, sellerFacts, type PhotoLookalike } from "@/lib/listings/screening";
 
 // Adapter between a listing document and the moderation core: the seller facts (a reopened
 // listing's own rejection counts) and the fields handed to the screen (the district included).
@@ -70,6 +70,45 @@ describe("screen", () => {
     const result = await screen({ listing: listing(), uploads: [], seller: { ...seller, previousRejections: 1 }, others: [] });
     expect(result).toMatchObject({ state: "auto_ok", score: 10 });
     expect(result.evidence).toContain("1 previous rejection(s)");
+  });
+});
+
+describe("detectDuplicates (zone 7 P4 Photo en double)", () => {
+  const HASH = "0123456789abcdef";
+  // 5 bits off: a re-encoded or resized copy; 12 bits off: another picture.
+  const NEAR = "0123456789abcdf0";
+  const FAR = "0123456789a54321";
+  const photo = (id: string, hash?: string) => ({ id, w: 800, h: 600, blurhash: "LEHV6nWB2yk8", ...(hash ? { hash } : {}) }) as ListingDoc["photos"][number];
+  const mine = listing({ photos: [photo("up_a", HASH)] });
+  const other = (id: string, hash: string | undefined, text = "Autre annonce") => ({ id, title: text, description: text, photos: [photo(`up_${id}`, hash)] });
+
+  it("counts the owner's listings with a near-duplicate photo, not a different or flat one", () => {
+    expect(detectDuplicates(mine, [other("l1", NEAR), other("l2", FAR), other("l3", undefined)], "self")).toEqual({ sameText: 0, samePhoto: 1 });
+    expect(detectDuplicates(mine, [other("self", HASH)], "self").samePhoto).toBe(0);
+    const flat = listing({ photos: [photo("up_f", "0000000000000000")] });
+    expect(detectDuplicates(flat, [other("l4", "0000000000000000")]).samePhoto).toBe(0);
+  });
+
+  it("counts other accounts' listings with a near-duplicate photo, quoting 3 of them, never the owner's own or drafts", () => {
+    const lookalike = (id: string, ownerUid: string, hash: string, status: PhotoLookalike["status"] = "published"): PhotoLookalike => ({ id, ownerUid, status, photos: [photo(`up_${id}`, hash)] });
+    const lookalikes = [
+      lookalike("x1", "uid-other", NEAR),
+      lookalike("x2", "uid-other", HASH, "removed"),
+      lookalike("x3", "uid-third", HASH, "expired"),
+      lookalike("x4", "uid-fourth", NEAR, "rejected"),
+      lookalike("x5", "uid-other", FAR),
+      lookalike("x6", "uid-other", HASH, "draft"),
+      lookalike("x7", mine.ownerUid, HASH),
+      lookalike("self", "uid-other", HASH),
+    ];
+    expect(detectDuplicates(mine, [], "self", lookalikes)).toEqual({ sameText: 0, samePhoto: 0, otherAccountPhoto: 4, otherAccountListings: ["x1", "x2", "x3"] });
+    expect(detectDuplicates(mine, [], "self", [lookalike("x5", "uid-other", FAR)])).toEqual({ sameText: 0, samePhoto: 0 });
+  });
+
+  it("hands the lookalikes to the core: dup_photo_other", async () => {
+    const result = await screen({ listing: mine, uploads: [], seller, others: [], lookalikes: [{ id: "x1", ownerUid: "uid-other", status: "published", photos: [photo("up_x1", NEAR)] }] }, "self");
+    expect(result).toMatchObject({ state: "auto_ok", score: 30, flags: ["dup_photo_other"] });
+    expect(result.evidence).toContain("same photo as 1 listing(s) of other accounts: x1");
   });
 });
 

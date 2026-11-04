@@ -52,13 +52,15 @@ interface OwnerListingCardProps {
   pins?: { pinned: string[]; onPin: (id: string, pin: boolean) => Promise<void> };
   /** The shop's « Payer chez le vendeur » is shown: the row offers the listing's own link (catalogue §6). */
   paymentReady?: boolean;
+  /** « Dupliquer » (Pros, audit §7); absent when not offered. */
+  onDuplicate?: () => void;
 }
 
 /**
  * One row of "Mes annonces": cover, title, price, city, status, expiry, actions. On phones the
  * primary action takes the full row under the cover (its label is longer than the text column).
  */
-export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, autoPromote = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins }: OwnerListingCardProps) {
+export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, autoPromote = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins, onDuplicate }: OwnerListingCardProps) {
   const t = useTranslations("MyListings");
   // "Mettre en avant" as a visible button of the row, not only in the menu (zone 6 audit 6-04).
   const promotable = salesOpen && listing.status === "published" && paidOptionsAllowed(listing.subcategoryId);
@@ -119,6 +121,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
             busy={busy}
             publicHref={publicHref}
             triggerRef={menu}
+            {...(onDuplicate ? { onDuplicate } : {})}
             {...(promotable
               ? {
                   onPromote: () => {

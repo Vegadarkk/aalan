@@ -203,6 +203,15 @@ describe("proxy", () => {
     expect((await proxy(request("/fr/annonce/velo-casablanca-abcd2345?ref=1"))).status).toBe(200);
   });
 
+  it("sends the home page and other query-less ISR pages with a query string to the clean path (audit D-5)", async () => {
+    for (const path of ["/fr", "/ar/aide/securite", "/fr/legal/cgu", "/rif/tarifs", "/fr/boutiques"]) {
+      const response = await proxy(request(`${path}?x=${Math.random()}`));
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(`https://joutiya.ma${path}`);
+    }
+    expect((await proxy(request("/fr/recherche?q=velo"))).status).toBe(200);
+  });
+
   it("meters /annonce, /c, /profil and /boutique only", async () => {
     for (const path of ["/fr/annonce/velo-casablanca-abcd2345", "/ar/c/vehicules", "/rif/profil/abcdefghjk", "/fr/boutique/abcdefghjk"]) {
       checkPageLimits.mockClear();

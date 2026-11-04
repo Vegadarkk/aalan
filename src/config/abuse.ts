@@ -21,6 +21,7 @@ export const RISK_FLAG_IDS = [
   "price_outlier",
   "dup_text",
   "dup_photo",
+  "dup_photo_other",
   "new_account",
   "volume",
   "restricted_category",

@@ -29,8 +29,11 @@ export interface ScreenSeller {
 export interface ScreenDuplicates {
   /** Other listings of the platform with the same `textFingerprint`. */
   sameText: number;
-  /** Other listings sharing a photo hash (dHash). */
+  /** The owner's other listings with a near-duplicate photo (dHash, src/lib/media/near-duplicate.ts). */
   samePhoto: number;
+  /** Listings of other accounts with a near-duplicate photo (copied photos, a scam signal), and up to 3 of their ids. */
+  otherAccountPhoto?: number;
+  otherAccountListings?: readonly string[];
 }
 
 export interface ScreenInput {

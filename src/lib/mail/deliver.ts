@@ -1,6 +1,7 @@
 import "server-only";
 import { alert } from "@/lib/alert";
 import { generateActionUrl } from "@/lib/auth/links";
+import { inviteExpiry } from "@/lib/auth/staff-state";
 import { serverEnv } from "@/lib/env";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
@@ -162,7 +163,9 @@ async function withActionLink(job: MailJob): Promise<TemplateMail | null> {
   const { actionLink, ...rest } = data;
   const actionUrl = await generateActionUrl(job.to, actionLink);
   if (!actionUrl) return null;
-  return { ...job, data: { ...rest, actionUrl } } as TemplateMail;
+  // The staff invitation states until when its link works (audit zone 7 P3-5): from now, the code's birth.
+  const expiry = job.template === "staffInvite" ? { expiresAt: inviteExpiry(new Date()).toISOString() } : {};
+  return { ...job, data: { ...rest, actionUrl, ...expiry } } as TemplateMail;
 }
 
 export async function deliverMail(job: MailJob): Promise<DeliverOutcome> {

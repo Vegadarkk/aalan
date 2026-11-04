@@ -43,9 +43,10 @@ export default async function SignInPage({ params, searchParams }: Props) {
   const sessionCookie = (await cookies()).get(SESSION_COOKIE)?.value;
   const ended = Boolean(sessionCookie);
   const toPro = next !== null && /^\/(?:[a-z]{2,3}\/)?pro(?:[/?#]|$)/.test(next);
-  // Ended by a suspension (synthesis §5, zone 7 P2-4): say so, with its end in Morocco's time.
+  // Ended by a suspension (synthesis §5, zone 7 P2-4): say so, with its end in Morocco's time. Ended
+  // by a change of the account's rights, a shop's validation first (zone 7 P4): say that too.
   const reason = ended ? await endedSessionReason(sessionCookie) : null;
-  const until = reason ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeStyle: "short", timeZone: moroccoTimeZone(reason.until.getTime()) }).format(reason.until) : null;
+  const until = reason?.kind === "suspended" ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeStyle: "short", timeZone: moroccoTimeZone(reason.until.getTime()) }).format(reason.until) : null;
   return (
     <AuthShell
       title={t("title")}
@@ -62,6 +63,10 @@ export default async function SignInPage({ params, searchParams }: Props) {
       {until ? (
         <ErrorBanner tone="warning" className="mb-6" title={t("sessionEndedSuspended", { date: until })}>
           {t("sessionEndedSuspendedBody")}
+        </ErrorBanner>
+      ) : reason ? (
+        <ErrorBanner tone="info" className="mb-6" title={t(reason.kind === "pro-validated" ? "sessionEndedProValidated" : "sessionEndedChanged")}>
+          {t(reason.kind === "pro-validated" ? "sessionEndedProValidatedBody" : "sessionEndedChangedBody")}
         </ErrorBanner>
       ) : ended ? (
         <ErrorBanner tone="info" className="mb-6" title={t(toPro ? "sessionEndedPro" : "sessionEnded")} />

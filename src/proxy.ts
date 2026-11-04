@@ -150,6 +150,13 @@ function adminHost(request: NextRequest): NextResponse {
   return withRobots(decorate(NextResponse.rewrite(url, { request: { headers } }), "admin", policy), "admin", url.pathname);
 }
 
+/**
+ * Public ISR segments whose pages never read the query string ("" is the home page): categories,
+ * help, legal texts, prices, Pro and procedures pages, the shop directory. Search, listings,
+ * profiles, shops and the private pages keep theirs.
+ */
+const QUERYLESS_SEGMENTS: ReadonlySet<string> = new Set(["", "c", "aide", "legal", "tarifs", "professionnels", "demarches", "boutiques"]);
+
 /** Second path segment: "/fr/connexion/..." -> "connexion". */
 function pageSegment(pathname: string): string {
   return pathname.split("/")[2] ?? "";
@@ -215,9 +222,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const routed = handleI18nRouting(request);
   if (routed.status >= 300 && routed.status < 400) return routed;
 
-  // Category pages take no query (D15): `?x=` would bypass the edge cache, so it goes to the clean
-  // path. Next strips `_rsc` from nextUrl before the proxy, so client navigations never loop here.
-  if (pageSegment(pathname) === "c" && request.nextUrl.search) {
+  // ISR pages that read no query (D15, audit D-5): `?x=` would bypass the edge cache and reach the
+  // origin unmetered, so it goes to the clean path. Next strips `_rsc` from nextUrl before the
+  // proxy, so client navigations never loop here.
+  if (QUERYLESS_SEGMENTS.has(pageSegment(pathname)) && request.nextUrl.search) {
     const clean = request.nextUrl.clone();
     clean.search = "";
     return NextResponse.redirect(clean, 308);

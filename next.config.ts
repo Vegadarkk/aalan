@@ -37,8 +37,9 @@ const nextConfig: NextConfig = {
     // Photos are served by R2 (media host), never optimized on the VM (§2).
     unoptimized: true,
   },
-  // The legal pages read their Markdown sources at render time, ISR regenerations included (phase 6, D11).
-  outputFileTracingIncludes: { "/[locale]/legal/[page]": ["./src/content/legal/**/*.md"], "/[locale]/legal/[page]/[version]": ["./src/content/legal/**/*.md"] },
+  // The legal pages read their Markdown sources at render time, ISR regenerations included (phase 6, D11);
+  // the back office's tax guide reads docs/tax-runbook.md (zone 7 P3-7).
+  outputFileTracingIncludes: { "/[locale]/legal/[page]": ["./src/content/legal/**/*.md"], "/[locale]/legal/[page]/[version]": ["./src/content/legal/**/*.md"], "/admin/guide/fiscal": ["./docs/tax-runbook.md"] },
   // Native and runtime-resolved packages stay outside the server bundle (Sentry hooks Node modules).
   serverExternalPackages: ["@sentry/node", "pino", "firebase-admin"],
   // The sitemap index lives with its files under /sitemaps/ (design D16): one ISR route handler,

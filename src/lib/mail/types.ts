@@ -101,7 +101,8 @@ export interface TemplateData {
   /** `newEmail` already masked (maskEmail): the notice goes to an address that may no longer be the owner's. */
   emailChanged: { displayName: string; newEmail: string; at: string };
   passwordChanged: { displayName: string; at: string };
-  staffInvite: { displayName: string; actionUrl: string; role: "moderator" | "admin" };
+  /** expiresAt: when the set-password link stops working (ISO), set at delivery; absent on older jobs. */
+  staffInvite: { displayName: string; actionUrl: string; role: "moderator" | "admin"; expiresAt?: string };
   phoneVerified: { displayName: string; phone: string };
   /** The number was verified on another account and left this one. */
   phoneRemoved: { displayName: string; phone: string };

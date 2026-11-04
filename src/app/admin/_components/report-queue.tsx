@@ -133,7 +133,7 @@ export function ReportQueue({ items, groups, renderedAt, cards = {} }: ReportQue
               <Signals reports={reports} />
             </div>
             <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end md:justify-start">
-              <SlaTimer dueAt={group.slaDueAt} now={now} windowMs={prioritySla(group.priority)} />
+              <SlaTimer dueAt={group.slaDueAt} now={now} windowMs={prioritySla(group.priority)} className="md:flex-col md:items-end" />
               <Button asChild variant={late || group.priority === "P0" ? "primary" : "outline"} size="sm">
                 <Link href={href} aria-label={`Examiner : ${name}`}>
                   Examiner

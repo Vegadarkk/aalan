@@ -16,7 +16,7 @@ import { SITEMAP_SHARDS, SearchUnavailableError, type EngineQuery, type SearchDo
 // hour) and reached by verified bots only (Cloudflare WAF rule `sitemaps_verified_bots`):
 // - index.xml (also /sitemap.xml by rewrite): pages.xml + one listings-{k}.xml per non-empty shard;
 // - pages.xml: home, the public Pro page, the shop directory, the admin procedures guide and the
-//   indexable landing pages (>= SEO_MIN_LISTINGS listings, facet counts);
+//   landing pages: every /c/{category}, and the deeper ones with >= SEO_MIN_LISTINGS listings (facet counts);
 // - listings-{k}.xml: listings with `sitemapShard === k` (documents API, not capped by maxTotalHits),
 //   lastmod = listing updatedAt.
 // Every URL comes in fr and ar, each <url> carrying the whole hreflang cluster (+ x-default), from
@@ -89,8 +89,9 @@ export async function listingShards(): Promise<number[]> {
 }
 
 /**
- * Landing pages worth indexing (D15 thresholds): every subcategory x city count from one facet
- * query per subcategory (one engine round trip); category and city totals are their sums, since a
+ * Landing pages worth indexing: every top-level category, then the deeper pages over the D15
+ * thresholds, from every subcategory x city count from one facet
+ * query per subcategory (one engine round trip); category x city totals are their sums, since a
  * listing has exactly one subcategory and one city.
  */
 export async function indexableLandingPaths(): Promise<string[]> {
@@ -98,11 +99,9 @@ export async function indexableLandingPaths(): Promise<string[]> {
   const results = await searchEngine().search(subcategories.map((target) => countQuery(target, "citySlug")));
   const paths: string[] = [];
   const categoryCities = new Map<string, Map<string, number>>();
-  const categoryTotals = new Map<string, number>();
   subcategories.forEach((target, index) => {
     const cities = Object.entries(results[index]?.facetDistribution?.citySlug ?? {}).filter(([, count]) => count > 0);
     const total = cities.reduce((sum, [, count]) => sum + count, 0);
-    categoryTotals.set(target.category, (categoryTotals.get(target.category) ?? 0) + total);
     const perCity = categoryCities.get(target.category) ?? new Map<string, number>();
     for (const [city, count] of cities) {
       perCity.set(city, (perCity.get(city) ?? 0) + count);
@@ -112,7 +111,8 @@ export async function indexableLandingPaths(): Promise<string[]> {
     if (total >= SEO_MIN_LISTINGS) paths.push(seoPath(target));
   });
   for (const category of CATEGORIES) {
-    if ((categoryTotals.get(category.id) ?? 0) >= SEO_MIN_LISTINGS) paths.push(seoPath({ category: category.id }));
+    // Always indexable (seoVerdict): every top-level category page, whatever its count.
+    paths.push(seoPath({ category: category.id }));
     for (const [city, count] of categoryCities.get(category.id) ?? []) {
       if (count >= SEO_MIN_LISTINGS) paths.push(seoPath({ category: category.id, city }));
     }

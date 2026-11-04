@@ -195,6 +195,11 @@ test.describe("messaging", () => {
     await expect(row).toContainText(listing.title);
     await expect(row).toContainText(first);
     await expect(sellerPage.getByTestId("messages-link")).toHaveAttribute("data-unread", "1", { timeout: 15_000 });
+    // The count leads the tab title; « Non lues » keeps the row (audit §7).
+    await expect(sellerPage).toHaveTitle(/^\(1\) /);
+    await sellerPage.getByTestId("filter-unread").click();
+    await expect(sellerPage.getByTestId("filter-unread")).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toBeVisible();
 
     // Opening it reads it: the row and the badge go back to zero.
     await row.click();
@@ -202,6 +207,10 @@ test.describe("messaging", () => {
     await expect(sellerPage.getByTestId("thread").getByText(first)).toBeVisible({ timeout: 15_000 });
     await expect(row).toHaveAttribute("data-unread", "0", { timeout: 15_000 });
     await expect(sellerPage.getByTestId("messages-link")).toHaveAttribute("data-unread", "0", { timeout: 15_000 });
+    await expect(sellerPage).not.toHaveTitle(/^\(\d+\+?\) /);
+    // Read and open, the row stays under « Non lues »; the filter goes back off.
+    await expect(row).toBeVisible();
+    await sellerPage.getByTestId("filter-unread").click();
 
     // The seller answers.
     const reply = `Oui, il est disponible. Vous pouvez passer samedi. ${stamp}`;

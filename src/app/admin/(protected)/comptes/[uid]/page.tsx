@@ -9,7 +9,7 @@ import { userModerationView } from "@/lib/decisions/users";
 import { serverEnv } from "@/lib/env";
 import { listingSummaries, type ListingSummary } from "@/lib/reports/summaries";
 import { cn } from "@/lib/utils";
-import { ACCOUNT_STATUS_LABEL, APPEAL_STATUS_LABEL, formatDateTime, plural, TARGET_LABEL, targetHref, templateLabel } from "../../../_lib/moderation-format";
+import { ACCOUNT_STATUS_LABEL, ACTION_LABEL, actionTone, APPEAL_STATUS_LABEL, formatDateTime, plural, TARGET_LABEL, targetHref, templateLabel } from "../../../_lib/moderation-format";
 import { SANCTION_LABEL, stepChoice } from "../../../_components/decide-state";
 import { Facts, linkClassName, Panel } from "../../../_components/panel";
 import { CopyReference } from "../../../_components/copy-reference";
@@ -148,10 +148,11 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
           <p className="text-sm text-foreground-muted">Aucune décision sur ce compte ni sur ses contenus.</p>
         ) : (
           <div role="region" aria-label="Décisions du compte" tabIndex={0} className="relative overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-sm">
+            <table className="w-full min-w-[48rem] text-sm">
               <thead className="text-start text-foreground-muted">
                 <tr>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Décision</th>
+                  <th scope="col" className="py-2 pe-4 text-start font-medium">Mesure</th>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Cible</th>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Date</th>
                   <th scope="col" className="py-2 text-start font-medium">Recours</th>
@@ -159,11 +160,17 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
               </thead>
               <tbody>
                 {user.decisions.map((decision) => (
-                  <tr key={decision.id} className="border-t border-border align-top">
+                  // "Aucune mesure" (a report found unfounded) reads as such, quieter than a sanction (zone 7 audit P4).
+                  <tr key={decision.id} className={cn("border-t border-border align-top", decision.action === "no_action" && "text-foreground-muted")}>
                     <td className="py-2 pe-4">
                       <Link href={`/decisions/${decision.id}`} className={linkClassName}>
                         {templateLabel(decision.templateId)}
                       </Link>
+                    </td>
+                    <td className="py-2 pe-4">
+                      <Badge variant={actionTone(decision.action)} className="whitespace-nowrap">
+                        {ACTION_LABEL[decision.action as keyof typeof ACTION_LABEL] ?? decision.action}
+                      </Badge>
                     </td>
                     <td className="py-2 pe-4 text-foreground-muted">
                       <DecisionTarget target={decision.target} listing={listings.get(decision.target.id)} />

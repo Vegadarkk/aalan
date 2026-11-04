@@ -290,6 +290,37 @@
   }
 }
 
+/*
+ * A <details> folded on phones and open from md (fold-open-md) or lg (fold-open-lg): the summary
+ * steps aside and the content shows whatever the open state (::details-content). Browsers without
+ * that pseudo-element keep the summary, so the content stays one tap away.
+ */
+@utility fold-open-md {
+  @supports selector(::details-content) {
+    @media (width >= 48rem) {
+      & > summary {
+        display: none;
+      }
+      &::details-content {
+        content-visibility: visible;
+      }
+    }
+  }
+}
+
+@utility fold-open-lg {
+  @supports selector(::details-content) {
+    @media (width >= 64rem) {
+      & > summary {
+        display: none;
+      }
+      &::details-content {
+        content-visibility: visible;
+      }
+    }
+  }
+}
+
 /* Pointed horseshoe arch of the logo, used for brand frames. */
 @utility arch {
   border-start-start-radius: 50% 2.25rem;

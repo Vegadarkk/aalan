@@ -139,8 +139,8 @@ test.describe("accessibility (axe, WCAG 2.1 A and AA)", { tag: "@mobile" }, () =
       });
 
       test("sign-up", async ({ page }) => {
-        // The Turnstile widget never lets the network go idle: settled once it holds its token.
-        await expectAccessible(page, `/${locale}/inscription`, (p) => p.locator('[data-turnstile="ready"]'), { networkIdle: false });
+        // Hydrated (the submit button turns enabled); Google and Turnstile wait for a first action.
+        await expectAccessible(page, `/${locale}/inscription`, (p) => p.locator('form button[type="submit"]:enabled'));
       });
 
       test("legal page", async ({ page }) => {

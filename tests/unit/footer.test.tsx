@@ -3,15 +3,8 @@ import { createTranslator, NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import fr from "../../messages/fr.json";
 import { Footer } from "@/components/legal/footer";
-import {
-  categorySections,
-  DIRECTORY_LIST_CLASS,
-  DIRECTORY_SECTION_CLASS,
-  DIRECTORY_TITLE_CLASS,
-  directoryHtml,
-  regionSections,
-  type DirectorySection,
-} from "@/components/legal/footer-directory";
+import { categoryHeads, footerDirectory } from "@/components/legal/footer-directory";
+import { footerDirectoryUrl } from "@/components/legal/footer-directory-view";
 import { CATEGORIES } from "@/config/categories";
 import { REGIONS } from "@/config/regions";
 import { loadMessages } from "@/i18n/messages";
@@ -26,8 +19,15 @@ vi.mock("@/components/layout/locale-switcher", () => ({
 vi.mock("@/components/consent/consent-link", () => ({
   ConsentLink: () => null,
 }));
+// The route handler translates with the catalogs of the requested locale.
+vi.mock("next-intl/server", () => ({
+  getTranslations: async ({ locale, namespace }: { locale: "fr" | "ar" | "rif"; namespace: string }) =>
+    createTranslator({ locale, messages: await loadMessages(locale), namespace: namespace as never }),
+}));
 
-// Leboncoin's footer layout (owner, 2026-10-31): the plan of the categories and of the regions, then four columns.
+// Leboncoin's footer layout (owner, 2026-10-31): the plan of the categories and of the regions, then
+// four columns. The page carries the category heads only; the whole plan is a static JSON loaded
+// when the band is about to show (audit zone 8, perf 6).
 
 const render = () =>
   renderToStaticMarkup(
@@ -40,37 +40,23 @@ const render = () =>
     </NextIntlClientProvider>,
   );
 
-/** The directory as it was written in JSX: what directoryHtml must reproduce byte for byte. */
-function Twin({ sections }: { sections: readonly DirectorySection[] }) {
-  return (
-    <>
-      {sections.map((section) => (
-        <div key={section.href} className={DIRECTORY_SECTION_CLASS}>
-          <p className={DIRECTORY_TITLE_CLASS}>
-            <a href={section.href}>{section.label}</a>
-          </p>
-          <ul className={DIRECTORY_LIST_CLASS}>
-            {section.links.map((link) => (
-              <li key={link.href}>
-                <a href={link.href}>{link.label}</a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </>
-  );
-}
+const names = async (locale: "fr" | "ar" | "rif") => {
+  const t = createTranslator({ locale, messages: await loadMessages(locale), namespace: "Categories" });
+  return (key: string) => t(key as never);
+};
 
 describe("Footer", () => {
-  it("lists every category with its subcategories, and the regions with their main cities", () => {
+  it("renders the category landing pages in a fold, without the ~150 search links", () => {
     const html = render();
+    expect(html).toMatch(/<details class="[^"]*fold-open-md/);
+    expect(html).toContain(`<summary`);
+    expect(html).toContain(fr.Footer.directoryToggle);
     expect(html).toContain(`aria-label="${fr.Footer.categoriesLabel}"`);
-    expect(html).toMatch(/href="\/fr\/c\/vehicules"/);
-    expect(html).toMatch(/href="\/fr\/recherche\?[^"]*location-vacances"/);
-    expect(html).toContain(`aria-label="${fr.Footer.regionsLabel}"`);
-    expect(html).toContain(">Casablanca</a>");
-    expect(html).toContain(">Nador</a>");
+    expect(html).toContain('href="/fr/c/vehicules"');
+    for (const category of CATEGORIES) expect(html).toContain(`href="/fr/c/${category.id}"`);
+    // Subcategory and place searches (robots.txt disallows /recherche) come with the JSON.
+    expect(html).not.toContain("/fr/recherche?");
+    expect(html).not.toContain(`aria-label="${fr.Footer.regionsLabel}"`);
   });
 
   it("keeps the legal, Pro and help columns", () => {
@@ -80,6 +66,7 @@ describe("Footer", () => {
       fr.Footer.prosTitle,
       fr.Footer.questionsTitle,
       fr.Footer.contact,
+      fr.Footer.links.cgv,
       fr.Footer.links.mentions,
       fr.Footer.pricing,
       fr.Footer.wallet,
@@ -88,26 +75,30 @@ describe("Footer", () => {
     expect(html.match(/Mentions légales/g)).toHaveLength(1);
   });
 
-  it("builds the directory exactly as React renders its JSX, in every language", async () => {
+  it("builds the whole directory of every language: categories with subcategories, regions with cities", async () => {
     for (const locale of ["fr", "ar", "rif"] as const) {
-      const names = createTranslator({ locale, messages: await loadMessages(locale), namespace: "Categories" });
-      const categories = categorySections(locale, (key) => names(key as never));
-      const regions = regionSections(locale);
-      expect(categories).toHaveLength(CATEGORIES.length);
-      expect(regions).toHaveLength(REGIONS.length);
-      expect(directoryHtml(categories)).toBe(renderToStaticMarkup(<Twin sections={categories} />));
-      expect(directoryHtml(regions)).toBe(renderToStaticMarkup(<Twin sections={regions} />));
+      const directory = footerDirectory(locale, await names(locale));
+      expect(directory.categories).toHaveLength(CATEGORIES.length);
+      expect(directory.regions).toHaveLength(REGIONS.length);
+      expect(directory.categories.map(({ label, href }) => ({ label, href }))).toEqual(categoryHeads(locale, await names(locale)));
+      for (const region of directory.regions) expect(region.links.length).toBeGreaterThan(0);
     }
-    // Links are localized: the French and Arabic directories differ by their prefix and their labels.
-    expect(directoryHtml(regionSections("ar"))).toContain('href="/ar/recherche?');
-    expect(directoryHtml(regionSections("ar"))).toContain(">الدار البيضاء</a>");
+    const french = footerDirectory("fr", await names("fr"));
+    expect(french.categories.flatMap((section) => section.links).some((link) => /^\/fr\/recherche\?.*location-vacances/.test(link.href))).toBe(true);
+    const frenchCities = french.regions.flatMap((section) => section.links.map((link) => link.label));
+    expect(frenchCities).toEqual(expect.arrayContaining(["Casablanca", "Nador"]));
+    // Links are localized: the Arabic directory has its prefix and its labels.
+    const arabic = footerDirectory("ar", await names("ar"));
+    expect(arabic.regions[0]!.href).toMatch(/^\/ar\/recherche\?/);
+    expect(arabic.regions.flatMap((section) => section.links.map((link) => link.label))).toContain("الدار البيضاء");
   });
 
-  it("escapes text and attributes as React does", () => {
-    const sections: DirectorySection[] = [{ label: `Tom & Jerry <b>"quoted"</b> l'été`, href: "/x?a=1&b=<2>", links: [{ label: "A & B", href: "/y?c='3'" }] }];
-    const html = directoryHtml(sections);
-    expect(html).toBe(renderToStaticMarkup(<Twin sections={sections} />));
-    expect(html).toContain("Tom &amp; Jerry &lt;b&gt;&quot;quoted&quot;&lt;/b&gt; l&#x27;été");
-    expect(html).toContain('href="/x?a=1&amp;b=&lt;2&gt;"');
+  it("serves the directory as a static, cacheable JSON per locale", async () => {
+    const route = await import("@/app/api/footer-directory/[locale]/route");
+    expect(route.dynamicParams).toBe(false);
+    expect(route.generateStaticParams().map((params) => params.locale)).toEqual(["fr", "ar", "rif"]);
+    const response = await route.GET(new Request(`http://localhost${footerDirectoryUrl("ar")}`), { params: Promise.resolve({ locale: "ar" }) });
+    expect(response.headers.get("cache-control")).toMatch(/public, max-age=\d+/);
+    expect(await response.json()).toEqual(footerDirectory("ar", await names("ar")));
   });
 });

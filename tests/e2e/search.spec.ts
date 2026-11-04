@@ -3,7 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { stubGoogleScript } from "./gsi-stub";
-import { ownClientIp } from "./helpers";
+import { actOnAuthForm, ownClientIp } from "./helpers";
 
 // The auth pages render the Google button (stub client id): never the real script.
 test.beforeEach(({ page }) => stubGoogleScript(page));
@@ -173,8 +173,7 @@ async function waitForMail(request: APIRequestContext, to: string, template: str
 async function signUpAndIn(page: Page, request: APIRequestContext, email: string): Promise<void> {
   await ownClientIp(page);
   await page.goto("/fr/inscription");
-  // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-  await expect(page.locator("[data-turnstile]").first()).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
+  await actOnAuthForm(page);
   await page.getByLabel("Nom affiché").fill("Karim Test");
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);

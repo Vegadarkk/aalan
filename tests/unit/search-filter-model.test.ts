@@ -14,6 +14,9 @@ import {
   districtLabel,
   filterableCriteria,
   paginationItems,
+  quickConditionApplies,
+  quickConditionOf,
+  quickConditions,
   refinements,
   searchLinkHref,
   searchTitle,
@@ -282,5 +285,33 @@ describe("nearby dates of a dated rental search with no result (audit L4-10)", (
     ]);
     expect(nearbyDates(params, today)[0]?.params.dates).toEqual({ from: "2026-11-06", to: "2026-11-09" });
     expect(nearbyDates({ subcategory: "voitures" }, today)).toEqual([]);
+  });
+});
+
+describe("quick condition switch (audit §7)", () => {
+  it("offers Tout, Neuf and Occasion on page 1 with the other filters kept", () => {
+    const choices = quickConditions(url("q=iphone&ville=casablanca&page=3"));
+    expect(choices.map((choice) => choice.value)).toEqual(["all", "new", "used"]);
+    expect(choices.map((choice) => searchLinkHref(choice.params).query)).toEqual([
+      { q: "iphone", ville: "casablanca" },
+      { q: "iphone", ville: "casablanca", etat: "new_tagged" },
+      { q: "iphone", ville: "casablanca", etat: "like_new,very_good,good,for_parts" },
+    ]);
+  });
+
+  it("reads the selected value, null for another set picked in the sheet", () => {
+    expect(quickConditionOf(url("q=velo"))).toBe("all");
+    expect(quickConditionOf(url("etat=new_tagged"))).toBe("new");
+    expect(quickConditionOf(url("etat=for_parts,good,very_good,like_new"))).toBe("used");
+    expect(quickConditionOf(url("etat=good"))).toBeNull();
+  });
+
+  it("is hidden where the scope has no condition", () => {
+    expect(quickConditionApplies({})).toBe(true);
+    expect(quickConditionApplies({ category: "electronique" })).toBe(true);
+    expect(quickConditionApplies({ category: "immobilier" })).toBe(false);
+    expect(quickConditionApplies({ category: "emploi" })).toBe(false);
+    expect(quickConditionApplies({ subcategory: "velos" })).toBe(true);
+    expect(quickConditions(url("categorie=immobilier"))).toEqual([]);
   });
 });

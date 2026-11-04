@@ -22,6 +22,7 @@ import { ListViewOnly, SearchMapRoot } from "@/components/search/map/search-map-
 import { defaultView } from "@/components/search/map/view-mode";
 import { Pagination } from "@/components/search/pagination";
 import { RefineChips } from "@/components/search/refine-chips";
+import { ConditionSwitch } from "@/components/search/condition-switch";
 import { ResultsGrid } from "@/components/search/results-grid";
 import { SearchChallenge } from "@/components/search/search-challenge";
 import { SearchEmpty } from "@/components/search/search-empty";
@@ -156,6 +157,7 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
           </div>
           <div className="search-panel-tools flex flex-wrap items-center gap-2">
             <RefineChips params={params} facets={response.facets} className="search-refine w-full" />
+            <ConditionSwitch params={params} />
             <div className="ms-auto flex min-w-0 items-center gap-2">
               <SaveSearchButton params={params} />
               <SortSelect params={params} />

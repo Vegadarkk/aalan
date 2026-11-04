@@ -64,7 +64,7 @@ import { planPromo, promoEnd } from "./promo";
 import { assessReadiness } from "./readiness";
 import { needsRealEstateAttestation } from "./real-estate";
 import { revalidateListingPaths } from "./revalidate";
-import { contentFingerprint, screen, sellerFacts, type ScreeningResult } from "./screening";
+import { contentFingerprint, findPhotoLookalikes, screen, sellerFacts, type ScreeningResult } from "./screening";
 
 // Listing service (design §4 service.ts): drafts, edits, publication, status changes. Every entry
 // point takes the signed-in `AuthContext` (ownership answers 404, never 403) and the clear IP for
@@ -339,9 +339,10 @@ async function releaseDroppedPhotos(listing: ListingRecord, photos: readonly Lis
 }
 
 async function screenFor(listing: ListingDoc & { id: string }, seller: SellerContext, now: Date): Promise<ScreeningResult> {
-  const [uploads, others] = await Promise.all([
+  const [uploads, others, lookalikes] = await Promise.all([
     listing.photos.length > 0 ? getUploads(listing.photos.map((photo) => photo.id)) : Promise.resolve([]),
     listOwnerListingsByStatus(listing.ownerUid, [...ACTIVE_STATUSES, "paused", "rejected"]),
+    findPhotoLookalikes(listing, listing.id),
   ]);
   const facts = sellerFacts({
     accountCreatedAt: seller.user.createdAt,
@@ -351,7 +352,7 @@ async function screenFor(listing: ListingDoc & { id: string }, seller: SellerCon
     sanitaryNumbers: seller.sanitaryNumbers,
     now,
   });
-  return screen({ listing, uploads, seller: facts, others: others.filter((other) => other.status !== "rejected") }, listing.id);
+  return screen({ listing, uploads, seller: facts, others: others.filter((other) => other.status !== "rejected"), lookalikes }, listing.id);
 }
 
 /** Screening result on the listing; `held`: a person reviews it whatever the screen said. The hold's decision id is set by `commit`. */

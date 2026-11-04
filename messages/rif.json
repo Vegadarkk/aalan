@@ -414,6 +414,8 @@
       "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s.",
       "sessionEndedProValidated": "Taḥanut nnec tettwaqbel: ɛawed kcem ḥima ad teldiḍ tallunt nnec Pro.",
       "sessionEndedProValidatedBody": "Tukcimt nnec tettwabeddel ḥima ad yeddu ubeddel-a deg umiḍan nnec.",
+      "sessionEndedProWithdrawn": "Taḥanut nnec tekkes-as tuqbelt : ɛawed kcem ḥima ad tazneḍ tiwṛiqin timaynutin.",
+      "sessionEndedProWithdrawnBody": "Tukcimt nnec tettwabeddel ḥima ad yeddu ubeddel-a. Amiḍan nnec yeqqim yerẓem ; ssebba tella deg tallunt nnec Pro d deg e-mail i dak-d nuzen.",
       "sessionEndedChanged": "Tukcimt nnec tettwabeddel ḥima ad yeddu ca n ubeddel deg umiḍan nnec.",
       "sessionEndedChangedBody": "Ɛawed kcem ḥima ad tkemmleḍ."
     },
@@ -4237,6 +4239,18 @@
       "title": "Asuter nnec war yettwaqbel ca",
       "reason": "Sebba: {reason}",
       "fix": "Seɣt isefka yettwaxḍan, uca azen asuter nnec tikkelt nniḍen."
+    },
+    "revalidation": {
+      "title": "Taḥanut nnec tekkes-as tuqbelt",
+      "reason": "Sebba: {reason}",
+      "hidden": "Ar ma tettwaqbel tikkelt nniḍen, taḥanut nnec war d-tettban ca deg usit niɣ deg umawal n tḥuna, annonces nnec yettwassufɣen ttwaḥebsent i ca n lweqt (war yettwakkes walu) d war tezmireḍ ca ad tessuffɣeḍ am Pro. Tamtuat nnec war tettwabeddel ca.",
+      "resubmit": "Senqed isefka da ddaw, uca azen tiwṛiqin timaynutin. Xmi ad yeqbel umeɣlaf taḥanut, ad d-tuɣal nettat d annonces nnec ɣer usit.",
+      "refused": "Tiwṛiqin nnec tineggura war ttwaqbelent ca: {reason}",
+      "contact": "Ɣer-k isteqsi, niɣ war tqebbleḍ ca tukksa-ya?",
+      "contactLink": "Aru-yaɣ-d",
+      "pendingTitle": "Tasenqedt tamaynut teddu",
+      "pendingBody": "Newweḍ-d tiwṛiqin timaynutin n « {name} » deg {date}. Taḥanut nnec d annonces nnec ad qqimen ffren ar tagtint ; ad dak-d yawḍ e-mail.",
+      "submit": "Azen tiwṛiqin inu timaynutin"
     },
     "dashboard": {
       "verified": "Taḥanut yettwasenqden",

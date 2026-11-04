@@ -108,7 +108,8 @@ export function lifecycleEventFor(profile: ProLifecycleView, status: Subscriptio
 /** The profile after a transition: `null` in the patch clears a field; quotas follow the plan. */
 export function profileAfter(profile: ProProfileRecord, patch: ProPatch, pricing: PricingConfig, now: Date): ProProfileDoc {
   const { proId: _proId, ...doc } = profile;
-  const { graceUntil, suspendedFrom, ...rest } = patch;
+  // `revalidationFrom` is the Pro review's (src/lib/pro/review.ts): a subscription never moves it.
+  const { graceUntil, suspendedFrom, revalidationFrom: _revalidation, ...rest } = patch;
   const next: ProProfileDoc = { ...doc, ...rest, quotas: listingQuotas({ type: "pro", plan: patch.plan }, pricing), updatedAt: now };
   if (graceUntil === null) delete next.graceUntil;
   else if (graceUntil) next.graceUntil = graceUntil;

@@ -424,6 +424,8 @@
       "sessionEndedSuspendedBody": "Reconnectez-vous pour lire vos conversations, voir le motif de la décision et la contester.",
       "sessionEndedProValidated": "Votre boutique a été validée : reconnectez-vous pour ouvrir votre espace Pro.",
       "sessionEndedProValidatedBody": "Votre session a été renouvelée pour appliquer ce changement sur votre compte.",
+      "sessionEndedProWithdrawn": "La validation de votre boutique a été retirée : reconnectez-vous pour envoyer de nouveaux justificatifs.",
+      "sessionEndedProWithdrawnBody": "Votre session a été renouvelée pour appliquer ce changement. Votre compte reste ouvert ; le motif est dans votre espace Pro et dans l'e-mail que nous vous avons envoyé.",
       "sessionEndedChanged": "Votre session a été renouvelée pour appliquer un changement sur votre compte.",
       "sessionEndedChangedBody": "Reconnectez-vous pour continuer."
     },
@@ -4247,6 +4249,18 @@
       "title": "Votre demande n'a pas été validée",
       "reason": "Motif : {reason}",
       "fix": "Corrigez les informations concernées, puis envoyez à nouveau votre demande."
+    },
+    "revalidation": {
+      "title": "La validation de votre boutique a été retirée",
+      "reason": "Motif : {reason}",
+      "hidden": "En attendant une nouvelle validation, votre boutique n'apparaît plus sur le site ni dans l'annuaire, vos annonces publiées sont en pause (rien n'est supprimé) et vous ne pouvez plus publier en tant que professionnel. Votre offre n'est pas modifiée.",
+      "resubmit": "Vérifiez les informations ci-dessous et envoyez de nouveaux justificatifs. Dès qu'un modérateur valide la boutique, elle et vos annonces reviennent en ligne.",
+      "refused": "Vos derniers justificatifs n'ont pas été acceptés : {reason}",
+      "contact": "Une question, ou vous contestez ce retrait ?",
+      "contactLink": "Contactez-nous",
+      "pendingTitle": "Nouvelle vérification en cours",
+      "pendingBody": "Nous avons reçu les nouveaux justificatifs de « {name} » le {date}. Votre boutique et vos annonces restent masquées jusqu'à la décision ; vous recevrez un e-mail.",
+      "submit": "Envoyer mes nouveaux justificatifs"
     },
     "dashboard": {
       "verified": "Boutique vérifiée",

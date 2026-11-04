@@ -16,6 +16,13 @@ import { DEVICE_ID_HEADER, gisNonce } from "@/lib/security/device";
 
 type Props = { params: Promise<{ locale: string }>; searchParams: Promise<{ next?: string | string[] }> };
 
+/** What the notice says for a session ended by a change of rights (a suspension has its own). */
+const ENDED_COPY = {
+  "pro-validated": { title: "sessionEndedProValidated", body: "sessionEndedProValidatedBody" },
+  "pro-withdrawn": { title: "sessionEndedProWithdrawn", body: "sessionEndedProWithdrawnBody" },
+  "account-changed": { title: "sessionEndedChanged", body: "sessionEndedChangedBody" },
+} as const;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = pageLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "Auth.signIn" });
@@ -42,8 +49,7 @@ export default async function SignInPage({ params, searchParams }: Props) {
   // suspension, a password change elsewhere) or ended; a sign-out clears it. Said instead of a
   // silent sign-in page (zone 6 audit 6-07).
   const sessionCookie = (await cookies()).get(SESSION_COOKIE)?.value;
-  const ended = Boolean(sessionCookie);
-  const toPro = next !== null && /^\/(?:[a-z]{2,3}\/)?pro(?:[/?#]|$)/.test(next);
+  const ended = Boolean(sessionCookie);  const toPro = next !== null && /^\/(?:[a-z]{2,3}\/)?pro(?:[/?#]|$)/.test(next);
   // Ended by a suspension (synthesis §5, zone 7 P2-4): say so, with its end in Morocco's time. Ended
   // by a change of the account's rights, a shop's validation first (zone 7 P4): say that too.
   const reason = ended ? await endedSessionReason(sessionCookie) : null;
@@ -65,9 +71,9 @@ export default async function SignInPage({ params, searchParams }: Props) {
         <ErrorBanner tone="warning" className="mb-6" title={t("sessionEndedSuspended", { date: until })}>
           {t("sessionEndedSuspendedBody")}
         </ErrorBanner>
-      ) : reason ? (
-        <ErrorBanner tone="info" className="mb-6" title={t(reason.kind === "pro-validated" ? "sessionEndedProValidated" : "sessionEndedChanged")}>
-          {t(reason.kind === "pro-validated" ? "sessionEndedProValidatedBody" : "sessionEndedChangedBody")}
+      ) : reason && reason.kind !== "suspended" ? (
+        <ErrorBanner tone="info" className="mb-6" title={t(ENDED_COPY[reason.kind].title)}>
+          {t(ENDED_COPY[reason.kind].body)}
         </ErrorBanner>
       ) : ended ? (
         <ErrorBanner tone="info" className="mb-6" title={t(toPro ? "sessionEndedPro" : "sessionEnded")} />

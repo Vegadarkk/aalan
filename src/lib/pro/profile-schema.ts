@@ -282,6 +282,9 @@ export const proProfileSchema = z
         phoneCheck: z.object({ at: ts, by: uid, outcome: z.enum(PHONE_CHECK_OUTCOMES), phone: mobileE164, note: z.string().max(200).optional() }).strict().optional(),
         submittedAt: ts.optional(),
         rejectReason: z.string().max(1000).optional(),
+        /** Validation withdrawn by an admin (P2-10): when, and the statement sent to the Pro. */
+        withdrawnAt: ts.optional(),
+        withdrawReason: z.string().max(1000).optional(),
         decisionId: z.string().max(64).optional(),
       })
       .strict(),
@@ -316,6 +319,8 @@ export const proProfileSchema = z
     graceUntil: ts.optional(),
     downgradedAt: ts.optional(),
     suspendedFrom: z.enum(PRO_STATES).optional(),
+    /** State held when an admin withdrew the validation, restored by the next KYBC validation. */
+    revalidationFrom: z.enum(PRO_STATES).optional(),
     launchOfferNoticeSentAt: ts.optional(),
     /** End of the Pass Boutique (`planSource: "pass"`); kept after the end as the last pass bought. */
     passEndsAt: ts.optional(),

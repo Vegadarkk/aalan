@@ -52,11 +52,11 @@ export const newProId = newListingId;
  * no application in progress for it (a rejected one may be resubmitted). The phone never gates the
  * application (decision of 19 Oct 2026, audit Z1-03): an unverified one is checked by a
  * moderator's call during the review, so the application then carries the number to call.
+ * A shop whose validation was withdrawn (P2-10) sends its new KYBC through the same path, even
+ * while new applications are closed: it is not a new shop.
  */
 export async function assertCanApply(auth: AuthContext): Promise<{ user: UserDoc; existing: ProProfileRecord | null }> {
   const uid = auth.user.uid;
-  const flags = await getFlags();
-  if (!flags.proSignupEnabled) throw new HttpError(403, "pro_signup_closed");
   if (auth.user.claims.role === "pro") throw new HttpError(409, "already_pro");
 
   const user = await getUser(uid);
@@ -64,8 +64,19 @@ export async function assertCanApply(auth: AuthContext): Promise<{ user: UserDoc
   if (!user.badges.emailVerified) throw new HttpError(403, "email_not_verified");
 
   const existing = user.proId ? await getProProfile(user.proId) : null;
-  if (existing && existing.lifecycle !== "rejected") throw new HttpError(409, "pro_application_exists");
+  if (existing && !canResubmit(existing)) throw new HttpError(409, "pro_application_exists");
+  if (!(existing && awaitsRevalidation(existing)) && !(await getFlags()).proSignupEnabled) throw new HttpError(403, "pro_signup_closed");
   return { user, existing };
+}
+
+/** A shop sent back to a KYBC review (P2-10) that has no submission under review. */
+export function awaitsRevalidation(profile: Pick<ProProfileRecord, "lifecycle" | "kybc">): boolean {
+  return profile.lifecycle === "revalidation_required" && profile.kybc.status !== "submitted";
+}
+
+/** A refused application, or a shop awaiting its new KYBC, may be submitted again. */
+export function canResubmit(profile: Pick<ProProfileRecord, "lifecycle" | "kybc">): boolean {
+  return profile.lifecycle === "rejected" || awaitsRevalidation(profile);
 }
 
 /**
@@ -129,7 +140,11 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
-  if (existing) transition(existing, { type: "reapplied" }, { now, graceDays: pricing.graceDays });
+  // A shop under revalidation keeps all it has (plan, storefront settings, notes): only the
+  // application's own fields are replaced, and it stays `revalidation_required` until the decision.
+  const revalidation = existing !== null && awaitsRevalidation(existing);
+  if (existing && !revalidation) transition(existing, { type: "reapplied" }, { now, graceDays: pricing.graceDays });
+  const written = revalidation && existing ? revalidationSubmission(existing, doc, now) : doc;
 
   const ref = proProfileRef(proId);
   const userRef = db().collection(COLLECTIONS.users).doc(uid);
@@ -140,8 +155,8 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
     const linked: unknown = userSnapshot.get("proId");
     if (linked !== undefined && linked !== proId) throw new HttpError(409, "pro_application_exists");
     const current = proProfileFromSnapshot(profileSnapshot);
-    if (current && current.lifecycle !== "rejected") throw new HttpError(409, "pro_application_exists");
-    tx.set(ref, proProfileToFirestore(doc));
+    if (current && (!canResubmit(current) || awaitsRevalidation(current) !== revalidation)) throw new HttpError(409, "pro_application_exists");
+    tx.set(ref, proProfileToFirestore(written));
     tx.update(userRef, { proId, updatedAt: Timestamp.fromDate(now) });
   });
   void consume("firestore.reads", 2);
@@ -150,6 +165,29 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
   const to = await listingRecipient(uid).catch(() => null);
   if (to) await sendMail({ locale: to.locale, to: to.email, priority: "transactional", template: "proApplicationReceived", idempotencyKey: `proApplicationReceived-${proId}-${now.getTime()}`, data: { displayName: to.displayName, shopName: input.name } });
   return { proId };
+}
+
+/**
+ * The new KYBC of a shop under revalidation (P2-10): the application's fields of `submitted`
+ * replace the profile's, everything else (plan, storefront settings, notes, the state to restore)
+ * is kept. Pure, for the unit tests.
+ */
+export function revalidationSubmission(existing: ProProfileRecord, submitted: ProProfileDoc, now: Date): ProProfileDoc {
+  const { proId: _proId, sector: _sector, sectorCommitment, ...kept } = existing;
+  const commitment = submitted.sectorCommitment ?? (sectorCommitment && sectorCommitment.sector === submitted.sector ? sectorCommitment : undefined);
+  return {
+    ...kept,
+    name: submitted.name,
+    slug: submitted.slug,
+    description: submitted.description,
+    regionCode: submitted.regionCode,
+    citySlug: submitted.citySlug,
+    legal: submitted.legal,
+    kybc: { ...submitted.kybc, ...(existing.kybc.withdrawnAt ? { withdrawnAt: existing.kybc.withdrawnAt } : {}), ...(existing.kybc.withdrawReason ? { withdrawReason: existing.kybc.withdrawReason } : {}) },
+    ...(submitted.sector ? { sector: submitted.sector } : {}),
+    ...(commitment ? { sectorCommitment: commitment } : {}),
+    updatedAt: now,
+  };
 }
 
 /** GET /api/pro/me: the account's shop or application, the switches and the eligibility checks. */
@@ -162,7 +200,7 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
   const base = { signupOpen: flags.proSignupEnabled, salesOpen: flags.salesEnabled, phoneVerification: isPhoneVerificationConfigured() ? ("whatsapp" as const) : ("call" as const), launchOffer, eligibility };
   const profile = user?.proId ? await getProProfile(user.proId) : null;
   if (!profile || profile.ownerUid !== uid) return { ...base, shop: null };
-  const active = profile.lifecycle === "pending_verification" || profile.lifecycle === "rejected" ? 0 : await countActive(uid);
+  const active = profile.lifecycle === "pending_verification" || profile.lifecycle === "rejected" || profile.lifecycle === "revalidation_required" ? 0 : await countActive(uid);
   return {
     ...base,
     shop: {
@@ -179,6 +217,8 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       planSource: profile.planSource,
       kybcStatus: profile.kybc.status,
       rejectReason: profile.kybc.rejectReason ?? null,
+      withdrawReason: profile.kybc.withdrawReason ?? null,
+      withdrawnAt: profile.kybc.withdrawnAt?.toISOString() ?? null,
       submittedAt: profile.kybc.submittedAt?.toISOString() ?? null,
       quotas: profile.quotas,
       activeListings: active,

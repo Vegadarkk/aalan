@@ -43,6 +43,7 @@ export type TemplateId =
   | "proApplicationReceived"
   | "proApproved"
   | "proRejected"
+  | "proValidationWithdrawn"
   // Pro plans (phase 7, lot 4b): the end of the launch offer, notices then downgrade (design D3).
   | "launchOfferNotice"
   | "passNotice"
@@ -190,7 +191,9 @@ export interface TemplateData {
   proApplicationReceived: { displayName: string; shopName: string };
   proApproved: { displayName: string; shopName: string; launchOffer: boolean; noticeDays: number };
   /** The moderator's reason; `contact` is where to object (legal configuration). */
-  proRejected: { displayName: string; shopName: string; reason: string; contact: string };
+  proRejected: { displayName: string; shopName: string; reason: string; contact: string; revalidation?: boolean };
+  /** Validation withdrawn by an admin (P2-10): the statement as written; `contact` is where to object. */
+  proValidationWithdrawn: { displayName: string; shopName: string; reason: string; contact: string };
   /**
    * `ending`: notice before `endsAt` (ISO); `ended`: the shop was downgraded, `paused` listings over
    * the free quota (`freeListings`, null = unlimited) were paused.

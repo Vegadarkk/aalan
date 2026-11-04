@@ -20,12 +20,16 @@ import { notifyPhoneChange } from "@/lib/phone-verify/notify";
 import { normalizeMoroccanMobile } from "@/lib/phone/normalize";
 import { consume } from "@/lib/quota";
 import type { RequestIdentity } from "@/lib/rate-limit/keys";
+import { storefrontSegment } from "@/lib/listings/public";
+import { revalidateListingPaths } from "@/lib/listings/revalidate";
+import { resetDirectoryShopsCache } from "./directory";
 import { applyVerificationEffects, hasProClaims } from "./effects";
 import { KYBC_END_RETENTION_MS } from "./kybc-retention";
 import { IllegalProTransitionError, publishesAsPro, transition } from "./lifecycle";
 import { sectorCommitmentScope } from "./commitments";
 import { PRO_SECTORS, type ProProfileDoc, type ProSector } from "./profile-schema";
 import { rentalCheckReview } from "./rental-check";
+import { resumeRevalidationPaused } from "./revalidation";
 
 // KYBC review of the back office (phase 7 design §4): the queue of submitted applications, one
 // application's review, and the moderator's decision. The decision is one transaction that
@@ -84,6 +88,8 @@ export async function proReview(proId: string): Promise<ProReview | null> {
       iceFormatOk: record.kybc.iceFormatOk,
       submittedAt: iso(record.kybc.submittedAt),
       rejectReason: record.kybc.rejectReason ?? null,
+      withdrawnAt: iso(record.kybc.withdrawnAt),
+      withdrawReason: record.kybc.withdrawReason ?? null,
       registrySource: record.kybc.registryCheck?.source ?? null,
       phoneCheck: record.kybc.phoneCheck
         ? { at: record.kybc.phoneCheck.at.toISOString(), by: record.kybc.phoneCheck.by, outcome: record.kybc.phoneCheck.outcome, phone: record.kybc.phoneCheck.phone, note: record.kybc.phoneCheck.note ?? null }
@@ -127,9 +133,18 @@ function correctedSector(current: ProProfileRecord, requested: ProSector | undef
   return requested === "general" ? undefined : requested;
 }
 
+/**
+ * A submission under review: a first application (or one resubmitted after a refusal), or a shop
+ * whose validation was withdrawn and sent again (`revalidation_required`, P2-10).
+ */
+export function underReview(current: Pick<ProProfileRecord, "kybc" | "lifecycle">): boolean {
+  return current.kybc.status === "submitted" && (current.lifecycle === "pending_verification" || current.lifecycle === "revalidation_required");
+}
+
 /** The profile after the decision: pure, so the unit tests cover every branch without Firestore. */
 export function decidedProfile(current: ProProfileRecord, input: ProDecisionInput, ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>> }): ProProfileDoc {
-  if (current.kybc.status !== "submitted" || current.lifecycle !== "pending_verification") throw new HttpError(409, "conflict", "application already decided");
+  if (!underReview(current)) throw new HttpError(409, "conflict", "application already decided");
+  const revalidation = current.lifecycle === "revalidation_required";
   if (!reviewedSubmission(current, input)) throw new HttpError(409, "conflict", "application resubmitted since the review");
   const { proId: _proId, ...doc } = current;
   let result;
@@ -143,7 +158,7 @@ export function decidedProfile(current: ProProfileRecord, input: ProDecisionInpu
   const sector = input.action === "verify" ? correctedSector(current, input.sector) : current.sector;
   const kybc: ProProfileDoc["kybc"] =
     input.action === "verify"
-      ? { ...doc.kybc, status: "verified", registryCheck: { source: input.registrySource, at: ctx.now, by: ctx.staffUid }, rejectReason: undefined, phoneToCheck: undefined }
+      ? { ...doc.kybc, status: "verified", registryCheck: { source: input.registrySource, at: ctx.now, by: ctx.staffUid }, rejectReason: undefined, phoneToCheck: undefined, withdrawnAt: undefined, withdrawReason: undefined }
       : { ...doc.kybc, status: "rejected", rejectReason: input.reason };
   return {
     ...doc,
@@ -152,9 +167,12 @@ export function decidedProfile(current: ProProfileRecord, input: ProDecisionInpu
     lifecycle: patch.lifecycle,
     plan: patch.plan,
     planSource: patch.planSource,
+    // `null` (a new validation after a withdrawal) clears it; absent keeps it.
+    revalidationFrom: patch.revalidationFrom === null ? undefined : (patch.revalidationFrom ?? doc.revalidationFrom),
     quotas: listingQuotas({ type: "pro", plan: patch.plan }, ctx.pricing),
-    // A rejected application keeps its identifiers and pieces 6 months (spec §7), then retention-purge deletes it.
-    purgeAt: input.action === "reject" ? new Date(ctx.now.getTime() + KYBC_END_RETENTION_MS) : undefined,
+    // A rejected application keeps its identifiers and pieces 6 months (spec §7), then retention-purge
+    // deletes it. A shop under revalidation keeps everything: it stays hidden until it resubmits.
+    purgeAt: input.action === "reject" && !revalidation ? new Date(ctx.now.getTime() + KYBC_END_RETENTION_MS) : undefined,
     effectsPendingSince: undefined,
     updatedAt: ctx.now,
   };
@@ -179,7 +197,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
   const decided = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
-    if (isEffectsRerun(current, input)) return { next: current, rerun: true, sectorChange: null };
+    if (isEffectsRerun(current, input)) return { next: current, rerun: true, sectorChange: null, revalidation: false };
     const userRef = db().collection(COLLECTIONS.users).doc(current.ownerUid);
     const userSnapshot = await tx.get(userRef);
     if (!userSnapshot.exists) throw new HttpError(409, "conflict", "owner account missing");
@@ -191,7 +209,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     const after = next.sector ?? "general";
     tx.set(ref, proProfileToFirestore(next));
     if (input.action === "verify") tx.update(userRef, { type: "pro", updatedAt: Timestamp.fromDate(now) });
-    return { next, rerun: false, sectorChange: before === after ? null : `sector ${before} -> ${after}` };
+    return { next, rerun: false, sectorChange: before === after ? null : `sector ${before} -> ${after}`, revalidation: current.lifecycle === "revalidation_required" };
   });
   void consume("firestore.reads", decided.rerun ? 1 : 2);
   if (!decided.rerun) void consume("firestore.writes", input.action === "verify" ? 2 : 1);
@@ -205,13 +223,19 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     return { proId, lifecycle: decided.next.lifecycle, retagged: outcome.retagged, effectsPending: !outcome.ok };
   }
 
-  const { sectorChange } = decided;
+  const { sectorChange, revalidation } = decided;
   let effectsPending = false;
   let retagged = 0;
   if (input.action === "verify") {
     const outcome = await applyVerificationEffects(uid, proId, now);
     retagged = outcome.retagged;
     effectsPending = !outcome.ok;
+    // Validated again after a withdrawal (P2-10): the listings paused for it and the storefront come back.
+    if (revalidation) {
+      await resumeRevalidationPaused(uid, now);
+      revalidateListingPaths({ shopSegment: storefrontSegment(decided.next.slug, proId) });
+      resetDirectoryShopsCache();
+    }
   }
   await audit({
     actorUid: staff.user.uid,
@@ -219,11 +243,17 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     action: input.action === "verify" ? "pro.verify" : "pro.reject",
     target: { type: "pro", id: proId },
     automated: false,
-    ...(input.action === "reject" ? { reason: input.reason.slice(0, 500) } : sectorChange ? { reason: sectorChange } : {}),
+    ...(input.action === "reject"
+      ? { reason: `${revalidation ? "revalidation: " : ""}${input.reason}`.slice(0, 500) }
+      : sectorChange || revalidation
+        ? { reason: [revalidation ? `revalidation -> ${decided.next.lifecycle}` : null, sectorChange].filter(Boolean).join("; ") }
+        : {}),
     ip: identity.ip,
     at: now,
   });
-  await notifyApplicant(decided.next, input, launchOfferActive ? pricing.launchOffer.noticeDays : null);
+  // A shop validated again keeps its plan: the mail speaks of the launch offer only if it is that plan.
+  const offered = revalidation ? decided.next.planSource === "launch_offer" : launchOfferActive;
+  await notifyApplicant(decided.next, input, offered ? pricing.launchOffer.noticeDays : null);
   return { proId, lifecycle: decided.next.lifecycle, retagged, effectsPending };
 }
 
@@ -239,7 +269,7 @@ export async function checkPhoneByCall(staff: StaffContext, proId: string, input
   const checked = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
-    if (current.kybc.status !== "submitted" || current.lifecycle !== "pending_verification") throw new HttpError(409, "conflict", "application not under review");
+    if (!underReview(current)) throw new HttpError(409, "conflict", "application not under review");
     const userRef = db().collection(COLLECTIONS.users).doc(current.ownerUid);
     const userSnapshot = await tx.get(userRef);
     if (!userSnapshot.exists || userSnapshot.get("proId") !== proId) throw new HttpError(409, "conflict", "owner account missing or linked to another shop");
@@ -283,7 +313,7 @@ async function notifyApplicant(profile: ProProfileDoc, input: ProDecisionInput, 
       await sendMail({ ...base, template: "proApproved", idempotencyKey: `proApproved-${key}`, data: { displayName: to.displayName, shopName: profile.name, launchOffer: noticeDays !== null, noticeDays: noticeDays ?? 0 } });
     } else {
       const contact = (await getLegalConfig()).dsaContactEmail;
-      await sendMail({ ...base, template: "proRejected", idempotencyKey: `proRejected-${key}`, data: { displayName: to.displayName, shopName: profile.name, reason: input.reason, contact } });
+      await sendMail({ ...base, template: "proRejected", idempotencyKey: `proRejected-${key}`, data: { displayName: to.displayName, shopName: profile.name, reason: input.reason, contact, ...(profile.lifecycle === "revalidation_required" ? { revalidation: true } : {}) } });
     }
   } catch (error) {
     logger.error({ err: (error as Error).message, template: input.action }, "pro decision mail failed");

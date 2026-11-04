@@ -5398,11 +5398,15 @@
     "caption": "Factures de la boutique, de la plus récente à la plus ancienne",
     "number": "Numéro",
     "date": "Date",
-    "amount": "Montant TTC",
+    "amount": "Montant HT",
     "state": "État",
     "documents": "Documents",
     "noNumber": "Sans numéro",
     "total": "{amount, number} {currency}",
+    "units": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
     "statuses": {
       "paid": "Payée",
       "open": "À payer",
@@ -5411,7 +5415,8 @@
     },
     "view": "Voir la facture",
     "pdf": "Télécharger le PDF",
-    "older": "Les factures plus anciennes sont dans « Gérer l'abonnement »."
+    "older": "Les factures plus anciennes sont dans « Gérer l'abonnement ».",
+    "vatNote": "Montants hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due."
   },
   "Account": {
     "data": {

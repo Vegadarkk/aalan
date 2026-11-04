@@ -247,7 +247,7 @@ export interface InvoiceView {
   /** Stripe's invoice number, absent until finalized. */
   number: string | null;
   issuedAt: string;
-  /** Amount with tax, minor units of `currency`. */
+  /** Amount paid (Stripe's total; Aalan charges no VAT, so it is the price before tax), minor units of `currency`. */
   totalMinor: number;
   currency: string;
   status: "open" | "paid" | "uncollectible" | "void";

@@ -5388,11 +5388,15 @@
     "caption": "Tifaktuṛin n tḥanut, zi tamaynut ar taqdimt",
     "number": "Uṭṭun",
     "date": "Tarix",
-    "amount": "Ssuma TTC",
+    "amount": "Ssuma HT",
     "state": "Lḥala",
     "documents": "Tiwṛiqin",
     "noNumber": "Bla uṭṭun",
     "total": "{amount, number} {currency}",
+    "units": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
     "statuses": {
       "paid": "Tettwaxelleṣ",
       "open": "Ixs ad tettwaxelleṣ",
@@ -5401,7 +5405,8 @@
     },
     "view": "Ẓar tafaktuṛt",
     "pdf": "Ssader PDF",
-    "older": "Tifaktuṛin tiqdimin llant deg « Sged abonnement »."
+    "older": "Tifaktuṛin tiqdimin llant deg « Sged abonnement ».",
+    "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs."
   },
   "Account": {
     "data": {

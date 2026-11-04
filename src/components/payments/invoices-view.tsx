@@ -33,6 +33,9 @@ export function InvoicesView() {
 
   const date = useCallback((iso: string) => new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "medium", timeZone: moroccoTimeZone(new Date(iso).getTime()) }).format(new Date(iso)), [locale]);
 
+  // The site's unit (« DH », « درهم ») rather than Stripe's ISO code; an unexpected code shows as is.
+  const unit = (code: string) => (t.has(`units.${code as "MAD"}`) ? t(`units.${code as "MAD"}`) : code);
+
   const fetchInvoices = useCallback(async () => {
     try {
       setState({ kind: "ready", data: await loadInvoices() });
@@ -103,7 +106,7 @@ export function InvoicesView() {
                   <span className="truncate font-medium tabular-nums">{invoice.number ? <bdi>{invoice.number}</bdi> : t("noNumber")}</span>
                   <span className="text-sm text-foreground-muted">{date(invoice.issuedAt)}</span>
                 </span>
-                <span className="text-end font-semibold tabular-nums">{t("total", { amount: invoice.totalMinor / 100, currency: invoice.currency })}</span>
+                <span className="text-end font-semibold tabular-nums">{t("total", { amount: invoice.totalMinor / 100, currency: unit(invoice.currency) })}</span>
                 <span className="col-start-1 sm:col-start-auto">
                   <Badge variant={STATUS_BADGE[invoice.status]}>{t(`statuses.${invoice.status}`)}</Badge>
                 </span>
@@ -126,7 +129,10 @@ export function InvoicesView() {
               </li>
             ))}
           </ul>
-          <p className="text-sm text-foreground-muted text-pretty">{t("older")}</p>
+          <div className="flex flex-col gap-1 text-sm text-foreground-muted text-pretty">
+            <p>{t("vatNote")}</p>
+            <p>{t("older")}</p>
+          </div>
         </section>
       )}
     </div>

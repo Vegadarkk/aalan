@@ -57,6 +57,8 @@ export interface ModerationQueueItem {
   photoCount: number;
   flags: ModerationFlag[];
   score: number;
+  /** The seller's sensitive-data declaration (Russmedia), null without one. */
+  sensitiveDeclaration: SensitiveDeclarationKind | null;
   seller: { displayName: string; publicId: string; type: "individual" | "pro" };
   /** What is held: a first publication, an expired listing's renewal, or an edit after publication. */
   hold: HoldKind;
@@ -146,6 +148,7 @@ function queueItem(listing: ListingRecord): ModerationQueueItem {
     photoCount: listing.photos.length,
     flags: listing.moderation.flags,
     score: listing.moderation.score,
+    sensitiveDeclaration: listing.moderation.sensitiveDeclaration?.kind ?? null,
     seller: { displayName: listing.sellerName, publicId: listing.sellerPublicId, type: listing.sellerType },
     hold: holdKind(listing),
     waitingSince: listing.updatedAt.toISOString(),

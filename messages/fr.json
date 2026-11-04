@@ -775,7 +775,11 @@
       "rentalTitle": "Conditions de location",
       "rentalHint": "Assurance, caution, conducteur, remise du véhicule : des conditions claires évitent les mauvaises surprises et ressortent dans la recherche.",
       "jobAbroadTitle": "Emploi à l'étranger : un modérateur vérifie l'offre avant sa mise en ligne.",
-      "jobAbroadBody": "Le contrat de travail doit porter le visa du ministère chargé du Travail avant le départ, et les services de l'ANAPEC sont gratuits. L'offre ne doit demander aucun paiement au candidat : ni frais de dossier, ni caution, ni visa."
+      "jobAbroadBody": "Le contrat de travail doit porter le visa du ministère chargé du Travail avant le départ, et les services de l'ANAPEC sont gratuits. L'offre ne doit demander aucun paiement au candidat : ni frais de dossier, ni caution, ni visa.",
+      "holidayProTitle": "N° d'autorisation d'hébergement touristique obligatoire",
+      "holidayProBody": "Une agence indique le numéro d'autorisation d'exploitation de chaque logement (loi n° 80-14 sur l'hébergement touristique). Il est affiché sur l'annonce, déclaré par l'annonceur.",
+      "holidayIndividualTitle": "Louer à des touristes : la loi 80-14 s'applique",
+      "holidayIndividualBody": "Selon le type de logement, une autorisation d'exploitation peut être exigée. Si vous en avez une, indiquez son numéro : il est affiché sur l'annonce. Sans numéro, l'annonce indique « non communiquée »."
     },
     "start": {
       "title": "Déposer une annonce",
@@ -1047,6 +1051,7 @@
       "criterion_integer": "Entrez un nombre entier.",
       "criterion_text_max": "Ce champ ne peut pas dépasser {max} caractères.",
       "criterion_format_onssa": "Format attendu : lettres, province, numéro et année séparés par des points, par exemple M.07.113.20.",
+      "criterion_format_authorization": "Indiquez le numéro tel qu'il figure sur l'autorisation : lettres, chiffres et séparateurs (. / - _), avec au moins un chiffre.",
       "condition_required": "Indiquez l'état.",
       "title_min": "Le titre doit faire au moins {min} caractères.",
       "title_max": "Le titre ne peut pas dépasser {max} caractères.",
@@ -3354,6 +3359,7 @@
       "permit": "Permis de construire",
       "authorization": "Autorisation d'hébergement",
       "declared": "N° {number}, déclaré par l'annonceur",
+      "authorizationMissing": "Non communiquée par l'annonceur",
       "declaredNote": "Informations déclarées par l'annonceur, sous sa seule responsabilité. {brand} ne les vérifie pas. Demandez les justificatifs (titre foncier, mandat, autorisation) avant de vous engager."
     },
     "example": {

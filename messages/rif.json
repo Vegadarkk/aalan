@@ -765,7 +765,11 @@
       "rentalTitle": "Ticraḍ n ukra",
       "rentalHint": "Assurance, caution, ccifuṛ, asefk n ṭumubil : ticraḍ ibanen ttemnaɛent tiɣawsiwin n diri d ttbanent deg tarzzut.",
       "jobAbroadTitle": "Axeddim berra n tmurt : amsefrez ad isenqed annonce zzat ma ad tban.",
-      "jobAbroadBody": "Lɛaqd n uxeddim ixs ad ɣar-s visa n lwizara n uxeddim zzat ma ad yeddu umdan, d ixeddimen n ANAPEC bla idrimen. Annonce war txs ca ad tessuter idrimen i win yessutren axeddim : war idrimen n dossier, war caution, war visa."
+      "jobAbroadBody": "Lɛaqd n uxeddim ixs ad ɣar-s visa n lwizara n uxeddim zzat ma ad yeddu umdan, d ixeddimen n ANAPEC bla idrimen. Annonce war txs ca ad tessuter idrimen i win yessutren axeddim : war idrimen n dossier, war caution, war visa.",
+      "holidayProTitle": "Uṭṭun n tsirect n usensi aturisti ixs-it",
+      "holidayProBody": "Agence ad d-tini uṭṭun n tsirect n lexdma n kul axxam (lqanun 80-14 n usensi aturisti). Ad d-iban x lɛannonce, am wami t-id-yenna umessufeɣ.",
+      "holidayIndividualTitle": "Lekra i turist : lqanun 80-14 ittwaḥkem",
+      "holidayIndividualBody": "Ɣer wanaw n uxxam, tzemmer ad tili tsirect n lexdma ixs-itt. Ma ɣarwem tasirect, aret uṭṭun nnes : ad d-iban x lɛannonce. War uṭṭun, lɛannonce ad tini « war t-id-yenni ca »."
     },
     "start": {
       "title": "Ssuffeɣ annonce",
@@ -1037,6 +1041,7 @@
       "criterion_integer": "Ari uṭṭun bla virgule.",
       "criterion_text_max": "Aya war yezmir ca ad yɛeddi {max} n yisekkilen.",
       "criterion_format_onssa": "Ayen i nraǧu : isekkilen, lɛamala (province), uṭṭun d aseggas, s tenqiḍin jar-asen, am M.07.113.20.",
+      "criterion_format_authorization": "Aret uṭṭun am wami illa x tsirect : isekkilen, uṭṭunen d (. / - _), s yiwen n uṭṭun ula d drus.",
       "condition_required": "Ini-d lḥala.",
       "title_min": "Azwel ixs ad yili ɣas {min} n yisekkilen.",
       "title_max": "Azwel war yezmir ca ad yɛeddi {max} n yisekkilen.",
@@ -3344,6 +3349,7 @@
       "permit": "Permis n lebni",
       "authorization": "Tasirect n usensi",
       "declared": "Uṭṭun {number}, i d-yenna umessufeɣ",
+      "authorizationMissing": "War t-id-yenni ca umessufeɣ",
       "declaredNote": "Tilɣa i d-yenna umessufeɣ, x tamsuli nnes kan. {brand} war tent-tessenqad ca. Ssuter tiwṛiqin (titre foncier, mandat, tasirect) zzat ma ad tqebleḍ."
     },
     "example": {

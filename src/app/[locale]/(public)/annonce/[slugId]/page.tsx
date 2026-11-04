@@ -306,7 +306,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             {listing.catalogue && published && catalogueKind(subcategory) !== "none" ? (
               <ListingCatalogue listingId={listing.id} catalogue={listing.catalogue} axes={pickerAxes} price={listing.price} locale={locale} renderedAt={renderedAt} fleet={catalogueKind(subcategory) === "fleet"} />
             ) : null}
-            {realEstate ? <PropertyTerms attributes={listing.attributes} locale={locale} className="self-stretch sm:max-w-xl" /> : null}
+            {realEstate ? <PropertyTerms attributes={listing.attributes} locale={locale} holidayRental={listing.subcategoryId === "location-vacances"} className="self-stretch sm:max-w-xl" /> : null}
             {subcategory?.adultsOnly ? (
               <p data-testid="adults-only-notice" className="flex items-start gap-2 self-start rounded-md border border-warning/30 bg-warning-surface px-3 py-2 text-sm text-foreground text-pretty">
                 <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />

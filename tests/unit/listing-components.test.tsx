@@ -384,6 +384,8 @@ describe("PropertyTerms", () => {
     expect(holiday).toContain("TNG-2026-44");
     expect(holiday).toContain("حسب تصريح المعلن");
     expect(render(<PropertyTerms attributes={{ surface: 90 }} locale="fr" />)).toBe("");
+    // A holiday rental without a number says so (zone 3 audit P1-2).
+    expect(text(render(<PropertyTerms attributes={{ surface: 90 }} locale="fr" holidayRental />))).toContain(fr.ListingPage.terms.authorizationMissing);
   });
 
   it("takes its fields out of the criteria grid when asked", () => {

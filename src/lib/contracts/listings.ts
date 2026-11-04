@@ -48,6 +48,7 @@ export const MODERATION_FLAGS = [
   "work_abroad",
   "offsite_payment",
   "phone_in_words",
+  "sensitive_declared",
 ] as const;
 export type ModerationFlag = (typeof MODERATION_FLAGS)[number];
 

@@ -27,7 +27,7 @@ import { useCriteriaLabels } from "./labels";
 export type AttributeValue = ListingAttributes[string];
 
 /** Placeholder of a checked text field: one real-shaped value. */
-const FORMAT_EXAMPLES: Record<CriterionFormat, string> = { onssa: "M.07.113.20" };
+const FORMAT_EXAMPLES: Partial<Record<CriterionFormat, string>> = { onssa: "M.07.113.20" };
 
 interface CriteriaFieldsProps {
   subcategory: Subcategory;

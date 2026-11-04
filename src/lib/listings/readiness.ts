@@ -1,4 +1,4 @@
-import { contactMessagingOnly, criteriaSchema, criterionApplies, subcategoryById, type Subcategory } from "@/config/categories";
+import { contactMessagingOnly, criteriaSchema, criterionApplies, criterionRequired, subcategoryById, type Subcategory } from "@/config/categories";
 import { listingQuotas, type Seller } from "@/config/pricing";
 import { cityBySlug } from "@/config/regions";
 import { SOLDES_PATTERN, isVariantCriterion, withVariantAnswers } from "@/lib/contracts/catalog";
@@ -26,6 +26,7 @@ export const READINESS_CODES = [
   "criterion_required",
   "criterion_invalid",
   "criterion_format_onssa",
+  "criterion_format_authorization",
   "condition_required",
   "price_required",
   "price_invalid",
@@ -103,10 +104,11 @@ function attributeIssues(attributes: Candidate["attributes"], subcategory: Subca
     }
     // Zod reports a missing field as invalid_type (or invalid_value for enums): the input tells.
     const value = attributes[key];
-    const required = subcategory.criteria.find((criterion) => criterion.id === key)?.required === true;
+    const criterion = subcategory.criteria.find((candidate) => candidate.id === key);
+    const required = criterion ? criterionRequired(criterion, seller.type) : false;
     const missing = value === undefined || (required && typeof value === "string" && value.trim() === "");
-    // A checked text (ONSSA number) carries its own code in the refinement's message.
-    const format = problem.code === "custom" && problem.message === "criterion_format_onssa" ? problem.message : undefined;
+    // A checked text (ONSSA number, tourist authorisation) carries its own code in the refinement's message.
+    const format = problem.code === "custom" && (problem.message === "criterion_format_onssa" || problem.message === "criterion_format_authorization") ? problem.message : undefined;
     const code: ReadinessCode = missing ? "criterion_required" : (format ?? "criterion_invalid");
     if (!seen.has(path) || code === "criterion_required") seen.set(path, code);
   }

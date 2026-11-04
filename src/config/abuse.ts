@@ -31,6 +31,7 @@ export const RISK_FLAG_IDS = [
   "work_abroad",
   "offsite_payment",
   "phone_in_words",
+  "sensitive_declared",
 ] as const;
 export type RiskFlagId = (typeof RISK_FLAG_IDS)[number];
 

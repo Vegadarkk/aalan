@@ -60,16 +60,17 @@ export const RISK_WEIGHTS: Readonly<Record<ModerationFlag, RiskWeight>> = {
   work_abroad: { weight: 0, reason: "job offer for a post abroad, human check of the visa and agency mentions required" },
   offsite_payment: { weight: 40, reason: "payment through a cash-transfer network or before shipping, human review required" },
   phone_in_words: { weight: 30, reason: "phone number spelled out in words, human review required" },
+  sensitive_declared: { weight: 0, reason: "seller declared sensitive personal data, human review promised before publication" },
 };
 
 export const PREVIOUS_REJECTION_WEIGHT = DEFAULT_ABUSE.risk.previousRejectionWeight;
 export const PREVIOUS_REJECTION_CAP = DEFAULT_ABUSE.risk.previousRejectionCap;
 
 /** Flags that send the listing to review whatever the score (step 2 soft hits, step 3 legal review, step 5 nudity). */
-export const ALWAYS_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "nsfw_review", "restricted_category", "face", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad", "offsite_payment", "phone_in_words"]);
+export const ALWAYS_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "nsfw_review", "restricted_category", "face", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad", "offsite_payment", "phone_in_words", "sensitive_declared"]);
 
 /** Flags the agent may never lift alone, whatever `agent.autoApproveSoftFlags` says (a moderator decides). */
-export const HUMAN_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["restricted_category", "face", "sanitary_check", "promo_check", "work_abroad"]);
+export const HUMAN_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["restricted_category", "face", "sanitary_check", "promo_check", "work_abroad", "sensitive_declared"]);
 
 /** `accountAgeDays` below which `new_account` is raised (lot decision; architecture §7 cites 7 days for the AI agent context). */
 export const NEW_ACCOUNT_DAYS = DEFAULT_ABUSE.risk.newAccountDays;

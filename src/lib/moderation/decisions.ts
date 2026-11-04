@@ -153,6 +153,7 @@ export const FLAG_LABELS: Record<ModerationFlag, string> = {
   work_abroad: "Emploi à l'étranger",
   offsite_payment: "Paiement hors plateforme",
   phone_in_words: "Numéro écrit en lettres",
+  sensitive_declared: "Données sensibles déclarées",
 };
 
 export const DECISION_TEXT_MAX = 500;

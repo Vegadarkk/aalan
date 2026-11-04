@@ -1,7 +1,9 @@
 // The Markdown subset of the legal pages (phase 6, D11), parsed into a tree that React renders
 // (never HTML strings): headings with `{#id}` anchors, paragraphs, bullet and numbered lists,
 // pipe tables, **bold**, *italic*, `code`, [links](href), bare https URLs and e-mail addresses.
-// Client-safe and pure. Only same-site paths, anchors, https and mailto links survive.
+// Lists nest by indentation and carry task items ("- [ ]", "- [x]"), which the back-office guides
+// use (the legal sources have neither). Client-safe and pure. Only same-site paths, anchors, https
+// and mailto links survive.
 
 export type Inline =
   | { type: "text"; value: string }
@@ -9,16 +11,29 @@ export type Inline =
   | { type: "code"; value: string }
   | { type: "link"; href: string; children: Inline[] };
 
+export interface MdList {
+  type: "list";
+  ordered: boolean;
+  start: number;
+  items: Inline[][];
+  /** The indented list under each item, when one has any. */
+  nested?: (MdList | null)[];
+  /** Task state of each item ("- [x]" true, "- [ ]" false, a plain item null), when one is a task. */
+  checked?: (boolean | null)[];
+}
+
 export type MdBlock =
   | { type: "heading"; level: 1 | 2 | 3 | 4; id: string | null; children: Inline[]; text: string }
   | { type: "paragraph"; children: Inline[] }
-  | { type: "list"; ordered: boolean; start: number; items: Inline[][] }
+  | MdList
   | { type: "table"; head: Inline[][]; rows: Inline[][][] }
   | { type: "rule" };
 
 const HEADING = /^(#{1,4})\s+(.*?)(?:\s+\{#([\w-]+)\})?\s*$/;
 const BULLET = /^[-*]\s+(.*)$/;
 const NUMBERED = /^(\d+)[.)]\s+(.*)$/;
+const ITEM = /^(\s*)(?:([-*])|(\d+)[.)])\s+(.*)$/;
+const TASK = /^\[([ xX])\]\s+(.*)$/;
 const TABLE_SEPARATOR = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
 const RULE = /^(?:-{3,}|\*{3,})\s*$/;
 
@@ -118,6 +133,52 @@ export function inlineText(nodes: Inline[]): string {
   return nodes.map((node) => ("children" in node ? inlineText(node.children) : node.value)).join("");
 }
 
+const indentOf = (line: string) => line.length - line.trimStart().length;
+
+/**
+ * The list starting at `lines[start]` (an item at `indent`): items of the same kind at that indent,
+ * deeper items as the list under the previous item, deeper text lines as its continuation. Ends at
+ * a blank line, a shallower line, or an item of the other kind.
+ */
+function readList(lines: string[], start: number, indent: number): { block: MdList; next: number } {
+  const first = ITEM.exec(lines[start]!)!;
+  const ordered = first[2] === undefined;
+  const texts: string[] = [];
+  const nested: (MdList | null)[] = [];
+  let index = start;
+  while (index < lines.length) {
+    const line = lines[index]!;
+    if (!line.trim()) break;
+    const depth = indentOf(line);
+    const item = ITEM.exec(line);
+    if (item && depth === indent) {
+      if ((item[2] === undefined) !== ordered) break;
+      texts.push(item[4]!);
+      nested.push(null);
+      index += 1;
+    } else if (item && depth > indent && texts.length > 0) {
+      const sub = readList(lines, index, depth);
+      const last = nested.length - 1;
+      const previous = nested[last];
+      nested[last] = previous ? { ...previous, items: [...previous.items, ...sub.block.items] } : sub.block;
+      index = sub.next;
+    } else if (depth > indent && texts.length > 0) {
+      texts[texts.length - 1] += ` ${line.trim()}`;
+      index += 1;
+    } else break;
+  }
+  const tasks = texts.map((text) => (ordered ? null : TASK.exec(text)));
+  const block: MdList = {
+    type: "list",
+    ordered,
+    start: ordered ? Number(first[3]) : 1,
+    items: texts.map((text, at) => parseInline(tasks[at] ? tasks[at][2]! : text)),
+  };
+  if (nested.some(Boolean)) block.nested = nested;
+  if (tasks.some(Boolean)) block.checked = tasks.map((task) => (task ? task[1] !== " " : null));
+  return { block, next: index };
+}
+
 export function parseMarkdown(source: string): MdBlock[] {
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
   const blocks: MdBlock[] = [];
@@ -154,21 +215,10 @@ export function parseMarkdown(source: string): MdBlock[] {
       blocks.push({ type: "table", head, rows });
       continue;
     }
-    const bullet = BULLET.exec(line);
-    const numbered = NUMBERED.exec(line);
-    if (bullet || numbered) {
-      const ordered = !bullet;
-      const pattern = ordered ? NUMBERED : BULLET;
-      const items: string[] = [];
-      while (index < lines.length) {
-        const current = lines[index]!;
-        const item = pattern.exec(current);
-        if (item) items.push(ordered ? item[2]! : item[1]!);
-        else if (current.trim() && /^\s+/.test(current) && items.length > 0) items[items.length - 1] += ` ${current.trim()}`;
-        else break;
-        index += 1;
-      }
-      blocks.push({ type: "list", ordered, start: numbered ? Number(numbered[1]) : 1, items: items.map((cell) => parseInline(cell)) });
+    if (BULLET.test(line) || NUMBERED.test(line)) {
+      const list = readList(lines, index, 0);
+      blocks.push(list.block);
+      index = list.next;
       continue;
     }
     const paragraph: string[] = [];

@@ -3,8 +3,11 @@ import { EU_B2C_THRESHOLD_EUR, FRANCHISE_CEILING_EUR, THRESHOLD_ALERT_AT } from 
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
 import { getBillingThresholds } from "@/lib/payments/thresholds";
+import { TAX_GUIDE_ANCHORS, TAX_GUIDE_PATH } from "@/lib/guide/tax-guide";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { formatDateTime } from "../../_lib/moderation-format";
+import { linkClassName } from "../../_components/panel";
 import { ExportForm } from "../../_components/export-form";
 import { WithdrawalsAdmin } from "../../_components/withdrawals-admin";
 import { pendingWithdrawals } from "@/lib/payments/withdrawals";
@@ -18,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 const euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-function Threshold({ label, usedMinor, limitEur, consequence, reached = false }: { label: string; usedMinor: number | null; limitEur: number; consequence: string; reached?: boolean }) {
+function Threshold({ label, usedMinor, limitEur, consequence, guideAnchor, reached = false }: { label: string; usedMinor: number | null; limitEur: number; consequence: string; guideAnchor: string; reached?: boolean }) {
   const share = usedMinor === null ? null : usedMinor / (limitEur * 100);
   const level = reached || (share !== null && share >= 1) ? "reached" : share === null ? "unknown" : share >= THRESHOLD_ALERT_AT ? "warning" : "ok";
   const badge = { ok: ["Sous le seuil", "success"], warning: ["Alerte", "warning"], reached: ["Seuil atteint", "danger"], unknown: ["Non mesuré", "neutral"] } as const;
@@ -38,6 +41,9 @@ function Threshold({ label, usedMinor, limitEur, consequence, reached = false }:
         <div aria-hidden="true" className="absolute -top-1 h-4 w-0.5 rounded-full bg-featured" style={{ insetInlineStart: `calc(${THRESHOLD_ALERT_AT * 100}% - 1px)` }} />
       </div>
       <p className="text-sm text-foreground-muted text-pretty">{consequence}</p>
+      <Link href={`${TAX_GUIDE_PATH}#${guideAnchor}`} className={`self-start text-sm ${linkClassName}`}>
+        Que faire au seuil (guide fiscal, section {guideAnchor.replace("section-", "")})
+      </Link>
     </div>
   );
 }
@@ -66,7 +72,11 @@ export default async function SalesPage() {
           {current
             ? `Seuils de ${current.year}, comptés le ${formatDateTime(current.computedAt.toISOString())} ; recalculés chaque nuit à 5 h 20 UTC.`
             : "Seuils de l'année : pas encore comptés ; prochain calcul cette nuit à 5 h 20 UTC."}{" "}
-          La marche à suivre quand un seuil approche est décrite dans le guide fiscal de l&apos;équipe.
+          La marche à suivre quand un seuil approche est décrite dans le{" "}
+          <Link href={TAX_GUIDE_PATH} className={linkClassName}>
+            guide fiscal
+          </Link>
+          .
         </p>
       </div>
       <section aria-labelledby="thresholds-title" className="flex flex-col gap-3">
@@ -79,6 +89,7 @@ export default async function SalesPage() {
             usedMinor={current?.euB2cEurMinor ?? null}
             limitEur={EU_B2C_THRESHOLD_EUR}
             reached={lastYearReached}
+            guideAnchor={TAX_GUIDE_ANCHORS.euB2c}
             consequence={
               lastYearReached
                 ? `Seuil atteint en ${current!.year - 1} : les packs en euros restent retirés de la vente cette année, sauf inscription au guichet OSS.`
@@ -89,6 +100,7 @@ export default async function SalesPage() {
             label="Franchise en base de TVA (encaissé)"
             usedMinor={current ? current.turnoverEurMinor : null}
             limitEur={FRANCHISE_CEILING_EUR}
+            guideAnchor={TAX_GUIDE_ANCHORS.franchise}
             consequence="Au seuil, la franchise prend fin : la TVA française s'applique selon les règles du guide fiscal."
           />
         </div>

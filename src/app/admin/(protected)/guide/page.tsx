@@ -10,6 +10,7 @@ import { logger } from "@/lib/logging/logger";
 import { formatDate, formatDateTime } from "../../_lib/moderation-format";
 import { linkClassName } from "../../_components/panel";
 import { GuideLinkAccept } from "../../_components/guide-link-accept";
+import { GuideTabs } from "../../_components/guide-tabs";
 
 // Links of the admin procedures guide (design guide-demarches G4): what the weekly checker saw for
 // each official source, why one needs a look, and "Marquer comme vérifié" once a person has read the
@@ -61,7 +62,7 @@ async function loadReviews(): Promise<Partial<Record<GuideSourceId, GuideReview>
 }
 
 export default async function GuideLinksPage() {
-  await requirePageStaff(["moderator", "admin"]);
+  const staff = await requirePageStaff(["moderator", "admin"]);
   const [state, reviews] = await Promise.all([loadState(), loadReviews()]);
   const now = new Date();
   const rows = GUIDE_SOURCE_IDS.map((id) => {
@@ -74,6 +75,7 @@ export default async function GuideLinksPage() {
 
   return (
     <>
+      <GuideTabs current="links" admin={staff.role === "admin"} />
       <div>
         <h1 id="guide-title" className="text-2xl font-semibold">
           Liens du guide des démarches

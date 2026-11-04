@@ -328,6 +328,17 @@ test("a revoked session is sent to the sign-in page on a client-side navigation,
   await context.close();
 });
 
+test("the Ventes page links to the tax guide, rendered from its source in Guide démarches (zone 7 P3-7)", async ({ page }) => {
+  await signIn(page, EMAIL, PASSWORD);
+  await page.goto(`${admin}/ventes`);
+  await page.getByRole("link", { name: "Que faire au seuil (guide fiscal, section 4)" }).click();
+  await expect(page).toHaveURL(`${admin}/guide/fiscal#section-4`);
+  await expect(page.getByRole("heading", { name: "Guide fiscal et paiements", level: 1 })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Guide démarches" }).getByRole("link", { name: "Guide fiscal" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: /^4\. TVA française : franchise en base$/, level: 2 })).toBeInViewport();
+  await expect(page.getByRole("meter", { name: /^Points traités/ }).first()).toBeVisible();
+});
+
 test("an admin edits a legal mention: the legal page shows it and the audit log records the change", async ({ page }) => {
   const receipt = `D-E2E-${randomId(6).toUpperCase()}`;
   await signIn(page, EMAIL, PASSWORD);

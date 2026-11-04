@@ -1,8 +1,9 @@
 import "server-only";
 import mailchecker from "mailchecker";
 import type { Locale } from "@/config/site";
+import { closedAddress } from "@/lib/account/rules";
 import { CGU_VERSION, signupSchema, verifyResendSchema, type SignupInput, type SignupResponse, type VerifyResendResponse } from "@/lib/contracts/auth";
-import { createAccountDocuments, emailNormHash, findUidByEmail, getUser, isEmailTaken } from "@/lib/db/repositories/users";
+import { createAccountDocuments, emailNormHash, findUidByEmail, getUser, getUserPrivate, isEmailTaken } from "@/lib/db/repositories/users";
 import { auth } from "@/lib/firebase/admin";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
@@ -13,14 +14,15 @@ import { HttpError, unavailable } from "@/lib/http/errors";
 import { pepperedHash } from "@/lib/security/hash";
 import { displayNameFor, errorCode, userByEmail } from "./accounts";
 import { anonymous, beginAnonymous, checkTurnstile, deviceIdOf, respond, uniformDuration, type AnonymousFlow } from "./anonymous";
-import { sendSignupExistingMail, sendVerificationMail } from "./mails";
+import { sendSignupClosedMail, sendSignupExistingMail, sendVerificationMail } from "./mails";
 import { deleteOrphanRecord, recordState } from "./orphan";
 import { assertPasswordPolicy } from "./password-policy";
 
 // Sign-up by e-mail (§6): Turnstile, limits, disposable domains, password policy, then an Auth
 // record without role and the Firestore documents; the verification link activates the account.
-// An e-mail that already has an account gets the same 202 and a "signupExisting" mail, after the
-// same minimum duration (uniformDuration): neither the body nor a clock tells the two apart.
+// An e-mail that already has an account gets the same 202 and a "signupExisting" mail (a closed
+// account: "signupClosed", Z1-11), after the same minimum duration (uniformDuration): neither the
+// body nor a clock tells the two apart.
 
 const VERIFICATION_SENT: SignupResponse = { status: "verification_sent" };
 
@@ -32,8 +34,12 @@ const VERIFICATION_SENT: SignupResponse = { status: "verification_sent" };
 async function existingAccountAnswer(flow: AnonymousFlow, uid: string, email: string, locale: Locale): Promise<Response> {
   const allowance = await consumeLimit("signup.existing.email", emailNormHash(email));
   if (allowance.ok) {
-    const [profile, record] = await Promise.all([getUser(uid), auth().getUser(uid).catch(() => null)]);
-    await sendSignupExistingMail({ uid, email: record?.email ?? email, displayName: displayNameFor(profile, record, email), locale });
+    const [profile, account, record] = await Promise.all([getUser(uid), getUserPrivate(uid), auth().getUser(uid).catch(() => null)]);
+    const recipient = { uid, email: record?.email ?? email, displayName: displayNameFor(profile, record, email), locale };
+    // A closed account's sign-in answers "deactivated": "sign in" would send its owner in circles.
+    const closed = closedAddress(account, profile?.status ?? null);
+    if (closed) await sendSignupClosedMail({ ...recipient, ...closed });
+    else await sendSignupExistingMail(recipient);
   }
   await uniformDuration(flow);
   return respond(flow, VERIFICATION_SENT, { status: 202 });

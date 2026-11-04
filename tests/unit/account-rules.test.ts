@@ -5,6 +5,7 @@ import {
   EXPORT_MAX_READS,
   EXPORT_MESSAGES_PER_CONVERSATION,
   accountPurgeVerdict,
+  closedAddress,
   closureBlocker,
   closureDates,
   closurePurgeAt,
@@ -119,6 +120,24 @@ describe("nightly purge verdicts", () => {
     expect(identityPurgeable({ purgeAt: FUTURE, legalHold: [] }, NOW)).toBe(false);
     expect(identityPurgeable({ purgeAt: PAST, legalHold: ["authority:a1"] }, NOW)).toBe(false);
     expect(identityPurgeable({ legalHold: [] }, NOW)).toBe(false);
+  });
+});
+
+describe("closed address told at sign-up (Z1-11)", () => {
+  const dates = closureDates(NOW);
+
+  it("dates the closure and the release of the address at purgeAt", () => {
+    expect(closedAddress(dates, "closed")).toEqual({ closedAt: dates.closedAt, reusableFrom: dates.purgeAt });
+  });
+
+  it("a ban keeps the address until identityPurgeAt", () => {
+    expect(closedAddress(dates, "banned")).toEqual({ closedAt: dates.closedAt, reusableFrom: dates.identityPurgeAt });
+  });
+
+  it("is null for an account that is not closed, or without its private document", () => {
+    expect(closedAddress({}, "active")).toBeNull();
+    expect(closedAddress({ closedAt: NOW }, "closed")).toBeNull();
+    expect(closedAddress(null, null)).toBeNull();
   });
 });
 

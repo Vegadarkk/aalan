@@ -38,6 +38,21 @@ export async function sendSignupExistingMail(input: Recipient & { uid: string })
   });
 }
 
+/**
+ * Sign-up attempt on the e-mail of a closed account (Z1-11): what happened to the account, when the
+ * address serves again, whom to write to. Same answer to the browser, same hourly cap as above.
+ */
+export async function sendSignupClosedMail(input: Recipient & { uid: string; closedAt: Date; reusableFrom: Date }): Promise<void> {
+  await sendMail({
+    template: "signupClosed",
+    locale: input.locale,
+    to: input.email,
+    data: { displayName: input.displayName, closedAt: input.closedAt.toISOString(), reusableFrom: input.reusableFrom.toISOString() },
+    priority: "security",
+    idempotencyKey: `signup-closed-${input.uid}-${hourBucket()}`,
+  });
+}
+
 export async function sendResetMail(input: Recipient): Promise<void> {
   await sendMail({
     template: "resetPassword",

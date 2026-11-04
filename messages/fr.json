@@ -488,6 +488,8 @@
         "displayName": "Nom affiché",
         "displayNameHint": "{count} sur {max} caractères. Visible sur vos annonces et dans la messagerie : ni numéro ni lien.",
         "locale": "Langue de l'interface",
+        "localeHint": "Utilisée sur tous vos appareils et pour nos e-mails.",
+        "localeSaved": "Votre compte est réglé sur {name} : enregistrez pour utiliser cette langue sur tous vos appareils et pour nos e-mails.",
         "save": "Enregistrer",
         "saved": "Profil enregistré"
       },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { afterSignInTarget, safeNextPath, splitNextPath } from "@/lib/auth/next-path";
+import { afterSignInTarget, inPreferredLocale, safeNextPath, splitNextPath } from "@/lib/auth/next-path";
 
 describe("safeNextPath", () => {
   it("accepts a same-origin relative path, with its query and fragment", () => {
@@ -54,5 +54,19 @@ describe("afterSignInTarget", () => {
     expect(afterSignInTarget(["/ar/deposer", "/fr"])).toEqual({ locale: "ar", pathname: "/deposer" });
     expect(afterSignInTarget("//evil.example")).toEqual({ locale: null, pathname: "/" });
     expect(afterSignInTarget(undefined)).toEqual({ locale: null, pathname: "/" });
+  });
+});
+
+describe("inPreferredLocale (Z1-12)", () => {
+  it("sends a sign-in without a locale in `next` to the account's language", () => {
+    expect(inPreferredLocale(afterSignInTarget(undefined), "ar", "fr")).toEqual({ locale: "ar", pathname: "/" });
+    expect(inPreferredLocale(afterSignInTarget("/messages"), "rif", "fr")).toEqual({ locale: "rif", pathname: "/messages" });
+  });
+
+  it("keeps the target when it names its locale, when the page already is in it, or without a valid preference", () => {
+    expect(inPreferredLocale(afterSignInTarget("/fr/deposer"), "ar", "ar")).toEqual({ locale: "fr", pathname: "/deposer" });
+    expect(inPreferredLocale(afterSignInTarget("/messages"), "ar", "ar")).toEqual({ locale: null, pathname: "/messages" });
+    expect(inPreferredLocale(afterSignInTarget("/messages"), null, "fr")).toEqual({ locale: null, pathname: "/messages" });
+    expect(inPreferredLocale(afterSignInTarget("/messages"), "en", "fr")).toEqual({ locale: null, pathname: "/messages" });
   });
 });

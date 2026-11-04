@@ -58,7 +58,7 @@ export function LoginForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: stri
       const answer = await apiPost<LoginResponse>(AUTH_API.login, values);
       if (answer.status === "signed_in") {
         setSession(answer.session);
-        afterSignIn();
+        afterSignIn(answer.session);
       } else if (answer.status === "turnstile_required") {
         // Third failed attempt: the widget appears and the same credentials go again with its token.
         resubmitOnToken.current = !automatic.current;

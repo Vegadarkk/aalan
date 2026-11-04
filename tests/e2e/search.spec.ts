@@ -294,11 +294,41 @@ test.describe("search page", () => {
     await expect(results(page).getByTestId("search-count")).toHaveText("1 annonce");
   });
 
+  test("suggests what the search understands while typing, and the last searches when empty", { tag: "@mobile" }, async ({ page }) => {
+    await page.goto("/fr");
+    const words = page.getByRole("banner").getByRole("combobox", { name: "Rechercher une annonce" });
+    // Under load a focus given before hydration is lost when the pill re-renders: retry until it holds.
+    await expect(async () => {
+      await words.click();
+      await expect(words).toBeFocused({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+    await words.fill("tomob");
+    const list = page.getByTestId("search-suggestions");
+    await expect(list.getByRole("option").first()).toContainText("Voitures");
+    await expect(words).toHaveAttribute("aria-expanded", "true");
+    // Arrow then Enter opens the suggestion's filters, not the typed letters.
+    await words.press("ArrowDown");
+    await expect(words).toHaveAttribute("aria-activedescendant", /.+/);
+    await words.press("Enter");
+    await expect(page).toHaveURL(/sous-categorie=voitures/);
+    await expect(page).not.toHaveURL(/q=tomob/);
+    // A typed search is remembered on this device and offered on the next focus.
+    await words.fill(WORD);
+    await words.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`q=${WORD}`));
+    await words.fill("");
+    await words.blur();
+    await words.click();
+    await expect(list.getByRole("option", { name: WORD })).toBeVisible();
+    await list.getByRole("button", { name: "Effacer" }).click();
+    await expect(list).toBeHidden();
+  });
+
   test("the place field stays quiet on keyboard focus and opens on a key or a click", async ({ page }) => {
     // The place segment of the pill shows from xl (UX audit, 17: Tab must not open the list).
     await page.setViewportSize({ width: 1366, height: 800 });
     await page.goto(`/fr/recherche?q=${WORD}`);
-    const place = page.getByRole("banner").getByRole("combobox");
+    const place = page.getByRole("banner").getByRole("combobox", { name: "Lieu de la recherche" });
     // Under load a focus given before hydration is lost when the pill re-renders: retry until it holds.
     await expect(async () => {
       await place.focus();

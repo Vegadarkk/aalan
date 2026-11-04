@@ -34,7 +34,13 @@
     "procedures": "Lewraq n lidara",
     "visitorMenu": "Tabdart",
     "floating": "Iberdan iwezlen",
-    "signUp": "Snulfu amiḍan"
+    "signUp": "Snulfu amiḍan",
+    "suggestions": {
+      "label": "Isumar n urezzu",
+      "recent": "Arezzu aneggaru",
+      "clearRecent": "Kkes",
+      "in": "di {place}"
+    }
   },
   "Locale": {
     "label": "Tutlayt",

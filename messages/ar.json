@@ -34,7 +34,13 @@
     "procedures": "الإجراءات الإدارية",
     "visitorMenu": "القائمة",
     "floating": "اختصارات",
-    "signUp": "إنشاء حساب"
+    "signUp": "إنشاء حساب",
+    "suggestions": {
+      "label": "اقتراحات البحث",
+      "recent": "عمليات البحث الأخيرة",
+      "clearRecent": "مسح",
+      "in": "في {place}"
+    }
   },
   "Locale": {
     "label": "اللغة",

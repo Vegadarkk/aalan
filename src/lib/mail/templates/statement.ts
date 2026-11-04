@@ -31,7 +31,7 @@ const FLAGS: Record<MailLocale, Record<string, string>> = {
     sensitive_declared: "vous avez déclaré des données personnelles sensibles : un modérateur relit l'annonce avant sa mise en ligne",
   },
   ar: {
-    prohibited_kw: "ذكر غرض أو خدمة ممنوعة على Aalan",
+    prohibited_kw: "ذكر غرض أو خدمة ممنوعة على أعلان",
     prohibited_soft: "مفردات قريبة من غرض أو خدمة ممنوعة",
     sensitive_text: "بيانات شخصية حساسة في النص (الصحة، الدين، الآراء، الأصل، الحياة الخاصة)",
     third_party_phone: "بيانات اتصال لشخص آخر في النص",
@@ -49,7 +49,7 @@ const FLAGS: Record<MailLocale, Record<string, string>> = {
     promo_check: "تخفيض يفوق 70 %: يتحقق مشرف من الثمن الأصلي قبل إعادة النشر",
     work_abroad: "عرض عمل في الخارج: يتحقق مشرف من ذكر تأشيرة الوزارة المكلفة بالشغل ووكالة التشغيل قبل النشر",
     offsite_payment: "دفع مطلوب عبر شبكة لتحويل الأموال أو قبل إرسال المنتوج: يراجع مشرف الإعلان قبل نشره",
-    phone_in_words: "رقم هاتف مكتوب بالحروف: يتم التواصل عبر رسائل Aalan، ويراجع مشرف الإعلان قبل نشره",
+    phone_in_words: "رقم هاتف مكتوب بالحروف: يتم التواصل عبر رسائل أعلان، ويراجع مشرف الإعلان قبل نشره",
     sensitive_declared: "صرحتم بوجود بيانات شخصية حساسة: يراجع مشرف الإعلان قبل نشره",
   },
 };
@@ -84,7 +84,7 @@ const COPY: Record<MailLocale, StatementCopy> = {
     noFacts: "الوقائع المسجّلة: مؤشرات خطر رصدها الفحص الآلي.",
     ground: "الأساس: ",
     automated: "اتُّخذ هذا الإجراء بمعالجة آلية دون تدخل بشري في هذه المرحلة.",
-    human: "اتخذ هذا القرار مشرف لدى Aalan بعد فحص الإعلان.",
+    human: "اتخذ هذا القرار مشرف لدى أعلان بعد فحص الإعلان.",
     redress: (email, ref, human) => `للاعتراض عليه، اكتب إلى ${email}${ref ? ` مع ذكر المرجع ${ref}` : ""}: ${human ? "سيعيد شخص آخر" : "سيعيد مشرف"} فحص إعلانك.`,
     appealRedress: "يمكنك الطعن في هذا القرار خلال 6 أشهر عبر رابط «الطعن في القرار» أدناه: سيعيد شخص آخر فحص إعلانك.",
   },

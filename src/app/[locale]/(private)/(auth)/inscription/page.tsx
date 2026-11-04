@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignupForm } from "@/components/auth/signup-form";
+import { touchLinkClassName } from "@/components/ui/text-link";
 import { Link, redirect } from "@/i18n/navigation";
 import { pageLocale } from "@/i18n/params";
 import { currentMember } from "@/lib/auth/current-user";
@@ -39,7 +40,7 @@ export default async function SignUpPage({ params, searchParams }: Props) {
       footer={
         <p>
           {t("hasAccount")}{" "}
-          <Link href={next ? { pathname: "/connexion", query: { next } } : "/connexion"} className="font-medium text-link underline-offset-2 hover:underline">
+          <Link href={next ? { pathname: "/connexion", query: { next } } : "/connexion"} className={`font-medium text-link underline-offset-2 hover:underline ${touchLinkClassName}`}>
             {t("signIn")}
           </Link>
         </p>

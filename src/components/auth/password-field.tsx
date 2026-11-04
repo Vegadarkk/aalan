@@ -63,12 +63,13 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(fu
           className={cn(inputClassName, "pe-12 text-start")}
           {...props}
         />
-        {/* The label names the action that the click performs; no pressed state on top of it. */}
+        {/* The label names the action that the click performs; no pressed state on top of it. The
+            36 px square sits inside the field; its ::after takes the touch target to 44 px. */}
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? t("hidePassword") : t("showPassword")}
-          className="absolute end-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-sm text-foreground-muted transition-[background-color,color,scale] duration-150 ease-door hover:bg-surface-muted hover:text-foreground active:scale-[0.98]"
+          className="absolute end-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-sm text-foreground-muted transition-[background-color,color,scale] duration-150 ease-door after:absolute after:-inset-1 hover:bg-surface-muted hover:text-foreground active:scale-[0.98]"
         >
           {visible ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
         </button>

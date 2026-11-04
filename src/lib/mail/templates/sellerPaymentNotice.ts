@@ -1,4 +1,4 @@
-import { SITE_NAME } from "@/config/site";
+import { BRAND, SITE_NAME } from "@/config/site";
 import type { TemplateData } from "../types";
 import { formatDate, GREETING, pageUrl, renderLayout, type BuiltMail, type MailLocale, type TemplateContext } from "./layout";
 
@@ -78,7 +78,7 @@ const COPY: Record<MailLocale, Copy> = {
         case "changed":
           return [
             `تم تسجيل رابط دفع جديد نحو ${data.host} لمتجر ${shop}.`,
-            at ? `سيحل محل الرابط الحالي في ${at}. حتى ذلك الحين لا يتغير شيء بالنسبة لمشتريك.` : `موقع الدفع هذا لم يتحقق منه ${SITE_NAME} بعد: سيُفعَّل الرابط بعد التحقق، بعد 24 ساعة على الأقل من تسجيله.`,
+            at ? `سيحل محل الرابط الحالي في ${at}. حتى ذلك الحين لا يتغير شيء بالنسبة لمشتريك.` : `موقع الدفع هذا لم يتحقق منه ${BRAND.arabic} بعد: سيُفعَّل الرابط بعد التحقق، بعد 24 ساعة على الأقل من تسجيله.`,
           ];
         case "removed":
           return [`تمت إزالة رابط الدفع لمتجر ${shop}. لم يعد زر «الدفع لدى البائع» يظهر على إعلاناتك.`];

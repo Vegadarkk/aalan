@@ -8,7 +8,7 @@ import type { z } from "@/lib/zod";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { quietLinkClassName } from "@/components/ui/text-link";
+import { quietLinkClassName, touchLinkClassName } from "@/components/ui/text-link";
 import { Link } from "@/i18n/navigation";
 import { apiPost, isApiError, setSession } from "@/lib/auth/client";
 import { AUTH_API, loginSchema, type LoginInput, type LoginResponse } from "@/lib/contracts/auth";
@@ -119,7 +119,8 @@ export function LoginForm({ nonce, gisNonce }: { nonce?: string; gisNonce?: stri
         <PasswordField
           label={c("password")}
           labelAside={
-            <Link href="/mot-de-passe-oublie" className={cn("text-link", quietLinkClassName)}>
+            // The 44 px target grows upwards: below it is the password field, 6 px away.
+            <Link href="/mot-de-passe-oublie" className={cn("text-link", quietLinkClassName, touchLinkClassName, "after:top-auto after:-bottom-1.5 after:translate-y-0")}>
               {t("forgot")}
             </Link>
           }

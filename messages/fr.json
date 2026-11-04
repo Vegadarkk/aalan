@@ -678,7 +678,7 @@
       "turnstile_required": "Une vérification anti-robots est nécessaire. Cochez la case, puis réessayez.",
       "turnstile_failed": "La vérification anti-robots a échoué. Réessayez.",
       "invalid_credentials": "Adresse e-mail ou mot de passe incorrect.",
-      "account_locked": "Trop de tentatives : la connexion à ce compte est bloquée quelques minutes. Réessayez {wait}.",
+      "account_locked": "Trop de tentatives depuis cet appareil. Réessayez {wait}, ou réinitialisez votre mot de passe.",
       "account_disabled": "Ce compte a été désactivé. Si vous pensez qu'il s'agit d'une erreur, écrivez-nous.",
       "account_suspended": "Ce compte est suspendu. Vous pouvez lire vos conversations et faire un recours.",
       "email_not_verified": "Confirmez d'abord votre adresse e-mail avec le lien reçu.",
@@ -5490,7 +5490,8 @@
       "contents": "Profil, paramètres et consentements, annonces (terminées comprises), favoris, recherches enregistrées, conversations, signalements envoyés et décisions de modération vous concernant.",
       "download": "Télécharger mes données",
       "downloaded": "Vos données sont téléchargées",
-      "limit": "Fichier JSON, trois téléchargements par jour."
+      "limit": "Fichier JSON, trois téléchargements par jour.",
+      "limitReached": "Vous avez atteint la limite de trois téléchargements par jour. Réessayez {wait}."
     },
     "close": {
       "title": "Fermer mon compte",

@@ -668,7 +668,7 @@
       "turnstile_required": "Ixs tasenqedt anti-robot. Wet x tasenqedt, uca ɛawed.",
       "turnstile_failed": "Tasenqedt anti-robot war teddi ca. Ɛawed.",
       "invalid_credentials": "Adres n e-mail niɣ awal n uɛeddi war ṣeḥḥan.",
-      "account_locked": "Aṭas n tikkal : tukcimt ɣer umiḍan-a tettwaḥbes kra n tesdidin. Ɛawed {wait}.",
+      "account_locked": "Aṭas n tikkal zi lmakina-a. Ɛawed {wait}, niɣ ssuter asuɣen n ubeddel n awal n uɛeddi.",
       "account_disabled": "Amiḍan-a war yetteddu ca dǧa. Mala tɣileḍ d tuccḍa, ari-d aneɣ.",
       "account_suspended": "Amiḍan-a yettwaḥbes. Tzemmreḍ ad teɣreḍ tameslayin nnec d ad tagiḍ x tegtint.",
       "email_not_verified": "Sentem zzat adres n e-mail nnec s usaɣ i dak-d yawḍen.",
@@ -5480,7 +5480,8 @@
       "contents": "Profil, iɣewwaren d ayen i tqebleḍ, annonces (ula d tid ikemmlen), ayen tḥemmleḍ, tarzzut yettwaḥerzen, timeslayin, ismekten i tuzneḍ d tigtinin n umsefrez x cek.",
       "download": "Ssader isefka inu",
       "downloaded": "Isefka nnec ttwassadren",
-      "limit": "Afaylu JSON, kraḍ n tikkal yal ass."
+      "limit": "Afaylu JSON, kraḍ n tikkal yal ass.",
+      "limitReached": "Tewweḍeḍ tilist : kraḍ n tikkal yal ass. Ɛawed {wait}."
     },
     "close": {
       "title": "Qqen amiḍan inu",

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ForgotForm } from "@/components/auth/forgot-form";
+import { touchLinkClassName } from "@/components/ui/text-link";
 import { Link } from "@/i18n/navigation";
 import { pageLocale } from "@/i18n/params";
 
@@ -23,7 +24,7 @@ export default async function ForgotPasswordPage({ params }: { params: Promise<{
       lead={t("lead")}
       footer={
         <p>
-          <Link href="/connexion" className="font-medium text-link underline-offset-2 hover:underline">
+          <Link href="/connexion" className={`font-medium text-link underline-offset-2 hover:underline ${touchLinkClassName}`}>
             {t("back")}
           </Link>
         </p>

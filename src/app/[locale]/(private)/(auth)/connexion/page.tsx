@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { LoginForm } from "@/components/auth/login-form";
+import { touchLinkClassName } from "@/components/ui/text-link";
 import { Link, redirect } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
 import { currentMember } from "@/lib/auth/current-user";
@@ -54,7 +55,7 @@ export default async function SignInPage({ params, searchParams }: Props) {
       footer={
         <p>
           {t("noAccount")}{" "}
-          <Link href={next ? { pathname: "/inscription", query: { next } } : "/inscription"} className="font-medium text-link underline-offset-2 hover:underline">
+          <Link href={next ? { pathname: "/inscription", query: { next } } : "/inscription"} className={`font-medium text-link underline-offset-2 hover:underline ${touchLinkClassName}`}>
             {t("create")}
           </Link>
         </p>

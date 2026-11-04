@@ -115,18 +115,19 @@ const COLORS = {
 
 const FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, Tahoma, sans-serif";
 
-const FOOTER: Record<MailLocale, { auto: string; reply: string; publisher: (who: MailPublisher) => string; site: string }> = {
+/** `publisher` is the words before the identity ("Édité par "): the identity itself is Latin script. */
+const FOOTER: Record<MailLocale, { auto: string; reply: string; publisher: string; site: string }> = {
   fr: {
     auto: "E-mail automatique, merci de ne pas répondre.",
     reply: "Votre réponse à cet e-mail parvient à notre équipe.",
-    publisher: (who) => `Édité par ${who.name} · ${who.address}`,
+    publisher: "Édité par ",
     site: "Aller sur Aalan",
   },
   ar: {
     auto: "بريد إلكتروني آلي، يرجى عدم الرد عليه.",
     reply: "يصل ردّك على هذا البريد إلى فريقنا.",
-    publisher: (who) => `الناشر: ${who.name} · ${who.address}`,
-    site: "الذهاب إلى Aalan",
+    publisher: "الناشر: ",
+    site: "الذهاب إلى أعلان",
   },
 };
 
@@ -216,12 +217,26 @@ function sectionText(section: MailSection): string[] {
   return lines;
 }
 
+/**
+ * A Latin-script run (publisher, address, host, URL) inside Arabic copy, isolated so that the bidi
+ * algorithm neither reorders it nor pulls the Arabic punctuation into it (audit Z1-17): a `dir="ltr"`
+ * span in HTML (isolating by default), FSI/PDI marks in the text part. French copy is left as is.
+ */
+function ltrHtml(value: string, rtl: boolean): string {
+  return rtl ? `<span dir="ltr">${escapeHtml(value)}</span>` : escapeHtml(value);
+}
+
+function ltrText(value: string, rtl: boolean): string {
+  return rtl ? `\u2068${value}\u2069` : value;
+}
+
 export function renderLayout(input: LayoutInput): BuiltMail {
   const rtl = input.lang === "ar";
   const dir = rtl ? "rtl" : "ltr";
   const align = rtl ? "right" : "left";
   const footer = FOOTER[input.lang];
-  const publisher = footer.publisher(input.publisher ?? currentPublisher);
+  const who = input.publisher ?? currentPublisher;
+  const identity = `${who.name} · ${who.address}`;
   const siteHost = hostOf(input.siteUrl);
   const body: string[] = [];
 
@@ -261,8 +276,8 @@ export function renderLayout(input: LayoutInput): BuiltMail {
     `<tr><td style="padding:32px 28px;background:${COLORS.card};border:1px solid ${COLORS.cardBorder};border-radius:16px;text-align:${align};">${body.join("")}</td></tr>` +
     // Footer
     `<tr><td style="padding:24px 8px 0;text-align:${align};">` +
-    `<p style="margin:0 0 6px;font-size:12px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(publisher)}</p>` +
-    `<p style="margin:0 0 6px;font-size:12px;line-height:1.5;color:${COLORS.muted};"><a href="${escapeHtml(input.siteUrl)}" style="color:${COLORS.link};text-decoration:underline;">${escapeHtml(footer.site)}</a> · ${escapeHtml(siteHost)}</p>` +
+    `<p style="margin:0 0 6px;font-size:12px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(footer.publisher)}${ltrHtml(identity, rtl)}</p>` +
+    `<p style="margin:0 0 6px;font-size:12px;line-height:1.5;color:${COLORS.muted};"><a href="${escapeHtml(input.siteUrl)}" style="color:${COLORS.link};text-decoration:underline;">${escapeHtml(footer.site)}</a> · ${ltrHtml(siteHost, rtl)}</p>` +
     `<p style="margin:0;font-size:12px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(input.replyTo ? footer.reply : footer.auto)}</p>` +
     `</td></tr>` +
     `</table></td></tr></table></body></html>`;
@@ -271,7 +286,7 @@ export function renderLayout(input: LayoutInput): BuiltMail {
   if (input.action) lines.push(`${input.action.label} : ${input.action.url}`, "");
   for (const link of input.links ?? []) lines.push(`${link.label} ${link.url}`, "");
   for (const text of input.closing ?? []) lines.push(text, "");
-  lines.push("—", publisher, `${footer.site} : ${input.siteUrl}`, input.replyTo ? footer.reply : footer.auto);
+  lines.push("—", `${footer.publisher}${ltrText(identity, rtl)}`, `${footer.site}${rtl ? ": " : " : "}${ltrText(input.siteUrl, rtl)}`, input.replyTo ? footer.reply : footer.auto);
   const text = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 
   return { subject: input.subject, html, text, ...(input.replyTo ? { replyTo: input.replyTo } : {}) };

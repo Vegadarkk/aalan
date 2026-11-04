@@ -15,6 +15,7 @@ import { coopFor } from "@/lib/security/headers";
 import { checkPageLimits, isMeteredPath, pathLocale, tooManyPagesHtml, TOO_MANY_CSP } from "@/lib/rate-limit/proxy-limits";
 import { challengeUrlPath } from "@/lib/security/challenge-path";
 import { mediaBaseUrl } from "@/lib/storage/keys";
+import { robotsTag } from "@/lib/security/robots";
 
 const handleI18nRouting = createMiddleware(routing);
 
@@ -91,9 +92,13 @@ function decorate(response: NextResponse, host: "public" | "admin", policy: stri
   if (adsTwin && cspHeaderName() === "Content-Security-Policy") response.headers.set("Content-Security-Policy-Report-Only", adsTwin);
   response.headers.set("Cross-Origin-Opener-Policy", coopFor(host));
   response.headers.set("Reporting-Endpoints", 'csp="/api/csp-report"');
-  if (host === "admin" || process.env.APP_ENV !== "prod") {
-    response.headers.set("X-Robots-Tag", "noindex, nofollow");
-  }
+  return response;
+}
+
+/** Robots header of a page response (src/lib/security/robots.ts). */
+function withRobots(response: NextResponse, host: "public" | "admin", pathname: string): NextResponse {
+  const tag = robotsTag(host, pathname);
+  if (tag) response.headers.set("X-Robots-Tag", tag);
   return response;
 }
 
@@ -142,7 +147,7 @@ function adminHost(request: NextRequest): NextResponse {
   headers.set("Content-Security-Policy", policy);
   const url = request.nextUrl.clone();
   url.pathname = pathname === "/" ? "/admin" : `/admin${pathname}`;
-  return decorate(NextResponse.rewrite(url, { request: { headers } }), "admin", policy);
+  return withRobots(decorate(NextResponse.rewrite(url, { request: { headers } }), "admin", policy), "admin", url.pathname);
 }
 
 /** Second path segment: "/fr/connexion/..." -> "connexion". */
@@ -232,7 +237,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const deviceId = readDeviceId(request.cookies.get(DEVICE_COOKIE)?.value);
     if (dynamicPublic) {
       const twin = ads ? csp("private", nonce, [...PINNED_SCRIPT_HASHES], "strict") : undefined;
-      const response = decorate(forwardWithNonce(routed, request, policy, nonce), "public", policy, twin);
+      const response = withRobots(decorate(forwardWithNonce(routed, request, policy, nonce), "public", policy, twin), "public", pathname);
       // Like shared pages, no locale cookie. The device cookie makes the per-device search limits
       // apply (D13) instead of the anonymous bucket of the IP. It is not forwarded to this render:
       // a request without it is an unknown device on its IP (§6), or dropping cookies would skip
@@ -247,13 +252,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     // render gets the id (x-device-id) the cookie names, or the one set here: the auth pages derive
     // the Google sign-in nonce from it, and the API recomputes it from the same cookie.
     const fresh = deviceId ? null : newDeviceCookie();
-    const response = decorate(forwardWithNonce(routed, request, policy, nonce, fresh?.id ?? deviceId ?? undefined), "public", policy);
+    const response = withRobots(decorate(forwardWithNonce(routed, request, policy, nonce, fresh?.id ?? deviceId ?? undefined), "public", policy), "public", pathname);
     if (fresh) setDeviceCookie(response, fresh.value);
     return response;
   }
   // Fallback policy; the server hook swaps 'unsafe-inline' for the hashes of this HTML.
   const ads = adsConfigured();
-  const response = decorate(routed, "public", csp("public", undefined, undefined, ads ? "broad" : undefined), ads ? csp("public", undefined, undefined, "strict") : undefined);
+  const response = withRobots(decorate(routed, "public", csp("public", undefined, undefined, ads ? "broad" : undefined), ads ? csp("public", undefined, undefined, "strict") : undefined), "public", pathname);
   response.headers.set(INLINE_HASH_MARKER, "1");
   // Shared pages carry no cookie, so Cloudflare can cache them. The locale cookie is written by
   // the locale switcher (next-intl Link) and still read here for the "/" redirect.

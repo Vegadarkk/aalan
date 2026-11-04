@@ -68,7 +68,7 @@ export async function memberWithClaims(claims: Claims | null): Promise<Member> {
     email,
     displayName: "Karim Testeur",
     locale: "fr",
-    consents: { cguVersion: "2026-10", transfersVersion: "2026-10", marketing: false },
+    consents: { cguVersion: "2026-10", marketing: false },
     provider: "password",
     activated: claims !== null,
     now: THIRTY_DAYS_AGO(),

@@ -148,7 +148,7 @@ export interface AccountExport {
     phoneVerifiedAt: string | null;
     legalName: string | null;
     providers: string[];
-    consents: { cgu: { version: string; at: string }; transfers: { version: string; at: string }; marketing: boolean; marketingConsent: { version: string; at: string } | null };
+    consents: { cgu: { version: string; at: string }; transfers: { version: string; at: string } | null; marketing: boolean; marketingConsent: { version: string; at: string } | null };
     notifications: { messagesEmail: boolean };
     sanctions: { strikeLevel: number; lastAt: string | null; suspendedUntil: string | null };
     reporting: { abusiveUntil: string | null; warnedAt: string | null };

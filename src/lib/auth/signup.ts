@@ -14,7 +14,6 @@ import { pepperedHash } from "@/lib/security/hash";
 import { displayNameFor, errorCode, userByEmail } from "./accounts";
 import { anonymous, beginAnonymous, checkTurnstile, deviceIdOf, respond, uniformDuration, type AnonymousFlow } from "./anonymous";
 import { sendSignupExistingMail, sendVerificationMail } from "./mails";
-import { transfersConsentVersion } from "./consent-version";
 import { deleteOrphanRecord, recordState } from "./orphan";
 import { assertPasswordPolicy } from "./password-policy";
 
@@ -87,7 +86,7 @@ async function signup(request: Request): Promise<Response> {
       email: input.email,
       displayName: input.displayName,
       locale: input.locale,
-      consents: { cguVersion: CGU_VERSION, transfersVersion: transfersConsentVersion(), marketing: input.consents.marketing },
+      consents: { cguVersion: CGU_VERSION, marketing: input.consents.marketing },
       provider: "password",
       ...(deviceId ? { signupDeviceHash: pepperedHash("did", deviceId) } : {}),
     });

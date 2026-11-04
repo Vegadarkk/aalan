@@ -132,7 +132,7 @@ describe("users repository", () => {
     email: "Yasmine@Example.com",
     displayName: "Yasmine",
     locale: "fr" as const,
-    consents: { cguVersion: "2026-10", transfersVersion: "2026-10", marketing: false },
+    consents: { cguVersion: "2026-10", marketing: false },
     provider: "password" as const,
     now: NOW,
   };

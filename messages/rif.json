@@ -419,41 +419,10 @@
     },
     "consents": {
       "cgu": "Ɣriɣ d qebleɣ <link>tiwtilin n useqdec</link> n Aalan.",
-      "transfers": "Ttaǧǧaɣ s ṣṣaḥ Aalan ad tazen isefka inu berra n Lmeɣrib, ɣer Union européenne d Marikan, i tcerikat i d-yuran ddaw-a d i tawuri i d-yennan (article 44 n loi 09-08).",
-      "transfersRequired": "Bla aqbal-a, amiḍan war yezmir ad yettwasnulfu.",
-      "transfersDetails": "Ẓar tcerikat d tawuri nsent",
-      "transfersEu": "Deg Union européenne",
-      "transfersUs": "Deg Marikan",
-      "transfersNote": "Zzat ma ad yettwazen kra ɣer tmusni tamsnalit, uṭṭunen, e-mails d ismawen ttwaffren. Ḍḍmanat n yal asiweḍ yuran deg <link>isefka d tbaḍnit</link>.",
-      "roles": {
-        "oracle": "Serveur i yesseddayen asit, tarzzut d tiwuriwin n tmacint, deg Paris.",
-        "firestore": "Lqaɛida n isefka, deg Paris.",
-        "r2": "Aḥraz n tiwlafin d sauvegardes.",
-        "sentry": "Aḍfar n tuccḍiwin n tteknik.",
-        "brevo": "Asiweḍ n e-mails n teɣellist i lweqt n lḥaǧa, deg Fransa.",
-        "googleAuth": "Tukcimt d ussegged n imiḍanen.",
-        "adsense": "Lpublicité, melmi ma tebda, d ɣas s uqbal nnec i yettwafken waḥd-s.",
-        "cloudflare": "Asiweḍ d uḥraz n usit, tasenqedt anti-robot (Turnstile) d IA i lweqt n lḥaǧa i usenqed n annonces (Workers AI), deg réseau nnes n marra ddunit.",
-        "anthropic": "Tallalt deg usenqed n annonces, asettef n usmekti d tiẓri n urecwar, taɣuri n tegtint n agrément n win yettakran ṭumubilat, d Amallal n Aalan.",
-        "openai": "Asenqed n tɣawsiwin i lweqt n lḥaǧa, melmi ma yebda.",
-        "meta": "Tasenqedt n uṭṭun n tilifun nnec s WhatsApp.",
-        "resend": "Asiweḍ n e-mails.",
-        "stripe": "Axelleṣ, melmi ɣa yebdu uzenzi.",
-        "revenuecat": "Abonnements n Pro, melmi ɣa yebdu uzenzi."
-      },
       "marketing": "Xseɣ ad yi-d awḍen s e-mail tiɣawsiwin timaynutin d iɛerḍen n Aalan. War ixs ca, d yezmer ad yettwakkes melmi ma yella.",
       "privacy": "Mamec nesxdam isefka nnec yura deg <link>isefka d tbaḍnit</link>.",
+      "transfersNotice": "Vos données sont hébergées dans l'Union européenne et certaines sont traitées par des prestataires hors du Maroc (voir la <link>Politique de confidentialité, §7</link>).",
       "legend": "Ayen tqebleḍ"
-    },
-    "reconsent": {
-      "title": "Sentem aqbal nnec ḥima ad tkemmleḍ",
-      "lead": "Nessefhem uggar tabdart n tcerikat i yettaɣen isefka nnec berra n Lmeɣrib, s tawuri d wadeg n yal yiwet. Aqbal nnec n zzat yella x uḍris war yesfhem aṭas : ḥima ad tkemmleḍ s umiḍan nnec, fk-it tikkelt nniḍen.",
-      "submit": "Qbel d kemmel",
-      "accepted": "Aqbal nnec yettwaḥrez.",
-      "refuseTitle": "War texseḍ ca ad tefkeḍ aqbal-a ?",
-      "refuseBody": "Bla aqbal-a, amiḍan nnec war yezmir ad yettwasxdem : yetteddu s tcerikat-a. Tzemmreḍ ad teffɣeḍ, niɣ ad tekkseḍ amiḍan nnec d ad d-tawiḍ isefka nnec zi <settings>iɣewwaren nnec</settings>. I kra n usteqsi, ari ɣer <mail>{dpo}</mail>.",
-      "signOut": "Ffeɣ",
-      "signedOut": "Teffɣeḍ."
     },
     "forgot": {
       "title": "Tettuḍ awal n uɛeddi",

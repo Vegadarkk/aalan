@@ -112,13 +112,14 @@ Vous pouvez vous inscrire avec une adresse e-mail et un mot de passe, ou avec vo
 
 ### 3.3 Consentements demandés à l'inscription {#comptes-3}
 
-L'inscription comporte trois cases distinctes, aucune n'est cochée d'avance :
+L'inscription comporte deux cases distinctes, aucune n'est cochée d'avance :
 
 1. **Acceptation des CGU** (obligatoire).
-2. **Consentement exprès aux transferts de données hors du Maroc** (obligatoire), au sens de l'art. 44 de la loi marocaine 09-08. La case nomme chaque prestataire établi aux États-Unis et son rôle : Google (authentification des comptes et connexion avec Google ; publicité, seulement si vous l'acceptez dans la bannière de cookies), Anthropic et OpenAI (aide à la modération), <!--if:whatsappEnabled-->Meta (vérification du téléphone par WhatsApp), <!--endif-->Resend (envoi des e-mails), Cloudflare (diffusion et protection du site, vérification anti-robot, IA de secours), Stripe et RevenueCat (paiements, à l'ouverture des ventes). Le détail figure dans la politique de confidentialité (§18.3).
-3. **E-mails d'information et offres d'{brand}** (facultatif). Vous pouvez vous désabonner à tout moment.
+2. **E-mails d'information et offres d'{brand}** (facultatif). Vous pouvez vous désabonner à tout moment.
 
-Chaque consentement est enregistré avec sa version et sa date. Si le texte d'un consentement change, il vous est présenté à nouveau.
+Elle vous informe aussi que vos données sont hébergées dans l'Union européenne et que certaines sont traitées par des prestataires hors du Maroc (§18.3). Ces transferts sont nécessaires au service et ne demandent pas de consentement.
+
+Chaque choix est enregistré avec sa version et sa date. Si le texte de l'un d'eux change, il vous est présenté à nouveau.
 
 ### 3.4 Sécurité de votre compte {#comptes-4}
 
@@ -806,12 +807,12 @@ Une personne dont les données figurent dans une annonce peut exercer ses droits
 
 ### 18.3 Transferts hors du Maroc {#donnees-3}
 
-Certaines données sont traitées hors du Maroc, dans l'Union européenne et aux États-Unis, par les prestataires nommés à l'inscription (§3.3) et dans la politique de confidentialité.
+Certaines données sont traitées hors du Maroc, dans l'Union européenne et aux États-Unis, par les prestataires listés dans la politique de confidentialité (§7.2).
 
-- Pour les utilisateurs au Maroc, ces transferts reposent sur votre consentement exprès (loi 09-08, art. 44).
+- Pour les utilisateurs au Maroc, ces transferts sont nécessaires à l'exécution des présentes CGU (loi 09-08, art. 44, point 4) : ils ne reposent pas sur un consentement.
 - Depuis l'Union européenne, les transferts vers les États-Unis reposent sur le cadre de protection des données UE–États-Unis ou sur les clauses contractuelles types de la Commission européenne, selon le prestataire.
 
-Si vous refusez une nouvelle version de ce consentement, ou si vous le retirez (politique de confidentialité, §7.3), votre compte est conservé, mais les fonctions qui exigent ces transferts restent désactivées. La connexion et les e-mails de service en font partie : votre compte peut alors ne plus être utilisable. Vous pouvez aussi fermer votre compte (§21).
+Ces transferts font partie du fonctionnement du service. Pour les arrêter, vous pouvez fermer votre compte (§21).
 
 ### 18.4 Mesures contre la copie {#donnees-4}
 

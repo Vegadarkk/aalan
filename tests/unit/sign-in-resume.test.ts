@@ -39,7 +39,7 @@ describe("contact fragment", () => {
 });
 
 describe("sign-up next", () => {
-  const base = { email: "amina@example.com", password: "Une phrase assez longue 42", displayName: "Amina", locale: "fr", consents: { cgu: true, transfers: true, marketing: false }, turnstileToken: "token" };
+  const base = { email: "amina@example.com", password: "Une phrase assez longue 42", displayName: "Amina", locale: "fr", consents: { cgu: true, marketing: false }, turnstileToken: "token" };
 
   it("accepts a same-site path only", () => {
     expect(signupSchema.safeParse({ ...base, next: "/fr/annonce/velo-abcd2345" }).success).toBe(true);

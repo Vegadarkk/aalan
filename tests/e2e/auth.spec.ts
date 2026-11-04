@@ -88,7 +88,6 @@ async function createVerifiedAccount(page: Page, request: APIRequestContext, pre
   await waitForTurnstile(page);
   await fillSignup(page, { name, email, password: PASSWORD });
   await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-  await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
   await waitForTurnstile(page);
   await page.getByRole("button", { name: "Créer mon compte" }).click();
   await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible({ timeout: 15_000 });
@@ -110,7 +109,6 @@ test.describe("account", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Créer un compte" })).toBeVisible();
     await fillSignup(page, { name, email, password: PASSWORD });
     await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
-    await page.getByRole("checkbox", { name: /transférer mes données personnelles/i }).check();
     await waitForTurnstile(page);
     await page.getByRole("button", { name: "Créer mon compte" }).click();
     await expect(page.getByRole("heading", { name: "Vérifiez votre boîte mail" })).toBeVisible({ timeout: 15_000 });
@@ -176,7 +174,8 @@ test.describe("account", () => {
     await expect(page.getByText("Le nom doit faire au moins 2 caractères.")).toBeVisible();
     await expect(page.getByText("Entrez une adresse e-mail valide.")).toBeVisible();
     await expect(page.getByText(/au moins 8 caractères\./)).toBeVisible();
-    await expect(page.getByText("Cette case est obligatoire pour continuer.")).toHaveCount(2);
+    // Only the CGU box is required (the transfers box is gone, audit B2).
+    await expect(page.getByText("Cette case est obligatoire pour continuer.")).toHaveCount(1);
     // Focus lands on the first invalid field.
     await expect(page.getByLabel("Nom affiché")).toBeFocused();
   });

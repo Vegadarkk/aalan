@@ -42,7 +42,7 @@ export interface CreateAccountInput {
   email: string;
   displayName: string;
   locale: Locale;
-  consents: { cguVersion: string; transfersVersion: string; marketing: boolean };
+  consents: { cguVersion: string; marketing: boolean };
   provider: "password" | "google.com";
   /** Google accounts arrive with a verified e-mail: the account is activated at once. */
   activated?: boolean;
@@ -80,7 +80,6 @@ export async function createAccountDocuments(input: CreateAccountInput): Promise
     emailNormHash: hash,
     consents: {
       cgu: { version: input.consents.cguVersion, at: now },
-      transfers: { version: input.consents.transfersVersion, at: now },
       marketing: input.consents.marketing,
       ...(input.consents.marketing ? { marketingConsent: { version: MARKETING_CONSENT_VERSION, at: now } } : {}),
     },
@@ -200,12 +199,6 @@ export async function updateNotificationPreferences(uid: string, patch: Notifica
   if (patch.messagesEmail !== undefined) update["notifications.messagesEmail"] = patch.messagesEmail;
   if (Object.keys(update).length === 0) return;
   await privateRef(uid).update(update);
-  void consume("firestore.writes", 1);
-}
-
-/** Renewed transfers consent (art. 44 loi 09-08): only consents.transfers changes (a dotted path in update()). */
-export async function updateTransfersConsent(uid: string, version: string, now = new Date()): Promise<void> {
-  await privateRef(uid).update({ "consents.transfers": { version, at: now } });
   void consume("firestore.writes", 1);
 }
 

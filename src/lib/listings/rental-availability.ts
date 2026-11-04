@@ -131,3 +131,15 @@ export function isFresh(updatedAt: Date | number | null | undefined, now: Date |
   if (updatedAt === null || updatedAt === undefined) return false;
   return freshUntil(updatedAt) > (typeof now === "number" ? now : now.getTime());
 }
+
+/**
+ * Day price of a rental for `days` days: the longest-term rate the agency declared that applies
+ * (zod-free here: the listing page's estimate uses it, audit L4-19).
+ */
+export function rentalDayRate(attributes: Readonly<Record<string, unknown>>, price: number, days: number): number {
+  const week = attributes["rate-7-days"];
+  const month = attributes["rate-30-days"];
+  if (days >= 30 && typeof month === "number") return month;
+  if (days >= 7 && typeof week === "number") return week;
+  return price;
+}

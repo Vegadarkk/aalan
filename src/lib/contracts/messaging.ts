@@ -129,6 +129,8 @@ export interface ConversationView {
   appointment?: AppointmentView | null;
   /** The current booking request of a car rental (src/lib/contracts/rental-requests.ts); null when none. */
   rentalRequest?: RentalRequestView | null;
+  /** The requests sent before the current one, newest first (audit L4-04). */
+  rentalHistory?: RentalRequestView[];
   /** The buyer's current price offer (src/lib/contracts/offers.ts); null when none. */
   offer?: OfferView | null;
   /** The listing took price offers when the conversation started (the buyer's « Faire une offre »). */

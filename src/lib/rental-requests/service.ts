@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { datedRental, type RentalUnit } from "@/config/categories";
 import { getAbuseRules } from "@/lib/config/runtime";
-import { rentalRequestMarker, rentalRequestProblem, type RentalRequestAction, type RentalRequestEvent, type RentalRequestInput, type RentalRequestResponse } from "@/lib/contracts/rental-requests";
+import { RENTAL_HISTORY_MAX, rentalRequestMarker, rentalRequestProblem, type RentalRequestAction, type RentalRequestEvent, type RentalRequestInput, type RentalRequestResponse } from "@/lib/contracts/rental-requests";
 import { getListing, type ListingRecord } from "@/lib/db/repositories/listings";
 import { rentalRequestSchema, type RentalRequestDoc, type RentalRequestEventDoc } from "@/lib/db/schemas";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -13,13 +13,14 @@ import { ConversationAccessError, getParticipantConversation, type ConversationR
 import { screenPlace } from "@/lib/messaging/place";
 import type { MessageKeywords } from "@/lib/messaging/risk";
 import { appendSystemStep, type MessagingActor } from "@/lib/messaging/service";
-import { rentalRequestView } from "./views";
+import { rentalHistoryView, rentalRequestView } from "./views";
 
 // Booking request steps of a car rental (rental pack §6), and of a holiday home's stay by nights
 // (seasonal rental conception §3: arrival and departure, the host answers). The renter (the conversation's buyer)
 // asks for a period and a pick-up place, or replaces an unanswered request; the agency (the seller)
 // accepts, writing the days on the listing as unavailable when asked first, or declines; the renter
-// may withdraw an unanswered request. Each step is one system message appended in the message
+// may withdraw an unanswered request. A new request after an answered one keeps that one in the
+// conversation's history (audit L4-04). Each step is one system message appended in the message
 // transaction (access checks of D4), so it reaches the other participant like a message. Nothing
 // is booked or paid through the site: the card says the agency's written contract concludes it.
 
@@ -62,6 +63,8 @@ export function nextRentalStep(current: RentalRequestDoc | undefined, action: Re
       to: action.to,
       ...(unit === "night" ? { unit } : {}),
       ...(pickup ? { pickup } : {}),
+      // A stay's travellers only: a car rental has none.
+      ...(unit === "night" && action.guests ? { guests: action.guests } : {}),
       createdAt: now,
       updatedAt: now,
     });
@@ -95,6 +98,17 @@ export function rentalListingUnit(listing: ListingRecord | null): RentalUnit {
 }
 
 /** The listing days a request takes: a stay's nights leave its departure day free. */
+/**
+ * The earlier requests once `request` replaces `current` (audit L4-04): an answered or withdrawn
+ * request is kept, newest first, without its place (the renter's words stay in the thread's
+ * message, where moderation hides them); an unanswered one that the renter changes is not.
+ */
+export function nextRentalHistory(current: RentalRequestDoc | undefined, history: readonly RentalRequestDoc[] | undefined, event: RentalRequestEvent): RentalRequestDoc[] | undefined {
+  if (event !== "requested" || !current || current.status === "requested") return undefined;
+  const { pickup: _pickup, ...kept } = current;
+  return [kept, ...(history ?? []).filter((item) => item.id !== current.id)].slice(0, RENTAL_HISTORY_MAX);
+}
+
 export function requestedPeriod(request: Pick<RentalRequestDoc, "from" | "to" | "unit">): RentalPeriod {
   return request.unit === "night" ? { from: request.from, to: dayString(dayNumber(request.to) - 1) } : { from: request.from, to: request.to };
 }
@@ -132,14 +146,15 @@ export async function actOnRentalRequest(actor: MessagingActor, cid: string, act
     nextRentalStep(current, action, roleOf(conversation, actor.uid), now);
     if (current) blocked = await blockRentalDates(actor, conversation.listingId, requestedPeriod(current), now);
   }
-  let result: { request: RentalRequestDoc; role: RentalRole } | undefined;
+  let result: { request: RentalRequestDoc; history: RentalRequestDoc[]; role: RentalRole } | undefined;
   const messageId = await appendSystemStep(
     actor,
     cid,
     (conversation) => {
       const role = roleOf(conversation, actor.uid);
       const step = nextRentalStep(conversation.rentalRequest, action, role, now, { blocked: blocked === true, unit, keywords });
-      result = { request: step.request, role };
+      const history = nextRentalHistory(conversation.rentalRequest, conversation.rentalHistory, step.event);
+      result = { request: step.request, history: history ?? conversation.rentalHistory ?? [], role };
       const rentalRequest: RentalRequestEventDoc = {
         id: step.request.id,
         event: step.event,
@@ -148,16 +163,18 @@ export async function actOnRentalRequest(actor: MessagingActor, cid: string, act
         ...(step.request.unit ? { unit: step.request.unit } : {}),
         // The renter's own words travel with the request only: that message is the one a member reports (A-02).
         ...(step.request.pickup && (step.event === "requested" || step.event === "changed") ? { pickup: step.request.pickup } : {}),
+        ...(step.request.guests && (step.event === "requested" || step.event === "changed") ? { guests: step.request.guests } : {}),
       };
-      return { fields: { rentalRequest: step.request }, message: { text: rentalRequestMarker(step.event), rentalRequest } };
+      return { fields: { rentalRequest: step.request, ...(history ? { rentalHistory: history } : {}) }, message: { text: rentalRequestMarker(step.event), rentalRequest } };
     },
     now,
   );
   if (!result) throw new Error("rental request step without a result");
-  return { rentalRequest: rentalRequestView(result.request, result.role === "buyer"), messageId, blocked };
+  const buyer = result.role === "buyer";
+  return { rentalRequest: rentalRequestView(result.request, buyer), rentalHistory: rentalHistoryView(result.history, buyer), messageId, blocked };
 }
 
 /** The first message's request (POST /api/conversations with `rentalRequest`). */
 export function requestAction(input: RentalRequestInput): RentalRequestAction {
-  return { action: "request", from: input.from, to: input.to, ...(input.pickup ? { pickup: input.pickup } : {}) };
+  return { action: "request", from: input.from, to: input.to, ...(input.pickup ? { pickup: input.pickup } : {}), ...(input.guests ? { guests: input.guests } : {}) };
 }

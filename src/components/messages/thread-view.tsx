@@ -6,7 +6,7 @@ import { ArrowLeft, CalendarPlus, HandCoins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
-import { RentalRequestCard } from "@/components/rental/rental-request-card";
+import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/rental-request-card";
 import { OfferCard } from "@/components/offers/offer-card";
 import type { OfferDialogProps } from "@/components/offers/offer-dialog";
 import type { AppointmentDialogProps } from "@/components/appointments/appointment-dialog";
@@ -135,6 +135,7 @@ function ThreadSkeleton({ label }: { label: string }) {
 export function ThreadView({ cid }: { cid: string }) {
   const t = useTranslations("Messaging.thread");
   const appointmentText = useTranslations("Appointments");
+  const rentalText = useTranslations("RentalRequest");
   const card = useTranslations("ListingCard");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -146,7 +147,8 @@ export function ThreadView({ cid }: { cid: string }) {
   const [attempt, setAttempt] = useState(0);
   const [sendError, setSendError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [picker, setPicker] = useState<{ open: boolean; kind?: AppointmentKind } | null>(null);
+  /** The slot picker; a rental's card opens it on one kind, from the pick-up or arrival day (audit L4-08). */
+  const [picker, setPicker] = useState<{ open: boolean; kind?: AppointmentKind; kinds?: readonly AppointmentKind[]; startDay?: string; title?: string } | null>(null);
   const [offerForm, setOfferForm] = useState<{ open: boolean; answering?: { id: string; amount: number }; price: number } | null>(null);
   const offerText = useTranslations("Offers");
   const scroller = useRef<HTMLDivElement>(null);
@@ -399,7 +401,7 @@ export function ThreadView({ cid }: { cid: string }) {
     void fetchNewer();
   }
   function onRentalRequest(response: RentalRequestResponse) {
-    updateData((data) => ({ ...data, conversation: { ...data.conversation, rentalRequest: response.rentalRequest } }));
+    updateData((data) => ({ ...data, conversation: { ...data.conversation, rentalRequest: response.rentalRequest, rentalHistory: response.rentalHistory } }));
     const view = current.current;
     if (view.kind === "ready") putRow(view.data.conversation);
     void fetchNewer();
@@ -536,9 +538,20 @@ export function ThreadView({ cid }: { cid: string }) {
           writable={writable}
           now={now}
           onChange={onRentalRequest}
-          onPickup={conversation.appointment && isActive(conversation.appointment, now) ? undefined : () => setPicker({ open: true, kind: "pickup" })}
+          onNote={send}
+          onPickup={
+            conversation.appointment && isActive(conversation.appointment, now)
+              ? undefined
+              : () => {
+                  const request = conversation.rentalRequest;
+                  if (!request) return;
+                  const kind: AppointmentKind = request.unit === "night" ? "check_in" : "pickup";
+                  setPicker({ open: true, kind, kinds: [kind], startDay: request.from, title: rentalText(kind === "check_in" ? "card.home.pickupAppointment" : "card.pickupAppointment") });
+                }
+          }
         />
       ) : null}
+      {conversation.rentalHistory && conversation.rentalHistory.length > 0 ? <RentalRequestHistory history={conversation.rentalHistory} now={now} /> : null}
 
       {conversation.offer ? (
         <OfferCard
@@ -567,7 +580,10 @@ export function ThreadView({ cid }: { cid: string }) {
           writable={writable}
           now={now}
           onChange={onAppointment}
-          onReschedule={() => setPicker({ open: true, kind: conversation.appointment?.kind })}
+          onReschedule={() => {
+            const kind = conversation.appointment?.kind;
+            setPicker({ open: true, kind, ...(kind === "check_in" ? { kinds: [kind] } : {}) });
+          }}
         />
       ) : null}
 
@@ -651,7 +667,10 @@ export function ThreadView({ cid }: { cid: string }) {
                 aria-label={appointmentText("propose")}
                 title={appointmentText("propose")}
                 data-testid="appointment-open"
-                onClick={() => setPicker({ open: true, kind: conversation.appointment?.kind })}
+                onClick={() => {
+                  const kind = conversation.appointment?.kind;
+                  setPicker({ open: true, kind, ...(kind === "check_in" ? { kinds: [kind] } : {}) });
+                }}
               >
                 <CalendarPlus aria-hidden="true" />
               </Button>
@@ -681,6 +700,9 @@ export function ThreadView({ cid }: { cid: string }) {
           onOpenChange={(open) => setPicker((current) => (current ? { ...current, open } : current))}
           counterpartName={name}
           defaultKind={picker.kind}
+          kinds={picker.kinds}
+          startDay={picker.startDay}
+          title={picker.title}
           rescheduling={conversation.appointment ? isActive(conversation.appointment, now) : false}
           onDone={(response) => {
             onAppointment(response);

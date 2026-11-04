@@ -34,7 +34,7 @@ import {
   appointmentIdSchema,
   slotSchema,
 } from "@/lib/contracts/appointments";
-import { RENTAL_PICKUP_MAX, RENTAL_REQUEST_EVENTS, RENTAL_REQUEST_STATUSES, rentalRequestIdSchema } from "@/lib/contracts/rental-requests";
+import { RENTAL_GUESTS_MAX, RENTAL_HISTORY_MAX, RENTAL_PICKUP_MAX, RENTAL_REQUEST_EVENTS, RENTAL_REQUEST_STATUSES, rentalRequestIdSchema } from "@/lib/contracts/rental-requests";
 import { OFFER_EVENTS, OFFER_STATUSES, offerIdSchema } from "@/lib/contracts/offers";
 import { REPORT_PRIORITIES, REPORT_REASON_IDS, REPORT_TARGET_TYPES } from "@/config/report-reasons";
 import { PAYMENT_URL_MAX } from "@/config/seller-payments";
@@ -702,6 +702,8 @@ export const rentalRequestSchema = z
     unit: z.literal("night").optional(),
     /** Links masked like a message (URL_MARKER). */
     pickup: z.string().max(RENTAL_PICKUP_MAX + 40).optional(),
+    /** A stay's travellers (audit L4-11). */
+    guests: z.number().int().min(1).max(RENTAL_GUESTS_MAX).optional(),
     /** Accepted with the days written on the listing as unavailable. */
     blocked: z.boolean().optional(),
     createdAt: ts,
@@ -719,6 +721,7 @@ export const rentalRequestEventSchema = z
     to: rentalDay,
     unit: z.literal("night").optional(),
     pickup: z.string().max(RENTAL_PICKUP_MAX + 40).optional(),
+    guests: z.number().int().min(1).max(RENTAL_GUESTS_MAX).optional(),
   })
   .strict();
 export type RentalRequestEventDoc = z.infer<typeof rentalRequestEventSchema>;
@@ -802,6 +805,8 @@ export const conversationSchema = z
     appointmentRemindAt: ts.optional(),
     /** The current booking request of a car rental (requested, answered or withdrawn); the thread keeps every step. */
     rentalRequest: rentalRequestSchema.optional(),
+    /** The requests the renter sent before the current one, newest first, without their place (audit L4-04). */
+    rentalHistory: z.array(rentalRequestSchema).max(RENTAL_HISTORY_MAX).optional(),
     /** The buyer's current price offer (open, answered, withdrawn or expired); the thread keeps every step. */
     offer: offerSchema.optional(),
     /** Due time of the pending offer's expiry (job offer-expiry); absent once answered. */

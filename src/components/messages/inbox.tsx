@@ -62,7 +62,8 @@ function ConversationRow({ row, selected, archived, now }: { row: ConversationVi
     hidden: t("hidden"),
     maskedLink: t("maskedLink"),
     appointment: (event) => appointment(event),
-    rentalRequest: (event) => rentalRequest(event),
+    // A stay reads « Demande de séjour » (audit L4-06): the conversation's request tells the unit.
+    rentalRequest: (event) => rentalRequest(row.rentalRequest?.unit === "night" ? `home.${event}` : event),
     offer: (event) => offer(event),
   });
   return (

@@ -7,14 +7,7 @@ import type { ListingDoc } from "@/lib/db/schemas";
 
 type Candidate = Pick<ListingDoc, "attributes" | "price">;
 
-/** Day price of a rental for `days` days: the longest-term rate the agency declared that applies. */
-export function rentalDayRate(attributes: Candidate["attributes"], price: number, days: number): number {
-  const week = attributes["rate-7-days"];
-  const month = attributes["rate-30-days"];
-  if (days >= 30 && typeof month === "number") return month;
-  if (days >= 7 && typeof week === "number") return week;
-  return price;
-}
+export { rentalDayRate } from "./rental-availability";
 
 export function rentalIssues(listing: Candidate, subcategory: Subcategory): FieldIssue[] {
   if (subcategory.id !== RENTAL_SUBCATEGORY) return [];

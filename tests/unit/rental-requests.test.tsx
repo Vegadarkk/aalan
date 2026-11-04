@@ -6,7 +6,9 @@ import fr from "../../messages/fr.json";
 import { requestedDates } from "@/components/listing/message-dialog";
 import { previewText } from "@/components/messages/inbox";
 import { rentalFragment } from "@/components/rental/rental-day";
-import { RentalRequestCard } from "@/components/rental/rental-request-card";
+import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/rental-request-card";
+import { RentalRequestBanner, shownRentalRequest } from "@/components/rental/rental-request-banner";
+import { rentalEstimate } from "@/components/rental/listing-availability";
 import { RentalRequestEventItem } from "@/components/rental/rental-request-event";
 import { moroccoTime } from "@/lib/appointments/time";
 import {
@@ -21,7 +23,8 @@ import {
 import type { RentalRequestDoc } from "@/lib/db/schemas";
 import { HttpError } from "@/lib/http/errors";
 import { dayNumber, dayString } from "@/lib/listings/rental-availability";
-import { nextRentalStep, requestedPeriod } from "@/lib/rental-requests/service";
+import { nextRentalHistory, nextRentalStep, requestedPeriod } from "@/lib/rental-requests/service";
+import { RENTAL_GUESTS_MAX, RENTAL_HISTORY_MAX } from "@/lib/rental-requests/rules";
 import { SEARCH_QUERY_KEYS } from "@/lib/search/params";
 
 // Booking requests of a car rental (rental pack §6) and of a holiday home's stay (seasonal rental
@@ -182,13 +185,15 @@ describe("thread", () => {
       options.locale,
     );
 
-  it("shows the agency the days, the place, block-these-days, available and not available", () => {
+  it("shows the agency the days, the place, available and not available (each confirmed in a second step)", () => {
     const html = card(view());
     expect(html).toContain('data-status="requested-theirs"');
     expect(html).toContain("⁨Youssef⁩ demande ce véhicule");
     expect(html).toContain("3 jours");
     expect(html).toContain("[lien masqué]");
-    expect(html).toContain('data-testid="rental-request-block"');
+    // Block-these-days and the optional word come with the confirmation (audit L4-07).
+    expect(html).not.toContain('data-testid="rental-request-block"');
+    expect(html).toContain('data-testid="rental-request-accept"');
     expect(html).toContain("Disponible");
     expect(html).toContain("Pas disponible");
     expect(html).toContain("ne prend ni acompte ni caution");
@@ -217,7 +222,7 @@ describe("thread", () => {
     expect(html).toContain("remise : ⁨Gare de Marrakech⁩");
     expect(render(<RentalRequestEventItem step={{ ...step, event: "accepted", byMe: true }} counterpartName="Youssef" time="10:02" />)).not.toContain("remise");
     expect(render(<RentalRequestEventItem step={step} counterpartName="Youssef" time="10:02" />, "ar")).toContain("يطلب");
-    expect(card(view(), { locale: "ar" })).toContain("حجب هذه التواريخ في الإعلان");
+    expect(card(view(), { locale: "ar" })).toContain("غير متاحة");
     const row = { lastMessage: { preview: rentalRequestMarker("declined"), mine: false, at: NOW, flagged: false } };
     expect(previewText(row, { hidden: "", maskedLink: "", rentalRequest: (event) => fr.RentalRequest.preview[event] })).toBe("Pas disponible aux dates demandées");
   });
@@ -228,11 +233,12 @@ describe("thread", () => {
     expect(host).toContain("⁨Youssef⁩ demande un séjour");
     expect(host).toContain("3 nuits");
     expect(host).toContain("Précisions : ⁨2 adultes, arrivée vers 18 h⁩");
-    expect(host).toContain("le jour du départ reste libre");
     expect(host).toContain("Le séjour se conclut directement avec l'annonceur");
     expect(card({ ...stay, requestedByMe: true }).replaceAll("&#x27;", "'")).toContain("En attente de la réponse de l'annonceur.");
-    const accepted = card({ ...stay, requestedByMe: true, status: "accepted", blocked: true });
-    expect(accepted).not.toContain('data-testid="rental-request-pickup"');
+    const accepted = card({ ...stay, requestedByMe: true, status: "accepted", blocked: true, guests: 4 });
+    // A stay's next step is the arrival (audit L4-08), its travellers shown (L4-11).
+    expect(accepted.replaceAll("&#x27;", "'")).toContain("Proposer l'heure d'arrivée");
+    expect(accepted).toContain("4 voyageurs");
     expect(accepted).toContain("Nuits bloquées");
     expect(card(stay, { locale: "ar" })).toContain("يطلب ⁨Youssef⁩ إقامة");
     const step = { event: "requested" as const, byMe: false, from: day(3), to: day(6), unit: "night" as const, pickup: "2 adultes" };
@@ -240,5 +246,60 @@ describe("thread", () => {
     expect(html).toContain("⁨Youssef⁩ demande un séjour du sam. 7 nov. au mar. 10 nov.");
     expect(html).toContain("précisions : ⁨2 adultes⁩");
     expect(render(<RentalRequestEventItem step={{ ...step, event: "declined" }} counterpartName="Youssef" time="10:02" />)).toContain("⁨Youssef⁩ n&#x27;est pas disponible");
+  });
+});
+
+describe("earlier requests (audit L4-04)", () => {
+  const accepted = requestDoc({ status: "accepted", blocked: true, pickup: "Gare" });
+
+  it("keeps an answered request when the renter sends a new one, without its place, newest first", () => {
+    const history = nextRentalHistory(accepted, undefined, "requested");
+    expect(history).toEqual([{ ...accepted, pickup: undefined }].map(({ pickup: _pickup, ...rest }) => rest));
+    const older = requestDoc({ id: "ZyXwVuTsRqPo", status: "declined" });
+    expect(nextRentalHistory(accepted, [older], "requested")?.map((item) => item.id)).toEqual([accepted.id, older.id]);
+    const many = Array.from({ length: RENTAL_HISTORY_MAX }, (_, index) => requestDoc({ id: `AbCdEfGhIj${String(index).padStart(2, "0")}`, status: "withdrawn" }));
+    expect(nextRentalHistory(accepted, many, "requested")).toHaveLength(RENTAL_HISTORY_MAX);
+  });
+
+  it("keeps nothing for a changed unanswered request or another step", () => {
+    expect(nextRentalHistory(requestDoc(), undefined, "changed")).toBeUndefined();
+    expect(nextRentalHistory(requestDoc(), undefined, "requested")).toBeUndefined();
+    expect(nextRentalHistory(accepted, undefined, "declined")).toBeUndefined();
+    expect(nextRentalHistory(undefined, undefined, "requested")).toBeUndefined();
+  });
+
+  it("carries a stay's travellers, and none for a car", () => {
+    const stay = nextRentalStep(undefined, { action: "request", from: day(3), to: day(6), guests: 4 }, "buyer", new Date(NOW), { unit: "night" });
+    expect(stay.request.guests).toBe(4);
+    const car = nextRentalStep(undefined, { action: "request", from: day(3), to: day(6), guests: 4 }, "buyer", new Date(NOW));
+    expect(car.request.guests).toBeUndefined();
+    expect(rentalRequestActionSchema.safeParse({ action: "request", from: day(3), to: day(6), guests: 0 }).success).toBe(false);
+    expect(rentalRequestActionSchema.safeParse({ action: "request", from: day(3), to: day(6), guests: RENTAL_GUESTS_MAX + 1 }).success).toBe(false);
+  });
+
+  const past = (overrides: Partial<RentalRequestView>): RentalRequestView => ({ id: "AbCdEfGhIjKl", status: "accepted", requestedByMe: true, from: day(3), to: day(6), unit: "day", pickup: null, blocked: true, updatedAt: NOW, ...overrides });
+
+  it("shows an accepted rental still ahead, and folds the others", () => {
+    const html = render(<RentalRequestHistory history={[past({}), past({ id: "ZyXwVuTsRqPo", status: "declined", from: day(8), to: day(9) }), past({ id: "ZyXwVuTsRqP1", from: day(-9), to: day(-7) })]} now={NOW} />);
+    expect(html).toContain("À venir");
+    expect(html).toContain('data-status="accepted"');
+    expect(html).toContain("2 demandes précédentes");
+    expect(html).toContain("Pas disponible");
+    expect(html).toContain("Terminée");
+  });
+
+  it("tells the renter on the listing page which request to show", () => {
+    expect(shownRentalRequest({ rentalRequest: past({ status: "requested", requestedByMe: true }), rentalHistory: [] }, NOW)?.status).toBe("requested");
+    expect(shownRentalRequest({ rentalRequest: past({ status: "declined" }), rentalHistory: [past({ id: "ZyXwVuTsRqPo" })] }, NOW)?.id).toBe("ZyXwVuTsRqPo");
+    expect(shownRentalRequest({ rentalRequest: past({ status: "withdrawn" }), rentalHistory: [past({ from: day(-9), to: day(-7) })] }, NOW)).toBeNull();
+    const banner = render(<RentalRequestBanner cid="c000000000000000000001" request={past({})} />).replaceAll("&#x27;", "'");
+    expect(banner).toContain("L'agence a confirmé la disponibilité du");
+    expect(banner).toContain("/messages/c000000000000000000001");
+  });
+
+  it("estimates the picked period like the results cards (audit L4-19)", () => {
+    expect(rentalEstimate({ price: 300 }, 4)).toBe(1200);
+    expect(rentalEstimate({ price: 300, week: 250 }, 7)).toBe(1750);
+    expect(rentalEstimate({ price: 300, week: 250, month: 200 }, 30)).toBe(6000);
   });
 });

@@ -277,6 +277,16 @@ describe("components", () => {
     expect(render(<SlotPicker now={NOW} onSubmit={() => {}} />, "ar")).toContain("بتوقيت المغرب");
   });
 
+  it("opens on a rental's pick-up day when given, the strip starting two days before (audit L4-08)", () => {
+    const html = render(<SlotPicker defaultKind="pickup" kinds={["pickup"]} startDay="2026-11-24" now={NOW} onSubmit={() => {}} />);
+    expect(html).toContain('value="2026-11-24"');
+    expect(html).toContain(`min="2026-11-04"`);
+    expect(html).toMatch(/aria-checked="true" aria-label="[^"]*24 novembre/);
+    // Out of reach: the first open day, as before.
+    expect(render(<SlotPicker startDay="2027-06-01" now={NOW} onSubmit={() => {}} />)).toContain('value="2026-11-04"');
+    expect(render(<SlotPicker now={NOW} onSubmit={() => {}} />)).not.toContain("Arrivée");
+  });
+
   it("keeps the picker's 60-day horizon in its date field", () => {
     const html = render(<SlotPicker now={NOW} onSubmit={() => {}} />);
     expect(html).toContain(`max="${moroccoClock(NOW + 60 * DAY).day}"`);

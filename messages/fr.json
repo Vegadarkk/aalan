@@ -3231,16 +3231,22 @@
         "rentalDatesMissing": "Choisissez les dates de prise en charge et de retour.",
         "rentalSafety": "La location se conclut par le contrat écrit de l'agence : ne versez ni acompte ni caution sur le site ou avant d'avoir vu le véhicule.",
         "rentalSend": "Envoyer la demande",
+        "rentalPlaceholder": "Bonjour, ce véhicule est-il disponible à ces dates ?",
         "home": {
           "rentalTitle": "Demande de séjour à {name}",
           "rentalTitleFallback": "Demande de séjour",
           "rentalDates": "Dates du séjour",
           "rentalPickup": "Précisions (facultatif)",
-          "rentalPickupPlaceholder": "Ex. : 2 adultes et 1 enfant, arrivée vers 18 h",
+          "rentalPickupPlaceholder": "Ex. : arrivée vers 18 h, un lit bébé si possible",
           "rentalDraft": "Bonjour, je souhaite séjourner à « {title} » du {from} au {to} ({days, plural, one {# nuit} other {# nuits}}). Est-ce disponible ?",
           "rentalDraftPickup": "Bonjour, je souhaite séjourner à « {title} » du {from} au {to} ({days, plural, one {# nuit} other {# nuits}}) : {pickup}. Est-ce disponible ?",
           "rentalDatesMissing": "Choisissez les dates d'arrivée et de départ.",
-          "rentalSafety": "Le séjour se conclut directement avec l'annonceur. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement."
+          "rentalSafety": "Le séjour se conclut directement avec l'annonceur. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement.",
+          "rentalPlaceholder": "Bonjour, le logement est-il libre à ces dates ?",
+          "rentalGuests": "Voyageurs",
+          "rentalGuestsPick": "Choisir",
+          "rentalGuestsCount": "{count, plural, one {# voyageur} other {# voyageurs}}",
+          "rentalDraftGuests": "Nous serons {count, plural, one {# voyageur} other {# voyageurs}}."
         },
         "aboutShop": "Votre message arrive dans la messagerie de la boutique, sans lien avec une annonce précise.",
         "placeholderShop": "Bonjour, j'ai une question sur vos produits ou vos services."
@@ -4447,19 +4453,22 @@
       "meeting": "Rencontre",
       "visit": "Visite",
       "test_drive": "Essai",
-      "pickup": "Retrait"
+      "pickup": "Remise du véhicule",
+      "check_in": "Arrivée"
     },
     "kindPhrase": {
       "meeting": "un rendez-vous",
       "visit": "une visite",
       "test_drive": "un essai",
-      "pickup": "un retrait"
+      "pickup": "une remise du véhicule",
+      "check_in": "une arrivée"
     },
     "confirmedTitle": {
       "meeting": "Rendez-vous confirmé",
       "visit": "Visite confirmée",
       "test_drive": "Essai confirmé",
-      "pickup": "Retrait confirmé"
+      "pickup": "Remise confirmée",
+      "check_in": "Arrivée confirmée"
     },
     "duration": {
       "m15": "15 min",
@@ -5707,11 +5716,11 @@
       "open": "Disponibilités",
       "openOf": "Disponibilités de « {title} »",
       "title": "Disponibilités de « {title} »",
-      "hint": "Touchez le premier puis le dernier jour d'une période pour la bloquer. Une période qui commence sur un jour bloqué le libère. Un jour bloqué veut dire qu'aucun véhicule de cette annonce n'est libre.",
+      "hint": "Choisissez le premier puis le dernier jour d'une période pour la bloquer. Une période qui commence sur un jour bloqué le libère. Un jour bloqué veut dire qu'aucun véhicule de cette annonce n'est libre.",
       "updatedOn": "Disponibilités à jour, confirmées le {date}",
       "stale": "À confirmer : dernière mise à jour le {date}. Les locataires voient « disponibilité à confirmer ».",
       "never": "Disponibilités jamais renseignées : les locataires voient « disponibilité à confirmer ».",
-      "anchor": "Touchez maintenant le dernier jour de la période.",
+      "anchor": "Choisissez maintenant le dernier jour de la période.",
       "summaryNone": "Aucune période bloquée.",
       "summary": "{count, plural, one {# période bloquée.} other {# périodes bloquées.}}",
       "tooMany": "Au plus {max} périodes : regroupez des jours proches.",
@@ -5722,7 +5731,7 @@
       "confirmed": "Disponibilités confirmées.",
       "conflict": "Le calendrier a changé entre-temps. Rouvrez-le pour voir la dernière version.",
       "home": {
-        "hint": "Touchez la première puis la dernière nuit d'une période pour la bloquer (le jour du départ reste libre). Une période qui commence sur une nuit bloquée la libère.",
+        "hint": "Choisissez la première puis la dernière nuit d'une période pour la bloquer (le jour du départ reste libre). Une période qui commence sur une nuit bloquée la libère.",
         "stale": "À confirmer : dernière mise à jour le {date}. Les voyageurs voient « disponibilité à confirmer ».",
         "never": "Disponibilités jamais renseignées : les voyageurs voient « disponibilité à confirmer »."
       }
@@ -5733,10 +5742,11 @@
       "stale": "Disponibilité à confirmer avec l'agence (dernière mise à jour le {date}).",
       "never": "Disponibilité à confirmer avec l'agence.",
       "note": "Indication de l'agence, sans engagement : la réservation se confirme avec elle.",
-      "pickHint": "Touchez le jour de départ puis celui de retour pour préparer votre demande de réservation.",
-      "pickEnd": "Touchez maintenant le jour de retour.",
+      "pickHint": "Choisissez le jour de départ puis celui de retour pour préparer votre demande de réservation.",
+      "pickEnd": "Choisissez maintenant le jour de retour.",
       "picked": "Du {from} au {to} ({count, plural, one {# jour} other {# jours}})",
       "pickedBlocked": "Cette période comprend des jours indiqués indisponibles : l'agence vous dira ce qu'elle peut proposer.",
+      "estimate": "≈ {total} pour {count, plural, one {# jour} other {# jours}}, à confirmer avec l'agence",
       "request": "Demander ces dates",
       "clear": "Effacer",
       "exampleNoRequest": "Annonce exemple : aucune demande ne peut être envoyée.",
@@ -5745,10 +5755,11 @@
         "stale": "Disponibilité à confirmer avec l'annonceur (dernière mise à jour le {date}).",
         "never": "Disponibilité à confirmer avec l'annonceur.",
         "note": "Indication de l'annonceur, sans engagement : le séjour se confirme avec lui. Une nuit indisponible est marquée sur le jour d'arrivée.",
-        "pickHint": "Touchez le jour d'arrivée puis celui de départ pour préparer votre demande de séjour.",
-        "pickEnd": "Touchez maintenant le jour de départ.",
+        "pickHint": "Choisissez le jour d'arrivée puis celui de départ pour préparer votre demande de séjour.",
+        "pickEnd": "Choisissez maintenant le jour de départ.",
         "picked": "Du {from} au {to} ({count, plural, one {# nuit} other {# nuits}})",
-        "pickedBlocked": "Ce séjour comprend des nuits indiquées indisponibles : l'annonceur vous dira ce qu'il peut proposer."
+        "pickedBlocked": "Ce séjour comprend des nuits indiquées indisponibles : l'annonceur vous dira ce qu'il peut proposer.",
+        "estimate": "≈ {total} pour {count, plural, one {# nuit} other {# nuits}}, à confirmer avec l'annonceur"
       }
     },
     "search": {
@@ -5759,8 +5770,8 @@
       "submit": "Voir les véhicules libres",
       "placeholder": "Choisir",
       "calendar": "Calendrier des dates de location",
-      "pickFrom": "Touchez le jour de départ",
-      "pickTo": "Touchez maintenant le jour de retour",
+      "pickFrom": "Choisissez le jour de départ",
+      "pickTo": "Choisissez maintenant le jour de retour",
       "clear": "Effacer les dates",
       "home": {
         "from": "Arrivée",
@@ -5769,8 +5780,8 @@
         "barTitle": "Vos dates de séjour",
         "submit": "Voir les logements libres",
         "calendar": "Calendrier des dates de séjour",
-        "pickFrom": "Touchez le jour d'arrivée",
-        "pickTo": "Touchez maintenant le jour de départ"
+        "pickFrom": "Choisissez le jour d'arrivée",
+        "pickTo": "Choisissez maintenant le jour de départ"
       }
     },
     "home": {
@@ -5791,7 +5802,7 @@
   "Fleet": {
     "title": "Planning de flotte",
     "back": "Espace Pro",
-    "lead": "Vos voitures de location sur les 60 prochains jours. Touchez un jour pour le bloquer ou le libérer, ou glissez à la souris pour une période entière. Un jour bloqué veut dire qu'aucun véhicule de l'annonce n'est libre ce jour-là.",
+    "lead": "Vos voitures de location sur les 60 prochains jours. Choisissez un jour pour le bloquer ou le libérer, ou glissez à la souris pour une période entière. Un jour bloqué veut dire qu'aucun véhicule de l'annonce n'est libre ce jour-là.",
     "loading": "Chargement du planning",
     "retry": "Réessayer",
     "emptyTitle": "Aucune voiture de location en ligne",
@@ -5920,11 +5931,19 @@
       "withdrawnToast": "Demande retirée",
       "requestedTheirs": "{name} demande ce véhicule",
       "block": "Bloquer ces dates sur l'annonce",
-      "blockHint": "Cochez si plus aucun véhicule de ce modèle n'est libre sur la période : l'annonce sortira des recherches à ces dates.",
+      "blockHint": "Laissez coché si aucun autre véhicule de ce modèle n'est libre sur la période : l'annonce sortira des recherches à ces dates.",
       "accept": "Disponible",
       "acceptedToast": "Disponibilité confirmée",
       "blockFailed": "La disponibilité est confirmée, mais les dates n'ont pas pu être bloquées. Mettez votre planning à jour.",
       "planning": "Ouvrir mon planning",
+      "note": "Ajouter un mot (facultatif)",
+      "back": "Retour",
+      "confirmAccept": "Confirmer à {name} que le véhicule est disponible à ces dates ?",
+      "confirmDecline": "Répondre à {name} que le véhicule n'est pas disponible à ces dates ?",
+      "confirmAcceptButton": "Confirmer : disponible",
+      "confirmDeclineButton": "Confirmer : pas disponible",
+      "notePlaceholderAccept": "Ex. : le véhicule sera prêt à 9 h à l'agence de Guéliz.",
+      "notePlaceholderDecline": "Ex. : disponible plutôt du 2 au 4, ou un modèle équivalent aux mêmes dates.",
       "decline": "Pas disponible",
       "declinedToast": "Réponse envoyée : pas disponible",
       "acceptedMine": "Vous avez confirmé la disponibilité",
@@ -5938,11 +5957,17 @@
         "waiting": "En attente de la réponse de l'annonceur.",
         "requestedTheirs": "{name} demande un séjour",
         "block": "Bloquer ces nuits sur l'annonce",
-        "blockHint": "Cochez si le logement n'est plus libre ces nuits-là : l'annonce sortira des recherches à ces dates (le jour du départ reste libre).",
+        "blockHint": "Laissez coché si le logement n'est plus libre ces nuits-là : l'annonce sortira des recherches à ces dates (le jour du départ reste libre).",
         "blockFailed": "La disponibilité est confirmée, mais les nuits n'ont pas pu être bloquées. Mettez vos disponibilités à jour.",
         "planning": "Ouvrir mes annonces",
         "blockedNote": "Nuits bloquées sur l'annonce.",
-        "safety": "Le séjour se conclut directement avec l'annonceur, par un contrat ou une confirmation écrite. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement."
+        "safety": "Le séjour se conclut directement avec l'annonceur, par un contrat ou une confirmation écrite. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement.",
+        "pickupAppointment": "Proposer l'heure d'arrivée",
+        "guests": "{count, plural, one {# voyageur} other {# voyageurs}}",
+        "confirmAccept": "Confirmer à {name} que le logement est disponible pour ce séjour ?",
+        "confirmDecline": "Répondre à {name} que le logement n'est pas disponible pour ce séjour ?",
+        "notePlaceholderAccept": "Ex. : arrivée possible à partir de 15 h, les clés vous attendent sur place.",
+        "notePlaceholderDecline": "Ex. : libre plutôt du 20 au 24, ou un autre logement aux mêmes dates."
       }
     },
     "event": {
@@ -5980,12 +6005,40 @@
         "pickup": "précisions : {place}"
       }
     },
+    "history": {
+      "title": "Demandes de cette conversation",
+      "ahead": "À venir",
+      "earlier": "{count, plural, one {# demande précédente} other {# demandes précédentes}}",
+      "status": {
+        "accepted": "Confirmée",
+        "declined": "Pas disponible",
+        "withdrawn": "Retirée",
+        "requested": "Remplacée",
+        "past": "Terminée"
+      }
+    },
+    "banner": {
+      "requested": "Votre demande du {from} au {to} est envoyée : l'agence vous répond dans la messagerie.",
+      "accepted": "L'agence a confirmé la disponibilité du {from} au {to}.",
+      "open": "Voir la conversation",
+      "home": {
+        "requested": "Votre demande de séjour du {from} au {to} est envoyée : l'annonceur vous répond dans la messagerie.",
+        "accepted": "L'annonceur a confirmé votre séjour du {from} au {to}."
+      }
+    },
     "preview": {
       "requested": "Demande de location",
       "changed": "Demande de location modifiée",
       "accepted": "Disponibilité confirmée",
       "declined": "Pas disponible aux dates demandées",
-      "withdrawn": "Demande de location retirée"
+      "withdrawn": "Demande de location retirée",
+      "home": {
+        "requested": "Demande de séjour",
+        "changed": "Demande de séjour modifiée",
+        "accepted": "Séjour confirmé",
+        "declined": "Pas disponible aux dates demandées",
+        "withdrawn": "Demande de séjour retirée"
+      }
     },
     "errors": {
       "rental_request_changed": "Cette demande a changé entre-temps : voici sa dernière version.",

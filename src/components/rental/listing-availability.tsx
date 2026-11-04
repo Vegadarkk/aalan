@@ -9,11 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { RentalUnit } from "@/config/categories";
 import type { Locale } from "@/config/site";
 import type { RentalAvailability } from "@/lib/contracts/listings";
-import { formatDate } from "@/lib/listings/client/format";
-import { RENTAL_AHEAD_DAYS, RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, blockedSet, dayNumber, dayString, isFresh, moroccoToday, occupiedDays, rentalDuration } from "@/lib/listings/rental-availability";
+import { formatDate, formatPrice } from "@/lib/listings/client/format";
+import { RENTAL_AHEAD_DAYS, RENTAL_SEARCH_AHEAD_DAYS, RENTAL_SEARCH_DAYS_MAX, blockedSet, dayNumber, dayString, isFresh, moroccoToday, occupiedDays, rentalDayRate, rentalDuration } from "@/lib/listings/rental-availability";
 import { cn } from "@/lib/utils";
 import { AvailabilityCalendar } from "./availability-calendar";
-import { formatRentalDay, fragmentDates, requestRentalDates } from "./rental-day";
+import { formatRentalDay, fragmentDates, rememberRentalDates, requestRentalDates } from "./rental-day";
 
 // The listing page's availability block (rental pack §3; a holiday home: seasonal rental conception
 // §2, its nights): this month and the next, as declared by the agency or the host. The page is cached (ISR), so the days are drawn in the browser, on today's date.
@@ -43,7 +43,36 @@ function withinBounds(range: Range, today: number, gap: number): boolean {
   return range.to !== null && range.from >= today && range.from <= today + RENTAL_SEARCH_AHEAD_DAYS && range.to >= range.from + gap && range.to - range.from <= RENTAL_SEARCH_DAYS_MAX;
 }
 
-export function ListingAvailability({ rental, locale, unit = "day", requestable = false, example = false }: { rental: RentalAvailability; locale: Locale; unit?: RentalUnit; requestable?: boolean; example?: boolean }) {
+/** The listing's prices for the estimate of a picked period (audit L4-19): the day or night price and a car's long-term rates. */
+export interface RentalRates {
+  price: number;
+  week?: number;
+  month?: number;
+}
+
+/** The estimated total of `count` days or nights, as the results cards compute it. */
+export function rentalEstimate(rates: RentalRates, count: number): number {
+  const attributes: Record<string, number> = {};
+  if (rates.week) attributes["rate-7-days"] = rates.week;
+  if (rates.month) attributes["rate-30-days"] = rates.month;
+  return rentalDayRate(attributes, rates.price, count) * count;
+}
+
+export function ListingAvailability({
+  rental,
+  locale,
+  unit = "day",
+  requestable = false,
+  example = false,
+  rates,
+}: {
+  rental: RentalAvailability;
+  locale: Locale;
+  unit?: RentalUnit;
+  requestable?: boolean;
+  example?: boolean;
+  rates?: RentalRates;
+}) {
   const t = useTranslations("Rental.listing");
   const hydrated = useHydrated();
   const [monthOffset, setMonthOffset] = useState(0);
@@ -60,7 +89,7 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
   const gap = nights ? 1 : 0;
   const range = picked ?? (now !== null && (requestable || example) && fromAddress && withinBounds(fromAddress, today, gap) ? fromAddress : null);
   const blocked = blockedSet(rental.unavailable);
-  const text = <K extends "updatedOn" | "stale" | "never" | "note" | "pickHint" | "pickEnd" | "picked" | "pickedBlocked">(key: K) => (nights ? (`home.${key}` as const) : key);
+  const text = <K extends "updatedOn" | "stale" | "never" | "note" | "pickHint" | "pickEnd" | "picked" | "pickedBlocked" | "estimate">(key: K) => (nights ? (`home.${key}` as const) : key);
   const dates = range && range.to !== null ? { from: dayString(range.from), to: dayString(range.to) } : null;
   const selectable = requestable || example;
   const crossesBlocked = dates !== null && occupiedDays(dates, unit).some((day) => blocked.has(day));
@@ -68,10 +97,13 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
   function onDay(day: number) {
     if (range && range.to === null && day >= range.from + gap && day - range.from <= RENTAL_SEARCH_DAYS_MAX) {
       setRange({ from: range.from, to: day });
+      // The side button's dialog takes these days too (audit L4-05).
+      if (requestable) rememberRentalDates({ from: dayString(range.from), to: dayString(day) });
       return;
     }
     // A new start: within the request's horizon only.
     setRange(day <= today + RENTAL_SEARCH_AHEAD_DAYS ? { from: day, to: null } : null);
+    if (requestable && range && range.to !== null) rememberRentalDates(null);
   }
 
   return (
@@ -106,11 +138,24 @@ export function ListingAvailability({ rental, locale, unit = "day", requestable 
                     ? t(text("picked"), { from: formatRentalDay(dates.from, locale), to: formatRentalDay(dates.to, locale), count: rentalDuration(dates) })
                     : t(text(range ? "pickEnd" : "pickHint"))}
                 </p>
+                {dates && rates ? (
+                  <p className="text-sm text-foreground-muted tabular-nums" data-testid="rental-availability-estimate">
+                    {t(text("estimate"), { total: formatPrice(rentalEstimate(rates, rentalDuration(dates)), locale), count: rentalDuration(dates) })}
+                  </p>
+                ) : null}
                 {crossesBlocked ? <p className="text-xs text-warning text-pretty">{t(text("pickedBlocked"))}</p> : null}
               </div>
               {range ? (
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setRange(null)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setRange(null);
+                      if (requestable) rememberRentalDates(null);
+                    }}
+                  >
                     {t("clear")}
                   </Button>
                   {dates && !requestable ? <p className="self-center text-xs text-foreground-muted">{t("exampleNoRequest")}</p> : null}

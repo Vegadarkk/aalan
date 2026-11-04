@@ -5237,7 +5237,8 @@
     "notes": {
       "provider": "Le paiement se fait par carte sur la page sécurisée de notre prestataire RevenueCat, avec Stripe. Cette page peut s'afficher en anglais.",
       "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} DH par an (Office des Changes).",
-      "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : rétractez-vous depuis votre porte-monnaie, ou écrivez à {email}."
+      "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : rétractez-vous depuis votre porte-monnaie, ou écrivez à {email}.",
+      "creditsShop": "Les crédits ne sont ni transférables ni convertibles en argent. Achetés pour l'activité de la boutique, ils ne peuvent pas faire l'objet d'une rétractation : ce droit est réservé aux consommateurs (CGV, section 6)."
     },
     "consent": {
       "terms": "J'ai lu et j'accepte les",

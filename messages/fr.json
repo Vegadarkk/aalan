@@ -4005,7 +4005,13 @@
     "includeSoldOutHint": "Les boutiques laissent en ligne les articles dont le stock est à 0.",
     "promo": "En promotion",
     "modelPickBrand": "Choisissez d'abord une marque.",
-    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche."
+    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche.",
+    "quickCondition": {
+      "label": "État de l'article",
+      "all": "Tout",
+      "new": "Neuf",
+      "used": "Occasion"
+    }
   },
   "Pro": {
     "metaTitle": "Espace Pro",

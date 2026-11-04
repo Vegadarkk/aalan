@@ -81,8 +81,8 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   withdrawalReceipt: { displayName: "Nadia", receipt: "R-20270301-AB12CD", requestedAt: "2027-03-01T10:00:00.000Z", packCredits: 110, removedCredits: 90, refundMinor: 8_200, currency: "MAD", refundBy: "2027-03-15T10:00:00.000Z" },
   sellerPaymentNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "changed", host: "pay.example-bank.ma", activeFrom: "2026-11-02T10:00:00.000Z" },
   socialLinksNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "hidden", reason: "Le lien Instagram mène au compte d'un autre vendeur." },
-  proRejected: { displayName: "Nadia", shopName: "Atlas Vélos", reason: "L'ICE ne correspond pas au registre du commerce.", contact: "dsa@joutiya.ma" },
-  proValidationWithdrawn: { displayName: "Nadia", shopName: "Atlas Vélos", reason: "Le registre du commerce indique une radiation de la société.", contact: "dsa@joutiya.ma" },
+  proRejected: { displayName: "Nadia", shopName: "Atlas Vélos", reason: "L'ICE ne correspond pas au registre du commerce.", contact: "dsa@aalan.ma" },
+  proValidationWithdrawn: { displayName: "Nadia", shopName: "Atlas Vélos", reason: "Le registre du commerce indique une radiation de la société.", contact: "dsa@aalan.ma" },
   newMessages: { displayName: "Nadia", count: 4, conversations: [{ listingTitle: "Vélo de ville", counterpartName: "Karim" }] },
   appointmentReminder: {
     displayName: "Nadia",

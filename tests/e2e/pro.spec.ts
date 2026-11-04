@@ -19,7 +19,7 @@ process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 const admin = "http://admin.localhost:3100";
 const STAFF_EMAIL = "moderator.pro.e2e@aalan.test";
 const STAFF_PASSWORD = ["Porte", "Ouverte", "2026"].join("-");
-const ADMIN_EMAIL = "admin.pro.e2e@joutiya.test";
+const ADMIN_EMAIL = "admin.pro.e2e@aalan.test";
 const PASSWORD = ["Souk", "Tanger", "2026!"].join("-");
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from(randomBytes(length), (byte) => ALPHABET[byte % ALPHABET.length]).join("");

@@ -40,7 +40,7 @@ describe("price-choice", () => {
     const storage = sessionStore();
     vi.stubGlobal("window", { sessionStorage: storage });
     (await load()).rememberToDiscuss("a", true);
-    expect(storage.getItem("joutiya:price-to-discuss:a")).toBe("1");
+    expect(storage.getItem("aalan:price-to-discuss:a")).toBe("1");
     // A fresh module: nothing in memory, the tab's storage answers.
     expect((await load()).readToDiscuss("a")).toBe(true);
   });

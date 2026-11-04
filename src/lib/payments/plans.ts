@@ -11,6 +11,7 @@ import type { BillingAccountDoc } from "@/lib/db/schemas";
 import { getFlags, getPricing } from "@/lib/config/runtime";
 import { serverEnv } from "@/lib/env";
 import { db } from "@/lib/firebase/admin";
+import { getClaims } from "@/lib/firebase/claims";
 import { HttpError, notFound, unavailable } from "@/lib/http/errors";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
@@ -247,6 +248,22 @@ export async function startPlanCheckout(auth: AuthContext, input: CheckoutPlanIn
   }
   logger.info({ accountId, plan: input.plan, interval: input.interval }, "plan checkout opened");
   return { url: session.url };
+}
+
+/**
+ * A suspended or banned owner's shop (audit P-7): its plan and pass Checkout pages still payable
+ * are expired, so no payment lands on a shop staff just closed. Answers how many were open.
+ */
+export async function expireShopCheckouts(ownerUid: string, now = new Date()): Promise<number> {
+  if (!isStripeConfigured()) return 0;
+  const { proId, proRole } = await getClaims(ownerUid);
+  if (!proId || proRole !== "owner") return 0;
+  const account = await getBillingAccount(`pro_${proId}`);
+  const pages = [account?.lastPlanCheckout, account?.lastPassCheckout].filter((page) => page?.sessionId && now.getTime() - page.at.getTime() < SESSION_LIFETIME_MS);
+  let expired = 0;
+  for (const page of pages) if ((await expireOpenSession(page!.sessionId!)) === "open") expired += 1;
+  if (expired > 0) logger.info({ proId, expired }, "checkout pages of a suspended shop expired");
+  return expired;
 }
 
 /** Opens the Stripe Customer Portal of the owner's shop. */

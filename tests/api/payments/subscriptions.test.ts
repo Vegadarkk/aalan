@@ -93,6 +93,7 @@ import { resetServerEnv } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { setClaims } from "@/lib/firebase/claims";
 import { createSessionForUid } from "@/lib/firebase/session";
+import { expireShopCheckouts } from "@/lib/payments/plans";
 import { postStripeReceipt } from "@/lib/payments/revenuecat-api";
 import { expectedSignature } from "@/lib/payments/revenuecat-webhook";
 import type { ProProfileDoc } from "@/lib/pro/profile-schema";
@@ -237,6 +238,20 @@ async function published(owner: Member): Promise<string> {
 }
 
 describe("plan checkout", () => {
+  it("expires the payment page still open of a shop whose owner is suspended", async () => {
+    const owner = await member();
+    await shop(owner);
+    expect((await startCheckout(owner, plan("essentiel", "monthly"))).status).toBe(200);
+    stripe.calls = [];
+    stripe.sessionStatus = "open";
+    expect(await expireShopCheckouts(owner.uid)).toBe(1);
+    expect(stripe.calls.map((call) => `${call.method} ${call.path}`)).toEqual(["GET /v1/checkout/sessions/cs_test_1", "POST /v1/checkout/sessions/cs_test_1/expire"]);
+    // Paid or expired already: nothing to do; an account without a shop neither.
+    stripe.sessionStatus = "complete";
+    expect(await expireShopCheckouts(owner.uid)).toBe(0);
+    expect(await expireShopCheckouts((await member()).uid)).toBe(0);
+  });
+
   it("opens the Stripe Checkout of a verified shop's plan with its customer and RevenueCat id", async () => {
     const owner = await member();
     const proId = await shop(owner);

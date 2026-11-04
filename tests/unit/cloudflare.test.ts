@@ -276,7 +276,7 @@ describe("load test rule", () => {
 
   it("skips the edge limits for staging requests carrying the secret header only", () => {
     const rule = loadtestRule(secret, "staging.joutiya.ma");
-    expect(rule.expression).toBe(`http.host eq "staging.joutiya.ma" and any(http.request.headers["x-joutiya-loadtest"][*] eq "${secret}")`);
+    expect(rule.expression).toBe(`http.host eq "staging.joutiya.ma" and any(http.request.headers["x-aalan-loadtest"][*] eq "${secret}")`);
     expect(rule.action_parameters).toEqual({ phases: ["http_ratelimit", "http_request_firewall_managed"], products: ["bic", "securityLevel"] });
   });
 

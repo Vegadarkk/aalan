@@ -30,7 +30,7 @@ l'API Actions). Le jeton sert aussi au scan de sécurité.
 4. **Claude** : `LOADTEST_BYPASS_SECRET` scellé pour la VM (`seal-env.ts app staging --only=…`),
    posé par `oracle-vm.ts env staging --sealed=…`, puis web et worker redémarrés. L'application
    refuse cette variable en production. La règle Cloudflare lit le même secret dans
-   `<fichier>.cloudflare.env` (`JOUTIYA_LOADTEST_BYPASS_SECRET`).
+   `<fichier>.cloudflare.env` (`AALAN_LOADTEST_BYPASS_SECRET`).
 5. **Nav** (PC2) : `node scripts/github-ci.ts apply <fichier> --apply`.
 
 ## Le jour du test

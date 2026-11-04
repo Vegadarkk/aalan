@@ -105,12 +105,12 @@ describe("checkPageLimits", () => {
     try {
       process.env.APP_ENV = "staging";
       resetServerEnv();
-      await expect(checkPageLimits(request({}, { "x-joutiya-loadtest": secret }))).resolves.toEqual({ kind: "allow" });
+      await expect(checkPageLimits(request({}, { "x-aalan-loadtest": secret }))).resolves.toEqual({ kind: "allow" });
       expect(store.calls).toEqual([]);
-      await expect(checkPageLimits(request({}, { "x-joutiya-loadtest": "wrong" }))).resolves.toMatchObject({ kind: "challenge" });
+      await expect(checkPageLimits(request({}, { "x-aalan-loadtest": "wrong" }))).resolves.toMatchObject({ kind: "challenge" });
       process.env.APP_ENV = "prod";
       resetServerEnv();
-      await expect(checkPageLimits(request({}, { "x-joutiya-loadtest": secret }))).resolves.toMatchObject({ kind: "challenge" });
+      await expect(checkPageLimits(request({}, { "x-aalan-loadtest": secret }))).resolves.toMatchObject({ kind: "challenge" });
     } finally {
       delete process.env.LOADTEST_BYPASS_SECRET;
     }

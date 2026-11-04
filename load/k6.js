@@ -14,7 +14,7 @@
 // scripts/load-urls.ts.
 //
 // Environment: TARGET (https://staging.aalan.ma), ACCESS_HEADER and ACCESS_TOKEN (the Access
-// service token in single-header mode), LOADTEST_SECRET (x-joutiya-loadtest: skips the edge rate
+// service token in single-header mode), LOADTEST_SECRET (x-aalan-loadtest: skips the edge rate
 // limit rule and the app limiters, staging only), SUMMARY (path of the JSON summary).
 
 import http from "k6/http";
@@ -27,7 +27,7 @@ const PAGES = new SharedArray("pages", () => JSON.parse(open("./urls.json")).pag
 const SEARCHES = new SharedArray("searches", () => JSON.parse(open("./urls.json")).searches);
 
 const TARGET = __ENV.TARGET || "https://staging.aalan.ma";
-const headers = { "x-joutiya-loadtest": __ENV.LOADTEST_SECRET || "", "user-agent": "joutiya-loadtest/k6" };
+const headers = { "x-aalan-loadtest": __ENV.LOADTEST_SECRET || "", "user-agent": "aalan-loadtest/k6" };
 if (__ENV.ACCESS_HEADER) headers[__ENV.ACCESS_HEADER] = __ENV.ACCESS_TOKEN || "";
 
 // SCENARIOS=searches runs the searches alone, from the start (audit lot 7: in the full run their

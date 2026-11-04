@@ -8,7 +8,7 @@ name: Load test
 # Staging is behind Cloudflare Access: k6 sends the service token "joutiya-scan" in single-header
 # mode (header name in the variable ACCESS_TOKEN_HEADER, JSON value in the secret
 # STAGING_SCAN_ACCESS_TOKEN, shared with the security scan). The secret LOADTEST_BYPASS_SECRET goes
-# in the x-joutiya-loadtest header. Inert until the variable LOAD_TEST_ENABLED=true. The summary
+# in the x-aalan-loadtest header. Inert until the variable LOAD_TEST_ENABLED=true. The summary
 # artifact holds counts and latencies only.
 
 on:

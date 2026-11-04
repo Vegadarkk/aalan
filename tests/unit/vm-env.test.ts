@@ -153,7 +153,7 @@ describe("planEnv", () => {
 
 describe("app.env on the VM", () => {
   // Run as the test user: a sudo stub drops -n and runs the rest.
-  const work = mkdtempSync(join(tmpdir(), "joutiya-vm-env-"));
+  const work = mkdtempSync(join(tmpdir(), "aalan-vm-env-"));
   writeFileSync(join(work, "sudo"), '#!/bin/sh\n[ "$1" = "-n" ] && shift\nexec "$@"\n');
   chmodSync(join(work, "sudo"), 0o755);
   afterAll(() => rmSync(work, { recursive: true, force: true }));

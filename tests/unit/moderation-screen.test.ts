@@ -264,6 +264,15 @@ describe("screenListing: soft flags and state", () => {
     expect(screenListing(cleanListing({ duplicates: { sameText: 1, samePhoto: 1 } }), ctx).state).toBe("needs_review");
   });
 
+  it("weighs another account's photo like the owner's: alone it stays auto, with a new account and an odd price it holds (zone 7 P4)", () => {
+    const other = { sameText: 0, samePhoto: 0, otherAccountPhoto: 2, otherAccountListings: ["lst_a1", "lst_b2"] };
+    const alone = screenListing(cleanListing({ duplicates: other }), ctx);
+    expect(alone).toMatchObject({ state: "auto_ok", score: 30, flags: ["dup_photo_other"] });
+    expect(alone.evidence).toContain("same photo as 2 listing(s) of other accounts: lst_a1, lst_b2");
+    const seller = { accountAgeDays: 0, listingsLast24h: 0, phoneVerified: true, previousRejections: 0 };
+    expect(screenListing(cleanListing({ seller, price: 500, duplicates: other }), ctx)).toMatchObject({ state: "needs_review", score: 65, flags: ["price_outlier", "dup_photo_other", "new_account"] });
+  });
+
   it("counts previous rejections in the score without a flag", () => {
     const seller = { ...cleanListing().seller, previousRejections: 2 };
     const result = screenListing(cleanListing({ seller }), ctx);

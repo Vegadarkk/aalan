@@ -39,6 +39,8 @@ import { grantPlanPeriod } from "./wallet";
 //   `pass_{session}` makes a replay a no-op. RevenueCat is not involved.
 // - Nightly (pro-plans job, sales open only): notices at J-7 and J-1, then `pass_ended` (downgraded,
 //   no grace), its listings over the free quota paused and a last mail.
+// - A full refund of the pass payment (Stripe `charge.refunded`, src/lib/payments/stripe-events.ts)
+//   ends it at once (`revokePass`); a partial refund or a dispute only alerts staff.
 
 /** Opens the Stripe Checkout of a Pass Boutique for the owner's shop. */
 export async function startPassCheckout(auth: AuthContext, input: CheckoutPassInput, locale: Locale, now = new Date()): Promise<BillingRedirectResponse> {
@@ -195,6 +197,35 @@ export async function applyPassSession(account: BillingAccountRecord, sessionId:
   return result.outcome;
 }
 
+/**
+ * Ends the shop's pass now: a pass payment (`paymentIntentId`) was refunded in full. Same
+ * `pass_ended` downgrade as at the pass's end (no grace, listings over the free quota paused), the
+ * plan credits and À la Une allowance of the pass back to 0 (ledger `pass_refund_{intent}`), no mail
+ * (the alert sends staff to the shop). Idempotent (`already` once done); `not_running` when the shop
+ * is not running a pass (ended, suspended, or taken over by a subscription), which staff then checks.
+ */
+export async function revokePass(account: BillingAccountRecord, paymentIntentId: string, now = new Date()): Promise<"revoked" | "already" | "not_running"> {
+  if (!account.proId) return "not_running";
+  const proId = account.proId;
+  const pricing = await getPricing();
+  const entryId = `pass_refund_${ledgerKey(paymentIntentId)}`;
+  const ended = await db().runTransaction(async (tx) => {
+    if (await getLedgerEntryTx(tx, account.id, entryId)) return "already" as const;
+    const profile = await getProProfile(proId, tx);
+    if (!profile || profile.lifecycle !== "active" || profile.planSource !== "pass") return "not_running" as const;
+    const wallet = await getWalletTx(tx, account.id);
+    const { patch } = transition(profile, { type: "pass_ended" }, { now, graceDays: pricing.graceDays });
+    const { wallet: state, ledger } = grantPlanPeriod(walletStateAt(wallet, now), { credits: 0, featured: 0 });
+    recordWalletOperationTx(tx, account.id, entryId, { before: wallet, state, ledger, entry: { refs: { orderId: paymentIntentId }, actorUid: "system", at: now }, now, resetsAt: now });
+    tx.set(proProfileRef(proId), proProfileToFirestore({ ...profileAfter(profile, patch, pricing, now), passEndsAt: now }));
+    return profile;
+  });
+  if (typeof ended === "string") return ended;
+  logger.warn({ proId, paymentIntentId }, "pass ended by a refund");
+  await afterPassEnded(ended, pricing, now, "pro.pass.refunded");
+  return "revoked";
+}
+
 export interface PassExpiryRun {
   noticed: number;
   ended: number;
@@ -250,6 +281,20 @@ export async function runPassExpiry(now = new Date()): Promise<PassExpiryRun> {
   return run;
 }
 
+/** After `pass_ended`: the audit entry, then the listings over the free quota paused (their ids). */
+async function afterPassEnded(profile: ProProfileRecord, pricing: PricingConfig, now: Date, action: "pro.pass.ended" | "pro.pass.refunded"): Promise<string[]> {
+  const { proId } = profile;
+  await audit({ actorUid: "system", actorRole: "system", action, target: { type: "pro", id: proId }, automated: true, at: now }).catch((error: unknown) =>
+    logger.error({ proId, err: (error as Error).message }, "pass audit failed"),
+  );
+  try {
+    return await pauseListingsOverQuota(profile.ownerUid, pricing.pro.none.activeListings, now);
+  } catch (error) {
+    logger.error({ proId, err: (error as Error).message }, "quota pause failed");
+    return [];
+  }
+}
+
 /** Downgrades one shop whose pass ended (re-read in the transaction); false when it moved meanwhile. */
 async function endPass(proId: string, pricing: PricingConfig, now: Date, mail: boolean): Promise<boolean> {
   const ended = await db().runTransaction(async (tx) => {
@@ -260,15 +305,7 @@ async function endPass(proId: string, pricing: PricingConfig, now: Date, mail: b
     return profile;
   });
   if (!ended) return false;
-  await audit({ actorUid: "system", actorRole: "system", action: "pro.pass.ended", target: { type: "pro", id: proId }, automated: true, at: now }).catch((error: unknown) =>
-    logger.error({ proId, err: (error as Error).message }, "pass audit failed"),
-  );
-  let paused: string[] = [];
-  try {
-    paused = await pauseListingsOverQuota(ended.ownerUid, pricing.pro.none.activeListings, now);
-  } catch (error) {
-    logger.error({ proId, err: (error as Error).message }, "quota pause failed");
-  }
+  const paused = await afterPassEnded(ended, pricing, now, "pro.pass.ended");
   if (!mail) {
     logger.warn({ proId }, "pass end mail skipped: mail budget used up");
     return true;

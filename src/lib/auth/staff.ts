@@ -27,6 +27,7 @@ import { json } from "@/lib/http/route";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
 import { sendMail, type ActionLinkRequest } from "@/lib/mail";
+import { publishRevoked } from "@/lib/messaging";
 import { requestIdentity, type RequestIdentity } from "@/lib/rate-limit/keys";
 import { blockLimit, consumeLimit, enforceLimit, limitState, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
 import { clearSessionCookies, CSRF_HEADER, SESSION_COOKIE, setSessionCookies } from "@/lib/security/cookies";
@@ -226,13 +227,20 @@ export async function login(request: Request): Promise<Response> {
   return response;
 }
 
-/** POST /api/admin/auth/logout: revokes the session when there is one, clears the cookies, 204. */
+/**
+ * POST /api/admin/auth/logout: revokes the sessions when the cookie is a live one, clears the
+ * cookies, 204. A revoked cookie only clears the cookies (audit A-2: replayed, it would otherwise
+ * sign the account out of every new session).
+ */
 export async function logout(request: Request): Promise<Response> {
   requireAdminHost(request);
   requireSameOrigin(request);
   const session = readCookie(request.headers, SESSION_COOKIE);
-  const user = session ? await verifySession(session) : null;
-  if (user) await revokeSessions(user.uid);
+  const user = session ? await verifySession(session, { checkRevoked: true }) : null;
+  if (user) {
+    await revokeSessions(user.uid);
+    await publishRevoked(user.uid);
+  }
   const response = new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
   clearSessionCookies(response);
   return response;
@@ -272,6 +280,7 @@ export async function setPassword(request: Request): Promise<Response> {
     throw translateCodeError(error);
   }
   await revokeSessions(record.uid);
+  await publishRevoked(record.uid);
   // Traced like a member's reset: who set a staff password, when, from where.
   await logConnection({ uid: record.uid, event: "password_reset", ip: identity.ip });
   return json<StaffPasswordResponse>({ status: "password_set" });

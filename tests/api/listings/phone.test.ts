@@ -159,6 +159,26 @@ describe("POST /api/listings/{id}/phone", () => {
     expect((await ask(viewer, id)).status).toBe(200);
   });
 
+  it("hides the number when either account blocked the other, with the no-number answer (audit C-5)", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const viewer = await member();
+    const id = await listingOf(owner);
+    const blocks = db().collection(COLLECTIONS.userBlocks);
+    await blocks.doc(owner.uid).set({ uids: [viewer.uid], updatedAt: new Date() });
+    const bySeller = await ask(viewer, id);
+    expect([bySeller.status, bySeller.body.error.code]).toEqual([404, "not_found"]);
+    await blocks.doc(owner.uid).delete();
+    await blocks.doc(viewer.uid).set({ uids: [owner.uid], updatedAt: new Date() });
+    const byViewer = await ask(viewer, id);
+    expect([byViewer.status, byViewer.body.error.code]).toEqual([404, "not_found"]);
+    expect(await listRevealLogs(id)).toEqual([]);
+    // A viewer who revealed it before the block does not get it again either.
+    await blocks.doc(viewer.uid).delete();
+    expect((await ask(viewer, id)).status).toBe(200);
+    await blocks.doc(owner.uid).set({ uids: [viewer.uid], updatedAt: new Date() });
+    expect((await ask(viewer, id)).status).toBe(404);
+  });
+
   it("counts every call per account, repeats included (reveal.call.uid), before any read", async () => {
     expect(RATE_LIMITS["reveal.call.uid"]).toMatchObject({ points: 200, policy: "open" });
     const owner = await member({ phone: freshPhone() });

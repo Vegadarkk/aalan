@@ -18,7 +18,7 @@ const FORMS: Record<string, number> = {
   "auth/google-consent-step.tsx": 1,
   "auth/settings-view.tsx": 2,
   "auth/verifications-view.tsx": 1,
-  "auth/action-view.tsx": 1,
+  "auth/action-view.tsx": 2,
   "post/steps/title-step.tsx": 1,
   "post/steps/description-step.tsx": 1,
 };

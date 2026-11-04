@@ -14,6 +14,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    setupFiles: ["tests/unit/setup-env.ts"],
     exclude: ["**/node_modules/**"],
     // The CSP hook test patches http.ServerResponse: one process per file.
     pool: "forks",

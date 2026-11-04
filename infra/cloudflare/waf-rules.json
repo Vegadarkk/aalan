@@ -4,10 +4,10 @@
   "rules": [
     {
       "ref": "webhooks_skip",
-      "description": "Webhooks (signed by RevenueCat, Stripe, Meta): no edge rate limit, Browser Integrity Check or Security Level",
+      "description": "Webhooks (signed by RevenueCat, Stripe, Resend, Meta): no Browser Integrity Check or Security Level challenge; the edge rate limit still counts them (security review D-1, Nov 2026)",
       "expression": "starts_with(http.request.uri.path, \"/api/webhooks/\")",
       "action": "skip",
-      "action_parameters": { "phases": ["http_ratelimit"], "products": ["bic", "securityLevel"] },
+      "action_parameters": { "products": ["bic", "securityLevel"] },
       "logging": { "enabled": true }
     },
     {

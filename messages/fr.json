@@ -474,7 +474,14 @@
       "resetDoneTitle": "Mot de passe modifié",
       "resetDoneBody": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
       "resetExpiredBody": "Les liens de réinitialisation sont valables une heure. Demandez-en un nouveau.",
-      "requestNew": "Demander un nouveau lien"
+      "requestNew": "Demander un nouveau lien",
+      "passwordTitle": "Confirmez votre adresse",
+      "passwordLead": "Pour confirmer votre adresse sur cet appareil, saisissez le mot de passe choisi à l'inscription.",
+      "passwordAccount": "Compte : {email}",
+      "passwordSubmit": "Confirmer et me connecter",
+      "passwordWrong": "Mot de passe incorrect.",
+      "passwordUnknown": "Vous ne connaissez pas ce mot de passe ou vous l'avez oublié ?",
+      "passwordChoose": "Choisissez-en un nouveau"
     },
     "settings": {
       "title": "Mes paramètres",
@@ -687,6 +694,7 @@
       "upload_not_ready": "Une photo est encore en cours de traitement. Patientez quelques secondes, puis réessayez.",
       "phone_required": "Vérifiez votre numéro de téléphone pour afficher ce moyen de contact.",
       "listing_unavailable": "Cette annonce n'est plus disponible.",
+      "listing_under_review": "Cette annonce est en cours de vérification : vous ne pouvez pas la modifier pour le moment. Vous pourrez le faire dès que la vérification sera terminée.",
       "reveal_not_allowed": "Le numéro ne peut pas être affiché pour le moment. Vérifiez votre adresse e-mail ou réessayez plus tard.",
       "search_unavailable": "La recherche est momentanément indisponible. Réessayez dans quelques instants.",
       "favorite_limit": "Vous avez atteint le nombre maximal de favoris (300). Retirez-en quelques-uns pour en ajouter d'autres.",
@@ -5353,7 +5361,7 @@
         "once": "Paiement unique par carte sur la page sécurisée de Stripe. Le prix HT est le prix payé : Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
         "credits": "Les crédits offerts servent pendant le pass. Une prolongation ajoute les siens à ceux qui restent ; ils ne sont pas reportés après la fin du pass.",
         "end": "À la fin du pass, vos annonces au-delà du quota gratuit sont mises en pause, sans être supprimées. Vous êtes prévenu 7 jours et 1 jour avant.",
-        "subscribe": "Vous pouvez aussi vous abonner pendant le pass : pris au moins 2 jours avant sa fin, l'abonnement n'est facturé qu'à la fin du pass ; pris plus tard, il est facturé tout de suite."
+        "subscribe": "Vous pouvez aussi vous abonner pendant le pass : à l'offre de votre pass et au moins 2 jours avant sa fin, l'abonnement n'est facturé qu'à la fin du pass. Une autre offre, ou un abonnement pris plus tard, est facturé tout de suite."
       },
       "consent": {
         "terms": "J'accepte les",

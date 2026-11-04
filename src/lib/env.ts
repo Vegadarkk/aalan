@@ -43,7 +43,7 @@ const optionalUrl = z
 const schema = z.object({
   APP_ENV: z.enum(["dev", "staging", "prod"]).default("dev"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  /** Public origin of this environment: https://joutiya.ma, https://staging.aalan.ma. */
+  /** Public origin of this environment: https://aalan.ma, https://staging.aalan.ma. */
   SITE_URL: z.url().default("http://localhost:3000"),
   ADMIN_HOST: optional,
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
@@ -88,7 +88,7 @@ const schema = z.object({
   // three bucket names (checked against infra/targets.json by scripts/assert-target.ts). Set all
   // of them with MEDIA_BASE_URL, or none: without them dev stores files under os.tmpdir()
   // (src/lib/storage/fs.ts) and deployed environments refuse uploads.
-  /** Public media host, e.g. https://media.joutiya.ma; dev defaults to the dev storage route. */
+  /** Public media host, e.g. https://media.aalan.ma; dev defaults to the dev storage route. */
   MEDIA_BASE_URL: optionalUrl,
   R2_S3_ENDPOINT: optional,
   R2_ACCESS_KEY_ID: optional,

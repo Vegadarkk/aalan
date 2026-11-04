@@ -22,7 +22,7 @@ export interface CspOptions {
   scriptHashes?: readonly string[];
   /** `next dev` needs 'unsafe-eval' (React error overlays) and no upgrade of http://localhost. */
   dev?: boolean;
-  /** Public media host, e.g. https://media.joutiya.ma. */
+  /** Public media host, e.g. https://media.aalan.ma. */
   mediaOrigin?: string;
   /** R2 S3 host for presigned uploads, e.g. https://<account>.eu.r2.cloudflarestorage.com. */
   r2Origin?: string;

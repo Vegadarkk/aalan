@@ -29,15 +29,15 @@ export function isRtl(locale: Locale): boolean {
 
 /**
  * Public brand (owner, 2026-10-29: Joutiya renamed Aalan; OMPIC word mark AALAN). Arabic and
- * Tifinagh spellings chosen by the owner the same day. "Joutiya" stays the internal project name
- * (repository, cloud resources, JOUTIYA_* variables) and joutiya.ma stays ours as a redirect.
+ * Tifinagh spellings chosen by the owner the same day. joutiya.ma stays ours as a redirect only;
+ * cloud resource names that cannot be renamed keep the old name (zero-Joutiya plan).
  */
 export const BRAND = { latin: "Aalan", arabic: "أعلان", tifinagh: "ⴰⵄⵍⴰⵏ" } as const;
 
 export const SITE_NAME = BRAND.latin;
 
-/** Production origin, used for canonical URLs of prerendered pages (src/lib/i18n/metadata.ts). */
-export const CANONICAL_ORIGIN = "https://joutiya.ma";
+/** Production origin (aalan.ma), used for canonical URLs of prerendered pages (src/lib/i18n/metadata.ts). */
+export const CANONICAL_ORIGIN = "https://aalan.ma";
 
 /**
  * First path segment (after the locale) of the private pages: account, auth and Pro areas.

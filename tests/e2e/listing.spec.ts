@@ -349,7 +349,7 @@ test.describe("listing page", () => {
     expect(data.image).toHaveLength(2);
     expect(block).not.toContain(fixture.name);
     expect(block).not.toContain("+212");
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://joutiya.ma/fr/annonce/${fixture.published.slugId}`);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://aalan.ma/fr/annonce/${fixture.published.slugId}`);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /-l\.webp$/);
   });
 

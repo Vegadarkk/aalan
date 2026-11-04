@@ -41,7 +41,7 @@ export function staticSecurityHeaders(): Header[] {
 
 /**
  * CORP same-origin on every path but the development storage route, which sets its own: its media
- * bucket stands in for media.joutiya.ma (no CORP, read by the admin host too). A next.config header
+ * bucket stands in for media.aalan.ma (no CORP, read by the admin host too). A next.config header
  * wins over the one a route returns, hence the exclusion rather than an override in the route.
  */
 export const SAME_ORIGIN_RESOURCE_SOURCE = "/((?!api/dev/storage/).*)";

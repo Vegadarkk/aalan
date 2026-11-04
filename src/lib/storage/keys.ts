@@ -44,7 +44,7 @@ export function assertObjectKey(key: string): void {
 }
 
 /**
- * Where photos are served from, without a trailing slash: MEDIA_BASE_URL (media.joutiya.ma) or,
+ * Where photos are served from, without a trailing slash: MEDIA_BASE_URL (media.aalan.ma) or,
  * in development without it, the signed dev storage route of the media bucket (D11). Null when
  * nothing is configured outside dev: callers show listings without photos.
  */

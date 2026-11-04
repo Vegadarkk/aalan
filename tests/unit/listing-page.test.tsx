@@ -358,7 +358,7 @@ describe("page content", () => {
     expect(html).toMatch(/data-favorite="[^"]+"/);
     expect(crumbLinks(html)).toEqual({
       html: ["/fr", "/fr/c/vehicules", "/fr/c/vehicules/velos", "/fr/c/vehicules/velos/casablanca"],
-      ld: ["https://joutiya.ma/fr", "https://joutiya.ma/fr/c/vehicules", "https://joutiya.ma/fr/c/vehicules/velos", "https://joutiya.ma/fr/c/vehicules/velos/casablanca"],
+      ld: ["https://aalan.ma/fr", "https://aalan.ma/fr/c/vehicules", "https://aalan.ma/fr/c/vehicules/velos", "https://aalan.ma/fr/c/vehicules/velos/casablanca"],
     });
   });
 
@@ -367,7 +367,7 @@ describe("page content", () => {
     for (const listing of outOfIndex) {
       repo.getListing.mockResolvedValue(listing);
       const html = await renderPage();
-      expect(crumbLinks(html), listing.status).toEqual({ html: ["/fr", "/fr/c/vehicules"], ld: ["https://joutiya.ma/fr", "https://joutiya.ma/fr/c/vehicules"] });
+      expect(crumbLinks(html), listing.status).toEqual({ html: ["/fr", "/fr/c/vehicules"], ld: ["https://aalan.ma/fr", "https://aalan.ma/fr/c/vehicules"] });
     }
   });
 
@@ -425,7 +425,7 @@ describe("JSON-LD", () => {
     expect(data).toMatchObject({
       "@type": "Product",
       name: "Vélo de ville",
-      url: `https://joutiya.ma/fr/annonce/${SLUG_ID}`,
+      url: `https://aalan.ma/fr/annonce/${SLUG_ID}`,
       image: ["https://media.aalan.test/listings/abcd2345/photo0001-l.webp", "https://media.aalan.test/listings/abcd2345/photo0002-l.webp"],
       offers: { "@type": "Offer", price: "1500", priceCurrency: "MAD", availability: "https://schema.org/InStock", itemCondition: "https://schema.org/UsedCondition" },
     });

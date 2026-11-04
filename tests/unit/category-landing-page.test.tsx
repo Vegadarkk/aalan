@@ -165,8 +165,8 @@ describe("category landing page", () => {
     const jsonLd = JSON.parse(/<script type="application\/ld\+json">([^<]*)<\/script>/.exec(html)?.[1] ?? "{}") as { "@type"?: string; itemListElement?: { name: string; item?: string }[] };
     expect(jsonLd["@type"]).toBe("BreadcrumbList");
     expect(jsonLd.itemListElement?.map((step) => [step.name, step.item])).toEqual([
-      ["Accueil", "https://joutiya.ma/fr"],
-      ["Véhicules", "https://joutiya.ma/fr/c/vehicules"],
+      ["Accueil", "https://aalan.ma/fr"],
+      ["Véhicules", "https://aalan.ma/fr/c/vehicules"],
     ]);
   });
 
@@ -186,10 +186,10 @@ describe("category landing page", () => {
     expect(html).toContain('href="/fr/c/vehicules/casablanca"');
     const jsonLd = JSON.parse(/<script type="application\/ld\+json">([^<]*)<\/script>/.exec(html)?.[1] ?? "{}") as { itemListElement?: { item?: string }[] };
     expect(jsonLd.itemListElement?.map((step) => step.item)).toEqual([
-      "https://joutiya.ma/fr",
-      "https://joutiya.ma/fr/c/vehicules",
-      "https://joutiya.ma/fr/c/vehicules/voitures",
-      "https://joutiya.ma/fr/c/vehicules/voitures/casablanca",
+      "https://aalan.ma/fr",
+      "https://aalan.ma/fr/c/vehicules",
+      "https://aalan.ma/fr/c/vehicules/voitures",
+      "https://aalan.ma/fr/c/vehicules/voitures/casablanca",
     ]);
   });
 

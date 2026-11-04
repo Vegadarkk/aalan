@@ -60,7 +60,7 @@ export interface ProApplyResponse {
   status: "pending_verification";
 }
 
-// Back office (admin.joutiya.ma/pros): the KYBC queue and the moderator's decision. `submittedAt`
+// Back office (admin.aalan.ma/pros): the KYBC queue and the moderator's decision. `submittedAt`
 // pins the application the moderator reviewed: a resubmission meanwhile answers 409.
 
 export const PRO_REGISTRY_SOURCES = ["ompic", "directinfo", "odco"] as const;
@@ -111,7 +111,7 @@ export interface RentalCheckDecisionResponse {
   status: RentalCheckStatus;
 }
 
-/** A licence document waiting for a moderator (admin.joutiya.ma/pros). */
+/** A licence document waiting for a moderator (admin.aalan.ma/pros). */
 export interface RentalCheckQueueItem {
   proId: string;
   name: string;

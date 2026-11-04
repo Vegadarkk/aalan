@@ -90,17 +90,17 @@ describe("sitemap files", () => {
 
   it("writes fr and ar URLs, each with the whole hreflang cluster, x-default and lastmod", () => {
     const [fr, ar] = urlEntries("/annonce/velo-a&b-abcd2345", UPDATED);
-    expect(fr).toContain("<loc>https://joutiya.ma/fr/annonce/velo-a&amp;b-abcd2345</loc>");
-    expect(ar).toContain("<loc>https://joutiya.ma/ar/annonce/velo-a&amp;b-abcd2345</loc>");
+    expect(fr).toContain("<loc>https://aalan.ma/fr/annonce/velo-a&amp;b-abcd2345</loc>");
+    expect(ar).toContain("<loc>https://aalan.ma/ar/annonce/velo-a&amp;b-abcd2345</loc>");
     for (const entry of [fr, ar]) {
       expect(entry).toContain("<lastmod>2026-10-01T08:30:00.000Z</lastmod>");
-      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="fr-MA" href="https://joutiya.ma/fr/annonce/velo-a&amp;b-abcd2345"/>');
-      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="ar-MA" href="https://joutiya.ma/ar/annonce/velo-a&amp;b-abcd2345"/>');
-      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="x-default" href="https://joutiya.ma/fr/annonce/velo-a&amp;b-abcd2345"/>');
+      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="fr-MA" href="https://aalan.ma/fr/annonce/velo-a&amp;b-abcd2345"/>');
+      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="ar-MA" href="https://aalan.ma/ar/annonce/velo-a&amp;b-abcd2345"/>');
+      expect(entry).toContain('<xhtml:link rel="alternate" hreflang="x-default" href="https://aalan.ma/fr/annonce/velo-a&amp;b-abcd2345"/>');
       expect(entry).not.toContain("/rif/");
     }
     expect(urlEntries("")[0]).toBe(
-      '<url><loc>https://joutiya.ma/fr</loc><xhtml:link rel="alternate" hreflang="fr-MA" href="https://joutiya.ma/fr"/><xhtml:link rel="alternate" hreflang="ar-MA" href="https://joutiya.ma/ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://joutiya.ma/fr"/></url>',
+      '<url><loc>https://aalan.ma/fr</loc><xhtml:link rel="alternate" hreflang="fr-MA" href="https://aalan.ma/fr"/><xhtml:link rel="alternate" hreflang="ar-MA" href="https://aalan.ma/ar"/><xhtml:link rel="alternate" hreflang="x-default" href="https://aalan.ma/fr"/></url>',
     );
   });
 });
@@ -121,7 +121,7 @@ describe("buildSitemapFile", () => {
     const xml = (await buildSitemapFile("index.xml", PROD)) ?? "";
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')).toBe(true);
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-    expect(locs).toEqual(["https://joutiya.ma/sitemaps/pages.xml", ...shards.map((shard) => `https://joutiya.ma/sitemaps/listings-${shard}.xml`)]);
+    expect(locs).toEqual(["https://aalan.ma/sitemaps/pages.xml", ...shards.map((shard) => `https://aalan.ma/sitemaps/listings-${shard}.xml`)]);
     expect(shards.length).toBeLessThan(SITEMAP_SHARDS + 1);
   });
 
@@ -133,7 +133,7 @@ describe("buildSitemapFile", () => {
     const xml = (await buildSitemapFile(`listings-${shard}.xml`, PROD)) ?? "";
     expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-    expect(locs.sort()).toEqual(mine.flatMap((id) => [`https://joutiya.ma/fr/annonce/annonce-${id}`, `https://joutiya.ma/ar/annonce/annonce-${id}`]).sort());
+    expect(locs.sort()).toEqual(mine.flatMap((id) => [`https://aalan.ma/fr/annonce/annonce-${id}`, `https://aalan.ma/ar/annonce/annonce-${id}`]).sort());
     expect(xml.match(/<lastmod>2026-10-01T08:30:00.000Z<\/lastmod>/g)).toHaveLength(mine.length * 2);
     const empty = Array.from({ length: SITEMAP_SHARDS }, (_, k) => k).find((k) => !all.some((id) => sitemapShardOf(id) === k));
     if (empty !== undefined) await expect(buildSitemapFile(`listings-${empty}.xml`, PROD)).resolves.toBeNull();
@@ -157,7 +157,7 @@ describe("buildSitemapFile", () => {
       { ...doc("k2345678", "vente", "rabat"), isExample: true },
     ]);
     const xml = (await buildSitemapFile("pages.xml", PROD)) ?? "";
-    const paths = [...xml.matchAll(/<loc>https:\/\/joutiya\.ma\/fr([^<]*)<\/loc>/g)].map((match) => match[1]);
+    const paths = [...xml.matchAll(/<loc>https:\/\/aalan\.ma\/fr([^<]*)<\/loc>/g)].map((match) => match[1]);
     // Every top-level category is listed whatever its count (owner, 4 Nov 2026): immobilier with 2
     // real listings, the empty ones too.
     expect(paths.sort()).toEqual(["", ...CATEGORIES.map((category) => `/c/${category.id}`), "/c/vehicules/casablanca", "/c/vehicules/voitures", "/c/vehicules/voitures/casablanca", "/boutiques", "/boutiques/activite/boutiques", "/boutiques/activite/concessions-automobiles", "/boutiques/activite/agences-immobilieres", "/boutiques/activite/location-voitures", "/boutiques/activite/location-saisonniere", "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`), "/professionnels"].sort());
@@ -168,7 +168,7 @@ describe("buildSitemapFile", () => {
 describe("GET /sitemaps/[file]", () => {
   it("answers XML in production and 404 elsewhere", async () => {
     await engine.upsert([doc("a2345678", "voitures", "casablanca")]);
-    const call = (file: string) => GET(new Request(`https://joutiya.ma/sitemaps/${file}`), { params: Promise.resolve({ file }) });
+    const call = (file: string) => GET(new Request(`https://aalan.ma/sitemaps/${file}`), { params: Promise.resolve({ file }) });
     const notFound = await call("index.xml");
     expect(notFound.status).toBe(404);
     process.env.APP_ENV = "prod";

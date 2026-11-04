@@ -143,8 +143,8 @@ Node 24; `npm ci --ignore-scripts` once.
 - `npm run check`: lint, typecheck, unit tests, guard tests. `npm run test:rules`: Firestore rules in the
   emulator (Java 21). `npm run build`, then `npm run test:e2e` (Playwright; in the cloud set
   `PLAYWRIGHT_CHROMIUM_PATH`). `shellcheck infra/vm/*.sh` for the VM scripts.
-- `node scripts/legacy-name.ts`: zero-Joutiya guard (CI); the former name only shrinks, counts per
-  file in `scripts/legacy-name-baseline.json` (`--update` after a rename wave, never raise a count).
+- `node scripts/legacy-name.ts`: former-name guard (CI, rebrand plan): a change may not add a line
+  holding the old name (diff against `origin/main`; `--count` lists what is left).
 - `node scripts/assert-target.ts`: validate `infra/targets.json` (exact third-party
   identifiers). With `APP_ENV` set it also checks the configured identifiers, and it always
   checks the owner's `JOUTIYA_*_TUNNEL_TOKEN`, e.g.

@@ -379,9 +379,9 @@ export async function relay(request: Request, deps: RelayDeps): Promise<Response
   // Chunked bodies carry no Content-Length: the read itself is capped, before any signature work.
   const body = await readCapped(request.body, deps.maxBytes);
   if (body === null) return new Response(null, { status: 413 });
-  // X-Aalan-* first; X-Joutiya-* still accepted from an app not yet redeployed (zero-Joutiya plan).
+  // X-Aalan-* first; the pair under the former name is still accepted from an app not yet redeployed.
   // The pair is read together so a timestamp is never checked against the other name's signature.
-  const prefix = request.headers.has("X-Aalan-Signature") ? "X-Aalan" : "X-Joutiya";
+  const prefix = request.headers.has("X-Aalan-Signature") ? "X-Aalan" : "X-Joutiya"; // legacy-name: allow
   const signature = request.headers.get(`${prefix}-Signature`);
   const valid = await verifySignature(deps.secret, request.headers.get(`${prefix}-Timestamp`), signature, body, Math.floor(deps.nowMs / 1000));
   if (!valid || !signature) return new Response(null, { status: 401 });

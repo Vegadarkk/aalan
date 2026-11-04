@@ -25,14 +25,14 @@ export class RelayEmailChannel implements AlertChannel {
     const signature = createHmac("sha256", this.secret).update(`${timestamp}.${body}`).digest("hex");
     const response = await this.fetchImpl(this.url, {
       method: "POST",
-      // X-Aalan-* is read first by the Worker; the X-Joutiya-* copies keep an older Worker working
-      // until it is redeployed (zero-Joutiya plan), then they go.
+      // X-Aalan-* is read first by the Worker; the copies under the former name keep an older Worker
+      // working until it is redeployed (rebrand plan), then they go.
       headers: {
         "Content-Type": "application/json",
         "X-Aalan-Timestamp": timestamp,
         "X-Aalan-Signature": signature,
-        "X-Joutiya-Timestamp": timestamp,
-        "X-Joutiya-Signature": signature,
+        "X-Joutiya-Timestamp": timestamp, // legacy-name: allow
+        "X-Joutiya-Signature": signature, // legacy-name: allow
       },
       body,
       signal: AbortSignal.timeout(8_000),

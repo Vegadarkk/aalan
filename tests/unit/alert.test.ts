@@ -37,7 +37,7 @@ describe("RelayEmailChannel", () => {
     const expected = createHmac("sha256", "s3cret").update(`${headers["X-Aalan-Timestamp"]}.${body}`).digest("hex");
     expect(headers["X-Aalan-Signature"]).toBe(expected);
     // Copies for a Worker not yet redeployed.
-    expect(headers["X-Joutiya-Timestamp"]).toBe(headers["X-Aalan-Timestamp"]);
+    expect(headers["X-Joutiya-Timestamp"]).toBe(headers["X-Aalan-Timestamp"]); // legacy-name: allow
     expect(headers["X-Joutiya-Signature"]).toBe(expected);
     expect(JSON.parse(body)).toEqual({ ...ALERT, env: "prod" });
   });

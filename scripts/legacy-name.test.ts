@@ -1,19 +1,44 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { BASELINE_PATH, compare, countLegacyLines, type Baseline } from "./legacy-name.ts";
+import { netAdditions, problems } from "./legacy-name.ts";
 
-test("a file over its count or missing from the baseline fails; one under it can be lowered", () => {
-  const baseline = { "a.ts": 2, "b.md": 1, "gone.ts": 3 };
-  assert.deepEqual(compare(baseline, { "a.ts": 2, "b.md": 1 }), { problems: [], lowered: ["gone.ts"] });
-  assert.deepEqual(compare(baseline, { "a.ts": 1, "b.md": 1, "gone.ts": 3 }), { problems: [], lowered: ["a.ts"] });
-  assert.deepEqual(compare(baseline, { "a.ts": 3, "b.md": 1, "gone.ts": 3, "new.ts": 1 }), {
-    problems: ["a.ts: 3 lines with the former name, 2 allowed (name it Aalan)", "new.ts: 1 new line(s) with the former name (name it Aalan)"],
-    lowered: [],
-  });
+const diff = [
+  "diff --git a/src/a.ts b/src/a.ts",
+  "--- a/src/a.ts",
+  "+++ b/src/a.ts",
+  "@@ -1 +1 @@",
+  '-const host = "staging.joutiya.ma"; // old',
+  '+const host = "staging.joutiya.ma"; // edited, still one line',
+  "diff --git a/src/b.ts b/src/b.ts",
+  "--- a/src/b.ts",
+  "+++ b/src/b.ts",
+  "@@ -0,0 +1,2 @@",
+  '+const key = "Joutiya.review";',
+  "+const other = 1;",
+  '+headers["X-Joutiya-Signature"] = signature; // legacy-name: allow',
+  "diff --git a/src/c.ts b/src/c.ts",
+  "--- a/src/c.ts",
+  "+++ b/src/c.ts",
+  "@@ -1 +1 @@",
+  '-const key = "joutiya.x";',
+  '+const key = "aalan.x";',
+  "diff --git a/old.md b/old.md",
+  "--- a/old.md",
+  "+++ /dev/null",
+  "@@ -1 +0,0 @@",
+  "-Joutiya",
+  "diff --git a/scripts/legacy-name.ts b/scripts/legacy-name.ts",
+  "--- a/scripts/legacy-name.ts",
+  "+++ b/scripts/legacy-name.ts",
+  "@@ -0,0 +1 @@",
+  "+// joutiya by design",
+].join("\n");
+
+test("an edited line holding the name passes, a new one fails, a removed one counts down", () => {
+  assert.deepEqual(netAdditions(diff), { "src/a.ts": 0, "src/b.ts": 1, "src/c.ts": -1 });
+  assert.deepEqual(problems(netAdditions(diff)), ["src/b.ts: 1 new line(s) with the former name (name it Aalan)"]);
 });
 
-test("the repository holds no occurrence beyond the committed baseline", () => {
-  const baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8")) as Baseline;
-  assert.deepEqual(compare(baseline.files, countLegacyLines()).problems, []);
+test("a diff without the name has nothing to report", () => {
+  assert.deepEqual(problems(netAdditions("diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b")), []);
 });

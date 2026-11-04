@@ -4407,7 +4407,11 @@
       "selectBody": "Timeslayin nnec d imzenza d imsaɣen ad d-banent da.",
       "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna.",
       "busy": "Tesɛiḍ yakan {count} n onglets n Aalan ttwaldin: qqen yiwen akken ad d-yuɣal ubeddel nican n tebratin.",
-      "refreshLive": "Ɛawed ɛemmer"
+      "refreshLive": "Ɛawed ɛemmer",
+      "filteredUnreadTitle": "Kulci yettwaɣra",
+      "filteredTitle": "Ulac tameslayt i usfeṛ-a",
+      "filteredBody": "Timeslayin yettwaɛemmren ur msasant ca d usfeṛ-a.",
+      "showAll": "Ẓar akk timeslayin"
     },
     "row": {
       "you": "Cek:",
@@ -4495,6 +4499,14 @@
       "not_found": "Tameslayt-a war telli ca.",
       "listing_unavailable": "Annonce-a war telli ca: war tzemmreḍ ca ad tariḍ i umzenzu nnes.",
       "invalid_body": "Tabrat-a war tezmir ca ad tettwazen am uya. Senqed-tt, uca ɛawed."
+    },
+    "filters": {
+      "label": "Sfeṛ timeslayin",
+      "unread": "Ur ttwaɣrent ca",
+      "listing": "Annonce n timeslayin",
+      "allListings": "Akk annonces",
+      "listingOption": "{title} ({count})",
+      "untitled": "Annonce war azwel"
     }
   },
   "Appointments": {

@@ -6,7 +6,18 @@ import { audit } from "@/lib/audit";
 import { accessIdentity, requireSameOrigin, type StaffContext } from "@/lib/auth/guards";
 import { assertPasswordPolicy } from "@/lib/auth/password-policy";
 import { displayNameSchema, emailSchema, PASSWORD_MAX } from "@/lib/contracts/auth";
-import { getStaff, listActiveAdmins, listStaff, revokeStaff, staffRoleSchema, upsertStaff, type StaffRecord, type StaffRole } from "@/lib/db/repositories/staff";
+import {
+  getStaff,
+  listActiveAdmins,
+  listStaff,
+  markStaffActivated,
+  markStaffInvited,
+  revokeStaff,
+  staffRoleSchema,
+  upsertStaff,
+  type StaffRecord,
+  type StaffRole,
+} from "@/lib/db/repositories/staff";
 import { emailNormHash } from "@/lib/db/repositories/users";
 import { serverEnv } from "@/lib/env";
 import { auth } from "@/lib/firebase/admin";
@@ -85,6 +96,7 @@ export interface StaffSummary {
 export type StaffLoginResponse = { status: "signed_in"; staff: StaffSummary } | { status: "turnstile_required" };
 export type StaffPasswordResponse = { status: "password_set" };
 export type StaffInviteResponse = { uid: string };
+export type StaffResendResponse = { invitedAt: string };
 
 /** One roster row, dates as ISO strings (the API answer and the /personnel table). */
 export interface StaffMember {
@@ -95,6 +107,10 @@ export interface StaffMember {
   invitedBy: string;
   createdAt: string;
   revokedAt: string | null;
+  /** Last invitation mailed; null on entries older than the pending state. */
+  invitedAt: string | null;
+  /** Password set or first sign-in since the last invitation (null with invitedAt set: pending). */
+  activatedAt: string | null;
 }
 export interface StaffListResponse {
   staff: StaffMember[];
@@ -214,6 +230,7 @@ export async function login(request: Request): Promise<Response> {
 
   const minted = await createSessionForUid(record.uid);
   await resetLimit(LOGIN_LIMIT, accountIp);
+  await activate(record.uid);
   await logConnection({ uid: record.uid, event: "staff_login", ip: identity.ip });
 
   const payload: StaffLoginResponse = {
@@ -281,9 +298,22 @@ export async function setPassword(request: Request): Promise<Response> {
   }
   await revokeSessions(record.uid);
   await publishRevoked(record.uid);
+  await activate(record.uid);
   // Traced like a member's reset: who set a staff password, when, from where.
   await logConnection({ uid: record.uid, event: "password_reset", ip: identity.ip });
   return json<StaffPasswordResponse>({ status: "password_set" });
+}
+
+/**
+ * The invitation is accepted (password set) or the member signed in: no longer pending. Best
+ * effort: the roster state never blocks a sign-in.
+ */
+async function activate(uid: string): Promise<void> {
+  try {
+    await markStaffActivated(await getStaff(uid));
+  } catch (error) {
+    logger.warn({ err: (error as Error).message }, "staff activation not recorded");
+  }
 }
 
 function toMember(record: StaffRecord): StaffMember {
@@ -295,6 +325,8 @@ function toMember(record: StaffRecord): StaffMember {
     invitedBy: record.invitedBy,
     createdAt: record.createdAt.toISOString(),
     revokedAt: record.revokedAt?.toISOString() ?? null,
+    invitedAt: record.invitedAt?.toISOString() ?? null,
+    activatedAt: record.activatedAt?.toISOString() ?? null,
   };
 }
 
@@ -348,21 +380,10 @@ export async function invite(ctx: StaffContext, input: InviteInput, identity: Re
     await auth().updateUser(uid, { disabled: false, displayName: input.displayName });
   }
   // Roster before claims: an interrupted call leaves an entry without rights, never the reverse.
-  await upsertStaff({ uid, email: input.email, displayName: input.displayName, role: input.role, invitedBy: ctx.user.uid });
+  await upsertStaff({ uid, email: input.email, displayName: input.displayName, role: input.role, invitedBy: ctx.user.uid, invited: true });
   await setClaims(uid, { role: input.role, v: 2 });
-
-  try {
-    await sendMail({
-      template: "staffInvite",
-      locale: "fr",
-      to: input.email,
-      data: { displayName: input.displayName, actionLink: invitationLinkRequest(), role: input.role },
-      priority: "security",
-    });
-  } catch (error) {
-    // The account and its role exist; the admin can invite again to resend the link.
-    logger.error({ err: (error as Error).message, uid }, "staff invitation mail failed");
-  }
+  // The account and its role exist even when the mail fails: the admin resends it from the roster.
+  await mailInvitation(uid, input);
   await audit({
     actorUid: ctx.user.uid,
     actorRole: ctx.role,
@@ -384,6 +405,47 @@ export async function invite(ctx: StaffContext, input: InviteInput, identity: Re
     });
   }
   return { uid };
+}
+
+/** Queues the invitation mail (set-password link generated at delivery, valid one hour). */
+async function mailInvitation(uid: string, member: { email: string; displayName: string; role: StaffRole }): Promise<boolean> {
+  try {
+    await sendMail({
+      template: "staffInvite",
+      locale: "fr",
+      to: member.email,
+      data: { displayName: member.displayName, actionLink: invitationLinkRequest(), role: member.role },
+      priority: "security",
+    });
+    return true;
+  } catch (error) {
+    logger.error({ err: (error as Error).message, uid }, "staff invitation mail failed");
+    return false;
+  }
+}
+
+/**
+ * POST /api/admin/staff/[uid]/invitation: mails the set-password link again to a member still
+ * pending (expired link, lost mail). 404 for an unknown member; 409 once revoked (invite again)
+ * or active (the invitation was accepted).
+ */
+export async function resendInvitation(ctx: StaffContext, uid: string, identity: RequestIdentity, now = new Date()): Promise<StaffResendResponse> {
+  const member = await getStaff(uid);
+  if (!member) throw notFound();
+  if (member.revokedAt) throw new HttpError(409, "conflict", "revoked member: invite them again");
+  if (!member.invitedAt || member.activatedAt) throw new HttpError(409, "conflict", "the member already accepted the invitation");
+  if (!(await mailInvitation(uid, member))) throw unavailable("invitation mail not queued");
+  await markStaffInvited(uid, now);
+  await audit({
+    actorUid: ctx.user.uid,
+    actorRole: ctx.role,
+    action: "staff.invite_resend",
+    target: { type: "staff", id: uid },
+    automated: false,
+    ip: identity.ip,
+    reason: member.role,
+  });
+  return { invitedAt: now.toISOString() };
 }
 
 /** Revocation here never touches Cloudflare Access: the admin removes the person from its policy by hand. */

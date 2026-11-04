@@ -104,6 +104,18 @@ describe("deliverMail action links", () => {
     expect(sent?.text).toContain("oobCode=fresh");
   });
 
+  it("dates the staff invitation's link from its delivery (one hour, audit zone 7 P3-5)", async () => {
+    setEnv({ APP_ENV: "dev", DEV_MAILBOX: "true" });
+    const before = Date.now();
+    const link = { action: "resetPassword" as const, url: "https://admin.joutiya.test/connexion?mode=setPassword", continueUrl: "https://admin.joutiya.test/connexion" };
+    await deliverMail({ ...MAIL, template: "staffInvite", to: "invite@example.com", data: { displayName: "Nadia", role: "moderator", actionLink: link } });
+    const [sent] = memoryMailbox().list({ to: "invite@example.com" });
+    const expiresAt = Date.parse(String((sent?.data as { expiresAt?: string }).expiresAt));
+    expect(expiresAt - before).toBeGreaterThanOrEqual(60 * 60_000);
+    expect(expiresAt - Date.now()).toBeLessThanOrEqual(60 * 60_000);
+    expect(sent?.text).toContain("valable une heure");
+  });
+
   it("drops the mail when its recipient has no account any more", async () => {
     setEnv({ APP_ENV: "dev", DEV_MAILBOX: "true" });
     vi.mocked(generateActionUrl).mockResolvedValueOnce(null);

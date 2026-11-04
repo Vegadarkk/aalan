@@ -161,8 +161,10 @@ describe("FavoritesGrid", () => {
 
 describe("UnsubscribeConfirm", () => {
   it("offers a single confirm button (the GET page never unsubscribes)", () => {
-    const html = render(<UnsubscribeConfirm token="a.b" scope="all" />);
+    const html = render(<UnsubscribeConfirm token="a.b" scope="all" title={fr.Alerts.unsubscribe.titleAll} body={fr.Alerts.unsubscribe.bodyAll} />);
     expect(text(html)).toContain(fr.Alerts.unsubscribe.confirm);
+    // The question is the component's own heading, so the result can replace it once confirmed.
+    expect(html).toMatch(/<h1[^>]*>Ne plus recevoir d&#x27;alertes \?<\/h1>/);
     expect(html).toContain('type="button"');
     expect(html).not.toContain("<form");
   });

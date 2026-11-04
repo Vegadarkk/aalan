@@ -398,7 +398,9 @@
       "verifyTitle": "Sentem adres n e-mail nnec",
       "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu.",
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
-      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedSuspended": "Tukcimt nnec tekmel: amiḍan nnec yettwaḥbes ar {date} (tasaɛt n Lmeɣrib).",
+      "sessionEndedSuspendedBody": "Ɛawed kcem ḥima ad teɣreḍ tameslayin nnec, ad teẓreḍ ssebba n tegtint d ad tagiḍ x-s."
     },
     "signUp": {
       "title": "Snulfu amiḍan",

@@ -376,7 +376,28 @@ export interface PatchOptions {
   imported?: { listing: ListingRecord; seller: SellerContext };
 }
 
+/**
+ * Tries of a draft save that lost a version race (zone 3 audit P3-13). The photo pipeline attaches
+ * each photo to a draft in its own transaction (version + 1): with two uploads in flight, the save
+ * of the photo order read before the second attach commits after it and answered 409 (the browser
+ * retried once, then halted). A draft's save is a plain set of fields, no screening and no rate
+ * limit spent, so it is read again and redone here; other statuses keep the 409 (a live listing's
+ * save screens it, and a concurrent report must reach the owner).
+ */
+const DRAFT_SAVE_ATTEMPTS = 3;
+
 export async function patchListing(actor: Actor, id: string, patch: ListingPatch, now = new Date(), options: PatchOptions = {}) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await patchListingOnce(actor, id, patch, now, options);
+    } catch (error) {
+      if (error instanceof ListingRaceError && error.listingStatus === "draft" && !options.imported && attempt < DRAFT_SAVE_ATTEMPTS) continue;
+      throw error;
+    }
+  }
+}
+
+async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, now: Date, options: PatchOptions) {
   const listing = options.imported?.listing ?? (await ownedListing(actor, id));
   if (options.imported) requireOwner(actor.auth, listing);
   if (!EDITABLE_STATUSES.includes(listing.status)) throw new HttpError(409, "conflict", "listing is read-only in this status");
@@ -821,6 +842,13 @@ export function isAllowedTransition(from: ListingStatus, to: ListingStatus): boo
 
 // ---- Commit and notifications -----------------------------------------------------------------
 
+/** commit's 409 when the listing changed between its read and the write; callers see a plain `conflict`. */
+class ListingRaceError extends HttpError {
+  constructor(readonly listingStatus: ListingStatus) {
+    super(409, "conflict", "listing changed meanwhile, reload it");
+  }
+}
+
 interface CommitContext {
   actor: Actor;
   user: UserRecord;
@@ -859,7 +887,7 @@ async function commit(listing: ListingRecord, patch: ListingFieldPatch, effects:
       if (effects.contentOp && ctx.actor.ip) recordContentOpTx(tx, { uid: ctx.actor.auth.user.uid, op: effects.contentOp.op, contentRef: listingContentRef(listing.id), ip: ctx.actor.ip, now: ctx.now });
     });
   } catch (error) {
-    if (error instanceof ListingVersionError) throw new HttpError(409, "conflict", "listing changed meanwhile, reload it");
+    if (error instanceof ListingVersionError) throw new ListingRaceError(listing.status);
     if (error instanceof DraftLimitError) throw new HttpError(409, "draft_limit");
     if (error instanceof ActiveLimitError) throw new HttpError(409, "listing_limit");
     throw error;

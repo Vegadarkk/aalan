@@ -115,7 +115,7 @@ describe("POST /api/uploads/{id}/complete (inline pipeline)", () => {
     expect(doc).toMatchObject({ status: "ready", width: 50, height: 100, variants: ["l", "m", "s"], checks: { nsfw: 0.02, faces: 0 } });
     expect((await getListing(listingId))!.photos).toEqual([{ id, w: 50, h: 100, blurhash: doc.blurhash, hash: doc.hash, variants: ["l", "m", "s"] }]);
     const owned = await listingApi<ListingResponse>(getListingRoute, "GET", `/api/listings/${listingId}`, { member: owner });
-    expect(owned.body.listing.photos).toEqual([{ id, status: "ready", w: 50, h: 100, blurhash: doc.blurhash }]);
+    expect(owned.body.listing.photos).toEqual([{ id, status: "ready", w: 50, h: 100, blurhash: doc.blurhash, hash: doc.hash }]);
 
     // Repeating complete changes nothing; GET answers the same.
     const calls = store.calls.length;

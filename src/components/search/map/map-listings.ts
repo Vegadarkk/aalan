@@ -54,7 +54,7 @@ export interface MapListingLabels {
   today: string;
   per: (unit: "night" | "month" | "day") => string;
   pinPer: (unit: "night" | "month" | "day") => string;
-  fact: (id: string, count: number) => string | null;
+  fact: (id: string, value: number | string) => string | null;
 }
 
 /** Short price of a pin: grouped digits under a million, compact above ("1,2 M"). */

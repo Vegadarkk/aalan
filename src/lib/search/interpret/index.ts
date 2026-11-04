@@ -1,6 +1,7 @@
-import { categoryById, subcategoryById, type Condition } from "@/config/categories";
+import { categoryById, criterionById, searchCriteria, subcategoryById, type Condition } from "@/config/categories";
 import { canonicalSearchParams, effectiveSort, type CriterionFilter, type SearchParams, type SearchSort, type SellerTypeFilter } from "@/lib/search/params";
-import { FILLER_WORDS, PLACE_WORDS, lexiconPhrases, type Entry, type PhraseEntry, type ThingEntry } from "./lexicon";
+import { carModelById } from "@/config/car-models";
+import { CAR_WORDS, FILLER_WORDS, PLACE_WORDS, brandPhrases, lexiconPhrases, type Entry, type PhraseEntry, type ThingEntry } from "./lexicon";
 import { findAmounts, unreadPriceCues } from "./prices";
 import { keptText, tokenForms, tokenizeQuery, type Token } from "./tokens";
 
@@ -88,10 +89,40 @@ function sameWord(token: Token | undefined, word: string): boolean {
   return token !== undefined && tokenForms(token.norm).some((form) => form.form === word);
 }
 
+let brandWords: Map<string, string[][]> | undefined;
+
+/** Whether the words name the car brand (one of its spellings, anywhere). */
+function brandTyped(tokens: readonly Token[], brand: string): boolean {
+  brandWords ??= brandPhrases();
+  const words = tokens.map((token) => token.norm);
+  return (brandWords.get(brand) ?? []).some((phrase) => words.some((_, at) => phrase.every((word, offset) => words[at + offset] === word)));
+}
+
+const carWordTyped = (tokens: readonly Token[]) => tokens.some((token) => CAR_WORDS.has(token.norm));
+
+/** A guarded model: its brand typed; a car word is enough for a name ("voiture golf"), never for a number ("voiture 3 portes"). */
+function modelAllowed(entry: Extract<Entry, { kind: "model" }>, tokens: readonly Token[], start: number, end: number): boolean {
+  if (!entry.guarded || brandTyped(tokens, entry.brand)) return true;
+  const numeric = tokens.slice(start, end).every((token) => /^\d+$/.test(token.norm));
+  return !numeric && carWordTyped(tokens);
+}
+
+/** A guarded brand ("seat", "mini"): with one of its models or a car word. */
+function brandAllowed(entry: Extract<Entry, { kind: "brand" }>, tokens: readonly Token[]): boolean {
+  if (!entry.guarded) return true;
+  if (carWordTyped(tokens)) return true;
+  const words = tokens.map((token) => token.norm);
+  return words.some((_, at) => index().get(words[at] ?? "")?.some((phrase) => phrase.entry.kind === "model" && phrase.entry.brand === entry.car && phrase.tokens.every((word, offset) => words[at + offset] === word)) ?? false);
+}
+
 function allowed(entry: Entry, tokens: readonly Token[], start: number, end: number, place: boolean): boolean {
   const before = tokens[start - 1]?.norm;
   const after = tokens[end]?.norm;
   switch (entry.kind) {
+    case "model":
+      return modelAllowed(entry, tokens, start, end);
+    case "brand":
+      return brandAllowed(entry, tokens);
     case "city":
       return !entry.guarded || place || (before !== undefined && PLACE_WORDS.has(before));
     case "near":
@@ -125,6 +156,77 @@ function matchAt(tokens: readonly Token[], start: number, taken: ReadonlySet<num
 }
 
 // ---- Interpretation.
+
+type BrandMatch = Match & { entry: Extract<Entry, { kind: "brand" }> };
+type ModelMatch = Match & { entry: Extract<Entry, { kind: "model" }> };
+
+const YEAR = /^(19|20)\d\d$/;
+
+const KM_WORDS: ReadonlySet<string> = new Set(["km", "kms", "kilometre", "kilometres", "كم", "كلم", "كيلومتر"]);
+const FLOOR_BEFORE = /(?:^| )(?:plus de|au moins|a partir de|minimum|min|kter mn|ktar mn|اكثر من)$/;
+
+/** The first "<number> km" not taken: digits grouped by thousands ("100 000") or not ("100000"). */
+function findMileage(tokens: readonly Token[], taken: ReadonlySet<number>): { value: number; floor: boolean; tokens: number[] } | null {
+  for (let at = 0; at < tokens.length; at += 1) {
+    if (taken.has(at) || !/^\d{1,6}$/.test(tokens[at]?.norm ?? "")) continue;
+    let end = at + 1;
+    let digits = tokens[at]?.norm ?? "";
+    while (end < tokens.length && !taken.has(end) && /^\d{3}$/.test(tokens[end]?.norm ?? "") && digits.length <= 3) {
+      digits += tokens[end]?.norm ?? "";
+      end += 1;
+    }
+    if (end >= tokens.length || taken.has(end) || !KM_WORDS.has(tokens[end]?.norm ?? "")) continue;
+    const before = tokens.slice(Math.max(0, at - 3), at).map((token) => token.norm).join(" ");
+    return { value: Number(digits), floor: FLOOR_BEFORE.test(before), tokens: Array.from({ length: end - at + 1 }, (_, offset) => at + offset) };
+  }
+  return null;
+}
+
+/**
+ * Brand, catalogue model and year of a vehicle target, where its listings must state them (a
+ * required brand, the derived model, the year criterion). The brand of an understood model is
+ * filtered too, so the panel lists that brand's models.
+ */
+function vehicleCriteria(target: Resolved, tokens: readonly Token[], brands: readonly BrandMatch[], models: readonly ModelMatch[], taken: Set<number>): Understood[] {
+  const sub = target.subcategory ? subcategoryById(target.subcategory) : undefined;
+  if (!sub) return [];
+  const required = (id: string) => sub.criteria.some((criterion) => criterion.id === id && criterion.required);
+  const filters = new Set(searchCriteria(target.category, target.subcategory).map((criterion) => criterion.id));
+  const out: Understood[] = [];
+  const item = (id: string, values: string[], from: readonly number[], label: readonly number[]): Understood => ({ key: `criterion:${id}`, label: labelOf(tokens, label), patch: { criteria: { [id]: { kind: "options", values } } }, tokens: from, content: true, needsCategory: true });
+  const modelIds = filters.has("car-model") ? [...new Set(models.map((match) => match.entry.model))] : [];
+  const modelTokens = filters.has("car-model") ? models.flatMap(span) : [];
+  if (required("car-brand")) {
+    const typed = brands.filter((match) => match.entry.car !== undefined);
+    const values = [...new Set([...typed.map((match) => match.entry.car ?? ""), ...modelIds.map((id) => carModelById(id)?.brand ?? "")])].filter(Boolean);
+    const from = typed.flatMap(span);
+    if (values.length) out.push(item("car-brand", values, from, from.length ? from : modelTokens));
+  } else if (required("moto-brand")) {
+    const typed = brands.filter((match) => match.entry.moto !== undefined);
+    if (typed.length) out.push(item("moto-brand", [...new Set(typed.map((match) => match.entry.moto ?? ""))], typed.flatMap(span), typed.flatMap(span)));
+  }
+  if (modelIds.length) out.push(item("car-model", modelIds, modelTokens, modelTokens));
+  // A mileage ("100 000 km", "moins de 150000 km"): a ceiling, a floor after « plus de ».
+  const mileage = criterionById("mileage");
+  if (filters.has("mileage") && mileage?.type === "number") {
+    const found = findMileage(tokens, taken);
+    if (found && found.value <= (mileage.max ?? 0)) {
+      for (const at of found.tokens) taken.add(at);
+      out.push({ key: "criterion:mileage", label: labelOf(tokens, found.tokens), patch: { criteria: { mileage: { kind: "range", ...(found.floor ? { min: found.value } : { max: found.value }) } } }, tokens: found.tokens, content: true, needsCategory: true });
+    }
+  }
+  // A year alone ("Clio 4 diesel 2016"): the year-model, one year or the span of two.
+  const year = criterionById("year");
+  if (filters.has("year") && year?.type === "number") {
+    const found = tokens.flatMap((token, at) => (!taken.has(at) && YEAR.test(token.norm) && Number(token.norm) >= (year.min ?? 0) && Number(token.norm) <= (year.max ?? 0) ? [at] : []));
+    if (found.length > 0 && found.length <= 2) {
+      const values = found.map((at) => Number(tokens[at]?.norm));
+      for (const at of found) taken.add(at);
+      out.push({ key: "criterion:year", label: labelOf(tokens, found), patch: { criteria: { year: { kind: "range", min: Math.min(...values), max: Math.max(...values) } } }, tokens: found, content: true, needsCategory: true });
+    }
+  }
+  return out;
+}
 
 const span = (match: { start: number; length: number }) => Array.from({ length: match.length }, (_, offset) => match.start + offset);
 
@@ -201,8 +303,16 @@ export function interpretQuery(input: string): Interpretation {
   // "location saisonnière", "location vacances" with nothing named: a holiday rental (journey review 2026-10-29).
   const holidayAlone = !target && things.length === 0 && flags.holiday;
   if (holidayAlone) target = { category: "immobilier", subcategory: "location-vacances", criteria: {} };
+  // A brand or a model with nothing else named: a car ("Renault Clio", "logan"), or a motorbike for
+  // a motorbike-only brand ("Yamaha").
+  const brands = of("brand");
+  const models = of("model");
+  const vehicleAlone = !target && things.length === 0 && (brands.length > 0 || models.length > 0);
+  const carAlone = vehicleAlone && (models.length > 0 || brands.some((match) => match.entry.car !== undefined));
+  if (vehicleAlone) target = carAlone ? { category: "vehicules", subcategory: flags.rent ? "location-voitures" : "voitures", criteria: {} } : { category: "vehicules", subcategory: "motos-scooters", criteria: {} };
   if (target) {
     const families = new Set(things.map((match) => match.entry.family));
+    if (carAlone) families.add("car");
     const used = [
       ...things,
       ...of("sale"),
@@ -210,7 +320,8 @@ export function interpretQuery(input: string): Interpretation {
       ...(families.has("property") || holidayAlone ? of("holiday") : []),
     ];
     const tokensOf = used.flatMap(span);
-    understood.push({ key: "category", label: labelOf(tokens, tokensOf), patch: { category: target.category, ...(target.subcategory ? { subcategory: target.subcategory } : {}) }, tokens: tokensOf, content: true });
+    const vehicleTokens = vehicleAlone ? [...brands, ...models].flatMap(span) : [];
+    understood.push({ key: "category", label: labelOf(tokens, [...tokensOf, ...vehicleTokens]), patch: { category: target.category, ...(target.subcategory ? { subcategory: target.subcategory } : {}) }, tokens: tokensOf, content: true });
     for (const [id, values] of Object.entries(target.criteria)) {
       understood.push({ key: `criterion:${id}`, label: labelOf(tokens, tokensOf), patch: { criteria: { [id]: { kind: "options", values } } }, tokens: [], content: true, needsCategory: true });
     }
@@ -229,6 +340,7 @@ export function interpretQuery(input: string): Interpretation {
         understood.push({ key: `criterion:${id}`, label: labelOf(tokens, span(match)), patch: { criteria: { [id]: { kind: "options", values: [value] } } }, tokens: span(match), content: true, needsCategory: true });
       }
     }
+    understood.push(...vehicleCriteria(target, tokens, brands, models, taken));
   }
 
   // Where.

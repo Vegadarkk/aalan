@@ -3046,7 +3046,20 @@
     "facts": {
       "surface": "{count} m²",
       "rooms": "{count, plural, one {# texxamt} other {# n texxamin}}",
-      "bedrooms": "{count} ch."
+      "bedrooms": "{count} ch.",
+      "year": "{text}",
+      "mileage": "{count, number} km",
+      "fuel": {
+        "diesel": "Gazwal",
+        "essence": "Lisans",
+        "hybride": "Hybride",
+        "electrique": "S trisinti",
+        "gpl": "GPL"
+      },
+      "gearbox": {
+        "manuelle": "S ufus",
+        "automatique": "Utumatik"
+      }
     },
     "example": "Amedya",
     "rentalTotal": "≈ {total} i {days, plural, one {# n wass} other {# n wussan}}",
@@ -3940,7 +3953,9 @@
     "stayDatesHint": "Imessufeɣ ttinin iḍan ideg war yelli ca uxxam: ixxamen ixwan deg marra aqqimi ad d-banen, wid ixsen asentem deg taggara.",
     "includeSoldOut": "Rnu tiɣawsiwin yekmelen",
     "includeSoldOutHint": "Tiḥuna ttejjint deg internet tiɣawsiwin ideg stock d 0.",
-    "promo": "S promotion"
+    "promo": "S promotion",
+    "modelPickBrand": "Xtar tamarka zi tazwara.",
+    "modelNone": "Ulac tabdart n imudilen i tmarka-ya: ari amudil deg unadi."
   },
   "Pro": {
     "metaTitle": "Amkan n Pro",

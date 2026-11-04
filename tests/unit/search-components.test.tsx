@@ -373,7 +373,12 @@ describe("CriteriaFilters", () => {
     expect(html).toContain(">km</span>");
     expect(html).toContain('role="switch"');
     expect(text(html)).toContain(fr.Criteria["first-hand"].label);
-    expect(html).not.toContain(fr.Criteria.model.label);
+    // The model filter asks for a brand first, then lists that brand's catalogue models (audit lot 7).
+    expect(text(html)).toContain(fr.SearchFilters.modelPickBrand);
+    const renault = render(<CriteriaFilters categoryId="vehicules" subcategoryId="voitures" value={url("sous-categorie=voitures&f-car-brand=renault&f-car-model=renault-clio").criteria} onChange={() => undefined} />);
+    expect(renault).toMatch(/<input type="checkbox"[^>]* name="car-model-renault-clio" checked=""/);
+    expect(renault).toContain("Mégane");
+    expect(renault).not.toContain("Logan");
     expect(render(<CriteriaFilters categoryId="divers" subcategoryId="autres" value={undefined} onChange={() => undefined} />)).toBe("");
   });
 });

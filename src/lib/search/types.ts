@@ -141,6 +141,10 @@ export const CARD_FIELDS = [
   "a_rooms",
   "a_bedrooms",
   "a_mandate",
+  "a_year",
+  "a_mileage",
+  "a_fuel",
+  "a_gearbox",
   "isExample",
   // Car rentals searched by dates: long-term rates (estimated total) and freshness.
   "a_rate_7_days",

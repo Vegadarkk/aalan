@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BriefcaseBusiness, Camera, ImageOff, Store } from "lucide-react";
 import { rentalFragment } from "@/components/rental/rental-day";
+import { factKey } from "@/lib/listings/card-facts";
 import { BoostBadge } from "@/components/search/boost-badge";
 import type { CardBadge } from "@/components/search/filter-model";
 import { quietLinkClassName } from "@/components/ui/text-link";
@@ -30,7 +31,7 @@ import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 // (src/lib/demo) carries an "Exemple" chip and no action: it cannot be saved or contacted.
 
 /** Grid columns: 2 on phones, 3 from sm, 4 from lg (ListingGridSkeleton). */
-type FactKey = "surface" | "rooms" | "bedrooms";
+
 
 // Phones: two columns inside 1rem gutters with a 0.75rem gap (RESULTS_GRID_CLASS).
 export const LISTING_CARD_SIZES = "(min-width: 1024px) 18rem, (min-width: 640px) 33vw, calc(50vw - 1.375rem)";
@@ -72,7 +73,7 @@ export function ListingCard({ listing, mediaBaseUrl, locale, headingLevel = "h3"
   const sources = listing.photo ? photoSources(mediaBaseUrl, listing.id, listing.photo, "s") : null;
   const placeholder = blurhashPlaceholder(listing.photo?.blurhash);
   // Only the facts the messages can say (a category may add one before its wording lands).
-  const facts = (listing.facts?.facts ?? []).filter((fact) => t.has(`facts.${fact.id as FactKey}`));
+  const facts = (listing.facts?.facts ?? []).filter((fact) => t.has(factKey(fact) as "facts.surface"));
   // A running promotion (catalogue §4), not on a sold-out article: nothing left to sell at that price.
   const promo = listing.promo && !listing.soldOut ? listing.promo : undefined;
   const details = (
@@ -90,7 +91,7 @@ export function ListingCard({ listing, mediaBaseUrl, locale, headingLevel = "h3"
       </Heading>
       {facts.length > 0 ? (
         <p data-testid="card-facts" className="truncate text-xs text-foreground-muted tabular-nums">
-          {facts.map((fact) => t(`facts.${fact.id as FactKey}`, { count: fact.value })).join(" · ")}
+          {facts.map((fact) => t(factKey(fact) as "facts.surface", { count: fact.value as number, text: String(fact.value) })).join(" · ")}
         </p>
       ) : null}
       {subcategory?.priceMode === "none" ? null : (

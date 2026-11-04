@@ -1,4 +1,5 @@
 import { useLocale, useTranslations } from "next-intl";
+import { criterionLabelId, derivedOptionLabel } from "@/config/car-models";
 import type { Condition, CriterionUnit } from "@/config/categories";
 import type { FilterLabels } from "./filter-model";
 
@@ -24,8 +25,8 @@ export function makeFilterLabels({ chips, categories, criteria, units }: LabelTr
   return {
     category: (id) => lookup(categories, `${id}.name`, id),
     subcategory: (categoryId, id) => lookup(categories, `${categoryId}.sub.${id}`, id),
-    criterion: (id) => lookup(criteria, `${id}.label`, id),
-    option: (criterionId, optionId) => lookup(criteria, `${criterionId}.options.${optionId}`, optionId),
+    criterion: (id) => lookup(criteria, `${criterionLabelId(id)}.label`, id),
+    option: (criterionId, optionId) => derivedOptionLabel(criterionId, optionId) ?? lookup(criteria, `${criterionId}.options.${optionId}`, optionId),
     condition: (value: Condition) => lookup(criteria, `condition.options.${value}`, value),
     unit: (unit: CriterionUnit) => lookup(units, unit, unit),
     chip: (key, values) => chips(key, values),

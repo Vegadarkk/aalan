@@ -63,6 +63,34 @@ enregistrées 07:00 UTC). Au plus deux passages par jour (lectures Firestore des
    `cloudflare.ts zone --check` signale la règle tant qu'elle est en place (la routine du lundi
    aussi).
 
+## Recherche seule (lot 7 de l'audit)
+
+Le test complet mêle sa phase de recherche à la queue de la phase des pages (n° 4 à 6 : p95 de
+917 ms à 1,5 s pour une médiane de 119 à 159 ms). Ce test isole `/api/search`, entre 10 h et 22 h
+(heure de Paris), données retirées le jour même.
+
+Chaque script se lance par `NODE_USE_ENV_PROXY=1 node scripts/oracle-vm.ts run <script> --apply`.
+
+1. `load/seed-index.sh` : indexe les 50 000 documents du jeu de données dans Meilisearch
+   (`seed-loadtest.mjs --index-only`), sans aucune écriture Firestore (quota de suppressions).
+2. `load/staging-limits-prod.sh` (mêmes limites que le test complet ; le générateur tient dans
+   les 0,75 cœur du worker), puis `load/sampler-start.sh` et `load/search-load-start.sh` : le générateur
+   (`dist/worker/load-search.mjs`, source `scripts/load-search.ts`) part en tâche de fond dans le
+   conteneur worker du staging, 50 recherches par seconde pendant 3 minutes vers `web:3000` sur le
+   réseau Compose : ce que l'origine répond, sans Cloudflare ni tunnel.
+3. Après 4 minutes, `load/search-load-read.sh` (résumé JSON : p50, p95, p99, statuts, p95 par
+   tranche de 10 s, seuil p95 < 300 ms) et `load/sampler-read.sh` (CPU).
+4. `load/staging-limits-reset.sh` et `load/seed-index-remove.sh`, obligatoire le jour même (la réconciliation de 04 h 20 UTC lirait
+   les documents comme des trous).
+
+Chaque requête porte sa propre adresse `cf-connecting-ip` de la plage de banc d'essai
+198.18.0.0/15 et aucun cookie d'appareil : les limiteurs par appareil et par adresse tournent (un
+aller-retour Valkey) sans jamais bloquer, comme pour des visiteurs distincts. Aucune règle
+Cloudflare ni aucun secret de contournement n'est nécessaire.
+
+Le workflow `load-test` accepte aussi `scenarios: searches` (recherche seule à travers Cloudflare,
+avec la règle de contournement de la procédure ci-dessus).
+
 ## Lire le résultat
 
 - Artefact `k6-summary` du workflow : p95 et taux d'échec par scénario, seuils tenus ou non
@@ -82,3 +110,5 @@ seuil de trafic au-delà duquel passer à un VPS.
 - Les limites de production sont posées par `docker update` sur les conteneurs du staging, sans
   recréation : le tas Node du web reste celui du staging (320 Mo par processus au lieu de 512 Mo).
 - Le scénario de recherche appelle `/api/search`, ce que fait la page de recherche à chaque filtre.
+- La recherche seule part du conteneur worker de la VM, pas d'un runner GitHub : elle mesure
+  l'origine ; le trajet Cloudflare et tunnel se lit dans le test complet.

@@ -920,6 +920,16 @@ html[data-welcome~="door"] .welcome-glints {
   & .search-toolbar-chips {
     flex-wrap: nowrap;
   }
+  /* The chips row scrolls under the view toggle: its end fades out, a hint that more chips
+     (the dates, « Tout effacer ») follow; phones (audit L4-10) and desktop (search audit P2-3).
+     The fade covers the trailing padding only, so the last chip is clear once scrolled to. */
+  & .search-toolbar-scroll {
+    padding-inline-end: 2rem;
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+  }
+  & .search-toolbar-scroll:dir(rtl) {
+    mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
+  }
 
   @media (width >= 64rem) {
     & .search-panel {
@@ -1015,15 +1025,6 @@ html[data-welcome~="door"] .welcome-glints {
       top: 4.25rem;
       inset-inline: 0;
       padding-inline: 1rem;
-    }
-    /* The chips row scrolls under the view toggle: its end fades out, a hint that more chips
-       (the dates, « Tout effacer ») follow (audit L4-10). */
-    & .search-toolbar-scroll {
-      padding-inline-end: 2rem;
-      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
-    }
-    & .search-toolbar-scroll:dir(rtl) {
-      mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
     }
   }
   @media (prefers-reduced-motion: reduce) {

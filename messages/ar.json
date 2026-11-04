@@ -3046,7 +3046,20 @@
     "facts": {
       "surface": "{count} م²",
       "rooms": "{count} غرف",
-      "bedrooms": "{count} غرف نوم"
+      "bedrooms": "{count} غرف نوم",
+      "year": "{text}",
+      "mileage": "{count, number} كلم",
+      "fuel": {
+        "diesel": "ديزل",
+        "essence": "بنزين",
+        "hybride": "هجين",
+        "electrique": "كهربائي",
+        "gpl": "غاز"
+      },
+      "gearbox": {
+        "manuelle": "يدوية",
+        "automatique": "أوتوماتيكية"
+      }
     },
     "example": "مثال",
     "rentalTotal": "≈ {total} مقابل {days, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}}",
@@ -3940,7 +3953,9 @@
     "stayDatesHint": "يصرّح المعلنون بلياليهم غير المتوفرة: تظهر المساكن المتاحة طوال الإقامة، والتي تحتاج إلى تأكيد في الأخير.",
     "includeSoldOut": "إظهار المنتجات التي نفدت",
     "includeSoldOutHint": "تُبقي المتاجر المنتجات التي نفد مخزونها منشورة.",
-    "promo": "في تخفيض"
+    "promo": "في تخفيض",
+    "modelPickBrand": "اختر العلامة التجارية أولاً.",
+    "modelNone": "لا توجد لائحة طرازات لهذه العلامة: اكتب الطراز في البحث."
   },
   "Pro": {
     "metaTitle": "الفضاء المهني",

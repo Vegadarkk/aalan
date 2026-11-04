@@ -326,6 +326,7 @@
     "helpCardCta": "عرض الإجراءات"
   },
   "NotFound": {
+    "metaTitle": "الصفحة غير موجودة",
     "title": "هذه الصفحة غير موجودة",
     "body": "ربما الرابط غير مكتمل، أو أن الإعلان قد حُذف.",
     "back": "العودة إلى الصفحة الرئيسية",
@@ -3761,7 +3762,7 @@
   "SearchPage": {
     "title": {
       "all": "كل الإعلانات",
-      "query": "«{query}»",
+      "query": "« {query} »",
       "inCity": "{what} في {place}",
       "inRegion": "{what}، جهة {place}",
       "inZone": "{what} في منطقة الخريطة"

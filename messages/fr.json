@@ -336,6 +336,7 @@
     "helpCardCta": "Voir les démarches"
   },
   "NotFound": {
+    "metaTitle": "Page introuvable",
     "title": "Cette page n'existe pas",
     "body": "Le lien est peut-être incomplet, ou l'annonce a été retirée.",
     "back": "Revenir à l'accueil",

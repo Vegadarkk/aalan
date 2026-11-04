@@ -5227,7 +5227,8 @@
     "notes": {
       "provider": "Adfaɛ yettili s tkarḍa deg tasna s taɣellist n RevenueCat, i yexeddmen akid-neɣ, s Stripe. Tasna a tezmer ad d-tban s tengliziyt.",
       "moroccanCard": "S tkarḍa n Lmeɣrib, ssuter i lbanka nnec ad tserreḥ adfaɛ deg internet ɣer beṛṛa. Ayen ad taɣeḍ ad yettwaḥseb deg dotation e-commerce nnec n {cap, number} MAD i yal aseggas (Office des Changes).",
-      "credits": "Crédits war ttwazenen i yiwen nniḍen, war ttuɣalen d idrimen. Crédits n pack war tesxedmeḍ ad ak-d-ttwarran idrimen nsen deg 14 n wussan deffir ma ten-taɣeḍ : uɣal zi tasakkut nnec n idrimen, niɣ ari i {email}."
+      "credits": "Crédits war ttwazenen i yiwen nniḍen, war ttuɣalen d idrimen. Crédits n pack war tesxedmeḍ ad ak-d-ttwarran idrimen nsen deg 14 n wussan deffir ma ten-taɣeḍ : uɣal zi tasakkut nnec n idrimen, niɣ ari i {email}.",
+      "creditsShop": "Les crédits ne sont ni transférables ni convertibles en argent. Achetés pour l'activité de la boutique, ils ne peuvent pas faire l'objet d'une rétractation : ce droit est réservé aux consommateurs (CGV, section 6)."
     },
     "consent": {
       "terms": "Ɣriɣ d qebleɣ",

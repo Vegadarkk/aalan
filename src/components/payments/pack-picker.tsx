@@ -222,7 +222,7 @@ export function PackPicker({ contactEmail }: { contactEmail: string }) {
             <ul className="flex list-disc flex-col gap-2 ps-5 text-sm text-pretty marker:text-foreground-muted">
               <li>{t("notes.provider")}</li>
               {currency === "MAD" ? <li>{t("notes.moroccanCard", { cap: MOROCCAN_CARD_YEARLY_CAP_MAD })}</li> : null}
-              <li>{t("notes.credits", { email: contactEmail })}</li>
+              <li>{data.account === "shop" ? t("notes.creditsShop") : t("notes.credits", { email: contactEmail })}</li>
             </ul>
           </section>
 

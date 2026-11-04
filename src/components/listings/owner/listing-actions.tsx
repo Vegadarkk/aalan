@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type Ref } from "react";
-import { Eye, MoreHorizontal, Pause, Pencil, Play, RefreshCw, Tag, Trash2, TrendingUp } from "lucide-react";
+import { Copy, Eye, MoreHorizontal, Pause, Pencil, Play, RefreshCw, Tag, Trash2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DropdownMenu } from "radix-ui";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ interface ListingActionsProps {
   publicHref?: string | null;
   /** Opens "Mettre en avant" (the row owns the dialog, zone 6 audit 6-04); absent when not offered. */
   onPromote?: () => void;
+  /** « Dupliquer » (Pros, audit §7): a new draft from this listing; absent when not offered. */
+  onDuplicate?: () => void;
   /** The menu button, where the focus returns after a dialog opened from the menu (6-18). */
   triggerRef?: Ref<HTMLButtonElement>;
   now?: Date;
@@ -44,7 +46,7 @@ export function allowedActions(listing: OwnerListingSummary, now = new Date()): 
   };
 }
 
-export function ListingActions({ listing, onAction, onDelete, busy, publicHref, onPromote, triggerRef, now }: ListingActionsProps) {
+export function ListingActions({ listing, onAction, onDelete, busy, publicHref, onPromote, onDuplicate, triggerRef, now }: ListingActionsProps) {
   const t = useTranslations("MyListings");
   const [confirm, setConfirm] = useState<"delete" | "sold" | null>(null);
   const [working, setWorking] = useState(false);
@@ -87,6 +89,12 @@ export function ListingActions({ listing, onAction, onDelete, busy, publicHref, 
                   <Pencil aria-hidden="true" />
                   {listing.status === "draft" ? t("actions.continueDraft") : t("actions.edit")}
                 </Link>
+              </DropdownMenu.Item>
+            ) : null}
+            {onDuplicate && listing.status !== "removed" && listing.status !== "purged" ? (
+              <DropdownMenu.Item className={item} onSelect={onDuplicate} data-testid="listing-duplicate">
+                <Copy aria-hidden="true" />
+                {t("actions.duplicate")}
               </DropdownMenu.Item>
             ) : null}
             {onPromote ? (

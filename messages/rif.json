@@ -2899,7 +2899,8 @@
       "resumeOf": "Err « {title} » ad tban",
       "renewOf": "Snulfu « {title} » i 60 n wussan",
       "promote": "Err-itt ɣer zdat",
-      "promoteOf": "Mettre en avant « {title} »"
+      "promoteOf": "Mettre en avant « {title} »",
+      "duplicate": "Dupliquer"
     },
     "confirm": {
       "deleteTitle": "Ad tekkseḍ annonce-a?",
@@ -2916,7 +2917,8 @@
       "sold": "Annonce tettwagga d tettwazenza",
       "renewed": "Annonce tettwasnulfa i 60 n wussan",
       "deleted": "Annonce tettwakkes",
-      "renewHeld": "Asnulfu yettwazen ɣer usenqed: annonce nnec ad tuɣal ad tban deffir n usentem"
+      "renewHeld": "Asnulfu yettwazen ɣer usenqed: annonce nnec ad tuɣal ad tban deffir n usentem",
+      "duplicated": "Tanɣelt tettwaxleq d brouillon: rnu tiwlafin nnes"
     },
     "pending": {
       "title": "Deg usenqed",
@@ -3055,6 +3057,17 @@
       "removed": "Tawennaḍt tettwakkes zeg ustay.",
       "full": "Astay yeččur ({max, number} n twennaḍin)",
       "position": "Astay n tfrent, {index, number} zeg {max, number}"
+    },
+    "find": {
+      "label": "Rzu deg annonces inu",
+      "placeholder": "Azwel naɣ temdint",
+      "clear": "Kkes arezzu",
+      "category": "Taggayt",
+      "allCategories": "Akk taggayin",
+      "count": "{shown, plural, one {# n annonce} other {# n annonces}} zi {total}",
+      "emptyTitle": "Walu annonce yemsasan",
+      "emptyBody": "Ɛreḍ awalen nniḍen naɣ taggayt nniḍen.",
+      "reset": "Kkes arezzu"
     }
   },
   "Map": {

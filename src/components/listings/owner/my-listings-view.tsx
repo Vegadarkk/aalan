@@ -16,12 +16,13 @@ import { isApiError } from "@/lib/auth/client";
 import { usePublicConfig } from "@/lib/config/client";
 import type { ShopSection } from "@/lib/contracts/catalog";
 import { MAX_DRAFTS, OWNER_LIST_BUCKETS, type OwnerListBucket, type OwnerListing, type OwnerListingSummary } from "@/lib/contracts/listings";
-import { deleteListing, listMine, listingAction, type OwnerAction } from "@/lib/listings/client/api";
+import { deleteListing, duplicateListing, listMine, listingAction, type OwnerAction } from "@/lib/listings/client/api";
 import { savePins } from "@/lib/pro/client";
 import { wizardPath } from "@/lib/listings/client/routes";
 import { blockersOf } from "@/lib/listings/client/store";
 import { cn } from "@/lib/utils";
 import { BUCKET_STATUSES, tabKeyTarget, visibleListings } from "./buckets";
+import { ListingsFinder, findListings, finderShown, NO_FIND, type FindState } from "./listings-finder";
 import { OwnerListingCard } from "./owner-listing-card";
 
 // /mes-annonces: four tabs over GET /api/listings/mine?status=..., one list per bucket (cached per
@@ -98,6 +99,10 @@ export function MyListingsView() {
   const [salesOpen, setSalesOpen] = useState(false);
   const [sections, setSections] = useState<ShopSection[]>([]);
   const [paymentReady, setPaymentReady] = useState(false);
+  // « Dupliquer » (Pros, audit §7), offered when the list says so.
+  const [canDuplicate, setCanDuplicate] = useState(false);
+  // Search and category filter of the rows (audit §7), per tab.
+  const [find, setFind] = useState<Partial<Record<OwnerListBucket, FindState>>>({});
   // « Sélection de la boutique » (UX audit lot 3): null off a shop.
   const [pinned, setPinned] = useState<string[] | null>(null);
   // Answers that arrive out of order: only the latest request of a bucket is kept.
@@ -121,8 +126,9 @@ export function MyListingsView() {
     const request = (requests.current[bucket] ?? 0) + 1;
     requests.current[bucket] = request;
     try {
-      const { listings, salesOpen: open, sections: shelves, paymentReady: ready, pinned: pins } = await listMine(bucket);
+      const { listings, salesOpen: open, sections: shelves, paymentReady: ready, pinned: pins, duplicate } = await listMine(bucket);
       if (requests.current[bucket] !== request) return;
+      setCanDuplicate(duplicate === true);
       setPinned(pins ?? null);
       setSalesOpen(open);
       setSections(shelves ?? []);
@@ -263,8 +269,29 @@ export function MyListingsView() {
     [apiMessage, refresh, t, tab],
   );
 
+  const onDuplicate = useCallback(
+    async (id: string) => {
+      setBusyId(id);
+      try {
+        const { id: copy } = await duplicateListing(id);
+        toast.success(t("toasts.duplicated"));
+        // The copy is a draft: that tab loads again when opened; the wizard opens on its photos.
+        setBuckets((current) => ({ ...current, drafts: undefined }));
+        router.push(wizardPath(copy, "photos"));
+      } catch (error) {
+        toast.error(apiMessage(error));
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [apiMessage, router, t],
+  );
+
   const tabs = useMemo(() => OWNER_LIST_BUCKETS.map((bucket) => ({ bucket, label: t(`tabs.${bucket}`) })), [t]);
   const current = buckets[tab] ?? { kind: "loading" };
+  const finding = find[tab] ?? NO_FIND;
+  const allRows = current.kind === "ready" ? current.listings : [];
+  const rows = findListings(allRows, finding, locale);
   const mediaBaseUrl = config?.mediaBaseUrl ?? null;
   const newListing = { pathname: "/deposer", query: { nouveau: "1" } } as const;
 
@@ -366,11 +393,39 @@ export function MyListingsView() {
                 {t("draftsLimit", { count: current.listings.length, max: MAX_DRAFTS })}. {t("draftsRetention")}
               </p>
             ) : null}
-            <ul className={cn("flex flex-col divide-y divide-border transition-opacity duration-200", current.refreshing && "opacity-80")} aria-busy={busyId !== null || current.refreshing || undefined}>
-              {current.listings.map((listing) => (
-                <OwnerListingCard key={listing.id} listing={listing} mediaBaseUrl={mediaBaseUrl} busy={busyId === listing.id} salesOpen={salesOpen} autoPromote={listing.id === promoteId} onAction={(action) => onAction(listing.id, action)} onDelete={() => onDelete(listing.id)} onChanged={onChanged} sections={sections} paymentReady={paymentReady} {...(pinned ? { pins: { pinned, onPin } } : {})} />
-              ))}
-            </ul>
+            {finderShown(allRows, finding) ? <ListingsFinder rows={allRows} value={finding} shown={rows.length} onChange={(next) => setFind((state) => ({ ...state, [tab]: next }))} className="mb-2" /> : null}
+            {rows.length === 0 ? (
+              <EmptyState
+                title={t("find.emptyTitle")}
+                action={
+                  <Button type="button" variant="outline" onClick={() => setFind((state) => ({ ...state, [tab]: NO_FIND }))}>
+                    {t("find.reset")}
+                  </Button>
+                }
+              >
+                {t("find.emptyBody")}
+              </EmptyState>
+            ) : (
+              <ul className={cn("flex flex-col divide-y divide-border transition-opacity duration-200", current.refreshing && "opacity-80")} aria-busy={busyId !== null || current.refreshing || undefined}>
+                {rows.map((listing) => (
+                  <OwnerListingCard
+                    key={listing.id}
+                    listing={listing}
+                    mediaBaseUrl={mediaBaseUrl}
+                    busy={busyId === listing.id}
+                    salesOpen={salesOpen}
+                    autoPromote={listing.id === promoteId}
+                    onAction={(action) => onAction(listing.id, action)}
+                    onDelete={() => onDelete(listing.id)}
+                    onChanged={onChanged}
+                    sections={sections}
+                    paymentReady={paymentReady}
+                    {...(pinned ? { pins: { pinned, onPin } } : {})}
+                    {...(canDuplicate ? { onDuplicate: () => void onDuplicate(listing.id) } : {})}
+                  />
+                ))}
+              </ul>
+            )}
           </>
         )}
       </div>

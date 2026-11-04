@@ -188,6 +188,7 @@ export function demoShop(seller: DemoSeller, index: number, now: Date): ProProfi
     example: true,
     ...(seller.sector ? { sector: seller.sector } : {}),
     ...(seller.sector === "real_estate" ? { agency: { feeSchedule: seller.feeSchedule ?? "" } } : {}),
+    ...(seller.sector === "holiday_rental" && seller.holiday ? { holiday: seller.holiday } : {}),
     // A plan from a subscription: no job scans that source (the launch offer and the pass end on a date).
     lifecycle: "active",
     plan: "essentiel",

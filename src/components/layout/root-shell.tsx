@@ -57,7 +57,11 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
           <Providers dir={dir} config={config} initialSession={initialSession}>
             <SiteHeader locale={locale} />
             <CguNotice />
-            <main id="main" className="flex flex-1 flex-col">
+            {/* A floor under short pages (an invoice or two, an empty state): the tall footer starts near
+                the bottom of the screen instead of right under the content (owner, 2026-11-04), about
+                7 rem of it showing. Header + category row: 7.25 rem on a phone, 8.25 rem from md. The
+                search map sizes itself (h-dvh body). */}
+            <main id="main" className="flex min-h-[calc(100dvh-14rem)] flex-1 flex-col md:min-h-[calc(100dvh-15rem)] search-map:min-h-0">
               {children}
             </main>
             <Footer publisher={companyName} />

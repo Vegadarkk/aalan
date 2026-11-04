@@ -1,5 +1,6 @@
 import "server-only";
 import { cguAccepted, cguEffectiveFor, LEGAL_VERSIONS } from "@/config/legal-versions";
+import { livePendingChange, type PendingEmailChange } from "@/lib/account/email-change-rules";
 import type { SessionSummary } from "@/lib/contracts/auth";
 import { getUser, getUserPrivate } from "@/lib/db/repositories/users";
 import type { SessionUser } from "@/lib/firebase/session";
@@ -23,7 +24,14 @@ export async function sessionSummary(user: SessionUser, readPrivate: typeof getU
     providers: account?.providers ?? [],
     // No private document (an account being created): nothing to acknowledge.
     cguUpdate: account && !cguAccepted(account.consents?.cgu?.version) ? cguUpdate(account.consents?.cguNotice) : null,
+    emailChange: pendingChange(account?.emailChange),
   };
+}
+
+/** The change of address still waiting for its link (Z1-10); an expired one reads as none. */
+function pendingChange(pending: PendingEmailChange | undefined): SessionSummary["emailChange"] {
+  const live = livePendingChange(pending, new Date());
+  return live ? { newEmail: live.newEmail, expiresAt: live.expiresAt.toISOString() } : null;
 }
 
 /** The pending CGU notice of a member: not yet noticed, it is dated as if given now (the banner records it). */

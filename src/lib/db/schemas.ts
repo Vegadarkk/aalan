@@ -163,6 +163,8 @@ export const userPrivateSchema = z
     closedAt: ts.optional(),
     purgeAt: ts.optional(),
     identityPurgeAt: ts.optional(),
+    /** Change of address waiting for the link sent to `newEmail` (Z1-10); removed once confirmed or cancelled. */
+    emailChange: z.object({ newEmail: z.string().email().max(254), requestedAt: ts, expiresAt: ts }).strict().optional(),
   })
   .strict();
 export type UserPrivateDoc = z.infer<typeof userPrivateSchema>;

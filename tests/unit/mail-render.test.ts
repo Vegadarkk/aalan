@@ -15,6 +15,8 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   resetPassword: { displayName: "Nadia", actionUrl: ACTION },
   signupExisting: { displayName: "Nadia", loginUrl: `${SITE}/fr/connexion`, resetUrl: `${SITE}/fr/mot-de-passe-oublie` },
   signupClosed: { displayName: "Nadia", closedAt: "2026-11-03T22:30:00.000Z", reusableFrom: "2027-11-03T22:30:00.000Z" },
+  emailChangeConfirm: { displayName: "Nadia", actionUrl: ACTION, expiresAt: "2026-11-05T09:30:00.000Z" },
+  emailChanged: { displayName: "Nadia", newEmail: "n•••••@gmail.com", at: "2026-11-04T09:30:00.000Z" },
   passwordChanged: { displayName: "Nadia", at: "2026-10-16T09:30:00.000Z" },
   staffInvite: { displayName: "Nadia", actionUrl: ACTION, role: "moderator" },
   phoneVerified: { displayName: "Nadia", phone: "+212 6 00 00 00 00" },

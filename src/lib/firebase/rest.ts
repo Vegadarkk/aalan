@@ -86,6 +86,8 @@ export interface OobResult {
   localId?: string;
   emailVerified?: boolean;
   requestType?: string;
+  /** VERIFY_AND_CHANGE_EMAIL codes: the address the account moves to (`email` is the current one). */
+  newEmail?: string;
 }
 
 /** Applies a VERIFY_EMAIL code (accounts:update with oobCode). */
@@ -93,7 +95,7 @@ export async function applyEmailVerificationCode(oobCode: string, fetchImpl?: ty
   return call<OobResult>("update", { oobCode }, fetchImpl);
 }
 
-/** Checks a PASSWORD_RESET code without consuming it. */
+/** Checks a PASSWORD_RESET code without consuming it (any type: the answer names `requestType`, like the SDK's checkActionCode). */
 export async function verifyPasswordResetCode(oobCode: string, fetchImpl?: typeof fetch): Promise<OobResult> {
   return call<OobResult>("resetPassword", { oobCode }, fetchImpl);
 }

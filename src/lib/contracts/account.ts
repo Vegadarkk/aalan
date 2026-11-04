@@ -2,6 +2,7 @@ import type { OpeningHours } from "@/lib/pro/profile-schema";
 import type { Locale } from "@/config/site";
 import { BANNER_KEYS, BIO_MAX, type BannerKey } from "@/config/storefront";
 import { citySlugSchema } from "@/lib/contracts/listings";
+import { PASSWORD_MAX } from "@/lib/contracts/endpoints";
 import { z } from "@/lib/zod";
 
 // Account closure and personal data export (phase 5 design D26, lot L7; AF §5 UserPrivate, §6
@@ -23,6 +24,27 @@ export interface CloseAccountResponse {
   /** ISO: e-mail, phone and pseudonym are deleted at this date (closure + 1 year). */
   purgeAt: string;
 }
+
+/**
+ * POST /api/account/email (Z1-10): the new address and the current password (re-authentication).
+ * Password accounts only: a Google-only account answers 409 `password_required`.
+ */
+export const emailChangeSchema = z
+  .object({
+    newEmail: z.string().trim().toLowerCase().email().max(254),
+    currentPassword: z.string().min(1).max(PASSWORD_MAX),
+  })
+  .strict();
+export type EmailChangeInput = z.infer<typeof emailChangeSchema>;
+
+/** The confirmation link sent to the new address is valid this long (and once). */
+export const EMAIL_CHANGE_TTL_HOURS = 24;
+
+/**
+ * POST answers "pending" whether or not the address is free (no enumeration: a link goes only to
+ * an address no account uses); DELETE answers "cancelled".
+ */
+export type EmailChangeResponse = { status: "pending"; newEmail: string; expiresAt: string } | { status: "cancelled" };
 
 export const ACCOUNT_EXPORT_FORMAT = "aalan.account-export";
 export const ACCOUNT_EXPORT_VERSION = 1;

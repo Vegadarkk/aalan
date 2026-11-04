@@ -5136,6 +5136,7 @@
     "failed": "Tasakkut n idrimen war tettwaɛemmar ca.",
     "retry": "Ɛawed",
     "unit": "1 n crédit = 1 DH TTC",
+    "unitShop": "1 n crédit = 1 DH HT",
     "balance": "Crédits i taɣeḍ",
     "plan": "Crédits n abonnement nnec",
     "planUntil": "Ṣeḥḥan ar {date}, war ttemyernan",

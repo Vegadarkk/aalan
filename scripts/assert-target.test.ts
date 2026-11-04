@@ -149,7 +149,7 @@ describe("validateTargets", () => {
       "environments.staging.firebase.appId: project number 100000000002 is not environments.staging.firebase.projectNumber",
       "environments.prod.turnstile.siteKey: 0x4AAAAAAAAAAAAAAAAAAAA1 is already recorded at environments.staging.turnstile.siteKey",
       "environments.prod.google.oauthClientId: project number 100000000001 is not environments.prod.firebase.projectNumber",
-      "shared.cloudflare.accessOauthClientId: a production client (Access's login lives in joutiya-staging, §6)",
+      "shared.cloudflare.accessOauthClientId: a production client (Access's login lives in the staging project, §6)",
     ]);
   });
 

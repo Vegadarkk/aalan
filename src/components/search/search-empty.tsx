@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button";
 import { regionByCode, regionName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
-import { isBlankSearch, type SearchParams } from "@/lib/search/params";
+import { canonicalSearchParams, isBlankSearch, type SearchParams } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
 import { chipClassName } from "./active-filter-chips";
 import { useFilterLabels } from "./filter-labels";
-import { clearFilters, describeFilters, widenings, withPage } from "./filter-model";
+import { datedRental } from "@/config/categories";
+import { intlLocale } from "@/lib/listings/client/format";
+import { moroccoToday } from "@/lib/listings/rental-availability";
+import { clearFilters, describeFilters, nearbyDates, widenings, withPage } from "./filter-model";
 import { SearchLink } from "./search-navigation";
 
 // No result (design §2 L3b): say so plainly, then offer the next step: remove one filter, widen
@@ -62,6 +65,12 @@ export function SearchEmpty({ params, locale, outOfRange = false, action, classN
 
   const filters = describeFilters(params, locale, labels);
   const wider = widenings(params);
+  // A dated rental search: nothing free on those dates, the same stay a little earlier or later (audit L4-10).
+  const dated = datedRental(params.subcategory);
+  const stays = dated?.unit === "night";
+  const nearby = nearbyDates(params, moroccoToday(Date.now()));
+  const day = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", timeZone: "UTC" });
+  const at = (value: string) => day.format(new Date(`${value}T12:00:00Z`));
   return (
     <section data-testid="search-empty" aria-labelledby="search-empty-title" className={cn("mx-auto flex max-w-xl flex-col items-center gap-5 py-12 text-center", className)}>
       <DoorMark className="w-16" />
@@ -69,8 +78,29 @@ export function SearchEmpty({ params, locale, outOfRange = false, action, classN
         <h2 id="search-empty-title" className="text-xl font-semibold text-balance">
           {t("title")}
         </h2>
-        <p className="text-foreground-muted text-pretty">{params.q ? t("bodyWords") : t("body")}</p>
+        <p className="text-foreground-muted text-pretty">
+          {params.dates && dated ? t(stays ? "datesBodyNights" : "datesBody", { from: at(params.dates.from), to: at(params.dates.to) }) : params.q ? t("bodyWords") : t("body")}
+        </p>
       </div>
+      {params.dates && dated ? (
+        <div data-testid="search-empty-dates" className="flex flex-col items-center gap-2">
+          {nearby.length > 0 ? <p className="text-sm font-medium">{t("nearbyDates")}</p> : null}
+          <ul className="flex flex-wrap justify-center gap-2">
+            {nearby.map((option) => (
+              <li key={option.from}>
+                <Button asChild variant="outline" size="sm">
+                  <SearchLink params={option.params}>{t("datesOption", { from: at(option.from), to: at(option.to) })}</SearchLink>
+                </Button>
+              </li>
+            ))}
+            <li>
+              <Button asChild variant="ghost" size="sm">
+                <SearchLink params={canonicalSearchParams({ ...params, page: undefined, dates: undefined })}>{t(stays ? "withoutDatesNights" : "withoutDates")}</SearchLink>
+              </Button>
+            </li>
+          </ul>
+        </div>
+      ) : null}
       {filters.length > 0 ? (
         <div className="flex flex-col items-center gap-2">
           <p className="text-sm font-medium">{t("removeFilter")}</p>

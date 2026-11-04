@@ -15,6 +15,8 @@ import { COLLECTIONS, type UserDoc } from "@/lib/db/schemas";
 import { getUploads } from "@/lib/db/repositories/uploads";
 import { getUser } from "@/lib/db/repositories/users";
 import { HttpError } from "@/lib/http/errors";
+import { sendMail } from "@/lib/mail";
+import { listingRecipient } from "@/lib/mail/recipients";
 import { newListingId, slugify } from "@/lib/listings/ids";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { displayNameContact } from "@/lib/moderation/display-name";
@@ -144,6 +146,9 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
   });
   void consume("firestore.reads", 2);
   void consume("firestore.writes", 2);
+  // The application's acknowledgement (audit L4-16); sendMail logs a failure, never throws.
+  const to = await listingRecipient(uid).catch(() => null);
+  if (to) await sendMail({ locale: to.locale, to: to.email, priority: "transactional", template: "proApplicationReceived", idempotencyKey: `proApplicationReceived-${proId}-${now.getTime()}`, data: { displayName: to.displayName, shopName: input.name } });
   return { proId };
 }
 

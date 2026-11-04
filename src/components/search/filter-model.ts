@@ -4,6 +4,7 @@ import type { Locale } from "@/config/site";
 import { formatPrice, groupDigits, intlLocale } from "@/lib/listings/client/format";
 import { canonicalSearchParams, rentalDuration, SEARCH_MAX_PAGE, SEARCH_PATH, searchQueryObject, type CriterionFilter, type SearchParams, type SearchSort } from "@/lib/search/params";
 import type { SearchCard, SearchFacets } from "@/lib/search/types";
+import { dayNumber, dayString } from "@/lib/listings/rental-availability";
 import { locationName } from "./location";
 
 // Pure model of the search filters on the UI side (design D6, D7, D22): which filters are active,
@@ -358,6 +359,20 @@ export function widenings(params: SearchParams): Widening[] {
   if (city && regionByCode(city.regionCode)) out.push({ kind: "region", code: city.regionCode, params: canonicalSearchParams({ ...base, region: city.regionCode }) });
   if (params.city || params.region || params.zone) out.push({ kind: "country", params: canonicalSearchParams(base) });
   return out;
+}
+
+/** Shifts of a dated rental search with no result (audit L4-10): the same length, earlier or later. */
+const DATE_SHIFTS = [-7, -2, 2, 7];
+
+/** The same search on nearby dates (none in the past), then without dates; [] without dates. */
+export function nearbyDates(params: SearchParams, today: number): { from: string; to: string; params: SearchParams }[] {
+  if (!params.dates || !datedRental(params.subcategory)) return [];
+  const from = dayNumber(params.dates.from);
+  const to = dayNumber(params.dates.to);
+  return DATE_SHIFTS.filter((shift) => from + shift >= today).map((shift) => {
+    const dates = { from: dayString(from + shift), to: dayString(to + shift) };
+    return { ...dates, params: canonicalSearchParams({ ...params, page: undefined, dates }) };
+  });
 }
 
 /** Subcategory of the search, when it declares a `condition` field: the condition filter applies. */

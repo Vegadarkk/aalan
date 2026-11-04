@@ -617,7 +617,8 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     key: "vac-dakhla",
     sub: "location-vacances",
     seller: "leila",
-    city: "dakhla",
+    // Taghazout, as its title says (audit L4-15); the key stays, it names the seeded document.
+    city: "taghazout",
     days: 12,
     title: "Bungalow en bois bleu et jaune à Taghazout",
     description:

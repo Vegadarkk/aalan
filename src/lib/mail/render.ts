@@ -26,6 +26,7 @@ import { withdrawalReceipt } from "./templates/withdrawalReceipt";
 import { sellerPaymentNotice } from "./templates/sellerPaymentNotice";
 import { socialLinksNotice } from "./templates/socialLinksNotice";
 import { proApproved } from "./templates/proApproved";
+import { proApplicationReceived } from "./templates/proApplicationReceived";
 import { proRejected } from "./templates/proRejected";
 import { reportReceived } from "./templates/reportReceived";
 import { reviewPublished } from "./templates/reviewPublished";
@@ -64,6 +65,7 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   appealOutcome,
   reporterWarning,
   savedSearchAlert,
+  proApplicationReceived,
   proApproved,
   proRejected,
   launchOfferNotice,

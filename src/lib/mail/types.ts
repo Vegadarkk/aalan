@@ -35,7 +35,8 @@ export type TemplateId =
   | "reporterWarning"
   // Search (phase 4): the daily digest of the saved searches with an alert (design D19).
   | "savedSearchAlert"
-  // Pro accounts (phase 7): the moderator's decision on the application.
+  // Pro accounts (phase 7): the application's acknowledgement (audit L4-16), the moderator's decision.
+  | "proApplicationReceived"
   | "proApproved"
   | "proRejected"
   // Pro plans (phase 7, lot 4b): the end of the launch offer, notices then downgrade (design D3).
@@ -175,6 +176,7 @@ export interface TemplateData {
   /** `favorites`: favorite listings whose promotion started since the last run (catalogue §4). */
   savedSearchAlert: { displayName: string; searches: SavedSearchAlertSection[]; favorites?: FavoriteDropListing[]; unsubscribeToken: string };
   /** `launchOffer`: Essentiel offered until sales open, `noticeDays` of notice before any payment. */
+  proApplicationReceived: { displayName: string; shopName: string };
   proApproved: { displayName: string; shopName: string; launchOffer: boolean; noticeDays: number };
   /** The moderator's reason; `contact` is where to object (legal configuration). */
   proRejected: { displayName: string; shopName: string; reason: string; contact: string };

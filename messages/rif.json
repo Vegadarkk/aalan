@@ -2873,7 +2873,8 @@
       "editOf": "Beddel « {title} »",
       "resumeOf": "Err « {title} » ad tban",
       "renewOf": "Snulfu « {title} » i 60 n wussan",
-      "promote": "Err-itt ɣer zdat"
+      "promote": "Err-itt ɣer zdat",
+      "promoteOf": "Mettre en avant « {title} »"
     },
     "confirm": {
       "deleteTitle": "Ad tekkseḍ annonce-a?",
@@ -5083,12 +5084,10 @@
     "frozen": "Tasakkut nnec n idrimen tettwaḥbes deffir n urrar n idrimen. Ad tettwaserreḥ xmi ayen yeqqimen deg-s yuɣal ugar n 0.",
     "walletLink": "Ẓar tasakkut nnec n idrimen",
     "consent": {
-      "terms": "Qebleɣ CGV d ssneɣ azref inu n tuɣalin (rétractation) n 14 n wussan.",
-      "immediate": "Sutreɣ ad texdem commande inu nican, d ssneɣ belli azref inu n tuɣalin ad iruḥ xmi service yettwaxdem marra.",
       "termsLink": "Ɣer CGV (onglet amaynu)",
-      "required": "Sentem snat n tɣawsiwin ḥima ad tegged commande."
+      "single": "Je commande cette option selon les CGV : elle s'applique tout de suite et ne peut plus être annulée ni rétractée une fois appliquée.",
+      "requiredOne": "Cochez la case pour commander."
     },
-    "submit": "Commande s lwajib n udfaɛ",
     "cancel": "Ssbeṭṭel",
     "close": "Qqen",
     "success": {
@@ -5105,8 +5104,21 @@
       "insufficient_credits": "Crédits nnec war kfan i option a.",
       "price_changed": "Ssuma n option a tettwabeddel tura. Sneqd-itt, uca ɛawed commande."
     },
-    "availableAt": "Tella zi {time} : annonce tella zik deg uqerru.",
-    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra."
+    "availableAt": "Tella zi {when} : annonce tella zik deg uqerru.",
+    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra.",
+    "today": "aujourd'hui à {time}",
+    "onDay": "le {date} à {time}",
+    "shortfall": "{count, plural, one {Il vous manque # crédit} other {Il vous manque # crédits}}",
+    "shortfallBody": "Achetez un pack de crédits : vous pourrez revenir à cette annonce depuis votre porte-monnaie dès qu'ils sont arrivés.",
+    "buyCredits": "Acheter des crédits",
+    "confirmIdle": "Choisissez une option",
+    "confirmCredits": "{count, plural, one {Confirmer pour # crédit} other {Confirmer pour # crédits}}",
+    "confirmIncluded": "Confirmer (inclus dans votre offre)",
+    "offer": {
+      "title": "Vendez plus vite",
+      "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
+      "action": "Mettre en avant"
+    }
   },
   "Wallet": {
     "metaTitle": "Tasakkut n idrimen",
@@ -5145,7 +5157,9 @@
     "available": "Crédits i tesɛiḍ",
     "buy": "Aɣ crédits",
     "paid": "Adfaɛ yewḍed. Crédits nnec ad d-banen da deg kra n tesdidin.",
-    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)"
+    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)",
+    "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
+    "promoteBackAction": "Mettre en avant"
   },
   "Packs": {
     "metaTitle": "Aɣ crédits",

@@ -90,6 +90,8 @@ export function MyListingsView() {
   const config = usePublicConfig();
   const params = useSearchParams();
   const initial = params.get("onglet");
+  // Back from a credits purchase started in "Mettre en avant" (zone 6 audit 6-03): its dialog reopens.
+  const promoteId = params.get("promouvoir");
   const [tab, setTab] = useState<OwnerListBucket>(isBucket(initial) ? initial : "active");
   const [buckets, setBuckets] = useState<Partial<Record<OwnerListBucket, Bucket>>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -366,7 +368,7 @@ export function MyListingsView() {
             ) : null}
             <ul className={cn("flex flex-col divide-y divide-border transition-opacity duration-200", current.refreshing && "opacity-80")} aria-busy={busyId !== null || current.refreshing || undefined}>
               {current.listings.map((listing) => (
-                <OwnerListingCard key={listing.id} listing={listing} mediaBaseUrl={mediaBaseUrl} busy={busyId === listing.id} salesOpen={salesOpen} onAction={(action) => onAction(listing.id, action)} onDelete={() => onDelete(listing.id)} onChanged={onChanged} sections={sections} paymentReady={paymentReady} {...(pinned ? { pins: { pinned, onPin } } : {})} />
+                <OwnerListingCard key={listing.id} listing={listing} mediaBaseUrl={mediaBaseUrl} busy={busyId === listing.id} salesOpen={salesOpen} autoPromote={listing.id === promoteId} onAction={(action) => onAction(listing.id, action)} onDelete={() => onDelete(listing.id)} onChanged={onChanged} sections={sections} paymentReady={paymentReady} {...(pinned ? { pins: { pinned, onPin } } : {})} />
               ))}
             </ul>
           </>

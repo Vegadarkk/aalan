@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
 import { RENTAL_DATES_EVENT, clearPendingContact, contactFragment, fragmentDates, pendingContact } from "@/components/rental/rental-day";
+import { PromoteOffer } from "@/components/payments/promote-offer";
 import { Button } from "@/components/ui/button";
 import type { RentalUnit } from "@/config/categories";
 import { getPathname, Link } from "@/i18n/navigation";
@@ -305,12 +306,16 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     return (
       <div data-testid="contact-bar" className="flex flex-col gap-3 rounded-md bg-surface-muted p-4">
         <p className="text-sm text-pretty">{shop ? t("ownShop") : t("own")}</p>
-        <Button asChild variant="outline" className="self-start">
-          <Link href={shop ? "/pro" : "/mes-annonces"}>
-            <Settings2 aria-hidden="true" />
-            {t("manage")}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" className="self-start">
+            <Link href={shop ? "/pro" : "/mes-annonces"}>
+              <Settings2 aria-hidden="true" />
+              {t("manage")}
+            </Link>
+          </Button>
+          {/* The owner's way to the options from the page itself (zone 6 audit 6-04). */}
+          {shop ? null : <PromoteOffer listingId={listingId} title={listingTitle ?? ""} variant="button" />}
+        </div>
       </div>
     );
   }

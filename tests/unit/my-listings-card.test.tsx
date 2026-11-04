@@ -46,10 +46,10 @@ function summary(status: ListingStatus, overrides: Partial<OwnerListingSummary> 
 
 const noop = async () => undefined;
 
-function render(listing: OwnerListingSummary, locale: Locale = "fr") {
+function render(listing: OwnerListingSummary, locale: Locale = "fr", salesOpen = false) {
   return renderToStaticMarkup(
     <NextIntlClientProvider locale={locale} messages={locale === "ar" ? ar : fr} timeZone="Africa/Casablanca">
-      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.joutiya.test" onAction={noop} onDelete={noop} now={NOW} />
+      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.joutiya.test" onAction={noop} onDelete={noop} now={NOW} salesOpen={salesOpen} />
     </NextIntlClientProvider>,
   );
 }
@@ -58,6 +58,15 @@ function render(listing: OwnerListingSummary, locale: Locale = "fr") {
 const labels = (html: string) => [...html.matchAll(/aria-label="([^"]*)"/g)].map((match) => match[1]!.replace(/&#x27;/g, "'"));
 
 describe("OwnerListingCard", () => {
+  it("offers « Mettre en avant » as a visible button of a published row while sales are open (zone 6 audit 6-04)", () => {
+    const promote = fr.MyListings.actions.promoteOf.replace("{title}", isolate("Vélo de ville"));
+    expect(labels(render(summary("published"), "fr", true))).toContain(promote);
+    expect(labels(render(summary("published"), "fr", false))).not.toContain(promote);
+    expect(labels(render(summary("paused"), "fr", true))).not.toContain(promote);
+    // A job seeker's ad has no paid options.
+    expect(labels(render(summary("published", { categoryId: "emploi", subcategoryId: "demandes-emploi" }), "fr", true))).not.toContain(promote);
+  });
+
   it("titles each row with an h2 under the page's h1, in the title's own direction", () => {
     const html = render(summary("published"));
     expect(html).toMatch(/<h2 [^>]*><a [^>]*dir="auto"[^>]*>Vélo de ville<\/a><\/h2>/);

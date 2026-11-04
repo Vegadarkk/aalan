@@ -172,6 +172,7 @@
     "frenchPrevails": "Les textes légaux font foi en français.",
     "contents": "Sommaire",
     "backToTop": "Haut de page",
+    "printSource": "Adresse de la page :",
     "frenchOnly": "Ce texte n'existe qu'en français pour le moment. Il fait foi.",
     "upcomingTitle": "Nouvelle version en vigueur le {date}",
     "upcomingBody": "D'ici là, la version {version} reste en vigueur. Pour un membre prévenu moins de 30 jours avant cette date, elle le reste jusqu'à la date indiquée dans son avis.",
@@ -3091,6 +3092,7 @@
     "home": "Accueil",
     "breadcrumb": "Fil d'Ariane",
     "sellerLabel": "Vendeur et contact",
+    "printSource": "Adresse de l'annonce :",
     "reportLink": "Signaler l'annonce",
     "share": {
       "share": "Partager",

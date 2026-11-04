@@ -57,6 +57,7 @@ export default async function ArchivedLegalRoute({ params }: { params: Params })
       translated={language === "ar"}
       frenchOnly={locale !== "fr" && language === "fr"}
       archived={archivedVersionNote(page.slug, entry, language, legalDay(new Date()))}
+      path={`/${locale}/legal/${page.slug}/${version}`}
     />
   );
 }

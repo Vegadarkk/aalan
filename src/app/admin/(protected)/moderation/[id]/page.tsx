@@ -64,7 +64,7 @@ function PhotoChecks({ photo }: { photo: ModerationReviewPhoto }) {
 function Photos({ review, base }: { review: ModerationReview; base: string | null }) {
   const { listing } = review;
   if (listing.photos.length === 0) return <p className="text-sm text-foreground-muted">Aucune photo.</p>;
-  // A removed listing's photos leave the public media bucket: read through the staff-only route.
+  // A refused or removed listing's photos leave the public media bucket: read through the staff-only route.
   const staff = usesStaffPhotos(listing.status);
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">

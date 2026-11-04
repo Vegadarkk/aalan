@@ -1,6 +1,7 @@
 // BullMQ worker (§4) on valkey-queue. Receives no connection. Queues: "system" (heartbeat, nightly
 // quota report, hourly purge of unactivated accounts), "mail" (deliveries with retries), "media"
-// (photo pipeline, one upload at a time, D12), "search" (phase 4 D9: the search index's only
+// (photo pipeline, one upload at a time, D12; and the move of a listing's photos between the media
+// and private buckets, audit C-3), "search" (phase 4 D9: the search index's only
 // writer, one job at a time, fed by the web's fast lane, the searchOutbox watch and a 60 s poll)
 // "agent" (phase 5 D19: the moderation agent, one task at a time, fed by the listings publish
 // and renew paths, the reports service and the appeals service), "billing" (phase 7: RevenueCat
@@ -21,6 +22,7 @@ import { deliverMail, MailDeferredError } from "@/lib/mail/deliver";
 import { isTemplateMail } from "@/lib/mail/render";
 import { closeMailQueue, MAIL_QUEUE } from "@/lib/mail/send";
 import { checkModelsAtStartup, resetImageClassifier } from "@/lib/media/classify";
+import { closePhotoSyncQueue } from "@/lib/media/photo-sync";
 import { closeMediaQueue, MEDIA_CONCURRENCY, MEDIA_QUEUE } from "@/lib/media/queue";
 import { BILLING_CONCURRENCY, BILLING_QUEUE, closeBillingQueue } from "@/lib/payments/billing-queue";
 import { isFirebaseConfigured } from "@/lib/firebase/admin";
@@ -168,7 +170,7 @@ async function main(): Promise<void> {
     clearInterval(heartbeat);
     outboxWatch?.stop();
     await Promise.allSettled([systemWorker.close(), mailWorker.close(), mediaWorker.close(), searchWorker.close(), agentWorker.close(), billingWorker.close(), cdnWorker.close()]);
-    await Promise.allSettled([queue.close(), searchQueue.close(), closeMailQueue(), closeMediaQueue(), closeSearchQueue(), closeAgentQueue(), closeBillingQueue(), closeCdnQueue(), resetImageClassifier()]);
+    await Promise.allSettled([queue.close(), searchQueue.close(), closeMailQueue(), closeMediaQueue(), closePhotoSyncQueue(), closeSearchQueue(), closeAgentQueue(), closeBillingQueue(), closeCdnQueue(), resetImageClassifier()]);
     await connection.quit().catch(() => undefined);
     await flushObservability(2_000);
     process.exit(0);

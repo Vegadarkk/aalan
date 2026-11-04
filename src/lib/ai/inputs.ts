@@ -8,7 +8,7 @@ import { getModerationDecision, listDecisionsForTarget } from "@/lib/db/reposito
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { logger } from "@/lib/logging/logger";
 import { openImage } from "@/lib/media/sharp-setup";
-import { mediaObjectKey } from "@/lib/media/urls";
+import { readStoredPhoto } from "@/lib/media/stored-photo";
 import { staffMemberText, staffPlaceLabel } from "@/lib/messaging/member-text";
 import { containsProhibited, type CompiledProhibited } from "@/lib/moderation/prohibited";
 import { consume } from "@/lib/quota";
@@ -17,6 +17,7 @@ import { getReview } from "@/lib/reviews/repository";
 import { evidenceRef, messageRef, readConversationFacts } from "@/lib/reports/targets";
 import { splitMessageId } from "@/lib/reports/target-key";
 import { objectStore, type ObjectStore } from "@/lib/storage";
+import { photosArePrivate } from "@/lib/uploads/policy";
 import { maskPii } from "./mask";
 import { USER_FIELDS, userField } from "./prompts/shared";
 import type { AiImage, AiTarget, AiTask, AiTaskInput, ListingFacts } from "./types";
@@ -39,12 +40,16 @@ export interface ImageLoader {
   (listing: ListingRecord): Promise<AiImage[]>;
 }
 
-/** Variant "s" of the first photos, re-encoded to JPEG; a photo that fails is left out. */
+/**
+ * Variant "s" of the first photos, re-encoded to JPEG; a photo that fails is left out. A refused or
+ * hidden listing's (reported ones, appeals) sit in the private bucket (audit C-3): both are read.
+ */
 export async function loadListingImages(listing: ListingRecord, store: ObjectStore = objectStore()): Promise<AiImage[]> {
   const images: AiImage[] = [];
+  const first = photosArePrivate(listing) ? "private" : "media";
   for (const photo of listing.photos.slice(0, MAX_IMAGES)) {
     try {
-      const body = await store.get("media", mediaObjectKey(listing.id, photo.id, "s"), { maxBytes: IMAGE_MAX_BYTES });
+      const body = await readStoredPhoto(store, { listingId: listing.id, photoId: photo.id, variant: "s" }, { maxBytes: IMAGE_MAX_BYTES, first });
       if (!body || body.length > IMAGE_MAX_BYTES) continue;
       const jpeg = await openImage(body).rotate().resize({ width: IMAGE_EDGE, height: IMAGE_EDGE, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
       images.push({ mediaType: "image/jpeg", data: jpeg.toString("base64") });

@@ -1,11 +1,9 @@
 import "server-only";
-import { photoSources } from "@/components/listing/photo";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { ListingSummary, TargetSummary } from "@/lib/reports/summaries";
-import { mediaBaseUrl } from "@/lib/storage/keys";
 import { formatPrice } from "../_components/moderation-labels";
 import { ACCOUNT_STATUS_LABEL, TARGET_LABEL } from "./moderation-format";
-import { staffPhotoSources, usesStaffPhotos } from "./staff-photos";
+import { staffPhotoSources } from "./staff-photos";
 
 // The line a back-office queue shows for a target (zone 7 audit P2-8): what it is in words (title,
 // seller, price, city; an account's name and state), the first photo, and the stored reference as
@@ -27,11 +25,15 @@ export const cityLabel = (citySlug: string | null) => {
   return city ? cityName(city, "fr") : null;
 };
 
-/** A listing's first photo, through the staff route once its photos left the public bucket. */
-export function listingThumb(listing: Pick<ListingSummary, "id" | "status" | "photo">, base = mediaBaseUrl()): TargetCard["thumb"] {
+/**
+ * A listing's first photo, through the staff route: the summary does not say whether the listing
+ * is hidden (its photos then sit in the private bucket, audit C-3), and a reported listing often
+ * is. The route falls back to the media bucket for the others.
+ */
+export function listingThumb(listing: Pick<ListingSummary, "id" | "photo">): TargetCard["thumb"] {
   if (!listing.photo) return null;
-  const sources = usesStaffPhotos(listing.status) ? staffPhotoSources(listing.id, listing.photo, "s") : photoSources(base, listing.id, listing.photo, "s");
-  return sources ? { src: sources.src, width: sources.width, height: sources.height } : null;
+  const sources = staffPhotoSources(listing.id, listing.photo, "s");
+  return { src: sources.src, width: sources.width, height: sources.height };
 }
 
 /** Seller, price and city of a listing, the parts it has. */
@@ -43,12 +45,12 @@ export function listingDetails(listing: Pick<ListingSummary, "sellerName" | "pri
  * The card of a target key, from its summary; falls back to the stored reference when the target
  * is gone (a deleted listing, a closed account) or its read failed.
  */
-export function targetCard(target: { type: string; id: string; publicId: string | null; listingId: string | null }, summary: TargetSummary | undefined, base = mediaBaseUrl()): TargetCard {
+export function targetCard(target: { type: string; id: string; publicId: string | null; listingId: string | null }, summary: TargetSummary | undefined): TargetCard {
   const kind = TARGET_LABEL[target.type] ?? target.type;
   const listing = summary?.listing ?? null;
   if (target.type === "listing") {
     if (!listing) return { kind, title: `Annonce ${target.id}`, details: ["Annonce introuvable"], thumb: null, reference: target.id };
-    return { kind, title: listing.title || "Sans titre", details: listingDetails(listing), thumb: listingThumb(listing, base), reference: listing.id };
+    return { kind, title: listing.title || "Sans titre", details: listingDetails(listing), thumb: listingThumb(listing), reference: listing.id };
   }
   if (target.type === "user") {
     const account = summary?.account ?? null;
@@ -63,5 +65,5 @@ export function targetCard(target: { type: string; id: string; publicId: string 
   // A message or a review: the listing of the conversation it belongs to.
   const where = target.type === "message" ? "Conversation de l'annonce" : "Échange sur l'annonce";
   if (!listing) return { kind, title: target.type === "message" ? "Message" : "Avis", details: target.listingId ? [`${where} ${target.listingId}`] : [], thumb: null, reference: target.listingId ?? "" };
-  return { kind, title: `${where} « ${listing.title || "Sans titre"} »`, details: listingDetails(listing), thumb: listingThumb(listing, base), reference: listing.id };
+  return { kind, title: `${where} « ${listing.title || "Sans titre"} »`, details: listingDetails(listing), thumb: listingThumb(listing), reference: listing.id };
 }

@@ -240,6 +240,17 @@ export async function listUploadsByTarget(targetId: string, statuses?: readonly 
   return snapshot.docs.map(fromSnapshot).filter((record): record is UploadRecord => record !== null);
 }
 
+/**
+ * Listing photos of `targetId` whose variants are in the private bucket (equality filters only:
+ * single-field indexes), at most `limit`: the listing-photos job's check of a listing in public
+ * view (one read when there is none).
+ */
+export async function listPrivateUploadsByTarget(targetId: string, limit = UPLOADS_BY_TARGET_LIMIT): Promise<UploadRecord[]> {
+  const snapshot = await uploads().where("targetId", "==", targetId).where("bucket", "==", "private").limit(limit).get();
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return snapshot.docs.map(fromSnapshot).filter((record): record is UploadRecord => record !== null);
+}
+
 /** Upload documents of a listing, any status (count aggregation: one read per 1 000 entries). */
 export async function countUploadsByTarget(targetId: string): Promise<number> {
   const result = await uploads().where("targetId", "==", targetId).count().get();
@@ -308,9 +319,10 @@ export async function writeRejectedSweepCursor(createdAt: Date, now = new Date()
 }
 
 /**
- * Progress of purge-quarantine's scan of removed listings (system/purgeQuarantine): every one
- * with (updatedAt, id) <= (at, id) had its photos moved to the private bucket, or handed to the
- * hourly document purge.
+ * Progress of purge-quarantine's scan of removed and refused listings (system/purgeQuarantine):
+ * every one with (updatedAt, id) <= (at, id) had its photos moved to the private bucket, or handed
+ * to the hourly document purge. Fields renamed when refused listings joined the scan (audit C-3):
+ * the former retainedUpdatedAt/retainedId covered removed ones only, so the scan starts over once.
  */
 export interface RetainedScanCursor {
   at: Date;
@@ -320,8 +332,8 @@ export interface RetainedScanCursor {
 export async function readRetainedScanCursor(): Promise<RetainedScanCursor | null> {
   const snapshot = await db().collection(COLLECTIONS.system).doc(SWEEP_CURSOR_DOC).get();
   void consume("firestore.reads", 1);
-  const at: unknown = snapshot.get("retainedUpdatedAt");
-  const id: unknown = snapshot.get("retainedId");
+  const at: unknown = snapshot.get("privateUpdatedAt");
+  const id: unknown = snapshot.get("privateId");
   return at instanceof Timestamp && typeof id === "string" && id.length > 0 ? { at: at.toDate(), id } : null;
 }
 
@@ -329,7 +341,24 @@ export async function writeRetainedScanCursor(cursor: RetainedScanCursor, now = 
   await db()
     .collection(COLLECTIONS.system)
     .doc(SWEEP_CURSOR_DOC)
-    .set({ retainedUpdatedAt: Timestamp.fromDate(cursor.at), retainedId: cursor.id, updatedAt: Timestamp.fromDate(now) }, { merge: true });
+    .set({ privateUpdatedAt: Timestamp.fromDate(cursor.at), privateId: cursor.id, updatedAt: Timestamp.fromDate(now) }, { merge: true });
+  void consume("firestore.writes", 1);
+}
+
+/** Position of purge-quarantine's scan of hidden listings (moderation.hiddenBy.at, id), or null. */
+export async function readHiddenScanCursor(): Promise<RetainedScanCursor | null> {
+  const snapshot = await db().collection(COLLECTIONS.system).doc(SWEEP_CURSOR_DOC).get();
+  void consume("firestore.reads", 1);
+  const at: unknown = snapshot.get("hiddenAt");
+  const id: unknown = snapshot.get("hiddenId");
+  return at instanceof Timestamp && typeof id === "string" && id.length > 0 ? { at: at.toDate(), id } : null;
+}
+
+export async function writeHiddenScanCursor(cursor: RetainedScanCursor, now = new Date()): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.system)
+    .doc(SWEEP_CURSOR_DOC)
+    .set({ hiddenAt: Timestamp.fromDate(cursor.at), hiddenId: cursor.id, updatedAt: Timestamp.fromDate(now) }, { merge: true });
   void consume("firestore.writes", 1);
 }
 

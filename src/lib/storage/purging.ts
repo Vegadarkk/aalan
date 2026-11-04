@@ -4,8 +4,8 @@ import { captureServerException } from "@/lib/observability/capture";
 import type { BucketRole, GetOptions, ObjectHead, ObjectStore, PresignedPut, PresignPutInput, PutOptions } from "./types";
 
 // Edge cache of deleted media (audit A4-04): every DELETE in the public media bucket, whichever
-// path issues it (owner deletion, pipeline rejection, move of a removed listing's photos to the
-// private bucket, retention purge, replaced Pro logo), asks for that URL to leave the CDN once the
+// path issues it (owner deletion, pipeline rejection, move of a removed, refused or hidden
+// listing's photos to the private bucket, retention purge, replaced Pro logo), asks for that URL to leave the CDN once the
 // object is gone. A failed request is logged and reported, never thrown: the deletion stands, and
 // the caller's own retries (deletions are idempotent) must not depend on the CDN.
 

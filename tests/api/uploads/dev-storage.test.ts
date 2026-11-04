@@ -69,7 +69,7 @@ describe("uploads in development (file store and signed dev route)", () => {
     const served = await devRoute(devGet, variant, { method: "GET" });
     expect(served.status).toBe(200);
     expect(served.headers.get("content-type")).toBe("image/webp");
-    expect(served.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    expect(served.headers.get("cache-control")).toBe("public, max-age=86400");
     const meta = await sharp(Buffer.from(await served.arrayBuffer())).metadata();
     expect([meta.format, meta.exif, meta.width, meta.height]).toEqual(["webp", undefined, 50, 100]);
 

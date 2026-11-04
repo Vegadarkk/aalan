@@ -17,7 +17,9 @@ import { listTargetReports } from "./repository";
 import type { StrongSignal } from "./rules";
 import { splitMessageId, type TargetRef } from "./target-key";
 
-// Visibility of reported content (design D11, D13). A strong signal hides at once: a listing gets
+// Visibility of reported content (design D11, D13). A strong signal hides at once (a user report
+// only on a listing or a message: a profile or a review waits for a moderator, rules.ts
+// AUTO_HIDE_TARGETS, audit C-4): a listing gets
 // `moderation.hiddenBy` (search outbox + fast lane, ISR revalidation; the public page and the index
 // treat it as unavailable), an account becomes `restricted` and each of its published listings is
 // hidden, a message is replaced by HIDDEN_MARKER (messaging lot's hideMessage; messaging reaches this

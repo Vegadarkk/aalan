@@ -23,6 +23,7 @@ import type { BulkDismissResponse, DecideResponse } from "@/lib/decisions/contra
 import { setDecisionAiHooks } from "@/lib/decisions/hooks";
 import { getSearchOutbox } from "@/lib/db/repositories/search-outbox";
 import { resetServerEnv } from "@/lib/env";
+import { hideTarget } from "@/lib/reports/visibility";
 import { sendMail } from "@/lib/mail";
 import * as limiter from "@/lib/rate-limit/limiter";
 import { listingNotice, makeTrusted, member, publicIdOf, publishedListing, report, EXPLANATION } from "../../reports/helpers";
@@ -103,6 +104,10 @@ describe("dismissal", () => {
     await makeTrusted(reporter);
     const notice = await report({ target: { type: "user", id: await publicIdOf(seller.uid) }, reasonId: "threat", explanation: EXPLANATION, goodFaith: true }, { as: reporter });
     expect(notice.status).toBe(201);
+    // A report no longer restricts an account by itself (audit C-4): an account restricted before
+    // that change is still restored by the dismissal.
+    expect(await userStatus(seller.uid)).toBe("active");
+    expect(await hideTarget({ type: "user", id: seller.uid }, "trusted", notice.body.reportId)).toBe(true);
     expect(await userStatus(seller.uid)).toBe("restricted");
     expect((await listing(id)).moderation.hiddenBy).toBeDefined();
 

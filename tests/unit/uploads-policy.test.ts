@@ -6,7 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
 
-const { AUTO_ATTACH_STATUSES, LIVE_STATUSES, MANUAL_ATTACH_STATUSES, PHOTO_TARGET_STATUSES, RETAINED_STATUSES, maxPhotosOf, toStatusResponse } = await import("@/lib/uploads/policy");
+const { AUTO_ATTACH_STATUSES, LIVE_STATUSES, MANUAL_ATTACH_STATUSES, PHOTO_TARGET_STATUSES, PRIVATE_PHOTO_STATUSES, RETAINED_STATUSES, maxPhotosOf, photosArePrivate, toStatusResponse } = await import("@/lib/uploads/policy");
+const { LISTING_STATUSES } = await import("@/lib/contracts/listings");
 const { EDITABLE_STATUSES } = await import("@/lib/listings/service");
 const { MAX_PHOTOS_INDIVIDUAL, MAX_PHOTOS_PRO } = await import("@/lib/contracts/media");
 
@@ -28,6 +29,17 @@ describe("upload policy", () => {
   it("leaves the other editable listings to the owner's save, and retains a removed listing's uploads", () => {
     expect(MANUAL_ATTACH_STATUSES).toEqual(["pending_review", "published", "paused", "expired"]);
     expect(RETAINED_STATUSES).toEqual(["removed"]);
+  });
+
+  it("keeps the photos of a removed, refused or hidden listing off the media host, drafts and live listings on it (audit C-3)", () => {
+    const moderation = { state: "auto_ok" as const, score: 0, flags: [], openReports: 0 };
+    const hiddenBy = { reportId: "r1", signal: "trusted" as const, at: new Date() };
+    expect(PRIVATE_PHOTO_STATUSES).toEqual(["rejected", "removed"]);
+    for (const status of LISTING_STATUSES) {
+      expect(photosArePrivate({ status, moderation })).toBe(status === "rejected" || status === "removed");
+      // Hidden (a report's strong signal or a staff restriction) whatever the status, except a tombstone.
+      expect(photosArePrivate({ status, moderation: { ...moderation, hiddenBy } })).toBe(status !== "purged");
+    }
   });
 
   it("allows 10 photos to an individual and 20 to a Pro (D5)", () => {

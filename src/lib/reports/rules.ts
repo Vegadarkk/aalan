@@ -1,9 +1,9 @@
 import { REPORT_PRIORITIES, SLA_MS, type ReportPriority, type ReportTargetType } from "@/config/report-reasons";
 import type { STRONG_SIGNALS, UserPrivateDoc, UserDoc } from "@/lib/db/schemas";
 
-// Pure rules of the reports (design D10, D11, D12, D15): duplicates, strong signals, the trusted
-// reporter, the reporter accuracy and the art. 23 measures, the P0 alert text. No I/O here: the
-// service feeds them what it read, the unit tests feed them fixtures.
+// Pure rules of the reports (design D10, D11, D12, D15): duplicates, strong signals, the proven and
+// the trusted reporter, the reporter accuracy and the art. 23 measures, the P0 alert text. No I/O
+// here: the service feeds them what it read, the unit tests feed them fixtures.
 
 export type StrongSignal = (typeof STRONG_SIGNALS)[number];
 export type ReporterStats = UserPrivateDoc["reporter"];
@@ -16,6 +16,15 @@ export const TRUSTED_MIN_DECIDED = 5;
 export const TRUSTED_MIN_FOUNDED_SHARE = 0.8;
 /** D11 "multi": distinct reporters of open P0 reports on one target within this window. */
 export const MULTI_WINDOW_MS = 7 * DAY_MS;
+/** Audit C-4 "proven" reporter: minimum account age. */
+export const PROVEN_MIN_ACCOUNT_DAYS = 7;
+/**
+ * Target types a report may hide by itself (strong signal). A profile (restriction of the account and
+ * of all its listings) or a review is hidden only by a moderator's decision (owner, 2026-11-04,
+ * audit C-4): their reports go to the queue with their priority (a P0 still alerts), the signal is
+ * kept on the report as a hint. Shops have no automatic hide either (phase 7).
+ */
+export const AUTO_HIDE_TARGETS: readonly ReportTargetType[] = ["listing", "message"];
 /** D15: outcomes kept, manifestly unfounded dates kept, the 30-day windows, the suspension length. */
 export const REPORTER_RECENT_MAX = 10;
 export const MANIFEST_MAX = 10;
@@ -68,6 +77,8 @@ export function findDuplicate<T extends OpenReportLike>(open: readonly T[], who:
 
 export interface SignalReport {
   uid?: string;
+  /** The account is a proven reporter (provenFromFacts); only proven accounts make a "multi" signal. */
+  proven?: boolean;
   deviceHash: string;
   ipPrefixHash: string;
   createdAt: Date;
@@ -82,15 +93,27 @@ function distinctOrigins(a: SignalReport, b: SignalReport): boolean {
 const inWindow = (other: SignalReport, now: Date): boolean => now.getTime() - other.createdAt.getTime() <= MULTI_WINDOW_MS;
 
 /**
+ * The other reports that could complete a "multi" signal with `candidate`, proof aside: signed-in,
+ * within 7 days, distinct account, device and IP prefix. The service looks up whether each one's
+ * account is proven (hasMultiSignal).
+ */
+export function multiPartners<T extends SignalReport>(candidate: SignalReport, others: readonly T[], now: Date): T[] {
+  if (candidate.uid === undefined) return [];
+  return others.filter((other) => other.uid !== undefined && inWindow(other, now) && distinctOrigins(candidate, other));
+}
+
+/**
  * "multi" (strong signal): the new P0 report and at least one other open P0 user report on the same
- * target, created within 7 days, come from two distinct ACCOUNTS (both signed in) on distinct
+ * target, created within 7 days, come from two distinct PROVEN ACCOUNTS (both signed in) on distinct
  * devices AND IP prefixes (AF §7). A visitor has no account to answer for a false notice (art. 23),
- * so two visitors never hide anything (audit D1a-03): they only corroborate each other. `others` are
- * the open P0 reports of the target with `source: "user"` (the caller filters).
+ * so two visitors never hide anything (audit D1a-03): they only corroborate each other. Two fresh
+ * accounts are not enough either (audit C-4): each must be proven (provenFromFacts). `others` are
+ * the open P0 reports of the target with `source: "user"`, without the excluded reporters (the
+ * caller filters).
  */
 export function hasMultiSignal(candidate: SignalReport, others: readonly SignalReport[], now: Date): boolean {
-  if (candidate.uid === undefined) return false;
-  return others.some((other) => other.uid !== undefined && inWindow(other, now) && distinctOrigins(candidate, other));
+  if (candidate.proven !== true) return false;
+  return multiPartners(candidate, others, now).some((other) => other.proven === true);
 }
 
 /**
@@ -111,6 +134,12 @@ export function raisePriority(priority: ReportPriority): ReportPriority {
 export interface TrustedFacts {
   user: Pick<UserDoc, "createdAt" | "status" | "badges"> | null;
   reporter: ReporterStats | null;
+  now: Date;
+}
+
+export interface ProvenFacts {
+  user: Pick<UserDoc, "createdAt" | "status" | "activation" | "badges" | "stats"> | null;
+  reporter: ReporterStats | null | undefined;
   now: Date;
 }
 
@@ -138,13 +167,37 @@ export function trustedFromFacts({ user, reporter, now }: TrustedFacts): boolean
   return reporter.recent.length >= TRUSTED_MIN_DECIDED && share !== null && share >= TRUSTED_MIN_FOUNDED_SHARE;
 }
 
+/**
+ * Audit C-4 "proven" reporter (owner, 2026-11-04: only verified reporters count): the only accounts
+ * whose P0 reports may complete a "multi" signal. An active, activated account of at least 7 days
+ * with at least one proof the data model already keeps: a verified phone (badges.phoneVerified), a
+ * published listing (stats.activeListings, passed the publication screening), a received review
+ * (stats.ratingCount, a completed exchange), or a founded report decided by a moderator
+ * (reporter.recent). Never during an art. 23 suspension. Reports of other accounts are stored and
+ * queued as usual; they only never hide anything by themselves.
+ */
+export function provenFromFacts({ user, reporter, now }: ProvenFacts): boolean {
+  if (!user || user.status !== "active" || user.activation !== "done") return false;
+  if (now.getTime() - user.createdAt.getTime() < PROVEN_MIN_ACCOUNT_DAYS * DAY_MS) return false;
+  if (isAbusive(reporter, now)) return false;
+  return user.badges.phoneVerified || user.stats.activeListings > 0 || user.stats.ratingCount > 0 || (reporter?.recent ?? []).some(Boolean);
+}
+
+/** A report may hide a target of this type by itself (AUTO_HIDE_TARGETS). */
+export function autoHideAllowed(type: ReportTargetType): boolean {
+  return AUTO_HIDE_TARGETS.includes(type);
+}
+
 export interface SignalFacts {
   trusted: boolean;
   auto: boolean;
   multi: boolean;
 }
 
-/** The strong signal of a P0 user report, strongest first; undefined: nothing is hidden. */
+/**
+ * The strong signal of a P0 user report, strongest first; undefined: nothing is hidden. Whether it
+ * hides depends on the target type too (autoHideAllowed).
+ */
 export function strongSignalOf(priority: ReportPriority, facts: SignalFacts): StrongSignal | undefined {
   if (priority !== "P0") return undefined;
   if (facts.trusted) return "trusted";

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_STAFF_PHOTO_BYTES, parseStaffPhotoParams, readStaffPhoto, staffPhotoPath, staffPhotoSources, usesStaffPhotos } from "@/app/admin/_lib/staff-photos";
 import { photoFinalKey, photoObjectKey, retainedObjectKey } from "@/lib/media/urls";
+import { readStoredPhoto } from "@/lib/media/stored-photo";
 import { MemoryObjectStore } from "@/lib/storage/memory";
 import { isValidObjectKey } from "@/lib/storage/keys";
 
@@ -25,9 +26,10 @@ describe("retained photo keys", () => {
 });
 
 describe("staff photo route helpers", () => {
-  it("only removed listings go through the staff route", () => {
+  it("refused and removed listings go through the staff route (their photos are private, audit C-3)", () => {
     expect(usesStaffPhotos("removed")).toBe(true);
-    for (const status of ["pending_review", "published", "paused", "sold", "expired", "rejected"] as const) expect(usesStaffPhotos(status)).toBe(false);
+    expect(usesStaffPhotos("rejected")).toBe(true);
+    for (const status of ["pending_review", "published", "paused", "sold", "expired"] as const) expect(usesStaffPhotos(status)).toBe(false);
   });
 
   it("builds dot-free same-origin paths (proxy.ts skips paths with a dot) and both sources", () => {
@@ -73,5 +75,14 @@ describe("staff photo route helpers", () => {
     const store = new MemoryObjectStore();
     store.seed("private", photoObjectKey("private", LISTING, PHOTO, "l"), Buffer.alloc(MAX_STAFF_PHOTO_BYTES + 1), { contentType: "image/webp" });
     expect(await readStaffPhoto(store, { listingId: LISTING, photoId: PHOTO, variant: "l" })).toBeNull();
+  });
+
+  it("reads the media bucket first when asked (moderation agent on a live listing), with its own size guard", async () => {
+    const store = new MemoryObjectStore();
+    const target = { listingId: LISTING, photoId: PHOTO, variant: "s" as const };
+    store.seed("media", photoObjectKey("media", LISTING, PHOTO, "s"), Buffer.from("public"), { contentType: "image/webp" });
+    expect((await readStoredPhoto(store, target, { first: "media" }))?.toString()).toBe("public");
+    expect(store.calls.map((call) => call.bucket)).toEqual(["media"]);
+    expect(await readStoredPhoto(store, target, { first: "media", maxBytes: 3 })).toBeNull();
   });
 });

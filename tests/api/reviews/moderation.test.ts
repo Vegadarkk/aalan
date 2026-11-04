@@ -30,13 +30,14 @@ import { FakeValkey } from "../../unit/messaging-fake-valkey";
 import { adminCall, mailTo, staff, type Staff } from "../admin/decisions/helpers";
 import { call, type CallResult } from "../favorites/helpers";
 import { member, seedListing, send, startOk, type ErrorBody, type Member } from "../messaging/helpers";
-import { report, visitor } from "../reports/helpers";
+import { makeProven, makeTrusted, report, visitor } from "../reports/helpers";
 
 // Moderation of reviews (vitrine-avis §3) on the emulators: a review held for sensitive data goes
 // to the moderators' queue as a system report; "no action" publishes it. A published review is
 // reported by anyone but its author (the seller it is about included), held for the report's
 // time; a removal hides it with a statement of reasons to its author, takes it out of the seller's
-// average, and a restore brings it back with the restoration mail.
+// average, and a restore brings it back with the restoration mail. A report never hides a review by
+// itself, and the seller's own reports count toward no signal (audit C-4).
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TEXT = "Échange rapide et courtois, l'article était conforme à l'annonce.";
@@ -137,6 +138,38 @@ describe("review moderation", () => {
     expect(fromVisitor.status, JSON.stringify(fromVisitor.body)).toBe(201);
     expect((await reviewDoc(id)).legalHold).toEqual(expect.arrayContaining([`report:${fromSeller.body.reportId}`, `report:${fromVisitor.body.reportId}`]));
     refused(await report({ ...notice(), target: { type: "review", id: "AAAAAAAAAAAAAAAAAAAAAA" } }, { as: seller }), 422, "report_target_invalid");
+  });
+
+  it("never hides a review on reports: P0 notices queue it, the seller's own counts toward no signal (audit C-4)", async () => {
+    const { seller, id } = await reviewed(TEXT, 1);
+    let block = 0;
+    const network = () => {
+      block += 1;
+      return { "x-forwarded-for": `172.${16 + block}.3.9` };
+    };
+    const notice = { target: { type: "review", id }, reasonId: "threat", explanation: EXPLANATION, goodFaith: true };
+    await makeTrusted(seller);
+    const fromSeller = await report(notice, { as: seller, headers: network() });
+    expect(fromSeller.status, JSON.stringify(fromSeller.body)).toBe(201);
+    const sellerReport = (await db().collection(COLLECTIONS.reports).doc(fromSeller.body.reportId).get()).data()!;
+    // A trusted seller is still no signal on a review of their own.
+    expect(sellerReport).toMatchObject({ priority: "P0", status: "open", hidden: false, reporter: { uid: seller.uid, trusted: true } });
+    expect(sellerReport.strongSignal).toBeUndefined();
+
+    // A proven account plus the seller: no "multi" either.
+    const first = await report(notice, { as: await makeProven(await member()), headers: network() });
+    expect(first.status, JSON.stringify(first.body)).toBe(201);
+    expect((await db().collection(COLLECTIONS.reports).doc(first.body.reportId).get()).get("strongSignal")).toBeUndefined();
+
+    // Two proven accounts other than the seller: "multi" as a hint, still nothing hidden.
+    const second = await report(notice, { as: await makeProven(await member()), headers: network() });
+    expect(second.status, JSON.stringify(second.body)).toBe(201);
+    expect((await db().collection(COLLECTIONS.reports).doc(second.body.reportId).get()).data()).toMatchObject({ priority: "P0", strongSignal: "multi", hidden: false });
+    const doc = await reviewDoc(id);
+    expect(doc.status).toBe("published");
+    expect(doc).not.toHaveProperty("hiddenBy");
+    expect(await ratingCount(seller.uid)).toBe(1);
+    expect((await openReports(id)).filter((item) => item.status === "open")).toHaveLength(3);
   });
 
   it("hides a reported review with a statement of reasons, and a restore brings it back", async () => {

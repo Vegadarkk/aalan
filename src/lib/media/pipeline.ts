@@ -7,11 +7,12 @@ import { getUpload, markUploadReady, transitionUpload, type UploadRecord } from 
 import { serverEnv } from "@/lib/env";
 import { logger } from "@/lib/logging/logger";
 import { objectStore, type BucketRole, type ObjectStore } from "@/lib/storage";
-import { AUTO_ATTACH_STATUSES, PHOTO_TARGET_STATUSES, maxPhotosOf, toStatusResponse } from "@/lib/uploads/policy";
+import { AUTO_ATTACH_STATUSES, PHOTO_TARGET_STATUSES, maxPhotosOf, photosArePrivate, toStatusResponse } from "@/lib/uploads/policy";
 import { recordMediaBytes } from "@/lib/uploads/storage-gauge";
 import { imageClassifier, type ImageClassification, type ImageClassifier } from "./classify";
 import { isMediaError } from "./errors";
 import { checkImageType, SNIFF_BYTES } from "./magic";
+import { enqueueListingPhotoSync } from "./photo-sync";
 import { processImage, type ProcessedImage } from "./process";
 import { MEDIA_CACHE_CONTROL, MEDIA_CONTENT_TYPE, mediaObjectKey } from "./urls";
 
@@ -212,6 +213,9 @@ async function publish(upload: UploadRecord, listing: ListingRecord, processed: 
   await recordMediaBytes(storedBytes, ctx.now());
   await deleteQuietly(ctx.store, "quarantine", [upload.quarantineKey], upload.id);
   logger.info({ uploadId: upload.id, listingId: listing.id, bytes: storedBytes, attached: outcome.attached }, "upload ready");
+  // A refused or hidden listing's photos belong in the private bucket (audit C-3): the new one
+  // follows them (worker; the hourly purge-quarantine scan backs it up).
+  if (photosArePrivate(listing)) await enqueueListingPhotoSync(listing.id).catch((error: unknown) => logger.warn({ listingId: listing.id, err: (error as Error).message }, "listing photo sync not queued"));
   return { status: "ready", photo, ...((checks?.faces ?? 0) > 0 ? { faces: checks!.faces } : {}) };
 }
 

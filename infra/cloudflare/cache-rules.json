@@ -15,7 +15,7 @@
     },
     {
       "ref": "media_edge_ttl",
-      "description": "R2 media hosts (photos, PMTiles map): the origin sends max-age=31536000, immutable, which browsers keep, but the edge keeps a copy one day at most, so the photos of a removed listing leave the CDN within a day of their move to the private bucket; an urgent removal is purged by URL.",
+      "description": "R2 media hosts (photos, PMTiles map): the edge keeps a copy one day at most, whatever the origin sends. Photos are stored with max-age=86400 (those stored before 2026-11-04 with max-age=31536000, immutable; the PMTiles map keeps a year), so the photos of a removed, refused or hidden listing leave the CDN within a day of their move to the private bucket; the app purges each deleted URL at once when CF_MEDIA_PURGE_TOKEN is set.",
       "expression": "http.host in {\"media.joutiya.ma\" \"media-staging.joutiya.ma\" \"media.aalan.ma\" \"media-staging.aalan.ma\"}",
       "action": "set_cache_settings",
       "action_parameters": {

@@ -23,6 +23,12 @@ export interface ResolvedTarget {
   target: StoredTarget;
   /** The listing of a listing target (counters, legal hold, the "auto" signal). */
   listing?: ListingRecord;
+  /**
+   * Accounts whose reports never count toward an automatic signal on this target ("trusted",
+   * "multi", corroboration; audit C-4): for a review, the seller it is about. A shop belongs to its
+   * owner's account (no team accounts), so this covers the seller's shop too. Not stored.
+   */
+  excludedReporters?: string[];
 }
 
 const invalidTarget = () => new HttpError(422, "report_target_invalid");
@@ -103,12 +109,15 @@ async function resolveMessage(id: string, reporterUid: string | null): Promise<R
   return { target: { type: "message", id: `${ids.cid}/${ids.mid}`, ownerUid: message.senderUid, listingId: conversation.listingId } };
 }
 
-/** A published review, reported by anyone but its author (the seller it is about included). */
+/**
+ * A published review, reported by anyone but its author (the seller it is about included). The
+ * seller's own reports are queued but never count toward a signal (excludedReporters).
+ */
 async function resolveReview(id: string, reporterUid: string | null): Promise<ResolvedTarget> {
   const review = await getReview(id);
   if (!review || review.status !== "published") throw invalidTarget();
   if (reporterUid && review.authorUid === reporterUid) throw notAllowed();
-  return { target: { type: "review", id: review.id, ownerUid: review.authorUid, listingId: review.listingId } };
+  return { target: { type: "review", id: review.id, ownerUid: review.authorUid, listingId: review.listingId }, excludedReporters: [review.targetUid] };
 }
 
 /** The reported target of a notice, as stored; throws the refusals above. */

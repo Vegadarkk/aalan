@@ -4,18 +4,20 @@ import { getListings, type ListingRecord } from "@/lib/db/repositories/listings"
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { getUserPrivate } from "@/lib/db/repositories/users";
-import { listListingsChangedBefore, type ListingCursor } from "@/lib/db/repositories/retention";
+import { listListingsChangedBefore, listListingsHiddenBefore, type ListingCursor } from "@/lib/db/repositories/retention";
 import {
   deleteUploadDocument,
   listExpiredQuarantine,
   listPastPurge,
   listRejectedCreatedBetween,
   listUploadsByTarget,
+  readHiddenScanCursor,
   readRejectedSweepCursor,
   readRetainedScanCursor,
   transitionUpload,
   updateUpload,
   UPLOADS_BY_TARGET_LIMIT,
+  writeHiddenScanCursor,
   writeRejectedSweepCursor,
   writeRetainedScanCursor,
   type PurgeCursor,
@@ -23,12 +25,12 @@ import {
 } from "@/lib/db/repositories/uploads";
 import { isFirestoreConfigured } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
-import { MEDIA_CONTENT_TYPE, photoFinalKey, photoObjectKey, type PhotoBucket } from "@/lib/media/urls";
+import { MEDIA_CACHE_CONTROL, MEDIA_CONTENT_TYPE, photoFinalKey, photoObjectKey, type PhotoBucket } from "@/lib/media/urls";
 import { kybcObjectKey } from "@/lib/pro/kybc";
 import { kybcRetention } from "@/lib/pro/kybc-retention";
 import { isDegraded } from "@/lib/quota";
 import { isStorageNotConfigured, moveObject, objectStore, type ObjectStore } from "@/lib/storage";
-import { RETAINED_STATUSES, storedBytes } from "@/lib/uploads/policy";
+import { photosArePrivate, PRIVATE_PHOTO_STATUSES, RETAINED_STATUSES, storedBytes } from "@/lib/uploads/policy";
 import { recordMediaBytes } from "@/lib/uploads/storage-gauge";
 
 // Hourly at :20 (design §4, architecture §6 "Les objets non traités sont purgés après 24 h"):
@@ -37,16 +39,21 @@ import { recordMediaBytes } from "@/lib/uploads/storage-gauge";
 // 2. `rejected` uploads: their quarantine object deleted once no presigned PUT can land any more
 //    (the pipeline deletes it at once; this catches failed deletions and a PUT sent after
 //    complete), swept in creation order behind a cursor (system/purgeQuarantine);
-// 3. photos of removed listings leave the public media bucket (architecture §5: kept until
-//    removal + 12 months for appeals and authority requests, never served meanwhile): removed
-//    listings are scanned by updatedAt behind a cursor (system/purgeQuarantine, 10 minutes behind
-//    the clock so a removal still committing is not passed over), and the variants of each `ready`
-//    upload (or `rejected` once ready: deleted by its owner under a legal hold, objects kept) move
-//    to the private bucket under `removed/listings/...` (GET, PUT, HEAD check, then DELETE of the
-//    public copy), after which the upload records `bucket: "private"` and its finalKey. A rerun
-//    finishes whatever a crash left (moveObject). A legal hold does not stop it: no public copy
-//    goes before its private copy is checked. An upload that fails is handed to the document
-//    purge (purgeAt = now), which retries the move every hour;
+// 3. photos of removed, refused and hidden listings leave the public media bucket (architecture
+//    §5: a removed listing's are kept until removal + 12 months for appeals and authority
+//    requests, never served meanwhile; audit C-3 and owner decision 2026-11-04: a refused or
+//    hidden listing's too, uploads/policy.ts photosArePrivate): removed and refused listings are
+//    scanned by updatedAt behind a cursor, hidden ones by `moderation.hiddenBy.at` behind another
+//    (system/purgeQuarantine, 10 minutes behind the clock so a change still committing is not
+//    passed over), and the variants of each `ready` upload (or `rejected` once ready: deleted by
+//    its owner under a legal hold, objects kept) move to the private bucket under
+//    `removed/listings/...` (GET, PUT, HEAD check, then DELETE of the public copy), after which
+//    the upload records `bucket: "private"` and its finalKey. A rerun finishes whatever a crash left
+//    (moveObject). A legal hold does not stop it: no public copy goes before its private copy is
+//    checked. An upload that fails is handed to the document purge (purgeAt = now), which retries
+//    the move every hour. This scan is the backstop of the per-listing job of the media queue
+//    (src/worker/jobs/listing-photos.ts), queued after each search index pass, which also brings
+//    the photos back when a listing returns to public view;
 // 4. documents past purgeAt not attached to a listing: objects and document deleted. An attached
 //    photo lives with its listing: its purgeAt moves to the listing's purgeAt (expiry or end +
 //    purge months), or 30 days on when that is sooner or unset (drafts). The uploads of a removed
@@ -63,7 +70,8 @@ import { recordMediaBytes } from "@/lib/uploads/storage-gauge";
 //
 // Edge cache: the public URL of a moved variant answers 404 at R2 at once. With CF_MEDIA_PURGE_TOKEN
 // set, the DELETE of its public copy also queues its purge from Cloudflare's cache (src/lib/cdn,
-// storage/purging.ts); browsers may still hold a copy up to its max-age (MEDIA_CACHE_CONTROL).
+// storage/purging.ts); browsers may still hold a copy up to its max-age (MEDIA_CACHE_CONTROL: a
+// day; a year for objects stored before 2026-11-04).
 
 export const QUARANTINE_TTL_MS = 24 * 3_600_000;
 /** Presigned URLs live 5 minutes: an hour after signing nothing can land in quarantine. */
@@ -95,7 +103,7 @@ export interface PurgeQuarantineResult {
   extended: number;
   /** Past purgeAt but left alone (purgeAt moved on): legal hold, or removed listing (retention-purge). */
   skipped: number;
-  /** Uploads of removed listings whose variants moved to the private bucket (steps 3 and 4). */
+  /** Uploads of removed, refused or hidden listings whose variants moved to the private bucket (steps 3 and 4). */
   retained: number;
   /** Bytes of stored variants deleted with their documents (step 4), taken off the R2 storage gauge. */
   freedBytes: number;
@@ -178,10 +186,30 @@ async function moveVariantsToPrivate(store: ObjectStore, listingId: string, phot
 }
 
 /**
- * Moves the variants of a removed listing's photo from the media bucket to the private one, then
- * records `bucket: "private"` and the new finalKey on the upload (transaction: still ready or rejected).
- * Idempotent; throws on a storage failure, when the public copy of any variant whose private copy
- * is not checked yet is still in place. False when the upload changed meanwhile (not recorded).
+ * Moves a photo's variants from the private bucket back to the media one (a refused or hidden
+ * listing back in public view), stored with the current MEDIA_CACHE_CONTROL. Returns how many of
+ * `expected` are in neither bucket.
+ */
+async function moveVariantsToMedia(store: ObjectStore, listingId: string, photoId: string, expected: readonly PhotoVariant[]): Promise<number> {
+  let missing = 0;
+  for (const variant of PHOTO_VARIANTS) {
+    const outcome = await moveObject(
+      store,
+      { bucket: "private", key: photoObjectKey("private", listingId, photoId, variant) },
+      { bucket: "media", key: photoObjectKey("media", listingId, photoId, variant) },
+      { contentType: MEDIA_CONTENT_TYPE, cacheControl: MEDIA_CACHE_CONTROL, maxBytes: MAX_VARIANT_BYTES },
+    );
+    if (outcome === "missing" && expected.includes(variant)) missing += 1;
+  }
+  return missing;
+}
+
+/**
+ * Moves the variants of a removed, refused or hidden listing's photo from the media bucket to the
+ * private one, then records `bucket: "private"` and the new finalKey on the upload (transaction:
+ * still ready or rejected). Idempotent; throws on a storage failure, when the public copy of any
+ * variant whose private copy is not checked yet is still in place. False when the upload changed
+ * meanwhile (not recorded).
  */
 export async function retainUpload(store: ObjectStore, upload: UploadRecord, now: Date): Promise<boolean> {
   const missing = await moveVariantsToPrivate(store, upload.targetId, upload.id, upload.variants ?? LEGACY_PHOTO_VARIANTS);
@@ -191,18 +219,41 @@ export async function retainUpload(store: ObjectStore, upload: UploadRecord, now
   return marked.ok;
 }
 
-/** Every public photo of a removed listing; a failed one is handed to the document purge. Throws when even that fails. */
-async function retainListingPhotos(store: ObjectStore, listing: ListingRecord, now: Date, result: PurgeQuarantineResult): Promise<void> {
+/**
+ * Moves a `ready` photo of a refused or hidden listing back to the media bucket once the listing
+ * is in public view again, then records `bucket: "media"` and its finalKey (transaction: still
+ * ready). Idempotent; throws on a storage failure (a private copy stays until its public copy is
+ * checked). False when the upload changed meanwhile (not recorded).
+ */
+export async function releaseUpload(store: ObjectStore, upload: UploadRecord, now: Date): Promise<boolean> {
+  const missing = await moveVariantsToMedia(store, upload.targetId, upload.id, upload.variants ?? LEGACY_PHOTO_VARIANTS);
+  if (missing > 0) logger.warn({ uploadId: upload.id, missing }, "released photo: variant found in neither bucket");
+  const marked = await transitionUpload(upload.id, ["ready"], { bucket: "media", finalKey: photoFinalKey("media", upload.targetId, upload.id) }, now);
+  if (!marked.ok) logger.warn({ uploadId: upload.id }, "released photo: upload changed meanwhile, location not recorded");
+  return marked.ok;
+}
+
+/** Counters retainListingPhotos adds to (PurgeQuarantineResult, the listing-photos job). */
+export interface RetainTally {
+  retained: number;
+  failed: number;
+}
+
+/**
+ * Every public photo of a listing whose photos are private (photosArePrivate); a failed one is
+ * handed to the document purge. Throws when even that fails.
+ */
+export async function retainListingPhotos(store: ObjectStore, listing: ListingRecord, now: Date, result: RetainTally): Promise<void> {
   // Signing caps a listing far below one page; anything beyond moves at its own purgeAt (step 4).
   const uploads = await listUploadsByTarget(listing.id, RETAINABLE_UPLOAD_STATUSES);
-  if (uploads.length >= UPLOADS_BY_TARGET_LIMIT) logger.warn({ listingId: listing.id }, "removed listing: more ready or rejected uploads than one page");
+  if (uploads.length >= UPLOADS_BY_TARGET_LIMIT) logger.warn({ listingId: listing.id }, "private-photo listing: more ready or rejected uploads than one page");
   for (const upload of uploads) {
     if (!isPublicPhoto(upload)) continue;
     try {
       if (await retainUpload(store, upload, now)) result.retained += 1;
     } catch (error) {
       result.failed += 1;
-      logger.warn({ uploadId: upload.id, err: (error as Error).message }, "removed listing photo not moved, retried by the document purge");
+      logger.warn({ uploadId: upload.id, err: (error as Error).message }, "private-photo listing: photo not moved, retried by the document purge");
       if (upload.purgeAt.getTime() > now.getTime()) await updateUpload(upload.id, { purgeAt: now }, now);
     }
   }
@@ -212,30 +263,63 @@ async function retainListingPhotos(store: ObjectStore, listing: ListingRecord, n
   for (const photo of listing.photos) if (!known.has(photo.id)) await moveVariantsToPrivate(store, listing.id, photo.id, photo.variants ?? LEGACY_PHOTO_VARIANTS);
 }
 
-async function retainRemovedPhotos(store: ObjectStore, now: Date, result: PurgeQuarantineResult): Promise<void> {
+interface PrivatePhotoScan {
+  name: string;
+  readCursor: () => Promise<ListingCursor | null>;
+  writeCursor: (cursor: ListingCursor, now: Date) => Promise<void>;
+  list: (before: Date, limit: number, cursor?: ListingCursor) => Promise<{ listings: ListingRecord[]; next?: ListingCursor; read: number }>;
+  /** The cursor position of a listing this scan read. */
+  at: (listing: ListingRecord) => Date;
+}
+
+/** Removed and refused listings, by updatedAt. */
+const CHANGED_SCAN: PrivatePhotoScan = {
+  name: "removed or refused listing",
+  readCursor: readRetainedScanCursor,
+  writeCursor: writeRetainedScanCursor,
+  list: (before, limit, cursor) => listListingsChangedBefore(PRIVATE_PHOTO_STATUSES, before, limit, cursor),
+  at: (listing) => listing.updatedAt,
+};
+
+/** Hidden listings (any status), by moderation.hiddenBy.at: a hide sets it, so every hide is seen once. */
+const HIDDEN_SCAN: PrivatePhotoScan = {
+  name: "hidden listing",
+  readCursor: readHiddenScanCursor,
+  writeCursor: writeHiddenScanCursor,
+  list: listListingsHiddenBefore,
+  at: (listing) => listing.moderation.hiddenBy?.at ?? listing.updatedAt,
+};
+
+async function retainScannedPhotos(scan: PrivatePhotoScan, store: ObjectStore, now: Date, result: PurgeQuarantineResult): Promise<void> {
   const before = new Date(now.getTime() - RETAINED_SCAN_LAG_MS);
-  let cursor: ListingCursor | undefined = (await readRetainedScanCursor()) ?? undefined;
+  let cursor: ListingCursor | undefined = (await scan.readCursor()) ?? undefined;
   let done: ListingCursor | null = null;
   for (let pages = 0; pages < RETAINED_SCAN_PAGES; pages += 1) {
-    const page = await listListingsChangedBefore(RETAINED_STATUSES, before, RETAINED_SCAN_BATCH, cursor);
+    const page = await scan.list(before, RETAINED_SCAN_BATCH, cursor);
     for (const listing of page.listings) {
       try {
-        await retainListingPhotos(store, listing, now, result);
+        // As read now: a hidden listing shown again, or a purged one, keeps its photos where they are.
+        if (photosArePrivate(listing)) await retainListingPhotos(store, listing, now, result);
       } catch (error) {
         // Nothing handed over: the cursor stops before this listing and the next run starts from it.
         result.failed += 1;
-        logger.warn({ listingId: listing.id, err: (error as Error).message }, "removed listing scan stopped");
-        if (done) await writeRetainedScanCursor(done, now);
+        logger.warn({ listingId: listing.id, err: (error as Error).message }, `${scan.name} scan stopped`);
+        if (done) await scan.writeCursor(done, now);
         return;
       }
-      done = { at: listing.updatedAt, id: listing.id };
+      done = { at: scan.at(listing), id: listing.id };
     }
     // Past the page's last document, parsed or not.
     if (page.next) done = page.next;
     if (!page.next || page.read < RETAINED_SCAN_BATCH) break;
     cursor = page.next;
   }
-  if (done) await writeRetainedScanCursor(done, now);
+  if (done) await scan.writeCursor(done, now);
+}
+
+async function retainPrivatePhotos(store: ObjectStore, now: Date, result: PurgeQuarantineResult): Promise<void> {
+  await retainScannedPhotos(CHANGED_SCAN, store, now, result);
+  await retainScannedPhotos(HIDDEN_SCAN, store, now, result);
 }
 
 /**
@@ -308,7 +392,7 @@ async function purgeExpiredPages(store: ObjectStore, now: Date, result: PurgeQua
       try {
         const retained = listing !== undefined && RETAINED_STATUSES.includes(listing.status);
         // Backstop of step 3 (a hold allows it: the private copy is checked before the public one goes).
-        if (retained && isPublicPhoto(upload) && (await retainUpload(store, upload, now))) result.retained += 1;
+        if (listing && photosArePrivate(listing) && isPublicPhoto(upload) && (await retainUpload(store, upload, now))) result.retained += 1;
         if (listing && listing.legalHold.length > 0) {
           await updateUpload(upload.id, { purgeAt: new Date(now.getTime() + HOLD_RECHECK_MS) }, now);
           result.skipped += 1;
@@ -355,8 +439,8 @@ export async function purgeQuarantine(now = new Date(), deps: { store?: ObjectSt
   }
   await expireStale(store, now, result);
   await sweepRejected(store, now, result);
-  if (await isDegraded("firestore.writes")) logger.warn("purge-quarantine: removed listing photos deferred, Firestore write quota degraded");
-  else await step("retained photos", result, () => retainRemovedPhotos(store, now, result));
+  if (await isDegraded("firestore.writes")) logger.warn("purge-quarantine: private listing photos deferred, Firestore write quota degraded");
+  else await step("retained photos", result, () => retainPrivatePhotos(store, now, result));
   if (await isDegraded("firestore.deletes")) logger.warn("purge-quarantine: document purge deferred, Firestore delete quota degraded");
   else await purgeExpiredDocuments(store, now, result);
   logger.info({ ...result }, "purge-quarantine");

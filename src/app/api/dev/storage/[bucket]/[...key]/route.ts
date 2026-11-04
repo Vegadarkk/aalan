@@ -48,7 +48,8 @@ function headers(contentType: string, size: number, role: BucketRole, cacheContr
     "Content-Type": contentType,
     "Content-Length": String(size),
     "X-Content-Type-Options": "nosniff",
-    // Public media keys are immutable; the other buckets are read once by the worker.
+    // Public media: the Cache-Control stored with the object (MEDIA_CACHE_CONTROL); the other
+    // buckets are read once by the worker.
     "Cache-Control": role === "media" ? (cacheControl ?? "public, max-age=300") : "no-store",
     // Like media.joutiya.ma (no CORP): the admin host, another origin, shows the media photos too.
     // next.config.ts leaves this path out of its global same-origin CORP.

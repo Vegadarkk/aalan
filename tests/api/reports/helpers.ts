@@ -91,6 +91,15 @@ export async function makeTrusted(who: Member): Promise<void> {
   await users.collection(COLLECTIONS.userPrivate).doc(COLLECTIONS.userPrivateDoc).update({ reporter: { recent: [true, true, true, true, true], total: 5 } });
 }
 
+/**
+ * Makes `who` a proven reporter (audit C-4, rules.ts provenFromFacts): account of 8 days with a
+ * verified phone. `member()` alone is 30 days old with no proof: not proven.
+ */
+export async function makeProven(who: Member): Promise<Member> {
+  await db().collection(COLLECTIONS.users).doc(who.uid).update({ "badges.phoneVerified": true, createdAt: new Date(Date.now() - 8 * DAY_MS) });
+  return who;
+}
+
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 let idCounter = 0;
 function randomId(length: number, alphabet = B64): string {

@@ -35,6 +35,9 @@ import { resetPassword } from "./templates/resetPassword";
 import { savedSearchAlert } from "./templates/savedSearchAlert";
 import { newMessages } from "./templates/newMessages";
 import { appointmentReminder } from "./templates/appointmentReminder";
+import { emailChangeConfirm } from "./templates/emailChangeConfirm";
+import { emailChanged } from "./templates/emailChanged";
+import { signupClosed } from "./templates/signupClosed";
 import { signupExisting } from "./templates/signupExisting";
 import { staffInvite } from "./templates/staffInvite";
 import { verifyEmail } from "./templates/verifyEmail";
@@ -46,6 +49,9 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   verifyEmail,
   resetPassword,
   signupExisting,
+  signupClosed,
+  emailChangeConfirm,
+  emailChanged,
   passwordChanged,
   staffInvite,
   phoneVerified,

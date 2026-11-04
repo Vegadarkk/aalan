@@ -5,6 +5,7 @@ import { apiRoute, json } from "@/lib/http/route";
 import { logger } from "@/lib/logging/logger";
 import { verifyStripeSignature } from "@/lib/payments/stripe-api";
 import { receiveStripeEvent } from "@/lib/payments/stripe-events";
+import { enforceWebhookLimit } from "@/lib/rate-limit/webhooks";
 
 // Stripe → Pro subscriptions (phase 7 design §7). Signature first, on the raw body (400 otherwise,
 // as Stripe expects); the event is recorded and queued, then 200. Any other answer makes Stripe
@@ -14,6 +15,8 @@ export const dynamic = "force-dynamic";
 const MAX_BYTES = 256 * 1024;
 
 export const POST = apiRoute(async (request) => {
+  // Per-IP ceiling first, before the body is read (security review D-1).
+  await enforceWebhookLimit(request);
   const secret = serverEnv().STRIPE_WEBHOOK_SECRET;
   if (!secret) throw unavailable("Stripe webhook is not configured");
   if (Number(request.headers.get("content-length") ?? "0") > MAX_BYTES) throw new HttpError(413, "payload_too_large");

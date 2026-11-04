@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { stubGoogleScript } from "./gsi-stub";
+import { actOnAuthForm } from "./helpers";
 
 // Account flows against the production build and the Firebase emulators (npm run test:e2e).
 // Mails stay in memory (DEV_MAILBOX=true) and are read back from /api/dev/mailbox; Turnstile runs
@@ -84,8 +85,7 @@ async function createVerifiedAccount(page: Page, request: APIRequestContext, pre
   const email = uniqueEmail(prefix);
   const name = "Yasmine Test";
   await page.goto("/fr/inscription");
-  // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-  await waitForTurnstile(page);
+  await actOnAuthForm(page);
   await fillSignup(page, { name, email, password: PASSWORD });
   await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
   await waitForTurnstile(page);
@@ -104,8 +104,7 @@ test.describe("account", () => {
     const name = "Yasmine Test";
 
     await page.goto("/fr/inscription");
-    // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-    await waitForTurnstile(page);
+    await actOnAuthForm(page);
     await expect(page.getByRole("heading", { level: 1, name: "Créer un compte" })).toBeVisible();
     await fillSignup(page, { name, email, password: PASSWORD });
     await page.getByRole("checkbox", { name: /conditions générales d'utilisation/i }).check();
@@ -123,7 +122,19 @@ test.describe("account", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Mes paramètres" })).toBeVisible();
     await expect(page.getByLabel("Nom affiché")).toHaveValue(name, { timeout: 15_000 });
     // The header shows the account once /api/auth/me has answered ("Fermer mon compte" is on the page too).
-    await expect(page.getByRole("button", { name: /^Mon compte/ })).toBeVisible();
+    const account = page.getByRole("button", { name: /^Mon compte/ });
+    await expect(account).toBeVisible();
+    // The account menu is a navigation dialog of links, not an ARIA menu (audit zone 8, 5.2-3): the
+    // first link takes the focus, Escape gives it back to the trigger.
+    await account.click();
+    const panel = page.getByRole("dialog", { name: "Mon compte" });
+    await expect(panel.getByRole("navigation", { name: "Mon compte" })).toBeVisible();
+    await expect(panel.getByRole("link", { name: "Mes annonces" })).toBeFocused();
+    await expect(panel.getByRole("menuitem")).toHaveCount(0);
+    await expect(panel.getByRole("button", { name: "Déconnexion" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(account).toBeFocused();
 
     // Change the display name.
     await page.getByLabel("Nom affiché").fill("Yasmine B.");
@@ -167,8 +178,7 @@ test.describe("account", () => {
 
   test("the sign-up form explains what to fix", async ({ page }) => {
     await page.goto("/fr/inscription");
-    // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-    await waitForTurnstile(page);
+    await actOnAuthForm(page);
     await fillSignup(page, { name: "A", email: "pas-un-email", password: "court" });
     await page.getByRole("button", { name: "Créer mon compte" }).click();
     await expect(page.getByText("Le nom doit faire au moins 2 caractères.")).toBeVisible();
@@ -352,10 +362,29 @@ test.describe("account", () => {
     await expect(page).toHaveURL(/\/fr\/connexion/);
   });
 
+  test("the sign-in page loads neither Turnstile nor Google before the first action", async ({ page }) => {
+    // Turnstile only appears after repeated failures, and Google waits for a first action, as on the
+    // sign-up page (audit zone 8, perf 5).
+    const thirdParty: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.startsWith("https://challenges.cloudflare.com/") || url.startsWith("https://accounts.google.com/gsi/")) thirdParty.push(url);
+    });
+    await page.goto("/fr/connexion");
+    await expect(page.locator('form button[type="submit"]:enabled').first()).toBeVisible({ timeout: 20_000 });
+    // A negative check: give the page a moment after hydration to ask for anything it would load eagerly.
+    await page.waitForTimeout(1_500);
+    expect(thirdParty).toEqual([]);
+    await actOnAuthForm(page);
+    await expect(page.getByRole("button", { name: "Continuer avec Google (stub)" })).toBeVisible();
+    expect(thirdParty.filter((url) => url.startsWith("https://challenges.cloudflare.com/"))).toEqual([]);
+  });
+
   test("the Google button hands a rejected credential to the form message, under a device-bound nonce", async ({ page }) => {
     const stubButton = page.getByRole("button", { name: "Continuer avec Google (stub)" });
     const gisNonce = () => page.evaluate(() => (window as unknown as { __gsi?: { nonce?: string } }).__gsi?.nonce ?? "");
     await page.goto("/fr/connexion");
+    await actOnAuthForm(page);
     const [post] = await Promise.all([page.waitForResponse((candidate) => candidate.url().includes("/api/auth/google")), stubButton.click()]);
     // The fake token is refused server side (no Google signature): the form says so, and the page
     // stays. Next's empty route announcer is an alert too: the message is the alert with text.
@@ -368,12 +397,12 @@ test.describe("account", () => {
     const nonce = await gisNonce();
     expect(nonce).toMatch(/^[A-Za-z0-9_-]{43}$/);
     await page.goto("/fr/inscription");
-    // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-    await waitForTurnstile(page);
+    await actOnAuthForm(page);
     await expect(stubButton).toBeVisible();
     expect(await gisNonce()).toBe(nonce);
     await page.context().clearCookies();
     await page.goto("/fr/connexion");
+    await actOnAuthForm(page);
     await expect(stubButton).toBeVisible();
     const fresh = await gisNonce();
     expect(fresh).toMatch(/^[A-Za-z0-9_-]{43}$/);
@@ -410,6 +439,8 @@ test.describe("account", () => {
       expect(response?.status()).toBe(200);
       expect(response?.headers()["content-security-policy"] ?? "").toMatch(/'nonce-[^']+'/);
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+      // Sign-up loads Google and Turnstile on a first action: give one, so they load under the CSP too.
+      if (path === "/fr/inscription") await actOnAuthForm(page);
       // The Turnstile widget keeps the network busy: wait for it instead of "networkidle".
       await waitForTurnstile(page);
     }

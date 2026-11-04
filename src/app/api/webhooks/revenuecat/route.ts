@@ -5,6 +5,7 @@ import { apiRoute, json } from "@/lib/http/route";
 import { logger } from "@/lib/logging/logger";
 import { receiveRevenueCatEvent } from "@/lib/payments/revenuecat-events";
 import { authenticateWebhook, SIGNATURE_HEADER } from "@/lib/payments/revenuecat-webhook";
+import { enforceWebhookLimit } from "@/lib/rate-limit/webhooks";
 
 // RevenueCat → credit pack purchases and refunds (phase 7 design §6). Authorization value and HMAC
 // signature first, on the raw body; the event is recorded and queued, then 200. Any other answer
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 const MAX_BYTES = 64 * 1024;
 
 export const POST = apiRoute(async (request) => {
+  // Per-IP ceiling first, before the body is read (security review D-1).
+  await enforceWebhookLimit(request);
   const env = serverEnv();
   if (!env.REVENUECAT_WEBHOOK_AUTH || !env.REVENUECAT_WEBHOOK_HMAC_SECRET) throw unavailable("RevenueCat webhook is not configured");
   if (Number(request.headers.get("content-length") ?? "0") > MAX_BYTES) throw new HttpError(413, "payload_too_large");

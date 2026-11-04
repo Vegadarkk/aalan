@@ -64,8 +64,8 @@ async function appUserIdOf(buyer: Member): Promise<string> {
   return decodeURIComponent(new URL(result.body.url).pathname.split("/").pop()!);
 }
 
-function rcEvent(type: string, appUserId: string, transactionId: string, price: number) {
-  return {
+function rcEvent(type: string, appUserId: string, transactionId: string, price: number, extra: Record<string, unknown> = {}) {
+  const envelope = {
     api_version: "1.0",
     event: {
       id: randomUUID(),
@@ -82,6 +82,7 @@ function rcEvent(type: string, appUserId: string, transactionId: string, price: 
       event_timestamp_ms: Date.now(),
     },
   };
+  return { ...envelope, event: { ...envelope.event, ...extra } };
 }
 
 async function deliver(envelope: unknown) {
@@ -223,6 +224,42 @@ describe("withdrawal from a credit pack", () => {
 });
 
 describe("partial refund", () => {
+  it("takes back the spent credits too when a chargeback follows a withdrawal, once", async () => {
+    const buyer = await member();
+    const appUserId = await appUserIdOf(buyer);
+    const transactionId = await buy(buyer, appUserId);
+    await spendTo(buyer.uid, 90);
+    expect((await send(buyer, transactionId)).body).toMatchObject({ removedCredits: 90, refundMinor: 8_200 });
+
+    vi.mocked(alert).mockClear();
+    store.purchases = [purchase(transactionId, "refunded")];
+    const dispute = rcEvent("CANCELLATION", appUserId, transactionId, -100, { cancel_reason: "CHARGEBACK" });
+    expect((await deliver(dispute)).status).toBe(200);
+    // 20 credits were spent (18 paid + 2 bonus): debited, the wallet frozen.
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: -20, frozen: true });
+    expect((await ledgerRef(buyer.uid, `dispute_${dispute.event.id}`).get()).data()).toMatchObject({ reason: "refund", delta: -20, paidPart: -18, bonusPart: -2, balanceAfter: -20 });
+    expect(await getOrder(transactionId)).toMatchObject({ status: "refunded", refundedMinor: 10_000, refundedCredits: { paid: 100, bonus: 10 }, withdrawal: { status: "refunded" } });
+    expect(vi.mocked(alert).mock.calls.map(([event]) => event.title)).toEqual(expect.arrayContaining([expect.stringContaining("Litige après une rétractation"), expect.stringContaining("Porte-monnaie négatif")]));
+
+    // Delivered again, or a second chargeback event: nothing more.
+    expect((await deliver(rcEvent("CANCELLATION", appUserId, transactionId, -100, { cancel_reason: "CHARGEBACK" }))).status).toBe(200);
+    expect((await getWallet(buyer.uid))?.balance).toBe(-20);
+  });
+
+  it("takes back the spent credits when a chargeback follows a withdrawal an admin refunded", async () => {
+    const buyer = await member();
+    const appUserId = await appUserIdOf(buyer);
+    const transactionId = await buy(buyer, appUserId);
+    await spendTo(buyer.uid, 90);
+    await send(buyer, transactionId);
+    await markWithdrawalRefunded(staff, { orderId: transactionId, stripeRefundId: "re_3TestRefund02" });
+
+    store.purchases = [purchase(transactionId, "refunded")];
+    expect((await deliver(rcEvent("CANCELLATION", appUserId, transactionId, -100, { cancel_reason: "CHARGEBACK" }))).status).toBe(200);
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: -20, frozen: true });
+    expect(await getOrder(transactionId)).toMatchObject({ status: "refunded", refundedCredits: { paid: 100, bonus: 10 }, withdrawal: { status: "refunded", stripeRefundId: "re_3TestRefund02" } });
+  });
+
   it("debits the share of the pack matching the amount refunded", async () => {
     const buyer = await member();
     const appUserId = await appUserIdOf(buyer);

@@ -113,7 +113,7 @@ export function AccountMenu() {
       <FavoritesLink />
       <Suspense
         fallback={
-          <button type="button" aria-haspopup="menu" aria-expanded={false} className={triggerClassName}>
+          <button type="button" aria-haspopup="dialog" aria-expanded={false} className={triggerClassName}>
             {triggerContent}
           </button>
         }

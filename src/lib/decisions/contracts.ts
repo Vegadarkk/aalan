@@ -314,6 +314,33 @@ export interface CreateAuthorityResponse {
   missing: string[];
 }
 
+/** GET /api/admin/authorities/targets?q=: the content picker's query (audit zone 7 P3-4). */
+export const authorityTargetQuerySchema = z.object({ q: z.string().trim().min(2).max(300) }).strict();
+
+/** One content the picker found, as the admin previews it before recording the request. */
+export type AuthorityTargetCandidate =
+  | { kind: "listing"; entry: string; title: string; status: string; price: number | null; isDonation: boolean; ownerName: string | null; city: string | null }
+  | { kind: "user"; entry: string; displayName: string; status: string; accountType: "individual" | "pro"; publicId: string; activeListings: number }
+  | { kind: "conversation"; entry: string; listingTitle: string; buyerName: string; sellerName: string; frozen: boolean; messageCount: number };
+
+export interface AuthorityTargetsResponse {
+  candidates: AuthorityTargetCandidate[];
+  /** The query could not be read as a link, an id, an e-mail, a phone, a name or a title. */
+  unreadable: boolean;
+}
+
+/** An open or answered request whose scope names a content shown on a back-office page (P3-3). */
+export interface AuthorityNotice {
+  id: string;
+  authority: string;
+  kind: (typeof AUTHORITY_KINDS)[number];
+  status: "open" | "answered";
+  receivedAt: string;
+  dueAt: string | null;
+  /** The scope entries of this request among those the page asked about. */
+  entries: string[];
+}
+
 // ---- Staff views ----------------------------------------------------------------------------
 
 /** GET /api/admin/conversations/{cid}?reason=: why the staff member opens it (audited, D18). */

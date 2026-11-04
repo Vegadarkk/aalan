@@ -4,7 +4,7 @@ import type * as NextNavigation from "next/navigation";
 import { AppealQueue } from "@/app/admin/_components/appeal-queue";
 import { reasonSummary, ReportQueue, targetName } from "@/app/admin/_components/report-queue";
 import { startClock } from "@/app/admin/_components/sla-timer";
-import { formatSpan, orderByUrgency, slaState } from "@/app/admin/_lib/moderation-format";
+import { actionTone, formatDateTime, formatSpan, orderByUrgency, slaState } from "@/app/admin/_lib/moderation-format";
 import type { AppealQueueItem } from "@/lib/decisions/contracts";
 import type { ReportQueueGroup, ReportQueueItem } from "@/lib/reports/admin";
 
@@ -57,6 +57,16 @@ const text = (html: string) =>
 /** Target keys in the rendered order. */
 const order = (html: string) => [...html.matchAll(/data-target="([^"]+)"/g)].map((match) => match[1]);
 
+describe("decision measures in a list (zone 7 audit P4)", () => {
+  it("keeps 'Aucune mesure' quiet, never in a sanction's tone", () => {
+    expect(actionTone("no_action")).toBe("neutral");
+    expect(actionTone("restore")).toBe("success");
+    expect(actionTone("warn")).toBe("warning");
+    for (const action of ["remove", "restrict_visibility", "suspend_account", "ban", "demote"]) expect(actionTone(action)).toBe("danger");
+    expect(actionTone("unknown")).toBe("neutral");
+  });
+});
+
 describe("SLA arithmetic", () => {
   it("formats spans rounded down", () => {
     expect(formatSpan(30_000)).toBe("moins d'1 min");
@@ -108,11 +118,31 @@ describe("report queue", () => {
     const content = text(html);
     expect(content).toContain("Reste 40 min");
     expect(content).toContain("Reste 30 min");
+    // The absolute due date next to the time left (zone 7 audit P4).
+    expect(content).toContain(`Échéance ${formatDateTime(at(40 * MINUTE))}`);
+    expect(html).toContain(`<time dateTime="${at(40 * MINUTE)}">`);
     expect(content).toContain("2 signalements");
     expect(content).toContain("Signal fort : signalant fiable");
     expect(content).toContain("Masqué en attente");
     expect(content).toContain("Système");
     expect(html).toContain('href="/signalements/cible?cle=listing%3Aabcd2345"');
+  });
+
+  it("shows a target in words with its photo, the reference secondary and copyable (zone 7 P2-8)", () => {
+    const cards = {
+      "listing:abcd2345": { kind: "Annonce", title: "iPhone 15 Pro Max neuf", details: ["Yassine", "2 500 DH", "Casablanca"], thumb: { src: "https://media.example/listings/abcd2345/p1-s.webp", width: 640, height: 480 }, reference: "abcd2345" },
+      "user:u1": { kind: "Compte", title: "Rachid", details: ["Compte actif"], thumb: null, reference: "k7m2p9q4rs" },
+    };
+    const html = renderToStaticMarkup(<ReportQueue items={items} groups={groups} renderedAt={T0.toISOString()} cards={cards} />);
+    const content = text(html);
+    expect(content).toContain("Annonce iPhone 15 Pro Max neuf");
+    expect(content).toContain("Yassine, 2 500 DH, Casablanca");
+    expect(content).toContain("Compte Rachid");
+    expect(html).toContain('src="https://media.example/listings/abcd2345/p1-s.webp"');
+    expect(html).toContain('aria-label="Copier la référence abcd2345"');
+    expect(html).toContain('aria-label="Examiner : Annonce : iPhone 15 Pro Max neuf"');
+    // A target without a card keeps its reference name.
+    expect(content).toContain("Annonce wxyz2345");
   });
 
   it("follows the clock: a group past due moves ahead of a P0 still on time", () => {

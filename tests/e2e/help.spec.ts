@@ -56,6 +56,12 @@ test.describe("help centre", () => {
 
     const dialog = page.getByRole("dialog", { name: /Assistant Aalan/ });
     await expect(dialog).toBeVisible();
+    // Escape gives the focus back to the button that opened it (audit zone 8, 5.2-1; zone 5, 17).
+    const opener = page.getByRole("main").getByRole("button", { name: "Poser une question à l'Assistant" });
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(opener).toBeFocused();
+    await opener.click();
     await expect(dialog.getByTestId("assistant-disclosure")).toContainText("intelligence artificielle");
     await expect(dialog.getByTestId("assistant-disclosure")).toContainText("Ne donnez aucune donnée personnelle");
 

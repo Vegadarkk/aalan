@@ -27,7 +27,7 @@ import { notifySearchIndex } from "@/lib/search/queue";
 import { buildSlugId } from "./ids";
 import { IllegalTransitionError, approvalOutcome, approveHold, holdKind, transition, type ApprovalOutcome, type HoldKind, type TransitionResult } from "./lifecycle";
 import { revalidateListingPaths } from "./revalidate";
-import { screen, sellerFacts } from "./screening";
+import { contentFingerprint, findPhotoLookalikes, screen, sellerFacts } from "./screening";
 
 // Minimal moderation queue of the back office (design D9, architecture §7 step 8, phase 5
 // preview): the listings held by the pre-moderation, a review view, and the moderator's approval
@@ -57,6 +57,8 @@ export interface ModerationQueueItem {
   photoCount: number;
   flags: ModerationFlag[];
   score: number;
+  /** The seller's sensitive-data declaration (Russmedia), null without one. */
+  sensitiveDeclaration: SensitiveDeclarationKind | null;
   seller: { displayName: string; publicId: string; type: "individual" | "pro" };
   /** What is held: a first publication, an expired listing's renewal, or an edit after publication. */
   hold: HoldKind;
@@ -106,6 +108,8 @@ export interface ModerationReview {
     /** The decision that put the listing here (automated hold) or the last one taken. */
     lastDecision: { action: ModerationDecisionDoc["action"]; facts: string; ground: string; automated: boolean; createdAt: string } | null;
     reviewedAt: string | null;
+    /** The seller changed the text, price or photos since the last automated hold; null when the hold predates the fingerprint. */
+    contentChanged: boolean | null;
   };
   /** What an approval would give (published, or back to paused / expired); null when not pending. */
   approval: ApprovalOutcome | null;
@@ -144,6 +148,7 @@ function queueItem(listing: ListingRecord): ModerationQueueItem {
     photoCount: listing.photos.length,
     flags: listing.moderation.flags,
     score: listing.moderation.score,
+    sensitiveDeclaration: listing.moderation.sensitiveDeclaration?.kind ?? null,
     seller: { displayName: listing.sellerName, publicId: listing.sellerPublicId, type: listing.sellerType },
     hold: holdKind(listing),
     waitingSince: listing.updatedAt.toISOString(),
@@ -161,13 +166,14 @@ export async function moderationQueue(limit = QUEUE_PAGE): Promise<ModerationQue
 export async function moderationReview(id: string, now = new Date()): Promise<ModerationReview | null> {
   const listing = await getListing(id);
   if (!listing || !REVIEWABLE.includes(listing.status)) return null;
-  const [user, uploads, others, decisions, lastDecision, shop] = await Promise.all([
+  const [user, uploads, others, decisions, lastDecision, shop, lookalikes] = await Promise.all([
     getUserRecord(listing.ownerUid),
     getUploads(listing.photos.map((photo) => photo.id)),
     listOwnerListingsByStatus(listing.ownerUid, [...ACTIVE_STATUSES, "paused", "rejected"]),
     listDecisionsForUser(listing.ownerUid, 10),
     listing.moderation.lastDecisionId ? getModerationDecision(listing.moderation.lastDecisionId) : Promise.resolve(null),
     listing.proId && sanitaryNumber(listing.subcategoryId, listing.attributes) ? getProProfile(listing.proId) : Promise.resolve(null),
+    findPhotoLookalikes(listing, listing.id),
   ]);
   const sanitaryNumbers = shop && shop.ownerUid === listing.ownerUid ? (shop.sanitaryNumbers ?? []) : [];
   const suspension = user?.status === "suspended" ? await getSuspension(listing.ownerUid) : null;
@@ -177,7 +183,7 @@ export async function moderationReview(id: string, now = new Date()): Promise<Mo
   let screening: ModerationReview["screening"] = null;
   try {
     const facts = sellerFacts({ accountCreatedAt: user?.createdAt ?? listing.createdAt, phoneVerified: user?.badges.phoneVerified ?? false, others: otherListings, sanitaryNumbers, now });
-    const result = await screen({ listing, uploads, seller: facts, others: otherListings.filter((other) => other.status !== "rejected") }, listing.id);
+    const result = await screen({ listing, uploads, seller: facts, others: otherListings.filter((other) => other.status !== "rejected"), lookalikes }, listing.id);
     screening = { state: result.state, score: result.score, flags: result.flags, evidence: result.evidence };
   } catch (error) {
     logger.warn({ listingId: listing.id, err: (error as Error).message }, "moderation review: screening re-run failed");
@@ -218,6 +224,7 @@ export async function moderationReview(id: string, now = new Date()): Promise<Mo
         ? { action: lastDecision.action, facts: lastDecision.facts, ground: lastDecision.ground.ref, automated: lastDecision.automation.decision, createdAt: lastDecision.createdAt.toISOString() }
         : null,
       reviewedAt: iso(listing.moderation.reviewedAt),
+      contentChanged: listing.moderation.heldContent ? listing.moderation.heldContent !== contentFingerprint(listing) : null,
     },
     approval: listing.status === "pending_review" ? approvalOutcome(listing, now) : null,
     screening,

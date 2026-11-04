@@ -26,6 +26,8 @@ import { cardFactsField, cardFactsOf, type CardFacts } from "./card-facts";
 import { promoView } from "./promo";
 import { buildSlugId, parseSlugId } from "./ids";
 import { shopLogoUrl } from "@/lib/pro/logo-url";
+import { exampleTitlesField } from "@/lib/demo/localized";
+import type { ExampleTitles } from "@/lib/examples/title";
 
 // Public reads (design §4 public.ts): the listing page by its `{slug}-{id}` segment and the
 // seller's profile by publicId. No uid leaves these functions' return values except inside the
@@ -225,6 +227,8 @@ export interface PublicListingCard {
   facts?: CardFacts;
   /** Example listing: "Exemple" label, no favorite action. */
   example?: true;
+  /** Example listing: its title per language, shown in the page language (shownTitle). */
+  titles?: ExampleTitles;
   /** Pro catalogue: declared stock 0 everywhere (« Épuisé »). */
   soldOut?: true;
   /** Combinations at different prices: `price` is the lowest (« À partir de »). */
@@ -290,6 +294,7 @@ export function toPublicCard(record: ListingRecord): PublicListingCard | null {
     sortAt: record.sortAt.toISOString(),
     ...cardFactsField(cardFactsOf(record.subcategoryId, (id) => record.attributes[id])),
     ...(record.example ? { example: true as const } : {}),
+    ...exampleTitlesField(record.id, record.example === true),
   };
 }
 

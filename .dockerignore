@@ -9,18 +9,59 @@ playwright-report
 test-results
 tests
 docs
+# The back office renders the tax guide from its source (Guide démarches > Guide fiscal).
+!docs/tax-runbook.md
 workers
 # Imports the uptime Worker's library (excluded above): an ops script, not part of the image.
 scripts/incidents.ts
 .claude
-.env
-.env.*
-!.env.example
 *.log
-*.pem
-*.key
+# Secrets: the secret block of .gitignore, at any depth (security review D-9). A local build (the
+# owner's PC) must never send an env file, key or credential into the build context and its cache.
+**/.env
+**/.env.*
+**/*.env
+**/.envrc
+**/.dev.vars
+**/.dev.vars.*
+**/*.pem
+**/*.key
+**/*.p8
+**/*.p12
+**/*.pfx
+**/*.crt
+**/*.cer
+**/*.der
+**/*.jks
+**/*.keystore
+**/id_rsa*
+**/id_ed25519*
+**/*.gpg
+**/*.asc
+**/secrets
+**/.secrets
+**/credentials
 **/*credentials*.json
 **/service-account*.json
+**/*serviceAccount*.json
+**/*-sa.json
+**/*-adminsdk-*.json
+**/gcloud-*.json
+**/application_default_credentials.json
+**/client_secret*.json
+**/google-ads.yaml
+**/*.secret
+**/*.secrets
+**/*token*.txt
+**/*api-key*.txt
+**/*apikey*.txt
+**/*api-key*.json
+**/*API*.txt
+**/*.local.sh
+**/*.sealed
+.sentryclirc
+# The value-less template stays (last match wins); the build does not read it.
+!.env.example
 models/*.onnx
 public/vendor/*
 !public/vendor/.gitignore

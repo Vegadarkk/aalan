@@ -61,9 +61,9 @@ import { recordMediaBytes } from "@/lib/uploads/storage-gauge";
 // uploads whose variants are stored (`ready`, and `heldObjects`), whichever bucket holds them
 // (account total).
 //
-// Edge cache: the public URL of a moved variant answers 404 at R2, but Cloudflare and browsers may
-// still serve a copy cached before the move, up to the object's max-age (MEDIA_CACHE_CONTROL: one
-// year, immutable); the app has no Cloudflare token to purge it.
+// Edge cache: the public URL of a moved variant answers 404 at R2 at once. With CF_MEDIA_PURGE_TOKEN
+// set, the DELETE of its public copy also queues its purge from Cloudflare's cache (src/lib/cdn,
+// storage/purging.ts); browsers may still hold a copy up to its max-age (MEDIA_CACHE_CONTROL).
 
 export const QUARANTINE_TTL_MS = 24 * 3_600_000;
 /** Presigned URLs live 5 minutes: an hour after signing nothing can land in quarantine. */

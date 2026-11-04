@@ -16,7 +16,8 @@ function flatten(tree: Tree, prefix = ""): Map<string, string> {
   return out;
 }
 
-const placeholders = (text: string) => [...text.matchAll(/\{(\w+)/g)].map((match) => match[1]).sort();
+// An argument's name, not the text of a plural or select branch (`one {annonce}`, `=0 {…}`).
+const placeholders = (text: string) => [...text.matchAll(/(?<!\b(?:zero|one|two|few|many|other|=\d+)\s*)\{(\w+)/g)].map((match) => match[1]).sort();
 const french = flatten(fr);
 // Language names are endonyms, identical in every interface: kept in French only.
 const SHARED = /^Locale\.(names|short)\./;

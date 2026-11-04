@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/auth/client";
 import type { MessagingEvent } from "@/lib/contracts/messaging";
-import { HIDDEN_CLOSE_MS, MessagingLive, parseLiveEvent, RELEASE_GRACE_MS, type EventSourceLike } from "@/lib/messaging/live";
+import { BUSY_PROBE_MS, HIDDEN_CLOSE_MS, MessagingLive, parseLiveEvent, RELEASE_GRACE_MS, SLOT_FREED_DELAY_MS, type ChannelLike, type EventSourceLike } from "@/lib/messaging/live";
 
 // The browser's live messaging client (design phase-5 D2, lots/sse.md): one EventSource per tab,
 // ready/resync relaying, the badge total, backoff after a refused opening, no reconnection after
@@ -60,8 +60,20 @@ class FakeDocument {
   }
 }
 
+/** The BroadcastChannel of the browser's tabs: what this tab posts, and what another tab posts to it. */
+class FakeChannel implements ChannelLike {
+  onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
+  readonly posted: unknown[] = [];
+  postMessage(message: unknown): void {
+    this.posted.push(message);
+  }
+  deliver(data: unknown): void {
+    this.onmessage?.({ data } as MessageEvent<unknown>);
+  }
+}
+
 interface Options {
-  unread?: () => Promise<{ total: number }>;
+  unread?: () => Promise<{ total: number; streams?: number }>;
   session?: () => Promise<unknown>;
   random?: number;
 }
@@ -69,6 +81,7 @@ interface Options {
 function setup(options: Options = {}) {
   const sources: FakeSource[] = [];
   const doc = new FakeDocument();
+  const channel = new FakeChannel();
   const fetchUnread = vi.fn(options.unread ?? (async () => ({ total: 3 })));
   const refreshSession = vi.fn(options.session ?? (async () => ({ uid: "u1" })));
   const live = new MessagingLive({
@@ -83,13 +96,14 @@ function setup(options: Options = {}) {
     setTimeout: (callback, ms) => setTimeout(callback, ms),
     clearTimeout: (timer) => clearTimeout(timer),
     random: () => options.random ?? 0.5,
+    channel,
   });
   const last = (): FakeSource => {
     const source = sources.at(-1);
     if (!source) throw new Error("no stream opened");
     return source;
   };
-  return { live, sources, doc, fetchUnread, refreshSession, last };
+  return { live, sources, doc, channel, fetchUnread, refreshSession, last };
 }
 
 /** Lets the probe and session promises settle without moving the clock. */
@@ -436,5 +450,130 @@ describe("MessagingLive", () => {
     listener.mockClear();
     old?.send({ type: "message", cid: "c", mid: "m", at: 1 });
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("MessagingLive, every slot of the account taken (audit zone 5 n°7)", () => {
+  /** GET unread counts `streams` open streams of the account. */
+  const streamsSetup = (initial: number) => {
+    let streams = initial;
+    const env = setup({ unread: async () => ({ total: 1, streams }) });
+    return { ...env, setStreams: (value: number) => (streams = value) };
+  };
+
+  it("waits for a slot instead of reconnecting, then reopens once a probe finds one free", async () => {
+    const { live, sources, last, fetchUnread, setStreams } = streamsSetup(5);
+    const listener = vi.fn();
+    live.subscribe("u1", listener);
+    await settle();
+    last().refuse();
+    await settle();
+    expect(live.getSnapshot().status).toBe("busy");
+    // No reopening on the usual 5 s / 15 s backoff: it would spend the account's opening budget.
+    await vi.advanceTimersByTimeAsync(BUSY_PROBE_MS * 1.5 - 1);
+    expect(sources).toHaveLength(1);
+    const probes = fetchUnread.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchUnread).toHaveBeenCalledTimes(probes + 1);
+    expect(sources).toHaveLength(1);
+    expect(live.getSnapshot().status).toBe("busy");
+    setStreams(4);
+    await vi.advanceTimersByTimeAsync(BUSY_PROBE_MS * 1.5);
+    expect(sources).toHaveLength(2);
+    // Events may have been missed while waiting: the pages refetch.
+    last().accept("ready");
+    expect(live.getSnapshot().status).toBe("open");
+    expect(listener).toHaveBeenLastCalledWith({ type: "resync" });
+  });
+
+  it("probes shortly after another tab of the account gives its slot back", async () => {
+    const { live, sources, last, channel, setStreams } = streamsSetup(5);
+    live.subscribe("u1", vi.fn());
+    await settle();
+    last().refuse();
+    await settle();
+    channel.deliver({ type: "released", account: "u2" });
+    channel.deliver("released");
+    await vi.advanceTimersByTimeAsync(SLOT_FREED_DELAY_MS * 2);
+    expect(sources).toHaveLength(1);
+    setStreams(4);
+    channel.deliver({ type: "released", account: "u1" });
+    await vi.advanceTimersByTimeAsync(SLOT_FREED_DELAY_MS * 1.5 - 1);
+    expect(sources).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sources).toHaveLength(2);
+    expect(live.getSnapshot().status).toBe("connecting");
+  });
+
+  it("stays busy when the freed slot went to another tab, and falls back to the backoff for any other refusal", async () => {
+    const { live, sources, last, setStreams } = streamsSetup(4);
+    live.subscribe("u1", vi.fn());
+    await settle();
+    // Another tab took the slot between the probe and the opening.
+    setStreams(5);
+    last().refuse();
+    await settle();
+    expect(live.getSnapshot().status).toBe("busy");
+    setStreams(4);
+    await vi.advanceTimersByTimeAsync(BUSY_PROBE_MS * 1.5);
+    expect(sources).toHaveLength(2);
+    // Refused again with a slot free (503, the hourly limit): no tight loop, the usual 5 s.
+    last().refuse();
+    await settle();
+    expect(live.getSnapshot().status).toBe("down");
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(sources).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sources).toHaveLength(3);
+  });
+
+  it("retries at once on Actualiser", async () => {
+    const { live, sources, last } = streamsSetup(5);
+    live.retry();
+    live.subscribe("u1", vi.fn());
+    await settle();
+    live.retry();
+    expect(sources).toHaveLength(1);
+    last().refuse();
+    await settle();
+    live.retry();
+    expect(sources).toHaveLength(2);
+    expect(live.getSnapshot().status).toBe("connecting");
+  });
+
+  it("tells the other tabs when its live stream closes or the page goes away", async () => {
+    const { live, last, channel, doc } = setup();
+    const leave = live.subscribe("u1", vi.fn());
+    await settle();
+    live.pageHidden();
+    expect(channel.posted).toEqual([]);
+    last().accept();
+    live.pageHidden();
+    expect(channel.posted).toEqual([{ type: "released", account: "u1" }]);
+    doc.set("hidden");
+    await vi.advanceTimersByTimeAsync(HIDDEN_CLOSE_MS);
+    expect(live.getSnapshot().status).toBe("paused");
+    expect(channel.posted).toHaveLength(2);
+    doc.set("visible");
+    last().accept();
+    leave();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS);
+    expect(live.getSnapshot().status).toBe("idle");
+    expect(channel.posted).toHaveLength(3);
+  });
+
+  it("pauses a busy tab hidden for a minute and tries again when it is visible", async () => {
+    const { live, sources, last, doc } = streamsSetup(5);
+    live.subscribe("u1", vi.fn());
+    await settle();
+    last().refuse();
+    await settle();
+    doc.set("hidden");
+    await vi.advanceTimersByTimeAsync(HIDDEN_CLOSE_MS);
+    expect(live.getSnapshot().status).toBe("paused");
+    await vi.advanceTimersByTimeAsync(BUSY_PROBE_MS * 3);
+    expect(sources).toHaveLength(1);
+    doc.set("visible");
+    expect(sources).toHaveLength(2);
   });
 });

@@ -2,6 +2,7 @@
 // .github/workflows/load-test.yml with k6 v2.3.0:
 //
 //   k6 run --summary-mode=compact load/k6.js
+//   SCENARIOS=searches k6 run ...   the searches alone (audit lot 7)
 //
 // Scenarios (constant arrival rate, so a slow server shows as latency, not as fewer requests):
 //   warmup    1 min at 5/s on the home pages (connections, JIT, caches of shared data);
@@ -29,23 +30,28 @@ const TARGET = __ENV.TARGET || "https://staging.aalan.ma";
 const headers = { "x-joutiya-loadtest": __ENV.LOADTEST_SECRET || "", "user-agent": "joutiya-loadtest/k6" };
 if (__ENV.ACCESS_HEADER) headers[__ENV.ACCESS_HEADER] = __ENV.ACCESS_TOKEN || "";
 
+// SCENARIOS=searches runs the searches alone, from the start (audit lot 7: in the full run their
+// phase begins while the pages that are late still finish, which made their p95, not their median).
+const ALL = ["warmup", "pages", "searches"];
+const CHOSEN = (__ENV.SCENARIOS || ALL.join(",")).split(",").map((name) => name.trim()).filter((name) => ALL.includes(name));
+const ALONE = CHOSEN.length === 1 && CHOSEN[0] === "searches";
+
+const SCENARIOS = {
+  warmup: { executor: "constant-arrival-rate", exec: "warmup", rate: 5, timeUnit: "1s", duration: "1m", preAllocatedVUs: 10, maxVUs: 50 },
+  pages: { executor: "constant-arrival-rate", exec: "pages", startTime: "1m", rate: 40, timeUnit: "1s", duration: "3m", preAllocatedVUs: 60, maxVUs: 300 },
+  searches: { executor: "constant-arrival-rate", exec: "searches", startTime: ALONE ? "0s" : "4m", rate: 50, timeUnit: "1s", duration: "3m", preAllocatedVUs: 60, maxVUs: 300 },
+};
+const THRESHOLDS = {
+  // A threshold makes k6 keep the sub-metric, so the warm-up shows in the summary too.
+  warmup: { "http_req_duration{scenario:warmup}": ["max>=0"] },
+  pages: { "http_req_duration{scenario:pages}": ["p(95)<500"], "http_req_failed{scenario:pages}": ["rate<0.01"], "checks{scenario:pages}": ["rate>0.99"] },
+  searches: { "http_req_duration{scenario:searches}": ["p(95)<300"], "http_req_failed{scenario:searches}": ["rate<0.01"], "checks{scenario:searches}": ["rate>0.99"] },
+};
+
 export const options = {
   discardResponseBodies: true,
-  scenarios: {
-    warmup: { executor: "constant-arrival-rate", exec: "warmup", rate: 5, timeUnit: "1s", duration: "1m", preAllocatedVUs: 10, maxVUs: 50 },
-    pages: { executor: "constant-arrival-rate", exec: "pages", startTime: "1m", rate: 40, timeUnit: "1s", duration: "3m", preAllocatedVUs: 60, maxVUs: 300 },
-    searches: { executor: "constant-arrival-rate", exec: "searches", startTime: "4m", rate: 50, timeUnit: "1s", duration: "3m", preAllocatedVUs: 60, maxVUs: 300 },
-  },
-  thresholds: {
-    // A threshold makes k6 keep the sub-metric, so the warm-up shows in the summary too.
-    "http_req_duration{scenario:warmup}": ["max>=0"],
-    "http_req_duration{scenario:pages}": ["p(95)<500"],
-    "http_req_duration{scenario:searches}": ["p(95)<300"],
-    "http_req_failed{scenario:pages}": ["rate<0.01"],
-    "http_req_failed{scenario:searches}": ["rate<0.01"],
-    "checks{scenario:pages}": ["rate>0.99"],
-    "checks{scenario:searches}": ["rate>0.99"],
-  },
+  scenarios: Object.fromEntries(CHOSEN.map((name) => [name, SCENARIOS[name]])),
+  thresholds: Object.assign({}, ...CHOSEN.map((name) => THRESHOLDS[name])),
 };
 
 const HOMES = ["/fr", "/ar", "/rif"];
@@ -76,7 +82,7 @@ function metric(data, name) {
 /** Counts and latencies only: the summary goes to a public artifact (no URL, header or secret). */
 export function handleSummary(data) {
   const summary = {};
-  for (const scenario of ["warmup", "pages", "searches"]) {
+  for (const scenario of CHOSEN) {
     summary[scenario] = {
       duration: metric(data, `http_req_duration{scenario:${scenario}}`),
       failed: metric(data, `http_req_failed{scenario:${scenario}}`),

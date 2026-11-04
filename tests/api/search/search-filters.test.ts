@@ -207,9 +207,10 @@ describe("GET /api/search pages and À la Une", () => {
   });
 
   it("returns cards only, never the index-only fields", async () => {
+    // The first Pro hit is a car: its card carries the vehicle facts (year, mileage...: audit lot 7).
     const [card] = (await ok("vendeur=pro")).hits;
     expect(Object.keys(card ?? {}).sort()).toEqual(
-      ["bumped", "citySlug", "featured", "id", "isDonation", "photo", "photoCount", "price", "priceNegotiable", "sellerType", "slugId", "sortAt", "subcategoryId", "title"].sort(),
+      ["bumped", "citySlug", "facts", "featured", "id", "isDonation", "photo", "photoCount", "price", "priceNegotiable", "sellerType", "slugId", "sortAt", "subcategoryId", "title"].sort(),
     );
   });
 });

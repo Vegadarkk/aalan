@@ -14,6 +14,9 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   verifyEmail: { displayName: "Nadia", actionUrl: ACTION },
   resetPassword: { displayName: "Nadia", actionUrl: ACTION },
   signupExisting: { displayName: "Nadia", loginUrl: `${SITE}/fr/connexion`, resetUrl: `${SITE}/fr/mot-de-passe-oublie` },
+  signupClosed: { displayName: "Nadia", closedAt: "2026-11-03T22:30:00.000Z", reusableFrom: "2027-11-03T22:30:00.000Z" },
+  emailChangeConfirm: { displayName: "Nadia", actionUrl: ACTION, expiresAt: "2026-11-05T09:30:00.000Z" },
+  emailChanged: { displayName: "Nadia", newEmail: "n•••••@gmail.com", at: "2026-11-04T09:30:00.000Z" },
   passwordChanged: { displayName: "Nadia", at: "2026-10-16T09:30:00.000Z" },
   staffInvite: { displayName: "Nadia", actionUrl: ACTION, role: "moderator" },
   phoneVerified: { displayName: "Nadia", phone: "+212 6 00 00 00 00" },
@@ -165,8 +168,24 @@ describe("renderMail", () => {
     }
   }
 
+  it("signupClosed: closure day and release day in Casablanca time, a way to reopen, no sign-in link (Z1-11)", () => {
+    // Morocco's day: 23:30 UTC was 00:30 the next day before 20 September 2026 (UTC+1), the same day since (UTC).
+    const data = { displayName: "Nadia", closedAt: "2026-09-10T23:30:00.000Z", reusableFrom: "2027-09-10T23:30:00.000Z" };
+    const fr = renderMail(mail("signupClosed", "fr", data));
+    expect(fr.subject).toBe("Inscription impossible : votre compte Aalan est fermé");
+    expect(fr.text).toContain("fermé le 11 septembre 2026");
+    expect(fr.text).toContain("à partir du 10 septembre 2027");
+    expect(fr.text).toContain("Pour rouvrir votre compte plutôt que d'attendre, écrivez-nous à ");
+    expect(fr.text).toContain(`${SITE}/fr/aide/contact`);
+    expect(fr.text).not.toMatch(/connexion|mot-de-passe-oublie/);
+    const ar = renderMail(mail("signupClosed", "ar", data));
+    expect(ar.text).toContain("لإعادة فتح حسابك");
+    expect(ar.text).toContain(`${SITE}/ar/aide/contact`);
+    expect(renderMail(mail("signupClosed", "rif", data)).text).toContain(`${SITE}/rif/aide/contact`);
+  });
+
   it("ends security mails with the not-you sentence in both languages", () => {
-    for (const template of ["verifyEmail", "resetPassword", "signupExisting"] as const) {
+    for (const template of ["verifyEmail", "resetPassword", "signupExisting", "signupClosed"] as const) {
       expect(renderMail(mail(template, "fr")).text).toContain("Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.");
       expect(renderMail(mail(template, "ar")).text).toContain("إذا لم تكن أنت من قام بهذا الطلب");
     }
@@ -201,6 +220,15 @@ describe("renderMail", () => {
   it("names the role in the staff invitation", () => {
     expect(renderMail(mail("staffInvite", "fr", { ...DATA.staffInvite, role: "admin" })).text).toContain("administrateur");
     expect(renderMail(mail("staffInvite", "ar", { ...DATA.staffInvite, role: "moderator" })).text).toContain("مشرف");
+  });
+
+  it("states until when the staff invitation link works, without tool names (audit zone 7 P3-5)", () => {
+    const fr = renderMail(mail("staffInvite", "fr", { ...DATA.staffInvite, expiresAt: "2026-11-04T10:30:00.000Z" })).text;
+    expect(fr).toContain("Ce lien est valable une heure, jusqu'au 4 novembre 2026");
+    expect(fr).not.toContain("Cloudflare");
+    expect(renderMail(mail("staffInvite", "ar", { ...DATA.staffInvite, expiresAt: "2026-11-04T10:30:00.000Z" })).text).toContain("صالح لمدة ساعة واحدة");
+    // Jobs queued before the expiry was set: no line rather than a wrong date.
+    expect(renderMail(mail("staffInvite", "fr", DATA.staffInvite)).text).not.toContain("valable une heure");
   });
 });
 

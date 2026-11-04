@@ -1,4 +1,5 @@
 import { z } from "@/lib/zod";
+import { CAR_MODEL_IDS } from "./car-models";
 
 // Category tree and declarative criteria (phase 3, design §2; product research §1). Client-safe:
 // the wizard renders the fields from this file and the API validates `attributes` with
@@ -141,7 +142,7 @@ export interface Category {
    * field never matches a filter on it.
    */
   sharedFilters?: readonly CriterionId[];
-  /** Number criteria shown on result cards under the title, in order ("95 m² · 5 pièces"). */
+  /** Number and select criteria shown on result cards under the title, in order ("95 m² · 5 pièces", "2016 · 120 000 km · Diesel"). */
   cardFacts?: readonly CriterionId[];
 }
 
@@ -336,6 +337,23 @@ export type CriterionId = keyof typeof FIELDS;
 export const CRITERIA: Readonly<Record<CriterionId, FieldDef>> = FIELDS;
 export const CRITERION_IDS = Object.keys(FIELDS) as CriterionId[];
 
+/**
+ * Search-only criteria (audit lot 7, zone 2 P1-4): derived from a listing's other fields when it is
+ * indexed (src/lib/search/document.ts), offered as filters, never asked in a form nor validated at
+ * publish. `car-model`: the catalogue model (src/config/car-models.ts) read from the free-text
+ * `model`. Labels live in `SearchFilters.derived` (model names are not translated).
+ */
+const DERIVED_FIELDS = {
+  "car-model": { id: "car-model", type: "select", options: CAR_MODEL_IDS },
+} as const satisfies Record<string, FieldDef>;
+export type DerivedCriterionId = keyof typeof DERIVED_FIELDS;
+export const DERIVED_CRITERIA: Readonly<Record<DerivedCriterionId, FieldDef>> = DERIVED_FIELDS;
+
+/** Whether a criterion id is a search-only derived one. */
+export function isDerivedCriterion(id: string): id is DerivedCriterionId {
+  return Object.hasOwn(DERIVED_FIELDS, id);
+}
+
 const required = (id: CriterionId): Criterion => ({ ...FIELDS[id], required: true });
 const optional = (id: CriterionId): Criterion => ({ ...FIELDS[id] });
 const dossier = (id: CriterionId, options: { filter?: true } = {}): Criterion => ({ ...FIELDS[id], group: "dossier", ...options });
@@ -429,6 +447,8 @@ const TREE: readonly Category[] = [
       { id: "bateaux", categoryId: "vehicules", condition: "optional", criteria: [required("boat-type"), optional("year"), optional("engine-power")] },
       { id: "pieces-accessoires", categoryId: "vehicules", condition: "required", criteria: [required("part-type"), required("vehicle-kind"), optional("car-brand")] },
     ],
+    // A car buyer compares these before opening a listing (audit lot 7, zone 2 P1-3).
+    cardFacts: ["year", "mileage", "fuel", "gearbox"],
   },
   {
     id: "immobilier",
@@ -657,8 +677,10 @@ export function sanitaryNumber(subcategoryId: string | undefined, attributes: Re
   return CRITERION_FORMATS.onssa.test(trimmed) ? trimmed : undefined;
 }
 
+/** A form criterion, or a search-only derived one (DERIVED_CRITERIA). */
 export function criterionById(id: string): FieldDef | undefined {
-  return Object.hasOwn(FIELDS, id) ? FIELDS[id as CriterionId] : undefined;
+  if (Object.hasOwn(FIELDS, id)) return FIELDS[id as CriterionId];
+  return isDerivedCriterion(id) ? DERIVED_FIELDS[id] : undefined;
 }
 
 function criterionSchema(criterion: Criterion): z.ZodType {
@@ -750,5 +772,9 @@ export function searchCriteria(categoryId: string | undefined, subcategoryId: st
   const subcategory = subcategoryId ? subcategoryById(subcategoryId) : undefined;
   const criteria = subcategory ? subcategory.criteria : (categoryId ? categoryById(categoryId)?.sharedFilters : undefined)?.map(optional) ?? [];
   // The vehicle dossier stays out of the panel, but for the criteria marked `filter`.
-  return criteria.filter((criterion) => criterion.type !== "text" && (!criterion.group || criterion.filter));
+  const filters = criteria.filter((criterion) => criterion.type !== "text" && (!criterion.group || criterion.filter));
+  // The catalogue model right after the brand, where the listing states both.
+  const brand = filters.findIndex((criterion) => criterion.id === "car-brand");
+  if (brand >= 0 && criteria.some((criterion) => criterion.id === "model")) filters.splice(brand + 1, 0, { ...DERIVED_FIELDS["car-model"] });
+  return filters;
 }

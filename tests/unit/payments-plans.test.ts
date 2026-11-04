@@ -7,10 +7,10 @@ import { invoiceViews } from "@/lib/payments/invoices";
 import { noticeDue } from "@/lib/payments/launch-offer";
 import { passPurchaseEffect } from "@/lib/payments/pass";
 import { passEndAfter, passNoticeDue, runningPassEnd } from "@/lib/payments/pass-rules";
-import { invoiceFields, invoiceFooter } from "@/lib/payments/plans";
+import { invoiceFields, invoiceFooter, passTrialEnd } from "@/lib/payments/plans";
 import { listCustomerSubscriptions, postStripeReceipt, RevenueCatApiError, type RevenueCatSubscription } from "@/lib/payments/revenuecat-api";
 import { formEncode, stripeRequest, StripeApiError, verifyStripeSignature } from "@/lib/payments/stripe-api";
-import { addMonthsUtc, chooseSubscription, grantSlot, intervalOf, lifecycleEventFor, subscriptionStatusOf } from "@/lib/payments/subscriptions";
+import { addMonthsUtc, chooseSubscription, grantSlot, intervalOf, isTrialing, lifecycleEventFor, subscriptionStatusOf } from "@/lib/payments/subscriptions";
 import type { ProLifecycleView } from "@/lib/pro/lifecycle";
 
 // Pro subscriptions (phase 7 design §7): the plan grid, Stripe's form encoding and webhook
@@ -174,6 +174,22 @@ describe("lifecycle event of a subscription", () => {
     expect(lifecycleEventFor(onPass, "active", "essentiel", now)).toEqual({ type: "subscription_active", plan: "essentiel" });
     expect(lifecycleEventFor(onPass, "billing_issue", "essentiel", now)).toBeNull();
     expect(lifecycleEventFor(onPass, "expired", "essentiel", now)).toBeNull();
+  });
+
+  it("lets a trial take over only the running pass of its own plan, never switch to another plan before a payment", () => {
+    expect(isTrialing({ status: "trialing" })).toBe(true);
+    expect(isTrialing({ status: "active" })).toBe(false);
+    const onPass = view({ lifecycle: "active", planSource: "pass" });
+    expect(lifecycleEventFor(onPass, "active", "essentiel", now, true)).toEqual({ type: "subscription_active", plan: "essentiel" });
+    expect(lifecycleEventFor(onPass, "cancelled", "essentiel", now, true)).toEqual({ type: "subscription_active", plan: "essentiel" });
+    // Pass Essentiel, Business trial: the Business plan waits for its first payment.
+    expect(lifecycleEventFor(onPass, "active", "business", now, true)).toBeNull();
+    expect(lifecycleEventFor(onPass, "active", "business", now)).toEqual({ type: "subscription_active", plan: "business" });
+    // No pass running (offer, downgraded, ended by a refund): a trial gives nothing.
+    expect(lifecycleEventFor(view({}), "active", "essentiel", now, true)).toBeNull();
+    expect(lifecycleEventFor(view({ lifecycle: "downgraded", plan: "none", planSource: "none" }), "active", "essentiel", now, true)).toBeNull();
+    // Already switched: nothing to do.
+    expect(lifecycleEventFor(view({ lifecycle: "active", planSource: "subscription" }), "active", "essentiel", now, true)).toBeNull();
   });
 
   it("downgrades an expired subscription, never the launch offer, and leaves a suspended or unverified shop alone", () => {
@@ -340,6 +356,16 @@ describe("Pass Boutique rules", () => {
     expect(runningPassEnd({ planSource: "pass", passEndsAt: at("2026-10-30T00:00:00Z") }, now)).toBeNull();
     expect(runningPassEnd({ planSource: "subscription", passEndsAt: at("2026-11-10T00:00:00Z") }, now)).toBeNull();
     expect(runningPassEnd({ planSource: "none" }, now)).toBeNull();
+  });
+
+  it("runs the pass days as a trial of the pass's own plan only, at least 48 hours ahead", () => {
+    const onPass = { plan: "essentiel" as const, planSource: "pass" as const, passEndsAt: at("2026-11-20T00:00:00Z") };
+    expect(passTrialEnd(onPass, "essentiel", now)).toBe(Math.floor(at("2026-11-20T00:00:00Z").getTime() / 1000));
+    // Another plan is billed at once: the pass did not pay for it.
+    expect(passTrialEnd(onPass, "business", now)).toBeUndefined();
+    expect(passTrialEnd({ ...onPass, passEndsAt: at("2026-11-03T09:00:00Z") }, "essentiel", now)).toBeUndefined();
+    expect(passTrialEnd({ ...onPass, planSource: "subscription" as const }, "essentiel", now)).toBeUndefined();
+    expect(passTrialEnd({ plan: "none" as const, planSource: "none" as const }, "essentiel", now)).toBeUndefined();
   });
 
   it("starts now or at the end of the running pass, within maxAheadDays", () => {

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Container } from "@/components/layout/container";
 import { quietLinkClassName, textLinkClassName } from "@/components/ui/text-link";
 import { Link } from "@/i18n/navigation";
+import { PrintSource } from "@/components/print/print-source";
 import type { Inline, MdBlock } from "@/lib/legal/markdown";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,8 @@ export interface LegalPageProps {
   archive?: { version: string; from: string; replacedOn: string; href: string }[];
   /** This is an earlier version: until when it applies, and the current text. */
   archived?: { version: string; replacedOn: string; inForce: boolean; currentHref: string };
+  /** The page's path (/fr/legal/cgu), printed under the version line. */
+  path?: string;
 }
 
 /** French typography: no line break before « : ; ! ? » or after «. */
@@ -206,7 +209,7 @@ function VersionsNote({ upcoming, archive, archived }: Pick<LegalPageProps, "upc
   );
 }
 
-export function LegalPage({ blocks, language, translated, frenchOnly, provisional = false, upcoming, archive, archived }: LegalPageProps) {
+export function LegalPage({ blocks, language, translated, frenchOnly, provisional = false, upcoming, archive, archived, path }: LegalPageProps) {
   const t = useTranslations("Legal");
   const french = language === "fr";
   const titleIndex = blocks.findIndex((block) => block.type === "heading" && block.level === 1);
@@ -227,6 +230,8 @@ export function LegalPage({ blocks, language, translated, frenchOnly, provisiona
             <InlineView nodes={versionLine.children} french={french} />
           </p>
         ) : null}
+        {/* On paper: where the text comes from, beside its version and date (audit zone 8, impression 3). */}
+        {path ? <PrintSource label={t("printSource")} path={path} className="mt-1 text-foreground-muted" /> : null}
       </header>
       {provisional || translated || frenchOnly ? (
         <aside className="mt-6 flex max-w-[68ch] flex-col gap-1 border-s-4 border-featured bg-surface-muted px-4 py-3 text-sm">
@@ -244,19 +249,21 @@ export function LegalPage({ blocks, language, translated, frenchOnly, provisiona
 
       <div className={toc ? "mt-10 grid gap-10 lg:grid-cols-[15rem_minmax(0,68ch)] lg:gap-14" : "mt-10 max-w-[68ch]"}>
         {toc ? (
-          // Wide screens: a sticky column. Phones: folded, so the text starts on the first screen.
+          // Wide screens: a sticky column. Phones: folded, so the text starts on the first screen. One
+          // list for both (fold-open-lg), not one per screen size: the CGU's 48 entries were in the
+          // HTML and the RSC payload twice (audit zone 8, perf 6). Browsers without ::details-content
+          // keep the fold on wide screens too, under its own title.
           <nav aria-labelledby="legal-toc" className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto">
-            <h2 id="legal-toc" className="mb-3 text-sm font-semibold max-lg:hidden">
+            <h2 id="legal-toc" className="mb-3 hidden text-sm font-semibold supports-[selector(::details-content)]:lg:block">
               {t("contents")}
             </h2>
-            <details className="group rounded-md border border-border lg:hidden">
+            <details className="group fold-open-lg rounded-md border border-border supports-[selector(::details-content)]:lg:rounded-none supports-[selector(::details-content)]:lg:border-0">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-semibold [&::-webkit-details-marker]:hidden">
                 {t("contents")}
                 <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-foreground-muted transition-transform group-open:rotate-180" />
               </summary>
-              <Contents sections={sections} language={language} className="border-s-0 px-4 pt-1 pb-4" />
+              <Contents sections={sections} language={language} className="max-lg:border-s-0 max-lg:px-4 max-lg:pt-1 max-lg:pb-4" />
             </details>
-            <Contents sections={sections} language={language} className="max-lg:hidden" />
           </nav>
         ) : null}
 

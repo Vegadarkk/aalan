@@ -10,7 +10,8 @@ import { HttpError, forbidden } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
-import { enforceLimit, resetLimit } from "@/lib/rate-limit/limiter";
+import { publishRevoked } from "@/lib/messaging";
+import { enforceLimit, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
 import { accountByEmail, displayNameFor, userByEmail, withCodeErrors } from "./accounts";
 import { activateMember } from "./activation";
 import { checkResetCode } from "./action";
@@ -61,6 +62,8 @@ async function resetConfirm(request: Request): Promise<Response> {
   await withCodeErrors(() => confirmPasswordReset(input.oobCode, input.password));
   if (record) {
     await revokeSessions(record.uid);
+    // Open live-messaging streams checked the session once, at open: they close now (audit A-4).
+    await publishRevoked(record.uid);
     // Firebase marks the e-mail verified on a reset: a pending account becomes a member.
     await activateMember(record.uid, readClaims(record.customClaims ?? {}));
     // The account has a usable password again (a Google sign-in may have dropped it, src/lib/auth/google.ts).
@@ -81,7 +84,10 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   const email = context.user.email ?? (await auth().getUser(uid)).email;
   if (!email) throw forbidden("this account has no password");
   const keys = loginKeys(email, device.identity.ipBucket);
-  await assertNotLocked(keys);
+  const { accountFailures, accountFailureLimit } = await assertNotLocked(keys);
+  // 20 failures per hour on the account make Turnstile mandatory at login; this form has none, so it
+  // refuses until the hour is over (audit A-3: a stolen session must not test passwords here).
+  if (accountFailures >= accountFailureLimit) throw new HttpError(429, "account_locked", undefined, { headers: { "Retry-After": String((await rateLimitDefinition("login.fail.account")).duration) } });
   // The attempt is counted before the check (atomic), and forgotten as soon as the password is right.
   const attempt = await countAttempt(keys);
   await checkPassword(email, input.currentPassword, keys, attempt);
@@ -90,6 +96,8 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   assertPasswordPolicy(input.password, { email, displayName: profile?.displayName });
   await auth().updateUser(uid, { password: input.password });
   await revokeSessions(uid);
+  // Every open stream closes, this device's too: its client reopens one with the new session (A-4).
+  await publishRevoked(uid);
   const minted = await createSessionForUid(uid);
   await sendPasswordChangedMail({ email, displayName: displayNameFor(profile, null, email), locale: profile?.locale ?? "fr" });
   await logConnection({ uid, event: "password_change", ip: device.identity.ip });

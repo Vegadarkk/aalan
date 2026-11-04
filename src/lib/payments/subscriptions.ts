@@ -26,7 +26,8 @@ import { grantPlanPeriod } from "./wallet";
 //   plan's quotas on the profile;
 // - the month's grant (`grant_{subscription}_{plan}_{monthStartMs}`: plan credits and À la Une
 //   allowance reset, not added; a yearly plan gets one per month of its period, a plan switched
-//   during the month gets the new plan's once).
+//   during the month gets the new plan's once). A trial (a plan taken during a pass of the same
+//   plan, billed at the pass end) grants nothing: its first paid period does.
 // Then the shop's listings over the plan's quota are paused. Idempotent: a replay or a second
 // event for the same change writes nothing new.
 
@@ -78,11 +79,24 @@ export function chooseSubscription(subscriptions: readonly RevenueCatSubscriptio
 /** Statuses that pay for the plan now (a cancelled plan runs until its period ends). */
 const PAID: ReadonlySet<SubscriptionStatus> = new Set(["active", "cancelled"]);
 
+/**
+ * A trial: nothing paid yet. Only a plan taken during a Pass Boutique of the same plan has one (the
+ * pass days, src/lib/payments/plans.ts `passTrialEnd`); it reads as active or cancelled, but grants
+ * nothing until its first paid period.
+ */
+export const isTrialing = (subscription: Pick<RevenueCatSubscription, "status">): boolean => subscription.status === "trialing";
+
 /** The lifecycle event the subscription calls for, if any (a suspended or unverified shop waits). */
-export function lifecycleEventFor(profile: ProLifecycleView, status: SubscriptionStatus, plan: PaidPlanId, now: Date): ProEvent | null {
+export function lifecycleEventFor(profile: ProLifecycleView, status: SubscriptionStatus, plan: PaidPlanId, now: Date, trialing = false): ProEvent | null {
   const { lifecycle } = profile;
   if (lifecycle !== "verified" && lifecycle !== "active" && lifecycle !== "grace" && lifecycle !== "downgraded") return null;
-  if (PAID.has(status)) return lifecycle === "active" && profile.plan === plan && profile.planSource === "subscription" ? null : { type: "subscription_active", plan };
+  if (PAID.has(status)) {
+    if (lifecycle === "active" && profile.plan === plan && profile.planSource === "subscription") return null;
+    // A trial takes over the running pass of its own plan only (that plan is already paid until the
+    // pass ends); any other trial waits for its first payment.
+    if (trialing && !(lifecycle === "active" && profile.planSource === "pass" && profile.plan === plan)) return null;
+    return { type: "subscription_active", plan };
+  }
   if (status === "grace" || status === "billing_issue") {
     // A failed renewal touches the plan it pays for only (not a pass bought after it ended).
     if (lifecycle === "active") return profile.planSource === "subscription" ? { type: "billing_issue" } : null;
@@ -138,6 +152,7 @@ export async function syncShopSubscription(accountId: string, deps: SyncDeps = {
     const before = await getSubscriptionTx(tx, accountId);
     if (!profile) return { outcome: "no_shop" as const };
     if (!chosen && (!before || before.status === "expired")) return { outcome: "no_subscription" as const };
+    const trialing = chosen !== null && isTrialing(chosen.subscription);
 
     let next: SubscriptionDoc;
     if (chosen) {
@@ -166,13 +181,14 @@ export async function syncShopSubscription(accountId: string, deps: SyncDeps = {
       next = { ...before!, status: "expired", willRenew: false, syncedAt: now, updatedAt: now };
     }
 
-    // The month's grant, while the plan is paid (reads first: the transaction writes after).
-    const slot = PAID.has(next.status) ? grantSlot(next.periodStart, next.periodEnd ?? null, next.interval, now) : null;
+    // The month's grant, while the plan is paid (reads first: the transaction writes after); a trial
+    // pays nothing yet: its plan's grant comes with the first paid period.
+    const slot = PAID.has(next.status) && !trialing ? grantSlot(next.periodStart, next.periodEnd ?? null, next.interval, now) : null;
     const entryId = slot ? `grant_${ledgerKey(next.rcSubscriptionId)}_${next.plan}_${slot.start.getTime()}` : null;
     const granted = entryId ? await getLedgerEntryTx(tx, accountId, entryId) : null;
     const wallet = entryId && !granted ? await getWalletTx(tx, accountId) : null;
 
-    const event = lifecycleEventFor(profile, next.status, next.plan, now);
+    const event = lifecycleEventFor(profile, next.status, next.plan, now, trialing);
     const changed = event ? transition(profile, event, { now, graceDays: pricing.graceDays }) : null;
 
     if (slot && entryId && !granted) {

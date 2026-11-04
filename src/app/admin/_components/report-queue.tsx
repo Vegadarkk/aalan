@@ -1,10 +1,13 @@
 "use client";
 
+import { ImageOff, MessageSquare, Star, Store, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ReportQueueGroup, ReportQueueItem } from "@/lib/reports/admin";
 import { cn } from "@/lib/utils";
+import type { TargetCard } from "../_lib/target-cards";
+import { CopyReference } from "./copy-reference";
 import { orderByUrgency, plural, PRIORITY_EDGE, PRIORITY_TONE, prioritySla, reasonLabel, REPORTER_LABEL, SIGNAL_LABEL, TARGET_LABEL, targetHref } from "../_lib/moderation-format";
 import { SlaTimer, useNow } from "./sla-timer";
 
@@ -52,13 +55,28 @@ interface ReportQueueProps {
   groups: ReportQueueGroup[];
   /** Server time of the render (ISO): the timers start from it. */
   renderedAt: string;
+  /** What each target is (title, seller, price, city, photo) by target key; absent: its reference only. */
+  cards?: Record<string, TargetCard>;
+}
+
+const KIND_ICON: Record<string, LucideIcon> = { Annonce: ImageOff, Compte: UserRound, Message: MessageSquare, Boutique: Store, Avis: Star };
+
+/** First photo of the target, or a quiet tile with the icon of its kind. */
+function Thumb({ card }: { card: TargetCard }) {
+  const Icon = KIND_ICON[card.kind] ?? ImageOff;
+  return (
+    <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-muted text-foreground-muted">
+      {/* eslint-disable-next-line @next/next/no-img-element -- media variants are served as is (images.unoptimized, design §8) */}
+      {card.thumb ? <img src={card.thumb.src} alt="" width={56} height={56} loading="lazy" decoding="async" className="size-full object-cover" /> : <Icon aria-hidden="true" className="size-5" />}
+    </div>
+  );
 }
 
 /**
  * Open reports grouped by target (one decision closes a group, D13), past due first, then by
  * priority and due date; the timers and the order follow the clock without a reload.
  */
-export function ReportQueue({ items, groups, renderedAt }: ReportQueueProps) {
+export function ReportQueue({ items, groups, renderedAt, cards = {} }: ReportQueueProps) {
   const now = useNow(renderedAt);
   const byId = new Map(items.map((item) => [item.id, item]));
   return (
@@ -68,7 +86,8 @@ export function ReportQueue({ items, groups, renderedAt }: ReportQueueProps) {
         const first = reports[0];
         if (!first) return null;
         const href = targetHref(group.targetKey);
-        const name = targetName(first);
+        const card = cards[group.targetKey];
+        const name = card ? `${card.kind} : ${card.title}` : targetName(first);
         const excerpt = reports.find((report) => report.excerpt.trim())?.excerpt;
         const late = Date.parse(group.slaDueAt) < now.getTime();
         return (
@@ -88,9 +107,23 @@ export function ReportQueue({ items, groups, renderedAt }: ReportQueueProps) {
               <span className="text-xs text-foreground-muted">{plural(reports.length, "signalement", "signalements")}</span>
             </div>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <Link href={href} className="truncate font-medium text-foreground underline-offset-4 hover:underline focus-visible:underline">
-                {name}
-              </Link>
+              {card ? (
+                <div className="flex min-w-0 items-start gap-3">
+                  <Thumb card={card} />
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <Link href={href} dir="auto" className="truncate font-medium text-foreground underline-offset-4 hover:underline focus-visible:underline">
+                      <span className="text-foreground-muted">{card.kind} </span>
+                      {card.title}
+                    </Link>
+                    {card.details.length > 0 ? <p className="truncate text-sm text-foreground-muted">{card.details.join(", ")}</p> : null}
+                    <CopyReference value={card.reference} />
+                  </div>
+                </div>
+              ) : (
+                <Link href={href} className="truncate font-medium text-foreground underline-offset-4 hover:underline focus-visible:underline">
+                  {name}
+                </Link>
+              )}
               <p className="text-sm text-foreground">{reasonSummary(reports)}</p>
               {excerpt ? (
                 <p dir="auto" className="line-clamp-2 max-w-prose text-sm text-foreground-muted">
@@ -100,7 +133,7 @@ export function ReportQueue({ items, groups, renderedAt }: ReportQueueProps) {
               <Signals reports={reports} />
             </div>
             <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end md:justify-start">
-              <SlaTimer dueAt={group.slaDueAt} now={now} windowMs={prioritySla(group.priority)} />
+              <SlaTimer dueAt={group.slaDueAt} now={now} windowMs={prioritySla(group.priority)} className="md:flex-col md:items-end" />
               <Button asChild variant={late || group.priority === "P0" ? "primary" : "outline"} size="sm">
                 <Link href={href} aria-label={`Examiner : ${name}`}>
                   Examiner

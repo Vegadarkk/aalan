@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readCapped } from "@/lib/http/body";
 
 vi.mock("@/lib/logging/logger", () => ({ logger: { warn: vi.fn() } }));
 
 const { POST } = await import("@/app/api/csp-report/route");
 const { logger } = await import("@/lib/logging/logger");
+const { RATE_LIMITS } = await import("@/config/rate-limits");
+const { consumeLimit, resetRateLimiters } = await import("@/lib/rate-limit/limiter");
 
 function stream(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -69,6 +71,34 @@ describe("POST /api/csp-report", () => {
       { csp: { directive: "script-src", blocked: "eval", source: "chrome-extension://abcdef/content.js", line: 12, page: "/fr/annonce/x", disposition: "report" } },
       "csp violation",
     );
+  });
+
+  beforeEach(() => {
+    resetRateLimiters();
+    vi.mocked(logger.warn).mockClear();
+  });
+
+  it("logs only short strings and finite numbers (security review D-7)", async () => {
+    const report = JSON.stringify({
+      "csp-report": { "effective-directive": { nested: "x".repeat(500) }, "line-number": "12", disposition: "d".repeat(500), "document-uri": "https://joutiya.ma/fr" },
+    });
+    expect((await post(report)).status).toBe(204);
+    expect(logger.warn).toHaveBeenCalledWith(
+      { csp: { directive: undefined, blocked: undefined, source: undefined, line: undefined, page: "/fr", disposition: "d".repeat(200) } },
+      "csp violation",
+    );
+  });
+
+  it("limits each IP before the shared sample, under an open policy (security review D-7)", async () => {
+    expect(RATE_LIMITS["csp.report.ip"]).toMatchObject({ policy: "open", key: "ip" });
+    await consumeLimit("csp.report.ip", "203.0.113.5", RATE_LIMITS["csp.report.ip"].points);
+    const report = JSON.stringify({ "csp-report": { "effective-directive": "script-src" } });
+    const limited = await post(report, { "X-Forwarded-For": "203.0.113.5" });
+    expect(limited.status).toBe(429);
+    expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect((await post(report, { "X-Forwarded-For": "198.51.100.5" })).status).toBe(204);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
   });
 
   it("refuses oversized bodies, announced or not", async () => {

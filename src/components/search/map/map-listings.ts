@@ -3,6 +3,7 @@ import { formatCardDate } from "@/components/listing/listing-card";
 import { subcategoryById } from "@/config/categories";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
+import { shownTitle } from "@/lib/examples/title";
 import { formatPrice, groupDigits, intlLocale } from "@/lib/listings/client/format";
 import { isPublishedToday, pinSources, type LatLng } from "@/lib/search/map-pins";
 import type { SearchCard } from "@/lib/search/types";
@@ -53,7 +54,7 @@ export interface MapListingLabels {
   today: string;
   per: (unit: "night" | "month" | "day") => string;
   pinPer: (unit: "night" | "month" | "day") => string;
-  fact: (id: string, count: number) => string | null;
+  fact: (id: string, value: number | string) => string | null;
 }
 
 /** Short price of a pin: grouped digits under a million, compact above ("1,2 M"). */
@@ -82,7 +83,7 @@ export function buildMapListings(input: { featured: readonly SearchCard[]; hits:
     const listing: MapListing = {
       id: card.id,
       slugId: card.slugId,
-      title: card.title,
+      title: shownTitle(card, locale),
       amount,
       ...(priced && unit ? { per: labels.per(unit) } : {}),
       negotiable: priced && card.priceNegotiable,

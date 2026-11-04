@@ -49,6 +49,8 @@ const schema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   RELEASE: optional,
   CSP_REPORT_ONLY: flag,
+  /** Production: "true" lets search engines index the Tarifit pages (after its native review); read by the proxy. */
+  RIF_INDEXABLE: flag,
   /** Staging only: requests carrying it in x-joutiya-loadtest skip the app's rate limits (load test, phase 6 D17). */
   LOADTEST_BYPASS_SECRET: optional,
   QUEUE_REDIS_URL: optional,
@@ -99,6 +101,11 @@ const schema = z.object({
    * byte accounting before the r2.storage gauge, so the 8 GB alert reflects the account total.
    */
   R2_STORAGE_BASELINE_BYTES: integer(4_140_000_000),
+  // Edge cache purge of deleted media (audit A4-04, src/lib/cdn): a Cloudflare token holding only
+  // Zone > Cache Purge, and the zone of MEDIA_BASE_URL's host (derived from infra/targets.json by
+  // scripts/vm-env.ts). Purging needs both; unset, deleted photos stay cached until their max-age.
+  CF_MEDIA_PURGE_TOKEN: optional,
+  CF_MEDIA_ZONE_ID: optional.refine((value) => value === undefined || /^[0-9a-f]{32}$/.test(value), "CF_MEDIA_ZONE_ID must be 32 hexadecimal characters"),
   /** AdSense publisher id (ca-pub- and 16 digits, public; phase 6 D8): unset = no ad unit, no ads.txt. */
   ADSENSE_CLIENT_ID: optional.refine((value) => value === undefined || /^ca-pub-\d{16}$/.test(value), "ADSENSE_CLIENT_ID must be ca-pub- followed by 16 digits"),
   /** AdSense ad unit ids, one per slot format (phase 6, D6); an unset format shows house promotions only. */
@@ -209,6 +216,9 @@ export const RECOMMENDED_DEPLOYED = [
   // Photos and backups (phase 3): recommended, not required, until the bucket tokens exist.
   ...R2_STORAGE_VARS,
   "BACKUP_AGE_RECIPIENT",
+  // Without them a deleted photo stays in the edge cache until it expires (audit A4-04).
+  "CF_MEDIA_PURGE_TOKEN",
+  "CF_MEDIA_ZONE_ID",
   // Search (phase 4): without it the site serves pages but search answers 503 (design D2).
   "MEILI_URL",
   "MEILI_SEARCH_KEY",
@@ -255,6 +265,9 @@ export function parseEnv(source: Record<string, string | undefined>): ParsedEnv 
       const missing = R2_STORAGE_VARS.filter((name) => !env[name]);
       errors.push(`R2 storage needs all of ${R2_STORAGE_VARS.join(", ")} or none (missing: ${missing.join(", ")})`);
     }
+    // The zone id is derived as soon as the media host exists, before the token is in place: a half
+    // set only disables the purge (the RECOMMENDED warning names the missing variable).
+    if (env.CF_MEDIA_PURGE_TOKEN && !env.MEDIA_BASE_URL) warnings.push("CF_MEDIA_PURGE_TOKEN is set without MEDIA_BASE_URL: nothing to purge");
     if (env.MEILI_URL && !env.MEILI_SEARCH_KEY && !env.MEILI_INDEX_KEY) errors.push("MEILI_URL needs MEILI_SEARCH_KEY (web) or MEILI_INDEX_KEY (worker)");
     if ((env.MEILI_SEARCH_KEY || env.MEILI_INDEX_KEY) && !env.MEILI_URL) errors.push("MEILI_SEARCH_KEY and MEILI_INDEX_KEY need MEILI_URL");
     for (const name of ["MEDIA_BASE_URL", "MAP_PMTILES_URL"] as const) {

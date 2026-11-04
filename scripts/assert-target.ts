@@ -328,7 +328,7 @@ function checkDistinct(targets: Targets): string[] {
   claim("oauth", "shared.cloudflare.accessOauthClientId", accessClient);
   const prodProject = targets.environments.prod.firebase.projectNumber;
   if (accessClient !== null && prodProject !== null && accessClient.startsWith(`${prodProject}-`)) {
-    errors.push("shared.cloudflare.accessOauthClientId: a production client (Access's login lives in joutiya-staging, §6)");
+    errors.push("shared.cloudflare.accessOauthClientId: a production client (Access's login lives in the staging project, §6)");
   }
   // dev and staging share Meta's test number; production must use its own.
   const prodNumber = targets.environments.prod.whatsapp.phoneNumberId;

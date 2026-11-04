@@ -61,6 +61,7 @@ export default async function LegalRoute({ params }: { params: Params }) {
       translated={language === "ar"}
       frenchOnly={locale !== "fr" && language === "fr"}
       provisional={PROVISIONAL_LEGAL_PAGES.has(page.slug)}
+      path={`/${locale}/legal/${page.slug}`}
       {...currentVersionNotes(page.slug, language, legalDay(new Date()))}
     />
   );

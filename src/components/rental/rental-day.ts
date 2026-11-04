@@ -1,4 +1,5 @@
 import type { Locale } from "@/config/site";
+import { FAVORITE_FRAGMENT_KEY } from "@/lib/favorites/pending";
 import { intlLocale } from "@/lib/listings/client/format";
 
 // Car rental days in the UI (rental pack §6), zod-free for the listing page's islands: a short day
@@ -53,11 +54,13 @@ export function pendingContact(hash: string): string | null {
   return new URLSearchParams(hash.replace(/^#/, "")).get(CONTACT_FRAGMENT_KEY) || null;
 }
 
-/** Drops the contact key from the address bar (the days stay): reopened once, not on every reload. */
+/** Drops the contact key from the address bar (the days and any other key stay): reopened once, not on every reload. */
 export function clearPendingContact(): void {
   const { pathname, search, hash } = window.location;
-  const dates = fragmentDates(hash);
-  window.history.replaceState(window.history.state, "", `${pathname}${search}${dates ? rentalFragment(dates) : ""}`);
+  const query = new URLSearchParams(hash.replace(/^#/, ""));
+  query.delete(CONTACT_FRAGMENT_KEY);
+  const fragment = query.toString();
+  window.history.replaceState(window.history.state, "", `${pathname}${search}${fragment ? `#${fragment}` : ""}`);
 }
 
 /**
@@ -74,6 +77,9 @@ export function rememberRentalDates(dates: { from: string; to: string } | null):
     query.set("au", dates.to);
   }
   if (contact) query.set(CONTACT_FRAGMENT_KEY, contact);
+  // A heart clicked before sign-in waits in the fragment too (lib/favorites/pending).
+  const favorite = new URLSearchParams(hash.replace(/^#/, "")).get(FAVORITE_FRAGMENT_KEY);
+  if (favorite) query.set(FAVORITE_FRAGMENT_KEY, favorite);
   const fragment = query.toString();
   window.history.replaceState(window.history.state, "", `${pathname}${search}${fragment ? `#${fragment}` : ""}`);
 }

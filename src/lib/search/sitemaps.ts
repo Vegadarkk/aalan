@@ -140,7 +140,6 @@ async function listingEntries(shard: number): Promise<string[]> {
   return entries;
 }
 
-/** Always indexable: the public Pro page, the admin procedures guide (guide-demarches G1) and its rubrics. */
 /** Always indexable: the public Pro page, the directory of shops and its activities, the admin procedures guide (guide-demarches G1) and its rubrics. */
 const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
 

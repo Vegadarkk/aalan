@@ -4,6 +4,7 @@ import { HttpError, unauthenticated, unavailable } from "@/lib/http/errors";
 import { apiRoute, json } from "@/lib/http/route";
 import { logger } from "@/lib/logging/logger";
 import { handleMailEvent, svixHeaders, verifySvix } from "@/lib/mail/webhook";
+import { enforceWebhookLimit } from "@/lib/rate-limit/webhooks";
 
 // Resend → Svix-signed events (§2 e-mail adapter): permanent bounces and complaints feed
 // mailSuppressions. Signature first, raw body, 200 quickly: Resend retries anything else.
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
 const MAX_BYTES = 256 * 1024;
 
 export const POST = apiRoute(async (request) => {
+  // Per-IP ceiling first, before the body is read (security review D-1).
+  await enforceWebhookLimit(request);
   const secret = serverEnv().MAIL_WEBHOOK_SECRET;
   if (!secret) throw unavailable("MAIL_WEBHOOK_SECRET is not set");
   if (Number(request.headers.get("content-length") ?? "0") > MAX_BYTES) throw new HttpError(413, "payload_too_large");

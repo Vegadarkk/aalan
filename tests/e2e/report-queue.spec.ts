@@ -143,8 +143,14 @@ test("a moderator removes a reported listing from the queue with a template, and
   await expect(row).toBeVisible();
   await expect(row).toContainText("Arnaque ou tentative d'escroquerie");
   await expect(row).toContainText(/Reste (23|24) h/);
+  // The absolute due date beside the time left (zone 7 audit P4).
+  await expect(row.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
+  await expect(row).toContainText(/Échéance \d{1,2} \S+ \d{4}/);
 
-  await row.getByRole("link", { name: `Examiner : Annonce ${id}` }).click();
+  // The row names the listing by its title, its id secondary and copyable (zone 7 P2-8).
+  await expect(row).toContainText(title);
+  await expect(row.getByRole("button", { name: `Copier la référence ${id}` })).toBeVisible();
+  await row.getByRole("link", { name: `Examiner : Annonce : ${title}` }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Annonce « ${title} »`);
   await expect(page.getByText("Le vendeur exige une avance par Wafacash avant de montrer le téléphone.")).toBeVisible();
 

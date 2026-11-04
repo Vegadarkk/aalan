@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyInterpretation, interpretQuery, interpretSearch, NEAR_KM } from "@/lib/search/interpret";
 import { lexiconPhrases } from "@/lib/search/interpret/lexicon";
 import { tokenizeQuery } from "@/lib/search/interpret/tokens";
-import { canonicalSearchParams, parseSearchParams, searchParamsToQuery, type SearchParams } from "@/lib/search/params";
+import { canonicalSearchParams, parseSearchParams, searchParamsToQuery, type CriterionFilter, type SearchParams } from "@/lib/search/params";
 
 // "Chercher en parlant" (Carte vivante, lot 4): a sentence becomes the filters it clearly names.
 
@@ -92,20 +92,15 @@ const CASES: Case[] = [
 /** Titles and words that must stay words, untouched. */
 const NEGATIVES: string[] = [
   "Golf 7",
-  "Dacia Logan 2019",
   "iPhone 13 128 Go",
   "iPhone 13 Pro",
   "iPhone 13 Pro Max 256",
   "3 pièces",
-  "Clio 4 diesel 2016",
   "Samsung Galaxy S23 Ultra",
   "PS5 avec 2 manettes",
-  "Mercedes classe C 220",
   "205/55 R16",
-  "Toyota Yaris 100 000 km",
   "moins de 2 ans",
   "17 pouces",
-  "Peugeot 208 1.2",
   "livraison gratuite",
   "à côté de la gare",
   "قريب من البحر",
@@ -113,33 +108,83 @@ const NEGATIVES: string[] = [
   "Safi",
   "lot de 3",
   "1 million",
-  "Renault Clio max 4",
   "pro max",
+  // A brand or a model that is also a word, without its brand or a car word (audit lot 7).
+  "seat",
+  "2008",
+  "c220",
+  "polo bleu",
 ];
 
-/** A category may be named, but no number becomes a price, a distance or a sort. */
+/** A category may be named, but no number becomes a price, a distance or a sort (a car's mileage or year becomes its criterion). */
 const NO_AMOUNTS: [text: string, q: string][] = [
   ["appartement 3 pièces", "3 pièces"],
   ["TV 4k 55 pouces", "4k 55 pouces"],
   ["تلفاز 4k", "4k"],
   ["pneus 205/55 R16", "205/55 R16"],
   ["jantes 17 pouces", "17 pouces"],
-  ["voiture 150 000 km", "150 000 km"],
-  ["moto 125 cc 2018", "125 cc 2018"],
+  ["voiture 150 000 km", ""],
+  ["moto 125 cc 2018", "125 cc"],
   ["iphone 13 pro max 256 go", "iphone 13 pro max 256 go"],
   // Price words before (or after) an amount of another unit leave with the understood words.
-  ["voiture moins de 100 000 km", "100 000 km"],
-  ["voiture 100 000 km max", "100 000 km"],
+  ["voiture moins de 100 000 km", ""],
+  ["voiture 100 000 km max", ""],
   ["voiture plus de 2 ans", "2 ans"],
   ["frigo max 300 litres", "300 litres"],
   ["moto plus de 125 cc", "125 cc"],
   ["appartement au moins 3 pièces", "3 pièces"],
-  ["سيارة أقل من 100000 كلم", "100000 كلم"],
+  ["سيارة أقل من 100000 كلم", ""],
   // A weak cue is an ordinary word too: it stays.
   ["voiture sous 3 ans", "sous 3 ans"],
 ];
 
+const car = (criteria: Record<string, CriterionFilter>, extra: SearchParams = {}, subcategory = "voitures"): SearchParams => ({ category: "vehicules", subcategory, criteria, ...extra });
+const options = (...values: string[]): CriterionFilter => ({ kind: "options", values });
+
+/** Brands, models, fuel, gearbox, year and mileage of a vehicle (audit lot 7, zone 2 P1-1). */
+const VEHICLES: [text: string, patch: SearchParams, q: string][] = [
+  ["Renault Clio", car({ "car-brand": options("renault"), "car-model": options("renault-clio") }), ""],
+  ["renaut clio", car({ "car-brand": options("renault"), "car-model": options("renault-clio") }), ""],
+  ["Mercedes", car({ "car-brand": options("mercedes-benz") }), ""],
+  ["dacia logan", car({ "car-brand": options("dacia"), "car-model": options("dacia-logan") }), ""],
+  ["Dacia Logan 2019", car({ "car-brand": options("dacia"), "car-model": options("dacia-logan"), year: { kind: "range", min: 2019, max: 2019 } }), ""],
+  ["Clio 4 diesel 2016 Tanger", car({ "car-brand": options("renault"), "car-model": options("renault-clio"), fuel: options("diesel"), year: { kind: "range", min: 2016, max: 2016 } }, { city: "tanger" }), "4"],
+  ["Renault Clio d'occasion à Casablanca moins de 60000 dh", car({ "car-brand": options("renault"), "car-model": options("renault-clio") }, { city: "casablanca", priceMax: 60000 }), ""],
+  ["Mercedes classe C 220", car({ "car-brand": options("mercedes-benz"), "car-model": options("mercedes-benz-classe-c") }), "220"],
+  ["Toyota Yaris 100 000 km", car({ "car-brand": options("toyota"), "car-model": options("toyota-yaris"), mileage: { kind: "range", max: 100000 } }), ""],
+  ["voiture plus de 100000 km", car({ mileage: { kind: "range", min: 100000 } }), ""],
+  ["Peugeot 208 1.2", car({ "car-brand": options("peugeot"), "car-model": options("peugeot-208") }), "1.2"],
+  ["peugeot 2008", car({ "car-brand": options("peugeot"), "car-model": options("peugeot-2008") }), ""],
+  ["voiture golf", car({ "car-brand": options("volkswagen"), "car-model": options("volkswagen-golf") }), ""],
+  ["seat ibiza", car({ "car-brand": options("seat"), "car-model": options("seat-ibiza") }), ""],
+  ["range rover evoque", car({ "car-brand": options("land-rover"), "car-model": options("land-rover-range-rover-evoque") }), ""],
+  ["voiture automatique diesel", car({ fuel: options("diesel"), gearbox: options("automatique") }), ""],
+  ["voiture 3 portes", car({}), "3 portes"],
+  ["location renault clio marrakech", car({ "car-brand": options("renault"), "car-model": options("renault-clio") }, { city: "marrakech" }, "location-voitures"), ""],
+  ["camion renault", car({ "car-brand": options("renault") }, {}, "utilitaires-camions"), ""],
+  ["yamaha", car({ "moto-brand": options("yamaha") }, {}, "motos-scooters"), ""],
+  ["moto honda", car({ "moto-brand": options("honda") }, {}, "motos-scooters"), ""],
+  ["honda", car({ "car-brand": options("honda") }), ""],
+  ["داسيا لوغان", car({ "car-brand": options("dacia"), "car-model": options("dacia-logan") }), ""],
+  // Parts may not state a brand: the brand stays a word.
+  ["pneu renault", { category: "vehicules", subcategory: "pieces-accessoires", criteria: { "part-type": options("pneus-jantes") } }, "renault"],
+];
+
 describe("interpretQuery", () => {
+  it.each(VEHICLES)("reads the vehicle in %j", (text, patch, q) => {
+    const result = interpretQuery(text);
+    expect(result.patch).toEqual(canonicalSearchParams(patch));
+    expect(result.q).toBe(q);
+  });
+
+  it("gives the words back when the category of a brand is removed", () => {
+    const applied = applyInterpretation({ q: "Renault Clio" }, interpretQuery("Renault Clio"));
+    const category = applied?.items.find((item) => item.key === "category");
+    expect(category?.without).toEqual({ q: "Renault Clio", raw: true });
+    const model = applied?.items.find((item) => item.key === "criterion:car-model");
+    expect(model?.without).toEqual({ q: "Clio", raw: true, category: "vehicules", subcategory: "voitures", criteria: { "car-brand": options("renault") } });
+  });
+
   it.each(CASES)("reads %j", (text, patch, q, near) => {
     const result = interpretQuery(text);
     expect(result.patch).toEqual(canonicalSearchParams(patch));
@@ -169,7 +214,7 @@ describe("interpretQuery", () => {
     // The sentence is then searched as typed (no interpretation): nothing to tidy.
     expect(interpretQuery("moins de 2 ans").q).toBe("moins de 2 ans");
     expect(interpretSearch({ q: "moins de 2 ans" })).toBeNull();
-    expect(interpretSearch({ q: "voiture moins de 100 000 km" })?.params).toEqual({ q: "100 000 km", category: "vehicules", subcategory: "voitures" });
+    expect(interpretSearch({ q: "voiture plus de 2 ans" })?.params).toEqual({ q: "2 ans", category: "vehicules", subcategory: "voitures" });
   });
 
   it("names a property type without an offer at the category level", () => {

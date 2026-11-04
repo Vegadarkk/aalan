@@ -10,6 +10,7 @@ import { logger } from "@/lib/logging/logger";
 import { formatDate, formatDateTime } from "../../_lib/moderation-format";
 import { linkClassName } from "../../_components/panel";
 import { GuideLinkAccept } from "../../_components/guide-link-accept";
+import { GuideTabs } from "../../_components/guide-tabs";
 
 // Links of the admin procedures guide (design guide-demarches G4): what the weekly checker saw for
 // each official source, why one needs a look, and "Marquer comme vérifié" once a person has read the
@@ -61,7 +62,7 @@ async function loadReviews(): Promise<Partial<Record<GuideSourceId, GuideReview>
 }
 
 export default async function GuideLinksPage() {
-  await requirePageStaff(["moderator", "admin"]);
+  const staff = await requirePageStaff(["moderator", "admin"]);
   const [state, reviews] = await Promise.all([loadState(), loadReviews()]);
   const now = new Date();
   const rows = GUIDE_SOURCE_IDS.map((id) => {
@@ -74,6 +75,7 @@ export default async function GuideLinksPage() {
 
   return (
     <>
+      <GuideTabs current="links" admin={staff.role === "admin"} />
       <div>
         <h1 id="guide-title" className="text-2xl font-semibold">
           Liens du guide des démarches
@@ -84,10 +86,10 @@ export default async function GuideLinksPage() {
             : state.runAt
               ? `Dernier contrôle automatique le ${formatDateTime(state.runAt)}, chaque lundi. ${flagged === 0 ? "Aucun lien à revoir." : `${flagged} lien${flagged > 1 ? "s" : ""} à revoir.`}`
               : "Aucun contrôle encore : le premier a lieu lundi à 6 h 10 UTC."}{" "}
-          Une page modifiée au-delà de {CHANGE_THRESHOLD_BITS} bits d&apos;empreinte est signalée, puis résumée par Claude le 1er du mois ; relisez-la, puis marquez-la comme vérifiée.
+          Une page officielle dont le texte change de façon notable est signalée, puis résumée par Claude le 1er du mois ; relisez-la, puis marquez-la comme vérifiée.
         </p>
       </div>
-      <div role="region" aria-labelledby="guide-title" tabIndex={0} className="overflow-x-auto rounded-lg border border-border bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+      <div role="region" aria-labelledby="guide-title" tabIndex={0} className="relative overflow-x-auto rounded-lg border border-border bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         <table className="w-full min-w-[56rem] text-sm">
           <thead className="bg-surface-muted text-start text-foreground-muted">
             <tr>
@@ -130,7 +132,7 @@ export default async function GuideLinksPage() {
                       <p className="mt-1.5 text-xs break-all text-foreground-muted">
                         {current.detail}
                         {current.streak > 1 ? `, ${current.streak} contrôles de suite` : ""}
-                        {distance !== null && distance > 0 ? `, écart ${distance} bits` : ""}, le {formatDate(current.checkedAt)}
+                        {distance !== null && distance > CHANGE_THRESHOLD_BITS ? ", modification notable du texte" : distance !== null && distance > 0 ? ", légère modification du texte" : ""}, le {formatDate(current.checkedAt)}
                       </p>
                     ) : null}
                     {review ? (

@@ -3,14 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
+import { authorityNoticesFor } from "@/lib/decisions/authorities";
 import type { UserModerationView } from "@/lib/decisions/contracts";
 import { userModerationView } from "@/lib/decisions/users";
 import { serverEnv } from "@/lib/env";
+import { listingSummaries, type ListingSummary } from "@/lib/reports/summaries";
 import { cn } from "@/lib/utils";
-import { ACCOUNT_STATUS_LABEL, APPEAL_STATUS_LABEL, formatDateTime, plural, TARGET_LABEL, targetHref, templateLabel } from "../../../_lib/moderation-format";
+import { ACCOUNT_STATUS_LABEL, ACTION_LABEL, actionTone, APPEAL_STATUS_LABEL, formatDateTime, plural, TARGET_LABEL, targetHref, templateLabel } from "../../../_lib/moderation-format";
 import { SANCTION_LABEL, stepChoice } from "../../../_components/decide-state";
 import { Facts, linkClassName, Panel } from "../../../_components/panel";
+import { CopyReference } from "../../../_components/copy-reference";
+import { AuthorityNoticeBanner } from "../../../_components/authority-notice-banner";
 import { RevokePhoneButton } from "../../../_components/revoke-phone-button";
+import { listingDetails, listingThumb } from "../../../_lib/target-cards";
 
 // An account's moderation page (design D14, D15, D24): the sanctions ladder and where it stands,
 // the running suspension, its accuracy as a reporter (art. 23), and the decisions about it.
@@ -37,18 +42,44 @@ function Ladder({ user }: { user: UserModerationView }) {
   );
 }
 
+/** A decision's target: a listing by its photo, title, price and city, the stored id copyable; the account itself in words. */
+function DecisionTarget({ target, listing }: { target: { type: string; id: string }; listing: ListingSummary | undefined }) {
+  const kind = TARGET_LABEL[target.type] ?? target.type;
+  if (target.type === "user") return <>Le compte</>;
+  if (target.type !== "listing" || !listing) return <CopyReference label={kind} value={target.id} />;
+  const thumb = listingThumb(listing);
+  return (
+    <span className="flex min-w-0 items-start gap-2.5">
+      <span className="size-10 shrink-0 overflow-hidden rounded-sm bg-surface-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element -- media variants are served as is (design §8) */}
+        {thumb ? <img src={thumb.src} alt="" width={40} height={40} loading="lazy" decoding="async" className="size-full object-cover" /> : null}
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span dir="auto" className="truncate text-foreground">
+          {listing.title || "Sans titre"}
+        </span>
+        <span className="truncate text-xs">{listingDetails(listing).slice(1).join(", ")}</span>
+        <CopyReference value={listing.id} />
+      </span>
+    </span>
+  );
+}
+
 function share(value: number | null): string {
   return value === null ? "aucun signalement décidé" : `${Math.round(value * 100)} % de signalements fondés`;
 }
 
 export default async function AccountPage({ params }: { params: Promise<{ uid: string }> }) {
-  await requirePageStaff(["moderator", "admin"]);
+  const staff = await requirePageStaff(["moderator", "admin"]);
   const { uid } = await params;
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) notFound();
   const user = await userModerationView(uid);
   if (!user) notFound();
   const site = serverEnv().SITE_URL.replace(/\/$/, "");
   const { reporter } = user;
+  // The listings the decisions are about, by title rather than id (zone 7 P2-8).
+  const notices = await authorityNoticesFor([`user:${user.uid}`]);
+  const listings = await listingSummaries(user.decisions.flatMap((decision) => (decision.target.type === "listing" ? [decision.target.id] : []))).catch(() => new Map<string, ListingSummary>());
 
   return (
     <>
@@ -74,6 +105,8 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
           .
         </p>
       </div>
+
+      <AuthorityNoticeBanner notices={notices} target={{ type: "user", id: user.uid }} admin={staff.role === "admin"} />
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Panel title="Sanctions">
@@ -114,11 +147,12 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
         {user.decisions.length === 0 ? (
           <p className="text-sm text-foreground-muted">Aucune décision sur ce compte ni sur ses contenus.</p>
         ) : (
-          <div role="region" aria-label="Décisions du compte" tabIndex={0} className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-sm">
+          <div role="region" aria-label="Décisions du compte" tabIndex={0} className="relative overflow-x-auto">
+            <table className="w-full min-w-[48rem] text-sm">
               <thead className="text-start text-foreground-muted">
                 <tr>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Décision</th>
+                  <th scope="col" className="py-2 pe-4 text-start font-medium">Mesure</th>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Cible</th>
                   <th scope="col" className="py-2 pe-4 text-start font-medium">Date</th>
                   <th scope="col" className="py-2 text-start font-medium">Recours</th>
@@ -126,14 +160,20 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
               </thead>
               <tbody>
                 {user.decisions.map((decision) => (
-                  <tr key={decision.id} className="border-t border-border align-top">
+                  // "Aucune mesure" (a report found unfounded) reads as such, quieter than a sanction (zone 7 audit P4).
+                  <tr key={decision.id} className={cn("border-t border-border align-top", decision.action === "no_action" && "text-foreground-muted")}>
                     <td className="py-2 pe-4">
                       <Link href={`/decisions/${decision.id}`} className={linkClassName}>
                         {templateLabel(decision.templateId)}
                       </Link>
                     </td>
+                    <td className="py-2 pe-4">
+                      <Badge variant={actionTone(decision.action)} className="whitespace-nowrap">
+                        {ACTION_LABEL[decision.action as keyof typeof ACTION_LABEL] ?? decision.action}
+                      </Badge>
+                    </td>
                     <td className="py-2 pe-4 text-foreground-muted">
-                      {TARGET_LABEL[decision.target.type] ?? decision.target.type} {decision.target.type === "user" ? "" : decision.target.id}
+                      <DecisionTarget target={decision.target} listing={listings.get(decision.target.id)} />
                     </td>
                     <td className="py-2 pe-4 whitespace-nowrap tabular-nums">{formatDateTime(decision.createdAt)}</td>
                     <td className="py-2 text-foreground-muted">{decision.appeal ? (APPEAL_STATUS_LABEL[decision.appeal as keyof typeof APPEAL_STATUS_LABEL] ?? decision.appeal) : "Aucun"}</td>

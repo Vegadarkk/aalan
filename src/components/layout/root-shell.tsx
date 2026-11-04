@@ -61,10 +61,14 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
                 the bottom of the screen instead of right under the content (owner, 2026-11-04), about
                 7 rem of it showing. Header + category row: 7.25 rem on a phone, 8.25 rem from md. The
                 search map sizes itself (h-dvh body). */}
-            <main id="main" className="flex min-h-[calc(100dvh-14rem)] flex-1 flex-col md:min-h-[calc(100dvh-15rem)] search-map:min-h-0">
+            {/* tabIndex -1: the skip link moves the reading point too, not only the hash (no ring, globals.css). */}
+            <main id="main" tabIndex={-1} className="flex min-h-[calc(100dvh-14rem)] flex-1 flex-col md:min-h-[calc(100dvh-15rem)] search-map:min-h-0">
               {children}
             </main>
-            <Footer publisher={companyName} />
+            {/* Under the private root layout every footer link leads to the other root layout, a full
+                page load that never reads a prefetch: none there (about 470 KB of RSC on the sign-up
+                page once the footer showed, audit zone 8 perf 5). */}
+            <Footer publisher={companyName} prefetch={config === undefined} />
           </Providers>
         </NextIntlClientProvider>
       </body>

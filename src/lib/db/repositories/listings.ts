@@ -3,6 +3,7 @@ import { FieldPath, FieldValue, Timestamp, type DocumentSnapshot, type Transacti
 import type { OwnerListBucket } from "@/lib/contracts/listings";
 import type { ListingPhoto } from "@/lib/contracts/media";
 import { db } from "@/lib/firebase/admin";
+import { listingPhotoKeys } from "@/lib/media/near-duplicate";
 import { consume } from "@/lib/quota";
 import { COLLECTIONS, listingSchema, type ListingDoc, type ListingStatus } from "../schemas";
 import { datesToTimestamps, timestampsToDates } from "./timestamps";
@@ -72,8 +73,9 @@ export function fromSnapshot(snapshot: DocumentSnapshot): ListingRecord | null {
   return parsed.success ? { id: snapshot.id, ...parsed.data } : null;
 }
 
+/** `photoKeys` follow `photos` on every write (cross-account photo lookup), whatever the caller passed. */
 export function toFirestore(doc: ListingDoc): Record<string, unknown> {
-  return datesToTimestamps(listingSchema.parse(doc)) as Record<string, unknown>;
+  return datesToTimestamps(listingSchema.parse({ ...doc, photoKeys: listingPhotoKeys(doc.photos) })) as Record<string, unknown>;
 }
 
 /** Applies a field patch in memory (what Firestore will hold after `updateListing`). */
@@ -89,8 +91,10 @@ export function applyPatch<T extends ListingDoc>(listing: T, patch: ListingField
 
 /** Firestore update map of a field patch: Dates to Timestamps, `null` to a deletion (or null, NULL_VALUED_FIELDS). */
 function toUpdate(patch: ListingFieldPatch): Record<string, unknown> {
-  const update: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(patch)) {
+  const fields: ListingFieldPatch = { ...patch };
+  delete fields.photoKeys;
+  const update: Record<string, unknown> = fields.photos !== undefined ? { photoKeys: listingPhotoKeys(fields.photos ?? []) } : {};
+  for (const [key, value] of Object.entries(fields)) {
     if (value === undefined) continue;
     if (value === null) update[key] = NULL_VALUED_FIELDS.has(key) ? null : FieldValue.delete();
     else update[key] = datesToTimestamps(value);
@@ -201,6 +205,17 @@ export async function countPublishedSince(uid: string, since: Date): Promise<num
  */
 export async function listOwnerListingsByStatus(uid: string, statuses: readonly ListingStatus[], limit = 50): Promise<ListingRecord[]> {
   const snapshot = await listings().where("ownerUid", "==", uid).where("status", "in", [...statuses]).limit(limit).get();
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return snapshot.docs.map(fromSnapshot).filter((record): record is ListingRecord => record !== null);
+}
+
+/**
+ * Listings holding one of these photo keys (cross-account near-duplicate photos), unordered, at
+ * most `limit`: one query, `limit` reads at most (1 when none). Up to 30 keys (array-contains-any).
+ */
+export async function listListingsByPhotoKeys(keys: readonly string[], limit: number): Promise<ListingRecord[]> {
+  if (keys.length === 0) return [];
+  const snapshot = await listings().where("photoKeys", "array-contains-any", keys.slice(0, 30)).limit(limit).get();
   void consume("firestore.reads", Math.max(1, snapshot.size));
   return snapshot.docs.map(fromSnapshot).filter((record): record is ListingRecord => record !== null);
 }

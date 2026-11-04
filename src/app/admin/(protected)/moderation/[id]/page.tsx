@@ -11,6 +11,8 @@ import { listingIdSchema } from "@/lib/contracts/listings";
 import type { ModerationDecisionDoc } from "@/lib/db/schemas";
 import { serverEnv } from "@/lib/env";
 import { moderationReview, type ModerationReview, type ModerationReviewPhoto } from "@/lib/listings/moderation-actions";
+import { screeningChange, type ScreeningChange } from "@/lib/listings/screening-change";
+import { FLAG_LABELS } from "@/lib/moderation/decisions";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { staffPhotoSources, usesStaffPhotos } from "../../../_lib/staff-photos";
 import { ACCOUNT_STATUS_LABEL, formatMorocco } from "../../../_lib/moderation-format";
@@ -18,6 +20,7 @@ import { ModerationDecisionForm } from "../../../_components/moderation-decision
 import { catalogLabels, formatPrice, waitingFor } from "../../../_components/moderation-labels";
 import { FlagBadges, HOLD_LABEL } from "../../../_components/moderation-queue";
 import { RiskMeter } from "../../../_components/moderation-risk";
+import { SensitiveDeclarationNotice } from "../../../_components/sensitive-declaration";
 import { Facts, Panel } from "../../../_components/panel";
 
 // Review of one listing of the moderation queue (design D9): the listing as the seller wrote it,
@@ -95,6 +98,19 @@ function Photos({ review, base }: { review: ModerationReview; base: string | nul
   );
 }
 
+const flagList = (flags: readonly ModerationReview["moderation"]["flags"][number][]) => flags.map((flag) => `« ${FLAG_LABELS[flag]} »`).join(", ");
+
+/** The re-run's sentence: a content change only when the seller changed the text, price or photos (zone 7 P2-11). */
+function changeSentence(change: Exclude<ScreeningChange, { kind: "none" }>): string {
+  if (change.kind === "content") {
+    return change.rescored
+      ? "Le vendeur a modifié le texte, le prix ou les photos depuis la mise en attente. Contrôle relancé sur la version actuelle :"
+      : "Le vendeur a modifié le texte, le prix ou les photos depuis la mise en attente ; le contrôle relancé donne le même résultat.";
+  }
+  const reasons = [...(change.added.length > 0 ? [`nouveau signal : ${flagList(change.added)}`] : []), ...(change.removed.length > 0 ? [`signal levé : ${flagList(change.removed)}`] : [])];
+  return `Contenu inchangé. Contrôle relancé : score mis à jour (${reasons.length > 0 ? reasons.join(" ; ") : "mêmes signaux, poids recalculés sur le contexte du vendeur"}).`;
+}
+
 export default async function ModerationReviewPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePageStaff(["moderator", "admin"]);
   const id = listingIdSchema.safeParse((await params).id);
@@ -105,7 +121,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
   const site = serverEnv().SITE_URL.replace(/\/$/, "");
   const pending = listing.status === "pending_review";
   const attributes = Object.entries(listing.attributes);
-  const changed = screening !== null && (screening.score !== moderation.score || screening.flags.join() !== moderation.flags.join());
+  const change = screeningChange(moderation, screening, moderation.contentChanged);
 
   return (
     <>
@@ -122,6 +138,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
           <time dateTime={listing.updatedAt}>{waitingFor(listing.updatedAt)}</time>.
         </p>
       </div>
+      {pending && moderation.sensitiveDeclaration ? <SensitiveDeclarationNotice kind={moderation.sensitiveDeclaration} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <article className="flex flex-col gap-6">
@@ -164,12 +181,16 @@ export default async function ModerationReviewPage({ params }: { params: Promise
         <aside className="flex flex-col gap-6" aria-label="Signaux, décision et vendeur">
           <Panel title="Signaux">
             <RiskMeter score={moderation.score} />
-            <FlagBadges flags={moderation.flags} />
-            {changed && screening ? (
-              <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-3 text-sm">
-                <p>Le contenu a changé depuis la mise en attente. Contrôle relancé sur la version actuelle :</p>
-                <RiskMeter score={screening.score} />
-                <FlagBadges flags={screening.flags} />
+            <FlagBadges flags={moderation.flags} declaration={moderation.sensitiveDeclaration} />
+            {change.kind !== "none" && screening ? (
+              <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-3 text-sm" data-testid="screening-change">
+                <p>{changeSentence(change)}</p>
+                {change.kind === "rescored" || change.rescored ? (
+                  <>
+                    <RiskMeter score={screening.score} />
+                    <FlagBadges flags={screening.flags} declaration={moderation.sensitiveDeclaration} />
+                  </>
+                ) : null}
               </div>
             ) : null}
             {screening && screening.evidence.length > 0 ? (

@@ -35,16 +35,25 @@ interface SlaTimerProps {
   className?: string;
 }
 
-/** Time left before a due date, or how late it is; the exact due time in the tooltip. */
+/**
+ * Time left before a due date, or how late it is, next to the due date itself in Morocco's time
+ * (zone 7 audit P4: "Reste 6 j 23 h" alone does not say when). `className` lays out the pair.
+ */
 export function SlaTimer({ dueAt, now, windowMs, className }: SlaTimerProps) {
   const state = slaState(dueAt, now, windowMs);
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium whitespace-nowrap tabular-nums", TONE[state.tone], className)}>
-      <Clock aria-hidden="true" className="size-3.5" />
-      {/* The browser may know another offset for the staff time zone than the server: its own wins after hydration. */}
-      <time dateTime={dueAt} title={`Échéance : ${formatDateTime(dueAt)}`} suppressHydrationWarning>
+    <span className={cn("inline-flex flex-wrap items-center gap-x-2 gap-y-1", className)}>
+      <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium whitespace-nowrap tabular-nums", TONE[state.tone])}>
+        <Clock aria-hidden="true" className="size-3.5" />
         {state.label}
-      </time>
+      </span>
+      <span className="text-xs whitespace-nowrap text-foreground-muted tabular-nums">
+        Échéance{" "}
+        {/* The browser may know another offset for the staff time zone than the server: its own wins after hydration. */}
+        <time dateTime={dueAt} suppressHydrationWarning>
+          {formatDateTime(dueAt)}
+        </time>
+      </span>
     </span>
   );
 }

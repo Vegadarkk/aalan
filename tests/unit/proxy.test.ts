@@ -169,6 +169,18 @@ describe("proxy", () => {
     expect(directive(bare, "img-src")).toBe("img-src 'self' data: blob:");
   });
 
+  it("keeps Tarifit pages out of the production index until RIF_INDEXABLE", async () => {
+    expect((await proxy(request("/fr"))).headers.get("x-robots-tag")).toBeNull();
+    expect((await proxy(request("/ar/c/vehicules"))).headers.get("x-robots-tag")).toBeNull();
+    for (const path of ["/rif", "/rif/c/vehicules", "/rif/connexion"]) {
+      expect((await proxy(request(path))).headers.get("x-robots-tag")).toBe("noindex, follow");
+    }
+    vi.stubEnv("RIF_INDEXABLE", "true");
+    expect((await proxy(request("/rif/c/vehicules"))).headers.get("x-robots-tag")).toBeNull();
+    vi.stubEnv("APP_ENV", "staging");
+    expect((await proxy(request("/rif"))).headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
   it("keeps staging out of search engines", async () => {
     vi.stubEnv("APP_ENV", "staging");
     expect((await proxy(request("/fr"))).headers.get("x-robots-tag")).toBe("noindex, nofollow");
@@ -189,6 +201,15 @@ describe("proxy", () => {
     expect((await proxy(request("/fr/c/vehicules/casablanca"))).status).toBe(200);
     // Other pages keep their query.
     expect((await proxy(request("/fr/annonce/velo-casablanca-abcd2345?ref=1"))).status).toBe(200);
+  });
+
+  it("sends the home page and other query-less ISR pages with a query string to the clean path (audit D-5)", async () => {
+    for (const path of ["/fr", "/ar/aide/securite", "/fr/legal/cgu", "/rif/tarifs", "/fr/boutiques"]) {
+      const response = await proxy(request(`${path}?x=${Math.random()}`));
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(`https://joutiya.ma${path}`);
+    }
+    expect((await proxy(request("/fr/recherche?q=velo"))).status).toBe(200);
   });
 
   it("meters /annonce, /c, /profil and /boutique only", async () => {

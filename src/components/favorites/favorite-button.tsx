@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Heart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -8,13 +8,14 @@ import { useApiErrorMessage } from "@/components/auth/form-message";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, loadSession, useSession } from "@/lib/auth/client";
 import { favoritesSnapshot, forgetFavorites, loadFavoriteIds, setFavorite, useFavorites } from "@/lib/favorites/client";
+import { favoriteFragment, takePendingFavorite } from "@/lib/favorites/pending";
 import { cn } from "@/lib/utils";
 
 // The heart of a listing (design D17, D22): a client island on cards (over the photo, `relative
 // z-10` above the card's stretched link) and on the listing page. Public pages are static, so the
 // heart renders neutral until the session is known; the ids of the account come once per page from
 // GET /api/favorites/ids (module store shared by every heart). A click by an anonymous visitor goes
-// to sign-in and comes back here.
+// to sign-in and comes back here, where the heart adds the listing by itself (lib/favorites/pending).
 
 export interface FavoriteButtonProps {
   listingId: string;
@@ -25,6 +26,11 @@ export interface FavoriteButtonProps {
 
 function currentPath(): string {
   return `${window.location.pathname}${window.location.search}`;
+}
+
+/** Back here after sign-in, with this listing to add once the session is known. */
+function signInNext(listingId: string): string {
+  return `${currentPath()}${favoriteFragment(window.location.hash, listingId)}`;
 }
 
 export function FavoriteButton({ listingId, className, variant = "overlay" }: FavoriteButtonProps) {
@@ -42,6 +48,29 @@ export function FavoriteButton({ listingId, className, variant = "overlay" }: Fa
     else if (uid === null) forgetFavorites();
   }, [uid]);
 
+  // The heart clicked before sign-in (audit zone 5 n°8): added once the session is known, unless it
+  // already is a favorite. Never a removal.
+  const resume = useEffectEvent(async (viewer: string) => {
+    await loadFavoriteIds(viewer);
+    const store = favoritesSnapshot();
+    if (store.status !== "ready" || store.uid !== viewer || store.ids.has(listingId) || store.busy.has(listingId)) return;
+    setBurst((value) => value + 1);
+    try {
+      await setFavorite(listingId, true);
+      toast.success(t("added"), { action: { label: t("view"), onClick: () => router.push("/favoris") } });
+    } catch (error) {
+      toast.error(apiMessage(error));
+    }
+  });
+  useEffect(() => {
+    if (!uid) return;
+    // Taken in the timer, not the effect: a cancelled effect (Strict Mode) leaves the key in place.
+    const timer = window.setTimeout(() => {
+      if (takePendingFavorite(listingId)) void resume(uid);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [uid, listingId]);
+
   const known = uid !== undefined && uid !== null && favorites.uid === uid && favorites.status === "ready";
   const active = known && favorites.ids.has(listingId);
   const busy = favorites.busy.has(listingId);
@@ -49,7 +78,7 @@ export function FavoriteButton({ listingId, className, variant = "overlay" }: Fa
   async function onClick() {
     const viewer = status === "ready" ? session : await loadSession();
     if (!viewer) {
-      router.push({ pathname: "/connexion", query: { next: currentPath() } });
+      router.push({ pathname: "/connexion", query: { next: signInNext(listingId) } });
       return;
     }
     await loadFavoriteIds(viewer.uid);
@@ -68,7 +97,7 @@ export function FavoriteButton({ listingId, className, variant = "overlay" }: Fa
       if (next) toast.success(t("added"), { action: { label: t("view"), onClick: () => router.push("/favoris") } });
     } catch (error) {
       if (error instanceof ApiError && error.code === "unauthenticated") {
-        router.push({ pathname: "/connexion", query: { next: currentPath() } });
+        router.push({ pathname: "/connexion", query: { next: next ? signInNext(listingId) : currentPath() } });
         return;
       }
       toast.error(apiMessage(error));

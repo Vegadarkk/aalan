@@ -516,6 +516,16 @@
       "indexes": []
     },
     {
+      "collectionGroup": "listings",
+      "fieldPath": "photoKeys",
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
       "collectionGroup": "savedSearches",
       "fieldPath": "alert",
       "indexes": [

@@ -47,6 +47,7 @@ import { getLegalConfig } from "@/lib/legal/config";
 import { formatDate, formatPrice } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
 import { listingJsonLd } from "@/lib/listings/jsonld";
+import { localizeExample } from "@/lib/demo/localized";
 import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { offerAllowed } from "@/lib/offers/eligibility";
@@ -58,6 +59,7 @@ import { shopPaymentFor } from "@/lib/pro/seller-payment";
 import { isIndexable } from "@/lib/search/document";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import { mediaBaseUrl } from "@/lib/storage/keys";
+import { PrintSource } from "@/components/print/print-source";
 
 // Public listing page (design D1, D10, D14, §5, §8): ISR, rendered on the first visit and kept 5
 // minutes (lifecycle transitions revalidate it at once). No loading.tsx above it: notFound() and the
@@ -136,7 +138,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const locale = pageLocale(value);
   const found = await load(slugId);
   if (!found || found.redirect) return {};
-  const { listing } = found;
+  const listing = localizeExample(found.listing, locale);
   const [t, card] = await Promise.all([getTranslations({ locale, namespace: "ListingPage.meta" }), getTranslations({ locale, namespace: "ListingCard" })]);
   const city = cityBySlug(listing.location.citySlug);
   const title = city ? t("title", { title: listing.title, city: cityName(city, locale) }) : listing.title;
@@ -167,7 +169,7 @@ export default async function ListingPage({ params }: { params: Params }) {
   if (!found) notFound();
   if (found.redirect) permanentRedirect(listingPath(locale, found.listing.slugId));
 
-  const { listing } = found;
+  const listing = localizeExample(found.listing, locale);
   const variants = listing.catalogue?.variants;
   const range = variants ? priceRange({ variants, price: listing.price, isDonation: listing.isDonation }) : null;
   const shownPrice = range ? range.min : listing.price;
@@ -318,6 +320,8 @@ export default async function ListingPage({ params }: { params: Params }) {
                 </span>
               </p>
             ) : null}
+            {/* On paper: where the listing comes from (audit zone 8, impression 3). */}
+            <PrintSource label={t("printSource")} path={listingPath(locale, listing.slugId)} />
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-foreground-muted">
               {place ? (
                 <span className="inline-flex items-center gap-1.5">
@@ -395,7 +399,7 @@ export default async function ListingPage({ params }: { params: Params }) {
               </div>
             </section>
 
-            <section aria-labelledby="location-title" className="flex flex-col gap-3">
+            <section aria-labelledby="location-title" className="flex flex-col gap-3 print:hidden">
               <h2 id="location-title" className="text-lg font-semibold">
                 {t("locationTitle")}
               </h2>
@@ -403,19 +407,22 @@ export default async function ListingPage({ params }: { params: Params }) {
               <ListingMapBlock citySlug={listing.location.citySlug} regionCode={listing.location.regionCode} seed={listing.id} locale={locale} className="w-full max-w-[26rem]" />
             </section>
 
-            {VEHICLE_SALE_SUBCATEGORIES.includes(listing.subcategoryId) ? <VehicleBuyingGuide attributes={listing.attributes} sellerType={listing.seller.type} /> : null}
-            {/* A rental has its own guide, not the sale one (audit L4-12); a holiday home links to the tourist rental procedure. */}
-            {guideRubric && !carRental ? <GuideCategoryLink rubric={guideRubric} procedure={holidayHome ? "immo-location-touristique" : undefined} locale={locale} /> : null}
-            {carRental || holidayHome ? <RentalGuide stay={holidayHome} /> : null}
+            {/* Guides, report, safety tips and ad: screen only (the printed listing is its own content). */}
+            <div className="contents print:hidden">
+              {VEHICLE_SALE_SUBCATEGORIES.includes(listing.subcategoryId) ? <VehicleBuyingGuide attributes={listing.attributes} sellerType={listing.seller.type} /> : null}
+              {/* A rental has its own guide, not the sale one (audit L4-12); a holiday home links to the tourist rental procedure. */}
+              {guideRubric && !carRental ? <GuideCategoryLink rubric={guideRubric} procedure={holidayHome ? "immo-location-touristique" : undefined} locale={locale} /> : null}
+              {carRental || holidayHome ? <RentalGuide stay={holidayHome} /> : null}
 
-            {/* Report link, then the safety tips: a non-interactive block always stands between the ad
-                and the contact or report controls (D6). */}
-            {/* The search map links here ("Signaler", lot 2). */}
-            <div id="signaler" className="scroll-mt-24">
-              <ReportButton target={{ type: "listing", id: listing.id, categoryId: listing.categoryId }} subject={listing.title} ownerPublicId={listing.seller.publicId} email={legal.dsaContactEmail} url={canonicalUrl} />
+              {/* Report link, then the safety tips: a non-interactive block always stands between the ad
+                  and the contact or report controls (D6). */}
+              {/* The search map links here ("Signaler", lot 2). */}
+              <div id="signaler" className="scroll-mt-24">
+                <ReportButton target={{ type: "listing", id: listing.id, categoryId: listing.categoryId }} subject={listing.title} ownerPublicId={listing.seller.publicId} email={legal.dsaContactEmail} url={canonicalUrl} />
+              </div>
+              <SafetyTips variant={jobs ? "jobs" : holidayHome ? "holiday" : carRental ? "carRental" : realEstate ? "realEstate" : "goods"} />
+              <AdSlot placement="listing-bottom" eligible={found.adsEligible} promos={availablePromos(flags)} seed={listing.id} />
             </div>
-            <SafetyTips variant={jobs ? "jobs" : holidayHome ? "holiday" : carRental ? "carRental" : realEstate ? "realEstate" : "goods"} />
-            <AdSlot placement="listing-bottom" eligible={found.adsEligible} promos={availablePromos(flags)} seed={listing.id} />
           </div>
         </div>
       </Container>

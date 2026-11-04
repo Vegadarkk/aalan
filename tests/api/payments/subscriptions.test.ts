@@ -93,6 +93,7 @@ import { resetServerEnv } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { setClaims } from "@/lib/firebase/claims";
 import { createSessionForUid } from "@/lib/firebase/session";
+import { expireShopCheckouts } from "@/lib/payments/plans";
 import { postStripeReceipt } from "@/lib/payments/revenuecat-api";
 import { expectedSignature } from "@/lib/payments/revenuecat-webhook";
 import type { ProProfileDoc } from "@/lib/pro/profile-schema";
@@ -237,6 +238,20 @@ async function published(owner: Member): Promise<string> {
 }
 
 describe("plan checkout", () => {
+  it("expires the payment page still open of a shop whose owner is suspended", async () => {
+    const owner = await member();
+    await shop(owner);
+    expect((await startCheckout(owner, plan("essentiel", "monthly"))).status).toBe(200);
+    stripe.calls = [];
+    stripe.sessionStatus = "open";
+    expect(await expireShopCheckouts(owner.uid)).toBe(1);
+    expect(stripe.calls.map((call) => `${call.method} ${call.path}`)).toEqual(["GET /v1/checkout/sessions/cs_test_1", "POST /v1/checkout/sessions/cs_test_1/expire"]);
+    // Paid or expired already: nothing to do; an account without a shop neither.
+    stripe.sessionStatus = "complete";
+    expect(await expireShopCheckouts(owner.uid)).toBe(0);
+    expect(await expireShopCheckouts((await member()).uid)).toBe(0);
+  });
+
   it("opens the Stripe Checkout of a verified shop's plan with its customer and RevenueCat id", async () => {
     const owner = await member();
     const proId = await shop(owner);
@@ -362,6 +377,37 @@ describe("subscription sync", () => {
     await rcDeliver("RENEWAL", appUserId);
     expect((await getWallet(accountId))?.planCredits).toBe(100);
     expect((await ledgerRef(accountId, `grant_sub_rc_1_business_${renewed.periodStart.getTime()}`).get()).exists).toBe(true);
+  });
+
+  it("grants nothing during a pass trial, and lets only the pass's own plan take over before a payment", async () => {
+    const owner = await member();
+    const passEndsAt = new Date(Date.now() + 20 * DAY_MS);
+    const proId = await shop(owner, { lifecycle: "active", plan: "essentiel", planSource: "pass", quotas: DEFAULT_PRICING.pro.essentiel, passEndsAt });
+    const accountId = `pro_${proId}`;
+    // A Business checkout during an Essentiel pass is billed at once: the pass did not pay for it.
+    const appUserId = await appUserOf(owner, proId);
+    const opened = stripe.calls.find((call) => call.path === "/v1/checkout/sessions")!;
+    expect(opened.params.subscription_data).not.toHaveProperty("trial_end");
+
+    // A Business trial all the same (an older page, the portal): no switch, no grant.
+    const trialStart = new Date(Date.now() - DAY_MS);
+    store.subscriptions = [rcSubscription({ status: "trialing", periodStart: trialStart, periodEnd: passEndsAt })];
+    await rcDeliver("INITIAL_PURCHASE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "essentiel", planSource: "pass", quotas: DEFAULT_PRICING.pro.essentiel });
+    expect(await getWallet(accountId)).toBeNull();
+
+    // The pass's own plan on trial takes over the pass (already paid until its end), still without a grant.
+    store.subscriptions = [rcSubscription({ status: "trialing", periodStart: trialStart, periodEnd: passEndsAt, entitlements: ["essentiel"] })];
+    await rcDeliver("PRODUCT_CHANGE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "essentiel", planSource: "subscription" });
+    expect(await getWallet(accountId)).toBeNull();
+
+    // The first paid period brings the plan's grant.
+    const now = new Date();
+    store.subscriptions = [rcSubscription({ periodStart: now, periodEnd: new Date(now.getTime() + 30 * DAY_MS), entitlements: ["essentiel"] })];
+    await rcDeliver("RENEWAL", appUserId);
+    expect(await getWallet(accountId)).toMatchObject({ planCredits: DEFAULT_PRICING.plans.essentiel.credits });
+    expect((await ledgerRef(accountId, `grant_sub_rc_1_essentiel_${now.getTime()}`).get()).exists).toBe(true);
   });
 
   it("puts the shop in grace on a failed payment, downgrades it at expiry and pauses then resumes its listings", async () => {

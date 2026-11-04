@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Dialog } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/components/ui/return-focus";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -19,11 +20,14 @@ interface ConfirmDialogProps {
 
 /** Modal confirmation for destructive or irreversible actions (delete, mark sold). */
 export function ConfirmDialog({ open, onOpenChange, title, body, cancelLabel, confirmLabel, tone = "danger", loading, onConfirm }: ConfirmDialogProps) {
+  // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
+  const returnFocusOnClose = useReturnFocus(open);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bab-950/50 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
+          onCloseAutoFocus={returnFocusOnClose}
           className={cn(
             "fixed inset-x-4 bottom-4 z-50 flex flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-xl shadow-bab-950/20 outline-none",
             "sm:inset-x-auto sm:start-1/2 sm:top-1/2 sm:bottom-auto sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 rtl:sm:translate-x-1/2",

@@ -42,3 +42,13 @@ export function afterSignInTarget(next: string | string[] | null | undefined): N
   const safe = safeNextPath(Array.isArray(next) ? next[0] : next);
   return safe ? splitNextPath(safe) : { locale: null, pathname: DEFAULT_AFTER_SIGN_IN };
 }
+
+/**
+ * The target in the member's own language (audit Z1-12): a `next` without a locale prefix, on a
+ * device whose page is in another language than the account's preference (a new device lands in
+ * French), goes to the preferred locale. A prefixed `next` was chosen on purpose and wins.
+ */
+export function inPreferredLocale(target: NextTarget, preferred: string | null | undefined, current: string): NextTarget {
+  if (target.locale !== null || !preferred || preferred === current || !(LOCALES as readonly string[]).includes(preferred)) return target;
+  return { ...target, locale: preferred as Locale };
+}

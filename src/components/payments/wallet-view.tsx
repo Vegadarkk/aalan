@@ -186,7 +186,8 @@ export function WalletView() {
               {t("available")}
             </h2>
             <p className={cn("text-5xl font-semibold tracking-tight tabular-nums", wallet.frozen && "text-foreground-muted")}>{t("amount", { count: available })}</p>
-            <p className="text-sm text-foreground-muted">{t("unit")}</p>
+            {/* A shop pays HT (the Pro self-assesses Moroccan VAT); a person pays TTC. */}
+            <p className="text-sm text-foreground-muted">{data.account === "shop" ? t("unitShop") : t("unit")}</p>
           </div>
           {data.salesOpen ? (
             <Button asChild variant="structure" className="w-full sm:w-auto">

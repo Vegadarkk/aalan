@@ -332,7 +332,9 @@ describe("FiltersSheet", () => {
   it("renders its trigger with the number of active filters", () => {
     const html = render(<FiltersSheet params={url("categorie=vehicules&photo=1")} facets={{ categories: {}, subcategories: {} }} />);
     expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('aria-label="Filtres, 2 actifs"');
+    expect(html).toContain('aria-label="Filtres 2, filtres actifs"');
+    // The visible digit is in the accessible name in every language (WCAG 2.5.3), Arabic dual/singular forms included.
+    expect(render(<FiltersSheet params={url("photo=1")} />, "ar")).toContain('aria-label="التصفية 1،');
     expect(text(render(<FiltersSheet params={{}} />, "ar"))).toContain(ar.SearchFilters.open);
   });
 
@@ -373,7 +375,12 @@ describe("CriteriaFilters", () => {
     expect(html).toContain(">km</span>");
     expect(html).toContain('role="switch"');
     expect(text(html)).toContain(fr.Criteria["first-hand"].label);
-    expect(html).not.toContain(fr.Criteria.model.label);
+    // The model filter asks for a brand first, then lists that brand's catalogue models (audit lot 7).
+    expect(text(html)).toContain(fr.SearchFilters.modelPickBrand);
+    const renault = render(<CriteriaFilters categoryId="vehicules" subcategoryId="voitures" value={url("sous-categorie=voitures&f-car-brand=renault&f-car-model=renault-clio").criteria} onChange={() => undefined} />);
+    expect(renault).toMatch(/<input type="checkbox"[^>]* name="car-model-renault-clio" checked=""/);
+    expect(renault).toContain("Mégane");
+    expect(renault).not.toContain("Logan");
     expect(render(<CriteriaFilters categoryId="divers" subcategoryId="autres" value={undefined} onChange={() => undefined} />)).toBe("");
   });
 });

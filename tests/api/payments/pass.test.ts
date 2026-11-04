@@ -9,7 +9,8 @@ import type * as QuotaModule from "@/lib/quota";
 // offers it, its Stripe Checkout (payment mode, invoice, sales gate, never over a subscription or the
 // free launch offer, never beyond maxAheadDays), the webhook that applies a paid session once
 // (lifecycle, end, plan credits) and extends a running pass, a subscription taken during a pass
-// (trial until its end), and the nightly end (notices, downgrade, listings paused).
+// (trial until its end for the pass's own plan, billed at once for another), a refund or a dispute
+// of the pass payment, and the nightly end (notices, downgrade, listings paused).
 
 const flags = vi.hoisted(() => ({ salesEnabled: true, proSignupEnabled: true, paymentInstallmentsEnabled: false }));
 const offer = vi.hoisted(() => ({ endsAt: null as string | null }));
@@ -17,6 +18,8 @@ const stripe = vi.hoisted(() => ({
   calls: [] as { method: string; path: string; params: Record<string, unknown>; idempotencyKey?: string }[],
   /** Checkout Sessions read back by id (the webhook re-reads a pass session). */
   sessions: {} as Record<string, Record<string, unknown>>,
+  /** Charges, disputes and PaymentIntents read back by path (a refund or a dispute of a pass). */
+  objects: {} as Record<string, Record<string, unknown>>,
 }));
 
 vi.mock("@/lib/config/runtime", async (importOriginal) => {
@@ -47,6 +50,7 @@ vi.mock("@/lib/payments/stripe-api", async (importOriginal) => ({
     if (path === "/v1/checkout/sessions") return { id: `cs_test_${stripe.calls.length}`, url: `https://checkout.stripe.com/c/pay/cs_test_${stripe.calls.length}` };
     if (path.endsWith("/expire")) return { status: "expired" };
     if (path.startsWith("/v1/checkout/sessions/")) return stripe.sessions[decodeURIComponent(path.split("/").pop()!)] ?? { status: "open" };
+    if (path in stripe.objects) return stripe.objects[path];
     throw new Error(`unexpected Stripe call ${method} ${path}`);
   }),
 }));
@@ -99,6 +103,7 @@ beforeEach(() => {
   offer.endsAt = new Date(Date.now() - DAY_MS).toISOString();
   stripe.calls = [];
   stripe.sessions = {};
+  stripe.objects = {};
   vi.mocked(alert).mockClear();
   vi.mocked(sendMail).mockClear();
 });
@@ -321,6 +326,63 @@ describe("pass webhook", () => {
     expect((await api(checkout, "POST", "/api/billing/checkout", { member: owner, body: { plan: "essentiel", interval: "monthly", acceptTerms: true, locale: "fr" } })).status).toBe(200);
     const session = stripe.calls.find((call) => call.path === "/v1/checkout/sessions")!;
     expect(session.params).toMatchObject({ mode: "subscription", subscription_data: { trial_end: Math.floor(end.getTime() / 1000) } });
+
+    // Another plan: billed at once, the pass did not pay for it.
+    stripe.calls = [];
+    expect((await api(checkout, "POST", "/api/billing/checkout", { member: owner, body: { plan: "business", interval: "monthly", acceptTerms: true, locale: "fr" } })).status).toBe(200);
+    const other = stripe.calls.find((call) => call.path === "/v1/checkout/sessions")!;
+    expect(other.params.subscription_data).not.toHaveProperty("trial_end");
+  });
+});
+
+describe("pass refund and dispute", () => {
+  /** The pass payment's charge, dispute and PaymentIntent as Stripe answers them. */
+  async function charged(proId: string, sessionId: string, refundedMinor: number) {
+    const account = await getBillingAccount(`pro_${proId}`);
+    const intent = `pi_${sessionId.replace(/[^A-Za-z0-9]/g, "")}`;
+    const charge = `ch_${sessionId.replace(/[^A-Za-z0-9]/g, "")}`;
+    stripe.objects[`/v1/charges/${charge}`] = { id: charge, object: "charge", payment_intent: intent, amount: 29_900, amount_refunded: refundedMinor, currency: "mad" };
+    stripe.objects[`/v1/disputes/dp_${charge}`] = { id: `dp_${charge}`, object: "dispute", charge, payment_intent: intent, amount: 29_900, currency: "mad" };
+    stripe.objects[`/v1/payment_intents/${intent}`] = { id: intent, customer: account!.stripeCustomerId, metadata: stripe.sessions[sessionId]!.metadata };
+    return { charge, intent, customer: account!.stripeCustomerId };
+  }
+
+  it("ends the pass at once on a full refund, credits included, and alerts staff", async () => {
+    const owner = await member();
+    const listing = await published(owner);
+    const proId = await shop(owner);
+    expect((await buyPass(owner)).status).toBe(200);
+    const session = await pay(proId);
+    expect((await getProProfile(proId))?.planSource).toBe("pass");
+    const { charge, intent, customer } = await charged(proId, session, 29_900);
+
+    expect((await stripeDeliver("charge.refunded", { id: charge, object: "charge", customer, payment_intent: intent, metadata: {} })).status).toBe(200);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "downgraded", plan: "none", planSource: "none", quotas: DEFAULT_PRICING.pro.none });
+    expect(await getWallet(`pro_${proId}`)).toMatchObject({ planCredits: 0 });
+    expect((await ledgerRef(`pro_${proId}`, `pass_refund_${intent}`).get()).exists).toBe(true);
+    expect((await getListing(listing))?.status).toBe("paused");
+    expect(alert).toHaveBeenCalledWith(expect.objectContaining({ severity: "P1", title: expect.stringContaining("Pass Boutique remboursé") }));
+
+    // The same refund seen again changes nothing and says nothing more.
+    vi.mocked(alert).mockClear();
+    await stripeDeliver("charge.refunded", { id: charge, object: "charge", customer, payment_intent: intent, metadata: {} });
+    expect(alert).not.toHaveBeenCalled();
+    expect((await getProProfile(proId))?.lifecycle).toBe("downgraded");
+  });
+
+  it("only alerts staff on a partial refund or a dispute", async () => {
+    const owner = await member();
+    const proId = await shop(owner);
+    expect((await buyPass(owner)).status).toBe(200);
+    const session = await pay(proId);
+    const { charge, intent, customer } = await charged(proId, session, 9_900);
+
+    await stripeDeliver("charge.refunded", { id: charge, object: "charge", customer, payment_intent: intent });
+    expect(alert).toHaveBeenLastCalledWith(expect.objectContaining({ severity: "P1", title: expect.stringContaining("Remboursement partiel") }));
+    await stripeDeliver("charge.dispute.created", { id: `dp_${charge}`, object: "dispute", charge, payment_intent: intent, amount: 29_900 });
+    expect(alert).toHaveBeenLastCalledWith(expect.objectContaining({ severity: "P1", title: expect.stringContaining("Litige sur un Pass Boutique") }));
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", planSource: "pass" });
+    expect(await getWallet(`pro_${proId}`)).toMatchObject({ planCredits: 30 });
   });
 });
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { publisherIdentity, vatMention, type LegalConfig } from "@/config/legal";
-import { launchOfferOpen, PAID_PLANS, type PricingConfig } from "@/config/pricing";
+import { launchOfferOpen, PAID_PLANS, type PaidPlanId, type PricingConfig } from "@/config/pricing";
 import type { Locale } from "@/config/site";
 import type { AuthContext } from "@/lib/auth/guards";
 import { PASS_CONSENT_VERSION, PLAN_CONSENT_VERSION, type BillingRedirectResponse, type CheckoutPlanInput, type PassOffer, type PlanOffer, type SubscriptionResponse } from "@/lib/contracts/payments";
@@ -11,6 +11,7 @@ import type { BillingAccountDoc } from "@/lib/db/schemas";
 import { getFlags, getPricing } from "@/lib/config/runtime";
 import { serverEnv } from "@/lib/env";
 import { db } from "@/lib/firebase/admin";
+import { getClaims } from "@/lib/firebase/claims";
 import { HttpError, notFound, unavailable } from "@/lib/http/errors";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
@@ -170,6 +171,18 @@ async function closeSession(sessionId: string): Promise<void> {
   if ((await expireOpenSession(sessionId)) === "complete") throw new HttpError(409, "already_subscribed");
 }
 
+/**
+ * Trial end (Unix seconds) of a plan taken during a Pass Boutique: the pass's own plan starts paying
+ * when the pass ends (the days already paid run as a trial; Stripe asks for a trial end at least
+ * 48 hours ahead, a pass ending sooner is not carried). Another plan is billed at once: the pass did
+ * not pay for it.
+ */
+export function passTrialEnd(profile: Pick<ProProfileRecord, "plan" | "planSource" | "passEndsAt">, plan: PaidPlanId, now: Date): number | undefined {
+  const passEnd = runningPassEnd(profile, now);
+  if (!passEnd || profile.plan !== plan || passEnd.getTime() - now.getTime() < TRIAL_MIN_MS) return undefined;
+  return Math.floor(passEnd.getTime() / 1_000);
+}
+
 /** Opens the Stripe Checkout of a plan for the owner's shop. */
 export async function startPlanCheckout(auth: AuthContext, input: CheckoutPlanInput, locale: Locale, now = new Date()): Promise<BillingRedirectResponse> {
   const [flags, pricing] = await Promise.all([getFlags(), getPricing()]);
@@ -185,10 +198,7 @@ export async function startPlanCheckout(auth: AuthContext, input: CheckoutPlanIn
   if (current && current.status !== "expired") throw new HttpError(409, "already_subscribed");
   // The same plan asked again the same day, from the same page, reopens the same session (Stripe
   // keeps an idempotent answer 24 hours); any other parameters make another key.
-  // A shop on a Pass Boutique starts paying when its pass ends: the days already paid run as a
-  // trial (Stripe asks for a trial end at least 48 hours ahead; a pass ending sooner is not carried).
-  const passEnd = runningPassEnd(profile, now);
-  const trialEnd = passEnd && passEnd.getTime() - now.getTime() >= TRIAL_MIN_MS ? Math.floor(passEnd.getTime() / 1_000) : undefined;
+  const trialEnd = passTrialEnd(profile, input.plan, now);
   const idempotencyKey = `checkout_${accountId}_${input.plan}_${input.interval}_${locale}_${price}_${now.toISOString().slice(0, 10)}${trialEnd ? `_t${trialEnd}` : ""}`;
   const previous = existing?.lastPlanCheckout;
   if (previous?.sessionId && previous.idempotencyKey !== idempotencyKey && now.getTime() - previous.at.getTime() < SESSION_LIFETIME_MS) await closeSession(previous.sessionId);
@@ -238,6 +248,22 @@ export async function startPlanCheckout(auth: AuthContext, input: CheckoutPlanIn
   }
   logger.info({ accountId, plan: input.plan, interval: input.interval }, "plan checkout opened");
   return { url: session.url };
+}
+
+/**
+ * A suspended or banned owner's shop (audit P-7): its plan and pass Checkout pages still payable
+ * are expired, so no payment lands on a shop staff just closed. Answers how many were open.
+ */
+export async function expireShopCheckouts(ownerUid: string, now = new Date()): Promise<number> {
+  if (!isStripeConfigured()) return 0;
+  const { proId, proRole } = await getClaims(ownerUid);
+  if (!proId || proRole !== "owner") return 0;
+  const account = await getBillingAccount(`pro_${proId}`);
+  const pages = [account?.lastPlanCheckout, account?.lastPassCheckout].filter((page) => page?.sessionId && now.getTime() - page.at.getTime() < SESSION_LIFETIME_MS);
+  let expired = 0;
+  for (const page of pages) if ((await expireOpenSession(page!.sessionId!)) === "open") expired += 1;
+  if (expired > 0) logger.info({ proId, expired }, "checkout pages of a suspended shop expired");
+  return expired;
 }
 
 /** Opens the Stripe Customer Portal of the owner's shop. */

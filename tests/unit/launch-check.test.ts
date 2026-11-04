@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { checkConfig, checkHeaders, checkHealth, checkLegal, checkObservatory, checkRecords, drillRecorded, MANUAL_ITEMS, parseLaunchCli, type LegalState } from "../../scripts/launch-check.ts";
+import { checkAdsTxt, checkConfig, checkHeaders, checkHealth, checkIndexing, checkLegal, checkObservatory, checkRecords, checkRifIndexing, checkRobotsTxt, drillRecorded, headLinks, MANUAL_ITEMS, parseLaunchCli, type LegalState } from "../../scripts/launch-check.ts";
 
 // scripts/launch-check.ts (D21): what each public answer must say before the site opens.
 
@@ -10,12 +10,12 @@ const SITE = "https://joutiya.ma";
 describe("parseLaunchCli", () => {
   it("defaults to the production site with ads off", () => {
     const now = new Date("2026-12-01T23:30:00Z");
-    expect(parseLaunchCli([], now)).toEqual({ tag: null, site: SITE, ads: "off", opening: "2026-12-01" });
-    expect(parseLaunchCli(["--tag=v1.0.0", "--site=https://staging.joutiya.ma", "--ads=test", "--opening=2026-12-03"], now)).toEqual({ tag: "v1.0.0", site: "https://staging.joutiya.ma", ads: "test", opening: "2026-12-03" });
+    expect(parseLaunchCli([], now)).toEqual({ tag: null, site: SITE, ads: "off", rif: "noindex", opening: "2026-12-01" });
+    expect(parseLaunchCli(["--tag=v1.0.0", "--site=https://staging.joutiya.ma", "--ads=test", "--rif=indexable", "--opening=2026-12-03"], now)).toEqual({ tag: "v1.0.0", site: "https://staging.joutiya.ma", ads: "test", rif: "indexable", opening: "2026-12-03" });
   });
 
   it("refuses anything else", () => {
-    for (const arg of ["--tag=1.0.0", "--site=http://joutiya.ma", "--site=https://joutiya.ma/fr", "--ads=on", "--apply", "--opening=2026-13-45", "--opening=1er décembre"]) expect(() => parseLaunchCli([arg])).toThrow(/not understood/);
+    for (const arg of ["--tag=1.0.0", "--site=http://joutiya.ma", "--site=https://joutiya.ma/fr", "--ads=on", "--rif=on", "--apply", "--opening=2026-13-45", "--opening=1er décembre"]) expect(() => parseLaunchCli([arg])).toThrow(/not understood/);
   });
 });
 
@@ -52,6 +52,49 @@ describe("checkHeaders", () => {
     expect(checkHeaders(200, new Headers({ "content-security-policy": "default-src 'self'", "strict-transport-security": "max-age=63072000" }))).toMatchObject({ ok: true });
     expect(checkHeaders(200, new Headers({ "content-security-policy-report-only": "default-src 'self'", "strict-transport-security": "max-age=1" })).detail).toBe("CSP in report-only");
     expect(checkHeaders(302, new Headers()).detail).toBe("HTTP 302; no CSP; no HSTS");
+  });
+});
+
+describe("search engine checks", () => {
+  const robots = ["User-Agent: *", "Allow: /", "Disallow: /api/", "Disallow: /fr/recherche", "", "User-Agent: Mediapartners-Google", "Allow: /", "Disallow: /api/", "", `Sitemap: ${SITE}/sitemap.xml`, ""].join("\n");
+  const home = (canonical: string, extra = "") =>
+    `<!DOCTYPE html><html><head><link rel="canonical" href="${canonical}/fr"/><link rel="alternate" hrefLang="fr-MA" href="${canonical}/fr"/><link rel="alternate" hrefLang="ar-MA" href="${canonical}/ar"/><link rel="alternate" hrefLang="x-default" href="${canonical}/fr"/>${extra}</head><body><link rel="canonical" href="https://elsewhere.example/x"/></body></html>`;
+
+  it("robots.txt: open, API closed, sitemap of the site", () => {
+    expect(checkRobotsTxt(200, robots, SITE)).toMatchObject({ ok: true });
+    expect(checkRobotsTxt(200, "User-Agent: *\nDisallow: /\n", SITE).detail).toMatch(/Disallow: \/ \(crawling closed/);
+    expect(checkRobotsTxt(200, robots, "https://aalan.ma").detail).toBe("no Sitemap: https://aalan.ma/sitemap.xml");
+    expect(checkRobotsTxt(404, "", SITE)).toMatchObject({ ok: false });
+  });
+
+  it("ads.txt follows the ads mode", () => {
+    expect(checkAdsTxt(404, "Not found\n", "off")).toMatchObject({ ok: true });
+    expect(checkAdsTxt(200, "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n", "off")).toMatchObject({ ok: false });
+    expect(checkAdsTxt(200, "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n", "live")).toMatchObject({ ok: true });
+    expect(checkAdsTxt(404, "", "test")).toMatchObject({ ok: false });
+  });
+
+  it("reads the head links whatever the attribute order and case", () => {
+    expect(headLinks(`<head><link href="/a" REL="Canonical"><link hreflang='ar-MA' rel='alternate' href='/ar'></head><link rel="canonical" href="/body">`)).toEqual([
+      { rel: "canonical", href: "/a", hreflang: null },
+      { rel: "alternate", href: "/ar", hreflang: "ar-MA" },
+    ]);
+  });
+
+  it("/fr: indexable, canonical and the fr/ar cluster on the site, no Tarifit", () => {
+    expect(checkIndexing(200, new Headers(), home(SITE), SITE)).toMatchObject({ ok: true });
+    expect(checkIndexing(200, new Headers(), home(SITE), "https://aalan.ma").detail).toMatch(/canonical https:\/\/joutiya\.ma\/fr \(expected https:\/\/aalan\.ma\/fr/);
+    expect(checkIndexing(200, new Headers({ "x-robots-tag": "noindex, nofollow" }), home(SITE), SITE).detail).toBe("X-Robots-Tag noindex, nofollow");
+    expect(checkIndexing(200, new Headers(), home(SITE, '<meta name="robots" content="noindex"/>'), SITE).detail).toBe("meta robots noindex");
+    expect(checkIndexing(200, new Headers(), home(SITE, `<link rel="alternate" hrefLang="rif-Latn" href="${SITE}/rif"/>`), SITE).detail).toBe("Tarifit in the hreflang cluster");
+  });
+
+  it("/rif: noindex until its review, indexable after", () => {
+    const noindex = new Headers({ "x-robots-tag": "noindex, follow" });
+    expect(checkRifIndexing(200, noindex, "noindex")).toMatchObject({ ok: true });
+    expect(checkRifIndexing(200, new Headers(), "noindex")).toMatchObject({ ok: false });
+    expect(checkRifIndexing(200, new Headers(), "indexable")).toMatchObject({ ok: true });
+    expect(checkRifIndexing(200, noindex, "indexable")).toMatchObject({ ok: false });
   });
 });
 

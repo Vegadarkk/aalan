@@ -47,14 +47,16 @@ export default async function UnsubscribePage({ params, searchParams }: { params
     <Container className="max-w-xl py-12 lg:py-16">
       <section className="flex flex-col items-center gap-5 rounded-lg border border-border bg-surface px-6 py-10 text-center shadow-sm shadow-bab-950/5 sm:px-10" data-testid="unsubscribe-page" data-kind={link.kind}>
         <DoorMark className="w-16" />
-        <h1 className="text-2xl font-semibold text-balance">{title}</h1>
-        <p className="max-w-prose text-foreground-muted text-pretty">{body}</p>
         {canConfirm && token ? (
-          <UnsubscribeConfirm token={token} scope={link.kind === "all" ? "all" : "one"} />
+          <UnsubscribeConfirm token={token} scope={link.kind === "all" ? "all" : "one"} title={title} body={body} />
         ) : (
-          <Button asChild variant="outline">
-            <Link href="/recherches">{t("manage")}</Link>
-          </Button>
+          <>
+            <h1 className="text-2xl font-semibold text-balance">{title}</h1>
+            <p className="max-w-prose text-foreground-muted text-pretty">{body}</p>
+            <Button asChild variant="outline">
+              <Link href="/recherches">{t("manage")}</Link>
+            </Button>
+          </>
         )}
       </section>
     </Container>

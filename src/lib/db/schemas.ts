@@ -21,6 +21,7 @@ import { PRICE_LOG_MAX, PROMO_KINDS, listingVariantsSchema, sectionIdSchema, sto
 import { MAX_UPLOAD_BYTES, PHOTO_VARIANTS, UPLOAD_DOC_DECLARED_TYPES, UPLOAD_REJECT_REASONS, UPLOAD_STATUSES, listingPhotoSchema, uploadIdSchema } from "@/lib/contracts/media";
 import { ROLES } from "@/lib/firebase/claims";
 import { DAY_PATTERN, RENTAL_PERIODS_MAX } from "@/lib/listings/rental-availability";
+import { PHOTO_KEY_BANDS, PHOTO_KEY_PATTERN } from "@/lib/media/near-duplicate";
 import { SAVED_SEARCH_ALERTS, SAVED_SEARCH_NAME_MAX } from "@/lib/contracts/search";
 import { storedSearchParamsSchema } from "@/lib/search/params";
 import { MESSAGE_RISK_FLAGS, MESSAGE_TEXT_MAX } from "@/lib/contracts/messaging";
@@ -163,6 +164,8 @@ export const userPrivateSchema = z
     closedAt: ts.optional(),
     purgeAt: ts.optional(),
     identityPurgeAt: ts.optional(),
+    /** Change of address waiting for the link sent to `newEmail` (Z1-10); removed once confirmed or cancelled. */
+    emailChange: z.object({ newEmail: z.string().email().max(254), requestedAt: ts, expiresAt: ts }).strict().optional(),
   })
   .strict();
 export type UserPrivateDoc = z.infer<typeof userPrivateSchema>;
@@ -279,6 +282,8 @@ export const moderationSchema = z
     /** Hidden by a report's strong signal (D11) or by a staff `restrict_visibility` decision (D13, `signal: "decision"`, reportId = the decision id when no report). */
     hiddenBy: z.object({ reportId: z.string().min(1).max(128), signal: z.enum(["trusted", "multi", "auto", "authority", "decision"]), at: ts }).strict().optional(),
     lastDecisionId: z.string().max(128).optional(),
+    /** contentFingerprint of the listing when the last automated hold was written (src/lib/listings/screening.ts). */
+    heldContent: z.string().regex(/^[0-9a-f]{64}$/).optional(),
     reviewedBy: z.string().max(128).optional(),
     reviewedAt: ts.optional(),
     ai: z
@@ -361,6 +366,11 @@ export const listingSchema = z
     location: listingLocationSchema.optional(),
     /** Order = display order; <= quotas.photosPerListing. */
     photos: z.array(listingPhotoSchema).max(50),
+    /**
+     * Band keys of the photos' dHash (src/lib/media/near-duplicate.ts), written by the repository with
+     * every `photos` write: the cross-account "photo d'un autre compte" lookup (array-contains-any).
+     */
+    photoKeys: z.array(z.string().regex(PHOTO_KEY_PATTERN)).max(50 * PHOTO_KEY_BANDS).optional(),
     /** Pro catalogue (lot 4, catalogue-boutique.md §2-3): variants, or the declared stock without them. */
     variants: listingVariantsSchema.optional(),
     stock: stockSchema.optional(),

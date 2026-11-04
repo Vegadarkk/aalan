@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/auth/client";
 import type { ConversationView, MessagingEvent } from "@/lib/contracts/messaging";
 import { fetchConversation, fetchInbox } from "@/lib/messaging/client";
-import type { LiveSnapshot } from "@/lib/messaging/live";
+import { messagingLive, type LiveSnapshot } from "@/lib/messaging/live";
 import { firstPage, removeRow, withFreshHead, withPage, withRow, type InboxState } from "./inbox-state";
 import { useMessagingStream } from "./use-live";
 
@@ -18,6 +18,8 @@ export interface MessagesContextValue {
   live: LiveSnapshot;
   loadMore: () => void;
   retry: () => void;
+  /** "Actualiser" while live updates wait: the list now, and the stream tries again (audit zone 5 n°7). */
+  refreshLive: () => void;
   /** A fresher version of a row (the open thread's own reads and actions). */
   putRow: (row: ConversationView) => void;
   dropRow: (cid: string) => void;
@@ -144,11 +146,15 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     [refreshRow, reloadHead],
   );
   const live = useMessagingStream(onEvent);
+  const refreshLive = useCallback(() => {
+    reloadHead();
+    messagingLive().retry();
+  }, [reloadHead]);
 
   const value = useMemo<MessagesContextValue>(
     // A view switch shows its skeleton until its first page arrives.
-    () => ({ archived, inbox: inbox.archived === archived ? inbox : { kind: "loading", archived }, live, loadMore, retry, putRow, dropRow }),
-    [archived, inbox, live, loadMore, retry, putRow, dropRow],
+    () => ({ archived, inbox: inbox.archived === archived ? inbox : { kind: "loading", archived }, live, loadMore, retry, refreshLive, putRow, dropRow }),
+    [archived, inbox, live, loadMore, retry, refreshLive, putRow, dropRow],
   );
   return <MessagesContext.Provider value={value}>{children}</MessagesContext.Provider>;
 }

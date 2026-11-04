@@ -210,7 +210,7 @@ describe("category landing page", () => {
     expect(await generateMetadata(params("vehicules", ["bateaux", "tanger"]))).toEqual({});
   });
 
-  it("keeps an empty category page at 200, noindex, with a way forward", async () => {
+  it("keeps an empty category page at 200, indexable (owner, 4 Nov 2026), with a way forward", async () => {
     const html = await render("animaux");
     expect(html).toMatch(/<h1[^>]*>Animaux au Maroc<\/h1>/);
     expect(html).toContain(fr.Seo.emptyTitle.replace("'", "&#x27;"));
@@ -218,7 +218,7 @@ describe("category landing page", () => {
     expect(html).not.toContain("results-grid");
     expect(html).not.toContain("/recherche");
     const metadata = await generateMetadata(params("animaux"));
-    expect(metadata.robots).toEqual({ index: false, follow: true });
+    expect(metadata.robots).toBeUndefined();
     expect(metadata.description).toBe("Animaux au Maroc : achetez et vendez entre particuliers et professionnels sur Aalan. Déposez votre annonce gratuitement.");
   });
 

@@ -65,6 +65,8 @@ describe("Gallery", () => {
     const html = render();
     expect(html).toContain('data-testid="gallery-counter"');
     expect(html).toMatch(/data-testid="gallery-counter"[^>]*>1 \/ 3</);
+    // Left to right in every locale: "1 / 3", never "3 / 1" in Arabic (zone 3 audit P3-7).
+    expect(html).toMatch(/dir="ltr" data-testid="gallery-counter"/);
     expect(html).toContain(`aria-label="${fr.ListingPage.gallery.previous}"`);
     expect(html).toContain(`aria-label="${fr.ListingPage.gallery.next}"`);
     expect(html).toContain(`aria-label="${fr.ListingPage.gallery.thumbnails}"`);

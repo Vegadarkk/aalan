@@ -34,7 +34,13 @@
     "procedures": "Démarches administratives",
     "visitorMenu": "Menu",
     "floating": "Raccourcis",
-    "signUp": "Créer un compte"
+    "signUp": "Créer un compte",
+    "suggestions": {
+      "label": "Suggestions de recherche",
+      "recent": "Recherches récentes",
+      "clearRecent": "Effacer",
+      "in": "dans {place}"
+    }
   },
   "Locale": {
     "label": "Langue",
@@ -336,6 +342,7 @@
     "helpCardCta": "Voir les démarches"
   },
   "NotFound": {
+    "metaTitle": "Page introuvable",
     "title": "Cette page n'existe pas",
     "body": "Le lien est peut-être incomplet, ou l'annonce a été retirée.",
     "back": "Revenir à l'accueil",
@@ -1002,7 +1009,14 @@
         "unavailable": "Cette photo ne peut pas être recadrée ici. Retirez-la et ajoutez une version sans visage.",
         "failed": "Le recadrage a échoué. Réessayez, ou retirez la photo.",
         "cancel": "Annuler",
-        "confirm": "Recadrer"
+        "confirm": "Recadrer",
+        "editTitle": "Recadrer ou pivoter la photo {index}",
+        "editDescription": "Redressez la photo d'un quart de tour et resserrez le cadre sur l'objet. La photo modifiée remplace l'originale.",
+        "rotateLabel": "Pivoter la photo",
+        "rotateLeft": "Pivoter à gauche",
+        "rotateRight": "Pivoter à droite",
+        "reset": "Rétablir",
+        "editConfirm": "Enregistrer"
       },
       "ignored": {
         "title": "Des fichiers n'ont pas été ajoutés",
@@ -1012,7 +1026,8 @@
         "rejected": "« {name} » : {reason}",
         "overflow": "{max} photos maximum : {count, plural, one {# fichier n'a pas été ajouté} other {# fichiers n'ont pas été ajoutés}}.",
         "dismiss": "J'ai compris"
-      }
+      },
+      "edit": "Recadrer ou pivoter la photo {index}"
     },
     "review": {
       "title": "Vérifiez votre annonce",
@@ -2910,7 +2925,8 @@
       "resumeOf": "Remettre en ligne « {title} »",
       "renewOf": "Renouveler pour 60 jours « {title} »",
       "promote": "Mettre en avant",
-      "promoteOf": "Mettre en avant « {title} »"
+      "promoteOf": "Mettre en avant « {title} »",
+      "duplicate": "Dupliquer"
     },
     "confirm": {
       "deleteTitle": "Supprimer cette annonce ?",
@@ -2927,7 +2943,8 @@
       "sold": "Annonce marquée comme vendue",
       "renewed": "Annonce renouvelée pour 60 jours",
       "deleted": "Annonce supprimée",
-      "renewHeld": "Renouvellement envoyé en vérification : votre annonce sera remise en ligne après validation"
+      "renewHeld": "Renouvellement envoyé en vérification : votre annonce sera remise en ligne après validation",
+      "duplicated": "Copie créée en brouillon : ajoutez ses photos"
     },
     "pending": {
       "title": "En cours de vérification",
@@ -3066,6 +3083,17 @@
       "removed": "Annonce retirée de la sélection.",
       "full": "Sélection complète ({max, number} annonces)",
       "position": "Sélection de la boutique, {index, number} sur {max, number}"
+    },
+    "find": {
+      "label": "Rechercher dans mes annonces",
+      "placeholder": "Titre ou ville",
+      "clear": "Effacer la recherche",
+      "category": "Catégorie",
+      "allCategories": "Toutes les catégories",
+      "count": "{shown, plural, one {# annonce} other {# annonces}} sur {total}",
+      "emptyTitle": "Aucune annonce ne correspond",
+      "emptyBody": "Essayez d'autres mots ou une autre catégorie.",
+      "reset": "Effacer la recherche"
     }
   },
   "Map": {
@@ -3137,7 +3165,6 @@
     "breadcrumb": "Fil d'Ariane",
     "sellerLabel": "Vendeur et contact",
     "printSource": "Adresse de l'annonce :",
-    "reportLink": "Signaler l'annonce",
     "share": {
       "share": "Partager",
       "copyLink": "Copier le lien",
@@ -3205,6 +3232,21 @@
       "message": "Envoyer un message",
       "messageShort": "Message",
       "messageHint": "Votre message arrive dans la messagerie Aalan du vendeur. Ni votre e-mail ni votre numéro ne lui sont transmis.",
+      "conversation": "Voir la conversation",
+      "conversationShort": "Conversation",
+      "conversationHint": "Vous avez déjà écrit au vendeur : la conversation reprend là où vous l'avez laissée.",
+      "status": {
+        "offerAccepted": "Offre acceptée à {amount}",
+        "offerOpen": "Votre offre de {amount} attend la réponse du vendeur",
+        "offerCountered": "Le vendeur vous propose {amount}",
+        "appointment": {
+          "meeting": "Rendez-vous confirmé : {day} à {time}",
+          "visit": "Visite confirmée : {day} à {time}",
+          "test_drive": "Essai confirmé : {day} à {time}",
+          "pickup": "Remise confirmée : {day} à {time}",
+          "check_in": "Arrivée confirmée : {day} à {time}"
+        }
+      },
       "testDrive": "Demander un essai",
       "testDriveShort": "Essai",
       "testDriveHint": "Écrivez au vendeur, puis proposez-lui vos créneaux dans la conversation.",
@@ -3214,6 +3256,7 @@
       "signIn": "Se connecter",
       "own": "C'est votre annonce. Les acheteurs voient ici les boutons pour vous contacter.",
       "manage": "Gérer mes annonces",
+      "edit": "Modifier l'annonce",
       "errors": {
         "reveal_not_allowed": "Les numéros s'affichent pour les comptes créés depuis plus de 24 heures, avec une adresse e-mail confirmée. Confirmez votre adresse ou réessayez demain.",
         "listing_unavailable": "Cette annonce n'est plus en ligne : son numéro ne s'affiche plus.",
@@ -3415,6 +3458,11 @@
       "feesIncluded": "Inclus dans le prix",
       "feesIncludedAmount": "{amount}, inclus dans le prix",
       "feesNone": "Sans frais pour le client",
+      "feesOnTopRent": "En plus du loyer, à la charge du locataire",
+      "feesOnTopRentAmount": "{amount} en plus du loyer, à la charge du locataire",
+      "feesIncludedRent": "Inclus dans le loyer",
+      "feesIncludedRentAmount": "{amount}, inclus dans le loyer",
+      "feesNoneRent": "Sans frais pour le locataire",
       "offPlan": "Vente sur plan",
       "offPlanYes": "Oui (VEFA)",
       "delivery": "Livraison prévue en {year}",
@@ -3503,7 +3551,6 @@
     "roleBusiness": "Professionnel",
     "pro": "Pro",
     "memberSince": "Membre depuis {date}",
-    "reportLink": "Signaler ce profil",
     "listingsTitle": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
     "emptyTitle": "Aucune annonce en ligne pour le moment",
     "emptyBody": "Les prochaines annonces de {name} apparaîtront ici.",
@@ -4013,7 +4060,13 @@
     "includeSoldOutHint": "Les boutiques laissent en ligne les articles dont le stock est à 0.",
     "promo": "En promotion",
     "modelPickBrand": "Choisissez d'abord une marque.",
-    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche."
+    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche.",
+    "quickCondition": {
+      "label": "État de l'article",
+      "all": "Tout",
+      "new": "Neuf",
+      "used": "Occasion"
+    }
   },
   "Pro": {
     "metaTitle": "Espace Pro",
@@ -4429,7 +4482,11 @@
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
       "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
       "busy": "Vous avez déjà {count} onglets d'Aalan ouverts : fermez-en un pour reprendre le direct de la messagerie.",
-      "refreshLive": "Actualiser"
+      "refreshLive": "Actualiser",
+      "filteredUnreadTitle": "Tout est lu",
+      "filteredTitle": "Aucune conversation pour ce filtre",
+      "filteredBody": "Les conversations chargées ne correspondent pas à ce filtre.",
+      "showAll": "Voir toutes les conversations"
     },
     "row": {
       "you": "Vous :",
@@ -4517,6 +4574,14 @@
       "not_found": "Cette conversation n'est plus disponible.",
       "listing_unavailable": "Cette annonce n'est plus disponible : vous ne pouvez plus écrire à son vendeur.",
       "invalid_body": "Ce message ne peut pas être envoyé tel quel. Vérifiez-le, puis réessayez."
+    },
+    "filters": {
+      "label": "Filtrer les conversations",
+      "unread": "Non lues",
+      "listing": "Annonce des conversations",
+      "allListings": "Toutes les annonces",
+      "listingOption": "{title} ({count})",
+      "untitled": "Annonce sans titre"
     }
   },
   "Appointments": {
@@ -4987,7 +5052,6 @@
     "label": "Boutique professionnelle",
     "verified": "Boutique vérifiée",
     "verifiedNote": "Aalan a vérifié les identifiants professionnels de cette boutique (ICE, registre). Les ventes se font directement entre vous et la boutique : Aalan n'est pas partie à la vente et ne garantit pas les produits. La boutique reste tenue de ses obligations de vendeur professionnel envers les consommateurs (loi n° 31-08 sur la protection du consommateur).",
-    "reportLink": "Signaler la boutique",
     "about": "Présentation",
     "meta": {
       "title": "{name}, boutique à {city}",

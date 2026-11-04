@@ -120,11 +120,22 @@ test.describe("public pages", () => {
     const response = await page.goto("/fr/cette-page-n-existe-pas");
     expect(response?.status()).toBe(404);
     await expect(page.locator("html")).toHaveAttribute("lang", "fr-MA");
+    // The tab says what happened, not the site's default title (audit zone 2, P3-1).
+    await expect(page).toHaveTitle("Page introuvable | Aalan");
     // A dead link is not a dead end: home, then the first four categories.
     await expect(page.getByRole("link", { name: "Revenir à l'accueil" })).toHaveAttribute("href", "/fr");
     const browse = page.getByRole("navigation", { name: "Ou parcourez une catégorie" });
     await expect(browse.getByRole("link")).toHaveCount(4);
     await expect(browse.getByRole("link", { name: "Véhicules" })).toHaveAttribute("href", "/fr/c/vehicules");
+  });
+
+  test("the home page describes the site and its search box in structured data", async ({ page }) => {
+    await page.goto("/ar");
+    const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const graph = blocks.map((text) => JSON.parse(text) as { "@graph"?: { "@type": string; potentialAction?: { target: { urlTemplate: string } } }[] }).find((ld) => ld["@graph"]);
+    const site = graph?.["@graph"]?.find((node) => node["@type"] === "WebSite");
+    expect(site?.potentialAction?.target.urlTemplate).toMatch(/\/ar\/recherche\?q=\{search_term_string\}$/);
+    expect(graph?.["@graph"]?.some((node) => node["@type"] === "Organization")).toBe(true);
   });
 
   test("the back office does not exist on the public host", async ({ request }) => {

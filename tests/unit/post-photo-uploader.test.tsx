@@ -90,6 +90,9 @@ describe("PhotoUploader faces", () => {
     expect(html.match(/data-testid="photo-face"/g)).toHaveLength(1);
     expect(html).toContain('aria-label="Recadrer la photo 2"');
     expect(html).not.toContain('aria-label="Recadrer la photo 1"');
+    // Every ready photo can be cropped or turned (audit §7).
+    expect(html).toContain('aria-label="Recadrer ou pivoter la photo 1"');
+    expect(html.match(/data-testid="photo-edit"/g)).toHaveLength(2);
   });
 
   it("says nothing without faces, and offers no crop without a handler", () => {

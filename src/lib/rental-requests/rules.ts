@@ -13,6 +13,15 @@ export type RentalRequestEvent = (typeof RENTAL_REQUEST_EVENTS)[number];
 
 export const RENTAL_PICKUP_MAX = 120;
 
+/** A stay's travellers (audit L4-11): the host compares them with the home's capacity. */
+export const RENTAL_GUESTS_MAX = 30;
+
+/**
+ * Earlier requests a conversation keeps beside its current one (audit L4-04): a new request no
+ * longer wipes out an accepted rental; each keeps its dates and its answer.
+ */
+export const RENTAL_HISTORY_MAX = 8;
+
 /** Stored text of a request system message: the UI renders it localized (inbox preview too). */
 export const rentalRequestMarker = (event: RentalRequestEvent) => `⟦location:${event}⟧`;
 const MARKER = /^⟦location:([a-z_]+)⟧$/;

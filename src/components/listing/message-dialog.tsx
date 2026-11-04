@@ -11,7 +11,7 @@ import { Textarea } from "@/components/post/controls/textarea";
 import { RentalDatesFields, completeDates } from "@/components/rental/rental-dates-fields";
 import { formatRentalDay, fragmentDates } from "@/components/rental/rental-day";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, inputClassName } from "@/components/ui/input";
 import { AmountField, amountProblem } from "@/components/offers/amount-field";
 import { offerErrorKey } from "@/components/offers/error-keys";
 import { OfferNotice } from "@/components/offers/offer-notice";
@@ -25,7 +25,7 @@ import { formatPrice, parsePriceInput } from "@/lib/listings/client/format";
 import { moroccoToday, rentalDuration } from "@/lib/listings/rental-availability";
 import { startConversation, startShopConversation } from "@/lib/messaging/client";
 import type { OfferProblem } from "@/lib/offers/rules";
-import { RENTAL_PICKUP_MAX, rentalRequestProblem } from "@/lib/rental-requests/rules";
+import { RENTAL_GUESTS_MAX, RENTAL_PICKUP_MAX, rentalRequestProblem } from "@/lib/rental-requests/rules";
 import type { RentalDates } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
 
@@ -103,7 +103,7 @@ export interface MessageDialogProps {
 }
 
 /** Texts of a stay (ListingPage.contact.compose.home), the car rental's otherwise. */
-type RentalComposeKey = "rentalTitle" | "rentalTitleFallback" | "rentalDates" | "rentalPickup" | "rentalPickupPlaceholder" | "rentalDraft" | "rentalDraftPickup" | "rentalDatesMissing" | "rentalSafety";
+type RentalComposeKey = "rentalPlaceholder" | "rentalTitle" | "rentalTitleFallback" | "rentalDates" | "rentalPickup" | "rentalPickupPlaceholder" | "rentalDraft" | "rentalDraftPickup" | "rentalDatesMissing" | "rentalSafety";
 
 export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sellerName, adultsOnly = false, intent = "message", rentalUnit = "day", onSignedOut, initialText, threadQuery, offerPrice, shop = false }: MessageDialogProps) {
   const t = useTranslations("ListingPage.contact.compose");
@@ -123,13 +123,17 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
   const [amountShown, setAmountShown] = useState<OfferProblem | "empty" | null>(null);
   const [dates, setDates] = useState<Partial<RentalDates>>(() => (rental && typeof window !== "undefined" ? requestedDates(window.location.hash, moroccoToday(Date.now()), rentalUnit) : {}));
   const [pickup, setPickup] = useState("");
+  /** A stay's travellers (audit L4-11): 0 until chosen. */
+  const [guests, setGuests] = useState(0);
+  const stay = rental && rentalUnit === "night";
   const [edited, setEdited] = useState(false);
   const [datesMissing, setDatesMissing] = useState(false);
-  const draft = (next: Partial<RentalDates>, place: string): string => {
+  const draft = (next: Partial<RentalDates>, place: string, travellers = guests): string => {
     const complete = completeDates(next, rentalUnit);
     if (!complete) return "";
     const values = { title: listingTitle ?? "", from: formatRentalDay(complete.from, locale as Locale), to: formatRentalDay(complete.to, locale as Locale), days: rentalDuration(complete) };
-    return place.trim() ? t(r("rentalDraftPickup"), { ...values, pickup: place.trim() }) : t(r("rentalDraft"), values);
+    const body = place.trim() ? t(r("rentalDraftPickup"), { ...values, pickup: place.trim() }) : t(r("rentalDraft"), values);
+    return stay && travellers > 0 ? `${body} ${t("home.rentalDraftGuests", { count: travellers })}` : body;
   };
   const offerDraft = (typed: string): string => {
     const amount = parsePriceInput(typed);
@@ -183,7 +187,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
         text: text.trim(),
         turnstileToken: token,
         ...(adultsOnly ? { adultConfirmed: true as const } : {}),
-        ...(period ? { rentalRequest: { ...period, ...(pickup.trim() ? { pickup: pickup.trim() } : {}) } } : {}),
+        ...(period ? { rentalRequest: { ...period, ...(pickup.trim() ? { pickup: pickup.trim() } : {}), ...(stay && guests > 0 ? { guests } : {}) } } : {}),
         ...(amount !== null ? { offer: { amount } } : {}),
       });
       const query = threadQuery ?? (visit ? "rdv=visit" : undefined);
@@ -253,6 +257,31 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                   />
                   {datesMissing && !completeDates(dates, rentalUnit) ? <InlineError>{t(r("rentalDatesMissing"))}</InlineError> : null}
                 </fieldset>
+                {stay ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`${counterId}-guests`} className="text-sm font-medium">
+                      {t("home.rentalGuests")}
+                    </label>
+                    <select
+                      id={`${counterId}-guests`}
+                      value={guests}
+                      data-testid="rental-request-guests-field"
+                      className={cn(inputClassName, "h-11 w-40")}
+                      onChange={(event) => {
+                        const count = Number(event.target.value);
+                        setGuests(count);
+                        if (!edited) setText(draft(dates, pickup, count));
+                      }}
+                    >
+                      <option value={0}>{t("home.rentalGuestsPick")}</option>
+                      {Array.from({ length: RENTAL_GUESTS_MAX }, (_, index) => index + 1).map((count) => (
+                        <option key={count} value={count}>
+                          {t("home.rentalGuestsCount", { count })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${counterId}-pickup`} className="text-sm font-medium">
                     {t(r("rentalPickup"))}
@@ -297,7 +326,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                 dir="auto"
                 value={text}
                 maxLength={MESSAGE_TEXT_MAX}
-                placeholder={shop ? t("placeholderShop") : t("placeholder")}
+                placeholder={shop ? t("placeholderShop") : rental ? t(r("rentalPlaceholder")) : t("placeholder")}
                 aria-invalid={problem ? true : undefined}
                 aria-describedby={problem ? `${counterId}-problem` : remaining <= 200 ? counterId : undefined}
                 className="min-h-28 resize-none"

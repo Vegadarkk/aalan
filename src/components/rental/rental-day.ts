@@ -60,6 +60,24 @@ export function clearPendingContact(): void {
   window.history.replaceState(window.history.state, "", `${pathname}${search}${dates ? rentalFragment(dates) : ""}`);
 }
 
+/**
+ * Keeps the days picked on the listing page's calendar in the fragment without opening anything
+ * (audit L4-05): the side button « Demander une réservation » then opens the dialog on them too.
+ * null takes them out.
+ */
+export function rememberRentalDates(dates: { from: string; to: string } | null): void {
+  const { pathname, search, hash } = window.location;
+  const contact = pendingContact(hash);
+  const query = new URLSearchParams();
+  if (dates) {
+    query.set("du", dates.from);
+    query.set("au", dates.to);
+  }
+  if (contact) query.set(CONTACT_FRAGMENT_KEY, contact);
+  const fragment = query.toString();
+  window.history.replaceState(window.history.state, "", `${pathname}${search}${fragment ? `#${fragment}` : ""}`);
+}
+
 /** Window event of the listing page: its calendar asks the contact bar for a request on these days. */
 export const RENTAL_DATES_EVENT = "aalan:rental-dates";
 

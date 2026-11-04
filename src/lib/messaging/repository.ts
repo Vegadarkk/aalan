@@ -169,7 +169,7 @@ export function verifiesExchange(input: Pick<NewMessageInput, "senderUid" | "off
  * appointment, booking request or offer step.
  */
 export type ConversationExtension = (conversation: ConversationRecord) => {
-  fields: Partial<Record<"appointment" | "appointmentRemindAt" | "rentalRequest" | "offer" | "offerExpiresAt", unknown>>;
+  fields: Partial<Record<"appointment" | "appointmentRemindAt" | "rentalRequest" | "rentalHistory" | "offer" | "offerExpiresAt", unknown>>;
   message?: Pick<NewMessageInput, "text"> &
     (Required<Pick<NewMessageInput, "appointment">> | Required<Pick<NewMessageInput, "rentalRequest">> | Required<Pick<NewMessageInput, "offer">>);
 };

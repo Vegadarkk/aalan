@@ -1,7 +1,7 @@
 import "server-only";
 import { cidSchema, messageIdSchema, type ConversationView, type MessageView } from "@/lib/contracts/messaging";
 import { appointmentEventView, appointmentView } from "@/lib/appointments/views";
-import { rentalRequestEventView, rentalRequestView } from "@/lib/rental-requests/views";
+import { rentalHistoryView, rentalRequestEventView, rentalRequestView } from "@/lib/rental-requests/views";
 import { offerEventView, offerView } from "@/lib/offers/views";
 import { counterpartOf, type ConversationRecord, type MessageRecord, type PagePosition } from "./repository";
 
@@ -29,6 +29,7 @@ export function conversationView(conversation: ConversationRecord, uid: string, 
     counterpartClosed: (conversation.accountClosed ?? []).includes(other),
     appointment: conversation.appointment ? appointmentView(conversation.appointment, uid) : null,
     rentalRequest: conversation.rentalRequest ? rentalRequestView(conversation.rentalRequest, buyer) : null,
+    rentalHistory: rentalHistoryView(conversation.rentalHistory, buyer),
     offer: conversation.offer ? offerView(conversation.offer, buyer, now) : null,
     // Conversations started before offers existed: a priced listing that is no donation (the server decides).
     offersAllowed: listing.offers ?? (listing.price !== null && listing.price > 0 && !listing.isDonation),

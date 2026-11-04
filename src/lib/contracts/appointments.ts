@@ -8,8 +8,14 @@ import { stripFormatCharacters } from "@/lib/contracts/messaging";
 // The Concession (test drive) and Agence (visit) packs reuse these kinds and components.
 
 /** Extend at the end; labels in messages/*.json under Appointments.kind. */
-export const APPOINTMENT_KINDS = ["meeting", "visit", "test_drive", "pickup"] as const;
+export const APPOINTMENT_KINDS = ["meeting", "visit", "test_drive", "pickup", "check_in"] as const;
 export type AppointmentKind = (typeof APPOINTMENT_KINDS)[number];
+
+/**
+ * Kinds of the thread's own « Proposer un rendez-vous ». « check_in » (a stay's arrival and key
+ * handover, audit L4-08) is proposed from an accepted stay's card only.
+ */
+export const GENERAL_APPOINTMENT_KINDS = ["meeting", "visit", "test_drive", "pickup"] as const satisfies readonly AppointmentKind[];
 
 export const APPOINTMENT_DURATIONS = [15, 30, 45, 60, 90, 120] as const;
 export type AppointmentDuration = (typeof APPOINTMENT_DURATIONS)[number];

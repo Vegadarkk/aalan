@@ -24,10 +24,14 @@ export interface AppointmentDialogProps {
   kinds?: readonly AppointmentKind[];
   /** An active appointment exists: the dialog reads "propose other slots". */
   rescheduling?: boolean;
+  /** The first day offered (a rental's pick-up or a stay's arrival, audit L4-08). */
+  startDay?: string;
+  /** The dialog's title when it is opened for one step (« Proposer la remise du véhicule »). */
+  title?: string;
   onDone: (response: AppointmentResponse) => void;
 }
 
-export function AppointmentDialog({ cid, open, onOpenChange, counterpartName, defaultKind, kinds, rescheduling, onDone }: AppointmentDialogProps) {
+export function AppointmentDialog({ cid, open, onOpenChange, counterpartName, defaultKind, kinds, rescheduling, startDay, title, onDone }: AppointmentDialogProps) {
   const t = useTranslations("Appointments.dialog");
   const errorMessage = useAppointmentErrorMessage();
   const [busy, setBusy] = useState(false);
@@ -68,14 +72,14 @@ export function AppointmentDialog({ cid, open, onOpenChange, counterpartName, de
           <div className="flex flex-col gap-5 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col gap-1">
-                <Dialog.Title className="text-xl font-semibold text-balance">{rescheduling ? t("rescheduleTitle") : t("title")}</Dialog.Title>
+                <Dialog.Title className="text-xl font-semibold text-balance">{rescheduling ? t("rescheduleTitle") : (title ?? t("title"))}</Dialog.Title>
                 <Dialog.Description className="text-sm text-foreground-muted text-pretty">{t("lead", { name: isolate(counterpartName) })}</Dialog.Description>
               </div>
               <Dialog.Close className="-me-2 -mt-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground-muted hover:bg-surface-muted hover:text-foreground" aria-label={t("close")}>
                 <X className="size-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
-            <SlotPicker defaultKind={defaultKind} kinds={kinds} submitting={busy} error={error} onSubmit={(value) => void submit(value)} onCancel={() => onOpenChange(false)} />
+            <SlotPicker defaultKind={defaultKind} kinds={kinds} startDay={startDay} submitting={busy} error={error} onSubmit={(value) => void submit(value)} onCancel={() => onOpenChange(false)} />
           </div>
         </Dialog.Content>
       </Dialog.Portal>

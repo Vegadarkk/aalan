@@ -148,7 +148,7 @@ test.describe("seasonal rental agency", () => {
     await expect(guest.getByTestId("visit-button")).toHaveCount(0);
     const listingCalendar = guest.getByTestId("rental-availability");
     await listingCalendar.locator(`button[data-day="${day(5)}"]`).tap();
-    await expect(guest.getByTestId("rental-availability-pick")).toContainText("Touchez maintenant le jour de départ.");
+    await expect(guest.getByTestId("rental-availability-pick")).toContainText("Choisissez maintenant le jour de départ.");
     await listingCalendar.locator(`button[data-day="${day(8)}"]`).tap();
     await expect(guest.getByTestId("rental-availability-pick")).toContainText("(3 nuits)");
     await listingCalendar.scrollIntoViewIfNeeded();
@@ -160,7 +160,7 @@ test.describe("seasonal rental agency", () => {
     await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(8));
     await compose.getByLabel("Départ").focus();
     await guest.keyboard.press("Enter");
-    await expect(guest.getByTestId("rental-dates-hint")).toHaveText("Touchez maintenant le jour de départ");
+    await expect(guest.getByTestId("rental-dates-hint")).toHaveText("Choisissez maintenant le jour de départ");
     await expect(guest.getByTestId("rental-dates-calendar").locator(`button[data-day="${day(8)}"]`)).toBeFocused();
     await guest.keyboard.press("ArrowRight");
     await guest.keyboard.press("Enter");
@@ -169,7 +169,8 @@ test.describe("seasonal rental agency", () => {
     await pickRentalDays(compose, "Départ", day(8));
     await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(8));
     await compose.getByLabel("Précisions (facultatif)").fill("2 adultes, arrivée vers 18 h");
-    await expect(compose.getByLabel("Votre message")).toHaveValue(new RegExp(`séjourner à « ${title} » du .+ au .+ \\(3 nuits\\) : 2 adultes, arrivée vers 18 h\\. Est-ce disponible \\?$`, "u"));
+    await compose.getByLabel("Voyageurs").selectOption("2");
+    await expect(compose.getByLabel("Votre message")).toHaveValue(new RegExp(`séjourner à « ${title} » du .+ au .+ \\(3 nuits\\) : 2 adultes, arrivée vers 18 h\\. Est-ce disponible \\? Nous serons 2 voyageurs\\.$`, "u"));
     await expect(compose.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
     await guest.screenshot({ path: "test-results/holiday-request-compose.png" });
     await compose.getByRole("button", { name: "Envoyer la demande" }).click();
@@ -184,11 +185,14 @@ test.describe("seasonal rental agency", () => {
     await expect(requestCard).toHaveAttribute("data-status", "requested-theirs", { timeout: 15_000 });
     await expect(requestCard).toContainText("3 nuits");
     await expect(requestCard).toContainText(/Précisions : \u2068?2 adultes, arrivée vers 18 h/u);
+    await expect(requestCard.getByTestId("rental-request-guests")).toHaveText("2 voyageurs");
     await page.screenshot({ path: "test-results/holiday-request-host.png" });
     await requestCard.getByTestId("rental-request-accept").click();
+    await requestCard.getByTestId("rental-request-confirm-send").click();
     await expect(requestCard).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
     await expect(requestCard).toContainText("Nuits bloquées sur l'annonce.");
-    await expect(requestCard.getByTestId("rental-request-pickup")).toHaveCount(0);
+    // A stay's next step: the arrival time (audit L4-08).
+    await expect(requestCard.getByTestId("rental-request-pickup")).toHaveText("Proposer l'heure d'arrivée");
     await page.goto(`/fr/annonce/${slugId}`);
     const availability = page.getByTestId("rental-availability");
     await expect(availability.locator(`[data-day="${day(7)}"]`)).toHaveAttribute("data-state", "blocked");

@@ -16,7 +16,9 @@ import type { SessionSummary } from "@/lib/contracts/auth";
 import { LISTING_API, MESSAGING_API } from "@/lib/contracts/endpoints";
 import type { PhoneRevealResponse } from "@/lib/contracts/listings";
 import { isolateLtr } from "@/lib/i18n/bidi";
-import { findListingConversation, findShopConversation } from "@/lib/messaging/client";
+import { findListingConversation, findRentalConversation, findShopConversation } from "@/lib/messaging/client";
+import { RentalRequestBanner, shownRentalRequest } from "@/components/rental/rental-request-banner";
+import type { RentalRequestView } from "@/lib/contracts/rental-requests";
 import { cn } from "@/lib/utils";
 import type { RevealChallengeProps, RevealErrorProps } from "./contact-feedback";
 import type { MessageDialogProps } from "./message-dialog";
@@ -169,9 +171,9 @@ function useDesktop(): boolean {
  * Room for the fixed phone bar after the footer (portalled to the end of <body>): without it the bar
  * would cover the last lines of the page. Client only, below the fold: no visible shift.
  */
-function BarSpacer() {
+function BarSpacer({ tall = false }: { tall?: boolean }) {
   const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
-  return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className="h-24 lg:hidden" />, document.body) : null;
+  return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className={cn(tall ? "h-36" : "h-24", "lg:hidden")} />, document.body) : null;
 }
 
 export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false }: ContactBarProps) {
@@ -237,6 +239,13 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     }
   }
 
+  /** The rental buttons: the dialog on the days the calendar or the search left in the fragment (audit L4-05). */
+  function openRentalComposer() {
+    const dates = fragmentDates(window.location.hash);
+    setDatesKey(dates ? `${dates.from}_${dates.to}` : "");
+    void openComposer("rental");
+  }
+
   /** Days picked on the listing page's calendar (they are in the fragment): a fresh request dialog on them. */
   const [datesKey, setDatesKey] = useState("");
   const onRentalDates = useEffectEvent((dates: { from: string; to: string }) => {
@@ -269,6 +278,22 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
     void openComposer(wanted);
   });
   const signedIn = status === "ready" && session !== null;
+
+  /** The renter's request about this listing, once signed in (audit L4-09). */
+  const [myRequest, setMyRequest] = useState<{ cid: string; request: RentalRequestView } | null>(null);
+  useEffect(() => {
+    if (!rental || !signedIn || own || shop) return;
+    let live = true;
+    findRentalConversation(listingId)
+      .then((conversation) => {
+        const request = conversation ? shownRentalRequest(conversation, Date.now()) : null;
+        if (live) setMyRequest(conversation && request ? { cid: conversation.cid, request } : null);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [rental, signedIn, own, shop, listingId]);
   useEffect(() => {
     if (!signedIn || own) return;
     // After the commit, and once (a strict-mode remount clears the first timer).
@@ -370,7 +395,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       <Button
         type="button"
         variant="outline"
-        onClick={() => void openComposer(barIntent)}
+        onClick={() => (barIntent === "rental" ? openRentalComposer() : void openComposer(barIntent))}
         loading={compose === "checking" && intent === barIntent}
         aria-haspopup="dialog"
         data-testid="contact-bar-action"
@@ -427,10 +452,15 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
       </div>
       {rental ? (
         <div className="mt-3 flex flex-col gap-1.5">
+          {myRequest ? (
+            <div className="hidden lg:block">
+              <RentalRequestBanner cid={myRequest.cid} request={myRequest.request} />
+            </div>
+          ) : null}
           <Button
             type="button"
             variant="structure"
-            onClick={() => void openComposer("rental")}
+            onClick={openRentalComposer}
             loading={compose === "checking" && intent === "rental"}
             aria-haspopup="dialog"
             data-testid="rental-request-button"
@@ -473,6 +503,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
           hidden text). Once revealed, the bar holds the call and WhatsApp actions only. */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(11_30_31/0.35)] lg:hidden">
         <div className="mx-auto flex max-w-xl flex-col gap-2">
+          {myRequest && compose !== "signin" ? <RentalRequestBanner cid={myRequest.cid} request={myRequest.request} compact /> : null}
           {feedback(false)}
           <div className="flex gap-2">
             {revealed ? null : canReveal || barIntent ? messageButton(true) : messageButton(false, true)}
@@ -481,7 +512,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
           </div>
         </div>
       </div>
-      <BarSpacer />
+      <BarSpacer tall={myRequest !== null} />
       {composeMounted ? (
         <MessageDialog
           // A fresh form per intent (the visit request comes with its own draft) and per picked combination.

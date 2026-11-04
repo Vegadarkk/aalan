@@ -3212,16 +3212,22 @@
         "rentalDatesMissing": "Xtar ass n tuṭṭfa d wass n tuɣalin.",
         "rentalSafety": "Akra yettwakemmal s contrat yettwarun n agence: war tefkeḍ ca wala tasbeqt wala caution deg usit niɣ zzat ma ad teẓreḍ ṭumubil.",
         "rentalSend": "Azen asuter",
+        "rentalPlaceholder": "Azul, ṭumubil-a tella deg wussan-a?",
         "home": {
           "rentalTitle": "Asuter n uqqimi i {name}",
           "rentalTitleFallback": "Asuter n uqqimi",
           "rentalDates": "Wussan n uqqimi",
           "rentalPickup": "Tilɣa nniḍen (ma texsed)",
-          "rentalPickupPlaceholder": "Amedya: 2 n imeqqranen d yiwen n weḥnjir, ad naweḍ x 18 h",
+          "rentalPickupPlaceholder": "Amedya: ad naweḍ x 18 h, yiwen n wusu n weḥnjir mala yella",
           "rentalDraft": "Azul, xseɣ ad qqimeɣ deg « {title} » zi {from} ar {to} ({days, plural, one {# n yiḍ} other {# n iḍan}}). Mala yella?",
           "rentalDraftPickup": "Azul, xseɣ ad qqimeɣ deg « {title} » zi {from} ar {to} ({days, plural, one {# n yiḍ} other {# n iḍan}}): {pickup}. Mala yella?",
           "rentalDatesMissing": "Xtar ass n tuɣda d wass n tuffɣa.",
-          "rentalSafety": "Aqqimi yettwakemmal nican d umessufeɣ n annonce. {site} war tettaɣ wala tasbeqt wala caution: war tefkeḍ walu zzat ma ad tesneqdeḍ amessufeɣ d uxxam."
+          "rentalSafety": "Aqqimi yettwakemmal nican d umessufeɣ n annonce. {site} war tettaɣ wala tasbeqt wala caution: war tefkeḍ walu zzat ma ad tesneqdeḍ amessufeɣ d uxxam.",
+          "rentalPlaceholder": "Azul, axxam yexwa deg wussan-a?",
+          "rentalGuests": "Imsafaren",
+          "rentalGuestsPick": "Xtar",
+          "rentalGuestsCount": "{count, plural, one {# n umsafar} other {# n imsafaren}}",
+          "rentalDraftGuests": "Ad nili {count, plural, one {# n umsafar} other {# n imsafaren}}."
         },
         "aboutShop": "Tabrat nnec ad taweḍ ɣer tḥanut, war ma tettwaqqen ɣer ca n annonce.",
         "placeholderShop": "Azul, ɣari asteqsi x tɣawsiwin niɣ x lxedmat nnwem."
@@ -4427,19 +4433,22 @@
       "meeting": "Amyafa",
       "visit": "Aẓuṛ",
       "test_drive": "Tajeṛṛabt",
-      "pickup": "Awway n tɣawsa"
+      "pickup": "Asefk n ṭumubil",
+      "check_in": "Tudfa"
     },
     "kindPhrase": {
       "meeting": "amyafa",
       "visit": "aẓuṛ",
       "test_drive": "tajeṛṛabt",
-      "pickup": "awway n tɣawsa"
+      "pickup": "asefk n ṭumubil",
+      "check_in": "tudfa"
     },
     "confirmedTitle": {
       "meeting": "Amyafa yettwasentem",
       "visit": "Aẓuṛ yettwasentem",
       "test_drive": "Tajeṛṛabt tettwasentem",
-      "pickup": "Awway yettwasentem"
+      "pickup": "Asefk yettwasentem",
+      "check_in": "Tudfa tettwasentem"
     },
     "duration": {
       "m15": "15 min",
@@ -5704,10 +5713,11 @@
       "stale": "Ad yettwasentem ma yella d agence (abeddel aneggaru deg {date}).",
       "never": "Ad yettwasentem ma yella d agence.",
       "note": "D ayen inna agence, bla aɛahed: tḥeǧǧiṭ tettwasentam d nettat.",
-      "pickHint": "Wet x wass n tuffɣa uca x wass n tuɣalin ḥima ad tsewjdeḍ asuter n tḥeǧǧiṭ.",
-      "pickEnd": "Wet tura x wass n tuɣalin.",
+      "pickHint": "Xtar ass n tuffɣa uca ass n tuɣalin ḥima ad tsewjdeḍ asuter n tḥeǧǧiṭ.",
+      "pickEnd": "Xtar tura ass n tuɣalin.",
       "picked": "Zi {from} ar {to} ({count, plural, one {# n wass} other {# n wussan}})",
       "pickedBlocked": "Lmudda-a ɣar-s ussan war yellin: agence ad dak-tini min tezmer ad dak-tefk.",
+      "estimate": "≈ {total} i {count, plural, one {# n wass} other {# n wussan}}, ad yettwasentem d agence",
       "request": "Ssuter ussan-a",
       "clear": "Kkes",
       "exampleNoRequest": "Annonce n umedya: war tzemmreḍ ad tazneḍ ca n usuter.",
@@ -5716,10 +5726,11 @@
         "stale": "Ad yettwasentem ma yella d bab n annonce (abeddel aneggaru deg {date}).",
         "never": "Ad yettwasentem ma yella d bab n annonce.",
         "note": "D ayen inna bab n annonce, bla aɛahed: aqimi yettwasentam d netta. Iḍ war yellin yettwacrac x wass n tudfa.",
-        "pickHint": "Wet x wass n tudfa uca x wass n tuffɣa ḥima ad tsewjdeḍ asuter n uqimi.",
-        "pickEnd": "Wet tura x wass n tuffɣa.",
+        "pickHint": "Xtar ass n tudfa uca ass n tuffɣa ḥima ad tsewjdeḍ asuter n uqimi.",
+        "pickEnd": "Xtar tura ass n tuffɣa.",
         "picked": "Zi {from} ar {to} ({count, plural, one {# n yiḍ} other {# n iḍan}})",
-        "pickedBlocked": "Aqimi-a ɣar-s iḍan war yellin: bab n annonce ad dak-yini min yezmer ad dak-yefk."
+        "pickedBlocked": "Aqimi-a ɣar-s iḍan war yellin: bab n annonce ad dak-yini min yezmer ad dak-yefk.",
+        "estimate": "≈ {total} i {count, plural, one {# n yiḍ} other {# n iḍan}}, ad yettwasentem d umessufeɣ"
       }
     },
     "search": {
@@ -5891,11 +5902,19 @@
       "withdrawnToast": "Asuter yettwakkes",
       "requestedTheirs": "{name} yessuter ṭumubil-a",
       "block": "Ḥbes ussan-a deg annonce",
-      "blockHint": "Crec mala ula d yiwet n ṭumubil n modèle-a war texwi deg lmudda-a: annonce ad teffeɣ zi tarzzut deg wussan-a.",
+      "blockHint": "Ejj-it yettwacrec mala war tqqim ula d yiwet n ṭumubil nniḍen n modèle-a texwa deg lmudda-a: annonce ad teffeɣ zi tarzzut deg wussan-a.",
       "accept": "Tella",
       "acceptedToast": "Yettwasentem belli tella",
       "blockFailed": "Yettwasentem belli tella, maca ussan war zemmren ca ad ttwaḥebsen. Ssbedd planning nnec.",
       "planning": "Rzem planning inu",
+      "note": "Rnu awal (mala texseḍ)",
+      "back": "Uɣal",
+      "confirmAccept": "Ad tsentmeḍ i {name} belli ṭumubil tella deg wussan-a?",
+      "confirmDecline": "Ad tarreḍ i {name} belli ṭumubil war telli deg wussan-a?",
+      "confirmAcceptButton": "Sentem: tella",
+      "confirmDeclineButton": "Sentem: war telli",
+      "notePlaceholderAccept": "Amedya: ṭumubil ad tili twejjed x 9 h deg agence n Guéliz.",
+      "notePlaceholderDecline": "Amedya: texwa zi 2 ar 4, niɣ yiwen n modèle am netta deg wussan-a.",
       "decline": "War telli",
       "declinedToast": "Tiririt tettwazen: war telli",
       "acceptedMine": "Tsentmeḍ belli tella",
@@ -5909,11 +5928,17 @@
         "waiting": "Ntettraju tiririt n bab n annonce.",
         "requestedTheirs": "{name} yessuter aqimi",
         "block": "Ḥbes iḍan-a deg annonce",
-        "blockHint": "Crec mala axxam war yexwi ca deg iḍan-a: annonce ad teffeɣ zi tarzzut deg wussan-a (ass n tuffɣa yeqqim yella).",
+        "blockHint": "Ejj-it yettwacrec mala axxam war yeqqim d axwi deg iḍan-a: annonce ad teffeɣ zi tarzzut deg wussan-a (ass n tuffɣa yeqqim d axwi).",
         "blockFailed": "Yettwasentem belli yella, maca iḍan war zemmren ca ad ttwaḥebsen. Ssbedd ussan ixwan nnec.",
         "planning": "Rzem annonces inu",
         "blockedNote": "Iḍan ttwaḥebsen deg annonce.",
-        "safety": "Aqimi yettwasentam nican d bab n annonce, s contrat niɣ s usentem yettwarun. {site} war tettaɣ ca idrimen zzat niɣ caution: war tefkeḍ walu zzat ma ad tesneqdeḍ bab n annonce d uxxam."
+        "safety": "Aqimi yettwasentam nican d bab n annonce, s contrat niɣ s usentem yettwarun. {site} war tettaɣ ca idrimen zzat niɣ caution: war tefkeḍ walu zzat ma ad tesneqdeḍ bab n annonce d uxxam.",
+        "pickupAppointment": "Sumer tasaɛt n tudfa",
+        "guests": "{count, plural, one {# n umsafar} other {# n imsafaren}}",
+        "confirmAccept": "Ad tsentmeḍ i {name} belli axxam yella i uqqimi-a?",
+        "confirmDecline": "Ad tarreḍ i {name} belli axxam war yelli i uqqimi-a?",
+        "notePlaceholderAccept": "Amedya: tudfa tzemmer zi 15 h, tisura ttrajunt-awen din.",
+        "notePlaceholderDecline": "Amedya: yexwa zi 20 ar 24, niɣ axxam nniḍen deg wussan-a."
       }
     },
     "event": {
@@ -5951,12 +5976,40 @@
         "pickup": "isallen: {place}"
       }
     },
+    "history": {
+      "title": "Isuturen n umeslay-a",
+      "ahead": "Ad d-asen",
+      "earlier": "{count, plural, one {# n usuter n zik} other {# n isuturen n zik}}",
+      "status": {
+        "accepted": "Yettwasentem",
+        "declined": "War yelli",
+        "withdrawn": "Yettwakkes",
+        "requested": "Yettwabeddel",
+        "past": "Yekmel"
+      }
+    },
+    "banner": {
+      "requested": "Asuter nnec zi {from} ar {to} yettwazen: agence ad ac-terr deg tbratin.",
+      "accepted": "Agence tsentem belli tella zi {from} ar {to}.",
+      "open": "Ẓeṛ ameslay",
+      "home": {
+        "requested": "Asuter n uqqimi nnec zi {from} ar {to} yettwazen: amessufeɣ ad ac-yerr deg tbratin.",
+        "accepted": "Amessufeɣ yesentem aqqimi nnec zi {from} ar {to}."
+      }
+    },
     "preview": {
       "requested": "Asuter n ukra",
       "changed": "Asuter n ukra yettwabeddel",
       "accepted": "Yettwasentem belli yella",
       "declined": "War yelli deg wussan yettwassutren",
-      "withdrawn": "Asuter n ukra yettwakkes"
+      "withdrawn": "Asuter n ukra yettwakkes",
+      "home": {
+        "requested": "Asuter n uqqimi",
+        "changed": "Asuter n uqqimi yettwabeddel",
+        "accepted": "Aqqimi yettwasentem",
+        "declined": "War yelli deg wussan yettwasutren",
+        "withdrawn": "Asuter n uqqimi yettwakkes"
+      }
     },
     "errors": {
       "rental_request_changed": "Asuter-a yettwabeddel deg lweqt-a: ha tanuskit nnes taneggarut.",

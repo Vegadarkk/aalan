@@ -12,11 +12,17 @@ export function rentalRequestView(request: RentalRequestDoc, requestedByMe: bool
     to: request.to,
     unit: request.unit ?? "day",
     pickup: request.pickup ?? null,
+    guests: request.guests ?? null,
     blocked: request.blocked === true,
     updatedAt: request.updatedAt.getTime(),
   };
 }
 
+/** The earlier requests of a conversation, newest first (audit L4-04). */
+export function rentalHistoryView(history: readonly RentalRequestDoc[] | undefined, requestedByMe: boolean): RentalRequestView[] {
+  return (history ?? []).map((request) => rentalRequestView(request, requestedByMe));
+}
+
 export function rentalRequestEventView(step: RentalRequestEventDoc, byMe: boolean): RentalRequestEventView {
-  return { event: step.event, byMe, from: step.from, to: step.to, unit: step.unit ?? "day", pickup: step.pickup ?? null };
+  return { event: step.event, byMe, from: step.from, to: step.to, unit: step.unit ?? "day", pickup: step.pickup ?? null, guests: step.guests ?? null };
 }

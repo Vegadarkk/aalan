@@ -374,7 +374,11 @@ export default async function ListingPage({ params }: { params: Params }) {
             {jobs ? <JobNotice subcategoryId={listing.subcategoryId} attributes={listing.attributes} /> : null}
             <VehicleDossier subcategoryId={listing.subcategoryId} attributes={listing.attributes} />
             <RentalTerms subcategoryId={listing.subcategoryId} attributes={listing.attributes} locale={locale} />
-            {listing.rental ? <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} requestable={contactable && datedRental(listing.subcategoryId) !== undefined} example={listing.example === true && datedRental(listing.subcategoryId) !== undefined} /> : null}
+            {listing.rental ? (
+              <ListingAvailability rental={listing.rental} locale={locale} unit={datedRental(listing.subcategoryId)?.unit} requestable={contactable && datedRental(listing.subcategoryId) !== undefined} example={listing.example === true && datedRental(listing.subcategoryId) !== undefined}
+                rates={typeof listing.price === "number" && listing.price > 0 ? { price: listing.price, week: numberAttribute(listing.attributes["rate-7-days"]), month: numberAttribute(listing.attributes["rate-30-days"]) } : undefined}
+              />
+            ) : null}
 
             <section aria-labelledby="description-title" className="flex flex-col gap-3">
               <h2 id="description-title" className="text-lg font-semibold">
@@ -412,4 +416,9 @@ export default async function ListingPage({ params }: { params: Params }) {
       </Container>
     </PageMessages>
   );
+}
+
+/** A long-term rate of the listing's attributes, when it is a number (the availability block's estimate). */
+function numberAttribute(value: unknown): number | undefined {
+  return typeof value === "number" && value > 0 ? value : undefined;
 }

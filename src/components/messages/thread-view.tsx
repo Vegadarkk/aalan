@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, CalendarPlus, HandCoins } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, BadgeCheck, CalendarPlus, HandCoins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/rental-request-card";
-import { OfferCard } from "@/components/offers/offer-card";
+import { OfferCard, offerCardShown } from "@/components/offers/offer-card";
 import type { OfferDialogProps } from "@/components/offers/offer-dialog";
 import type { AppointmentDialogProps } from "@/components/appointments/appointment-dialog";
 import { FormMessage } from "@/components/auth/form-message";
@@ -25,7 +25,7 @@ import { APPOINTMENT_KINDS, type AppointmentKind, type AppointmentResponse } fro
 import { URL_MARKER, type ConversationView, type MessageView } from "@/lib/contracts/messaging";
 import { isActive } from "@/lib/appointments/rules";
 import type { RentalRequestResponse } from "@/lib/contracts/rental-requests";
-import type { OfferResponse } from "@/lib/contracts/offers";
+import { offerFinalAmount, type OfferResponse } from "@/lib/contracts/offers";
 import { offerPending } from "@/lib/offers/rules";
 import { isolate } from "@/lib/i18n/bidi";
 import { formatPrice } from "@/lib/listings/client/format";
@@ -72,10 +72,21 @@ export function requestedOffer(search: string): boolean {
   return new URLSearchParams(search).get("offre") === "1";
 }
 
-/** The buyer may make an offer now: the listing took offers, none of his is waiting for an answer. */
+/**
+ * The buyer may make an offer now: the listing took offers, none of his is waiting for an answer,
+ * and none was accepted in this conversation (the price is settled there, audit zone 5 n°15).
+ */
 export function canOffer(conversation: Pick<ConversationView, "role" | "offersAllowed" | "offer" | "listing">, now: number): boolean {
   if (conversation.role !== "buyer" || conversation.offersAllowed !== true || !conversation.listing.price) return false;
-  return !conversation.offer || !offerPending(conversation.offer, now);
+  return !conversation.offer || (conversation.offer.status !== "accepted" && !offerPending(conversation.offer, now));
+}
+
+/** The address of the thread in the list view that holds it (`?archived=1` for an archived one), other parameters kept. */
+export function threadUrlFor(href: string, archived: boolean): string {
+  const url = new URL(href);
+  if (archived) url.searchParams.set("archived", "1");
+  else url.searchParams.delete("archived");
+  return url.toString();
 }
 
 /** `?rdv={kind}` on the thread's URL opens the slot picker with that kind (Concession, Agence entry points). */
@@ -144,7 +155,7 @@ export function ThreadView({ cid }: { cid: string }) {
   const errorMessage = useMessagingErrorMessage();
   const { session } = useSession();
   const suspended = session?.suspended === true;
-  const { archived, putRow, dropRow } = useMessages();
+  const { archived, putRow, dropRow, muteRow } = useMessages();
   const [view, setView] = useState<View>({ kind: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -153,6 +164,11 @@ export function ThreadView({ cid }: { cid: string }) {
   const [picker, setPicker] = useState<{ open: boolean; kind?: AppointmentKind; kinds?: readonly AppointmentKind[]; startDay?: string; title?: string } | null>(null);
   const [offerForm, setOfferForm] = useState<{ open: boolean; answering?: { id: string; amount: number }; price: number } | null>(null);
   const offerText = useTranslations("Offers");
+  // Read by the first load only: its effect does not run again when the translator changes.
+  const offerWords = useRef(offerText);
+  useEffect(() => {
+    offerWords.current = offerText;
+  });
   /** The settled pinned cards unfolded under lg (audit zone 5 n°6). */
   const [pinsOpen, setPinsOpen] = useState(false);
   const pinsId = useId();
@@ -176,7 +192,13 @@ export function ThreadView({ cid }: { cid: string }) {
       }),
     [update],
   );
+  /**
+   * Set while « Supprimer de ma messagerie » runs and after it succeeded: the thread asks nothing
+   * more of a conversation that is gone for me (no 404 on its way out, audit zone 5 n°13).
+   */
+  const leaving = useRef(false);
   const missing = useCallback(() => {
+    if (leaving.current) return;
     update(() => ({ kind: "missing" }));
     dropRow(cid);
   }, [update, dropRow, cid]);
@@ -203,6 +225,8 @@ export function ThreadView({ cid }: { cid: string }) {
           window.history.replaceState(window.history.state, "", url);
           const { conversation } = page;
           if (canWrite(conversation, false) && canOffer(conversation, Date.now()) && conversation.listing.price) setOfferForm({ open: true, price: conversation.listing.price });
+          // The price is already settled here: say so rather than open nothing (audit zone 5 n°15).
+          else if (conversation.role === "buyer" && conversation.offer?.status === "accepted") toast.info(offerWords.current("errors.offer_accepted"));
         }
       },
       (error: unknown) => {
@@ -229,7 +253,7 @@ export function ThreadView({ cid }: { cid: string }) {
       do {
         state.again = false;
         const view = current.current;
-        if (view.kind !== "ready") return;
+        if (view.kind !== "ready" || leaving.current) return;
         const latest = view.data.latest;
         try {
           const page = await fetchThread(cid, latest ? { after: latest } : {});
@@ -254,6 +278,7 @@ export function ThreadView({ cid }: { cid: string }) {
   }, [cid, updateData, putRow, missing]);
 
   const refreshConversation = useCallback(async () => {
+    if (leaving.current) return;
     try {
       const { conversation } = await fetchConversation(cid);
       updateData((data) => ({ ...data, conversation }));
@@ -266,7 +291,7 @@ export function ThreadView({ cid }: { cid: string }) {
   const refreshMessage = useCallback(
     async (mid: string) => {
       const view = current.current;
-      if (view.kind !== "ready") return;
+      if (view.kind !== "ready" || leaving.current) return;
       const cursor = pageCursorOf(view.data, mid);
       if (cursor === null) return;
       try {
@@ -280,6 +305,7 @@ export function ThreadView({ cid }: { cid: string }) {
   );
 
   useMessagingStream((event) => {
+    if (leaving.current) return;
     if (event.type === "ready" || event.type === "resync") {
       void fetchNewer();
       return;
@@ -307,7 +333,7 @@ export function ThreadView({ cid }: { cid: string }) {
     if (unread === 0) return;
     let sent = false;
     const send = () => {
-      if (sent || document.visibilityState !== "visible") return;
+      if (sent || leaving.current || document.visibilityState !== "visible") return;
       sent = true;
       markConversationRead(cid).then(
         () => {
@@ -395,6 +421,34 @@ export function ThreadView({ cid }: { cid: string }) {
     }
     updateData((data) => ({ ...data, conversation }));
     putRow(conversation);
+    // The address follows the list that now holds the conversation: no `?archived=1` left once
+    // unarchived (audit zone 5 n°12). With a null state, Next.js takes the call as a navigation of
+    // the page and its search parameters follow (the list switches view); no request is made.
+    if (action === "archive" || action === "unarchive") {
+      const next = threadUrlFor(window.location.href, action === "archive");
+      if (next !== window.location.href) window.history.replaceState(null, "", next);
+    }
+  }
+
+  /** « Supprimer de ma messagerie » running: nothing more is asked of the conversation, nor of its row. */
+  function onPending(action: ThreadAction, pending: boolean) {
+    if (action !== "delete") return;
+    leaving.current = pending;
+    muteRow(cid, pending);
+  }
+
+  const [unarchiving, setUnarchiving] = useState(false);
+  async function unarchive(conversation: ConversationView) {
+    setUnarchiving(true);
+    try {
+      await changeConversationState(cid, { archived: false });
+      toast.success(t("unarchivedToast"));
+      onAction("unarchive", { ...conversation, archived: false });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setUnarchiving(false);
+    }
   }
 
   const [report, setReport] = useState<{ subject: ReportSubject; open: boolean } | null>(null);
@@ -488,6 +542,9 @@ export function ThreadView({ cid }: { cid: string }) {
   const pending = prunePending(view.pending, data.messages);
   const labels = { today: t("today"), yesterday: t("yesterday") };
   const pins = settledPins(conversation, now);
+  // The settled cards while folded: under lg alone, everywhere beside a card that waits.
+  const folded = pins && !pinsOpen ? (pins.alongside ? "hidden" : "max-lg:hidden") : null;
+  const acceptedOffer = conversation.role === "buyer" && conversation.offer?.status === "accepted" && offerCardShown(conversation.offer, now) ? conversation.offer : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="thread-view">
@@ -511,7 +568,7 @@ export function ThreadView({ cid }: { cid: string }) {
             {price ? <span className={cn("shrink-0 font-medium tabular-nums", conversation.listing.isDonation ? "text-success" : "text-foreground")}>{price}</span> : null}
           </p>
         </div>
-        <ThreadActions conversation={conversation} onDone={onAction} onReport={() => setReport({ subject: { kind: "user" }, open: true })} />
+        <ThreadActions conversation={conversation} onDone={onAction} onPending={onPending} onReport={() => setReport({ subject: { kind: "user" }, open: true })} />
       </header>
 
       {suspended ? (
@@ -533,13 +590,31 @@ export function ThreadView({ cid }: { cid: string }) {
         />
       ) : conversation.blockedMe ? (
         <ErrorBanner tone="info" title={t("blockedMe")} className="mx-3 mt-3 lg:mx-5" />
+      ) : conversation.archived ? (
+        // Still open to messages, but out of the inbox: said once, with the way back (audit zone 5 n°12).
+        // A slim line, not a card: the messages keep their room (audit L4-23).
+        <div role="status" data-testid="thread-archived" className="mx-3 mt-3 flex shrink-0 items-center gap-3 rounded-md border border-border bg-surface-muted py-1.5 ps-3 pe-1.5 text-sm lg:mx-5">
+          <Archive className="size-4 shrink-0 text-foreground-muted" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-pretty">{t("archivedBanner")}</p>
+          <Button type="button" variant="ghost" size="sm" className="shrink-0 max-sm:h-11" loading={unarchiving} onClick={() => void unarchive(conversation)} data-testid="thread-unarchive">
+            <ArchiveRestore aria-hidden="true" />
+            {t("unarchive")}
+          </Button>
+        </div>
       ) : null}
 
-      {pins ? <PinnedSummary pins={pins} open={pinsOpen} controls={pinsId} onToggle={() => setPinsOpen((open) => !open)} /> : null}
+      {pins ? (
+        <PinnedSummary
+          pins={pins}
+          open={pinsOpen}
+          controls={[pins.offer !== null ? `${pinsId}-offer` : null, pins.appointment ? `${pinsId}-appointment` : null].filter(Boolean).join(" ")}
+          onToggle={() => setPinsOpen((open) => !open)}
+        />
+      ) : null}
       {/* The pinned cards (request, offer, appointment) scroll on their own past 45 % of the
-          screen: the messages keep the rest (audit L4-23). Once settled they fold into the summary
-          line under lg (audit zone 5 n°6). */}
-      <div id={pinsId} data-testid="thread-cards" className={cn("flex max-h-[45dvh] shrink-0 flex-col overflow-y-auto overscroll-contain", pins && !pinsOpen && "max-lg:hidden")}>
+          screen: the messages keep the rest. The settled ones fold into the summary line under lg
+          (audit zone 5 n°6), and on every screen beside a card that still waits (audit L4-23). */}
+      <div data-testid="thread-cards" className="flex max-h-[45dvh] shrink-0 flex-col overflow-y-auto overscroll-contain">
         {conversation.rentalRequest ? (
           <RentalRequestCard
             key={conversation.rentalRequest.id}
@@ -566,22 +641,25 @@ export function ThreadView({ cid }: { cid: string }) {
         {conversation.rentalHistory && conversation.rentalHistory.length > 0 ? <RentalRequestHistory history={conversation.rentalHistory} now={now} /> : null}
 
         {conversation.offer ? (
-          <OfferCard
-            key={conversation.offer.id}
-            cid={cid}
-            offer={conversation.offer}
-            counterpartName={name}
-            writable={writable}
-            now={now}
-            onChange={onOffer}
-            onCounter={() => {
-              const offer = conversation.offer;
-              if (offer) setOfferForm({ open: true, price: offer.price, answering: { id: offer.id, amount: offer.amount } });
-            }}
-          />
+          <div id={`${pinsId}-offer`} className={cn("flex flex-col", pins && pins.offer !== null && folded)}>
+            <OfferCard
+              key={conversation.offer.id}
+              cid={cid}
+              offer={conversation.offer}
+              counterpartName={name}
+              writable={writable}
+              now={now}
+              onChange={onOffer}
+              onCounter={() => {
+                const offer = conversation.offer;
+                if (offer) setOfferForm({ open: true, price: offer.price, answering: { id: offer.id, amount: offer.amount } });
+              }}
+            />
+          </div>
         ) : null}
 
         {conversation.appointment ? (
+          <div id={`${pinsId}-appointment`} className={cn("flex flex-col", pins?.appointment && folded)}>
           <AppointmentCard
             key={conversation.appointment.id}
             cid={cid}
@@ -597,6 +675,7 @@ export function ThreadView({ cid }: { cid: string }) {
               setPicker({ open: true, kind, ...(kind === "check_in" ? { kinds: [kind] } : {}) });
             }}
           />
+          </div>
         ) : null}
       </div>
 
@@ -704,6 +783,25 @@ export function ThreadView({ cid }: { cid: string }) {
                   onClick={() => setOfferForm({ open: true, price: conversation.listing.price ?? 0 })}
                 >
                   <HandCoins aria-hidden="true" />
+                </Button>
+              ) : acceptedOffer ? (
+                // « Offre acceptée » in place of « Faire une offre »: the price is settled in this
+                // conversation (audit zone 5 n°15); it brings the accepted card into view.
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 rounded-full text-success hover:bg-success-surface hover:text-success"
+                  aria-label={offerText("card.acceptedTitle", { amount: formatPrice(offerFinalAmount(acceptedOffer), locale) })}
+                  title={offerText("card.acceptedTitle", { amount: formatPrice(offerFinalAmount(acceptedOffer), locale) })}
+                  aria-controls={`${pinsId}-offer`}
+                  data-testid="offer-accepted-open"
+                  onClick={() => {
+                    setPinsOpen(true);
+                    requestAnimationFrame(() => document.getElementById(`${pinsId}-offer`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+                  }}
+                >
+                  <BadgeCheck aria-hidden="true" />
                 </Button>
               ) : null}
             </>

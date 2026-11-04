@@ -185,12 +185,16 @@ test.describe("price guide and offers", () => {
     await expect(buyerCard).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
     await expect(buyerCard).toContainText("Offre acceptée");
     await expect(buyerPage.getByTestId("offer-event").filter({ hasText: "Vous avez accepté le prix de" })).toBeVisible();
+    // « Offre acceptée » takes the place of « Faire une offre » in the composer (audit zone 5 n°15).
+    await expect(buyerPage.getByTestId("offer-open")).toHaveCount(0);
+    await expect(buyerPage.getByTestId("offer-accepted-open")).toBeVisible();
     await shoot(buyerPage, "6-offre-acceptee-acheteur-fr");
     await expect(sellerCard).toHaveAttribute("data-status", "accepted", { timeout: 40_000 });
     await expect(sellerPage.getByTestId("offer-event").filter({ hasText: "a accepté le prix de" })).toBeVisible();
 
     if (shots) {
-      // Arabic: the listing page, the thread, and the offer dialog of the thread (a new offer is possible once accepted).
+      // Arabic: the listing page, the thread, and the thread opened on « Faire une offre » once accepted
+      // (no new offer in this conversation: the « Offre acceptée » button and a notice, audit zone 5 n°15).
       await buyerPage.goto(`/ar/annonce/${listing.slugId}`);
       await expect(buyerPage.getByTestId("price-guide")).toBeVisible();
       await shoot(buyerPage, "1-annonce-prix-repere-ar", async () => {
@@ -200,9 +204,10 @@ test.describe("price guide and offers", () => {
       await expect(sellerPage.getByTestId("offer-card")).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
       await shoot(sellerPage, "6-offre-acceptee-vendeur-ar");
       await buyerPage.goto(`/ar/messages/${cid}?offre=1`);
-      await expect(buyerPage.getByTestId("offer-dialog")).toBeVisible({ timeout: 15_000 });
-      await buyerPage.getByTestId("offer-dialog").getByRole("textbox").first().fill("1250");
-      await shoot(buyerPage, "2-dialogue-offre-ar");
+      await expect(buyerPage.getByTestId("offer-accepted-open")).toBeVisible({ timeout: 15_000 });
+      await expect(buyerPage.getByText("سبق قبول عرض في هذه المحادثة")).toBeVisible();
+      await expect(buyerPage.getByTestId("offer-dialog")).toHaveCount(0);
+      await shoot(buyerPage, "2-offre-acceptee-acheteur-ar");
     }
 
     // Back on the listing: the conversation and the accepted offer, not a first message (audit zone 5 n°14).

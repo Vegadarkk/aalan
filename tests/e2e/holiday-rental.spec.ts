@@ -173,7 +173,7 @@ test.describe("seasonal rental agency", () => {
     await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(8));
     await compose.getByLabel("Précisions (facultatif)").fill("2 adultes, arrivée vers 18 h");
     await compose.getByLabel("Voyageurs").selectOption("2");
-    await expect(compose.getByLabel("Votre message")).toHaveValue(new RegExp(`séjourner à « ${title} » du .+ au .+ \\(3 nuits\\) : 2 adultes, arrivée vers 18 h\\. Est-ce disponible \\? Nous serons 2 voyageurs\\.$`, "u"));
+    await expect(compose.getByLabel("Votre message")).toHaveValue(new RegExp(`séjourner à « ${title} » aux dates de ma demande\\. Est-ce disponible \\? Nous serons 2 voyageurs\\.$`, "u"));
     await expect(compose.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
     await guest.screenshot({ path: "test-results/holiday-request-compose.png" });
     await compose.getByRole("button", { name: "Envoyer la demande" }).click();

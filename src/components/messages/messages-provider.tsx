@@ -23,6 +23,16 @@ export interface MessagesContextValue {
   /** A fresher version of a row (the open thread's own reads and actions). */
   putRow: (row: ConversationView) => void;
   dropRow: (cid: string) => void;
+  /**
+   * While muted (deleted for me, or being deleted), the echo events of a conversation fetch nothing:
+   * it answers 404 until a new message brings it back (audit zone 5 n°13).
+   */
+  muteRow: (cid: string, muted: boolean) => void;
+}
+
+/** Whether a live event about a muted conversation is worth a refetch: only a new message brings it back. */
+export function wakesMuted(event: MessagingEvent): boolean {
+  return event.type === "message";
 }
 
 const MessagesContext = createContext<MessagesContextValue | null>(null);
@@ -85,6 +95,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     setInbox((state) => (state.kind === "ready" ? { kind: "ready", ...removeRow(state, cid) } : state));
   }, []);
 
+  const muted = useRef(new Set<string>());
+  const muteRow = useCallback((cid: string, mute: boolean) => {
+    if (mute) muted.current.add(cid);
+    else muted.current.delete(cid);
+  }, []);
+
   // One refetch per row at a time; an event arriving meanwhile asks for one more.
   const rowFetches = useRef(new Map<string, boolean>());
   const refreshRow = useCallback(
@@ -134,6 +150,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         case "message":
         case "message_updated":
         case "conversation":
+          if (muted.current.has(event.cid)) {
+            if (!wakesMuted(event)) return;
+            muted.current.delete(event.cid);
+          }
           refreshRow(event.cid);
           return;
         case "resync":
@@ -153,8 +173,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<MessagesContextValue>(
     // A view switch shows its skeleton until its first page arrives.
-    () => ({ archived, inbox: inbox.archived === archived ? inbox : { kind: "loading", archived }, live, loadMore, retry, refreshLive, putRow, dropRow }),
-    [archived, inbox, live, loadMore, retry, refreshLive, putRow, dropRow],
+    () => ({ archived, inbox: inbox.archived === archived ? inbox : { kind: "loading", archived }, live, loadMore, retry, refreshLive, putRow, dropRow, muteRow }),
+    [archived, inbox, live, loadMore, retry, refreshLive, putRow, dropRow, muteRow],
   );
   return <MessagesContext.Provider value={value}>{children}</MessagesContext.Provider>;
 }

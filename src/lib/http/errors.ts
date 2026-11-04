@@ -173,6 +173,8 @@ export type ErrorCode =
   | "offer_expired"
   /** The buyer already has an offer waiting for an answer on this listing (409). */
   | "offer_pending"
+  /** An offer was already accepted in this conversation: no new negotiation in it (409, audit zone 5 n°15). */
+  | "offer_accepted"
   /** The listing takes no offer: donation, no price, rental, service, example, sold out (409). */
   | "offer_unavailable"
   /** Reporter abusive (art. 23) or target not reportable by this account (403). */

@@ -136,28 +136,35 @@ export function canWrite(conversation: ConversationView, suspended: boolean): bo
   return !conversation.frozen && !conversation.blockedByMe && !conversation.blockedMe && !conversation.counterpartClosed && !suspended;
 }
 
-/** What the pinned cards say once settled, in one line (audit zone 5 n°6). */
+/** What the settled pinned cards say, in one line (audit zone 5 n°6). */
 export interface SettledPins {
   /** The accepted offer's final amount. */
   offer: number | null;
   appointment: { kind: AppointmentKind; slot: Slot } | null;
+  /**
+   * Another card stays open beside them (a rental request or its history, an offer or a proposal
+   * waiting for an answer): the settled ones then fold on large screens too, so that two cards no
+   * longer leave the messages a sliver (audit L4-23). Alone, they fold under lg only.
+   */
+  alongside: boolean;
 }
 
 /**
- * The one-line summary of the pinned cards when nothing waits for an answer: an accepted offer and/or
- * a confirmed appointment, nothing else pinned. Null while an offer or a proposal is open (the full
- * card asks for the answer), with a rental request or its history (their own cards), or with nothing pinned.
+ * The one-line summary of the settled pinned cards: an accepted offer and/or a confirmed
+ * appointment. A card that waits for an answer, a rental request and its history never fold (the
+ * full card asks for the answer); null with nothing settled pinned.
  */
 export function settledPins(conversation: Pick<ConversationView, "offer" | "appointment" | "rentalRequest" | "rentalHistory">, now: number): SettledPins | null {
   const { offer, appointment, rentalRequest, rentalHistory } = conversation;
-  if ((rentalRequest && rentalRequestOpen(rentalRequest, moroccoToday(now))) || (rentalHistory && rentalHistory.length > 0)) return null;
   const offerShown = offer && offerCardShown(offer, now) ? offer : null;
   const appointmentShown = appointment && isActive(appointment, now) ? appointment : null;
-  if (!offerShown && !appointmentShown) return null;
-  if (offerShown && offerShown.status !== "accepted") return null;
-  if (appointmentShown && (appointmentShown.status !== "confirmed" || !appointmentShown.chosen)) return null;
+  const offerSettled = offerShown?.status === "accepted" ? offerShown : null;
+  const appointmentSettled = appointmentShown?.status === "confirmed" && appointmentShown.chosen ? { kind: appointmentShown.kind, slot: appointmentShown.chosen } : null;
+  if (!offerSettled && !appointmentSettled) return null;
+  const rentalShown = Boolean(rentalRequest && rentalRequestOpen(rentalRequest, moroccoToday(now))) || (rentalHistory?.length ?? 0) > 0;
   return {
-    offer: offerShown ? offerFinalAmount(offerShown) : null,
-    appointment: appointmentShown?.chosen ? { kind: appointmentShown.kind, slot: appointmentShown.chosen } : null,
+    offer: offerSettled ? offerFinalAmount(offerSettled) : null,
+    appointment: appointmentSettled,
+    alongside: rentalShown || (offerShown !== null && !offerSettled) || (appointmentShown !== null && !appointmentSettled),
   };
 }

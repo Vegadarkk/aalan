@@ -11,6 +11,7 @@ import { offerFinalAmount, type OfferAction, type OfferResponse, type OfferView 
 import { isolate } from "@/lib/i18n/bidi";
 import { formatPrice } from "@/lib/listings/client/format";
 import { postOfferAction } from "@/lib/offers/client";
+import { OFFER_TTL_MS } from "@/lib/offers/rules";
 import { cn } from "@/lib/utils";
 import { OfferNotice } from "./offer-notice";
 import { useOfferErrorMessage } from "./errors";
@@ -29,6 +30,18 @@ const ACCEPTED_PINNED_MS = 7 * 24 * HOUR_MS;
 export function offerCardShown(offer: Pick<OfferView, "status" | "updatedAt">, now: number): boolean {
   if (offer.status === "open" || offer.status === "countered") return true;
   return offer.status === "accepted" && now - offer.updatedAt < ACCEPTED_PINNED_MS;
+}
+
+/**
+ * Whole hours left before the offer expires, rounded to the nearest and never above the offer's
+ * 48 h: a device clock a little behind the server's read « 49 heures » right after sending (audit
+ * zone 5 n°11). 0 under an hour (« moins d'une heure »), null once expired.
+ */
+export function offerHoursLeft(expiresAt: number, now: number): number | null {
+  const left = expiresAt - now;
+  if (left <= 0) return null;
+  if (left < HOUR_MS) return 0;
+  return Math.min(Math.round(left / HOUR_MS), OFFER_TTL_MS / HOUR_MS);
 }
 
 export interface OfferCardProps {
@@ -56,7 +69,7 @@ export function OfferCard({ cid, offer, counterpartName, writable, now, onChange
   const name = isolate(counterpartName);
   const buyer = offer.madeByMe;
   const price = (amount: number) => formatPrice(amount, locale);
-  const hoursLeft = Math.ceil((offer.expiresAt - now) / HOUR_MS);
+  const hoursLeft = offerHoursLeft(offer.expiresAt, now);
 
   async function act(action: OfferAction, done: string) {
     setBusy(action.action);
@@ -87,10 +100,10 @@ export function OfferCard({ cid, offer, counterpartName, writable, now, onChange
     </span>
   );
   const expiry =
-    accepted || hoursLeft <= 0 ? null : (
+    accepted || hoursLeft === null ? null : (
       <p className="flex items-center gap-1.5 text-xs text-foreground-muted tabular-nums">
         <Hourglass className="size-3.5 shrink-0" aria-hidden="true" />
-        {hoursLeft <= 1 ? t("expiresSoon") : t("expiresIn", { hours: hoursLeft })}
+        {hoursLeft === 0 ? t("expiresSoon") : t("expiresIn", { hours: hoursLeft })}
       </p>
     );
 

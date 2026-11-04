@@ -10,6 +10,7 @@ import { MESSAGING_ERROR_KEYS, messagingErrorKey } from "@/components/messages/e
 import { formatDayLabel, formatRowTime } from "@/components/messages/format";
 import { previewText, threadHref } from "@/components/messages/inbox";
 import { NO_FILTER, effectiveFilter, filterRows, firstPage, inboxIsEmpty, listingChoices, removeRow, shouldLoadMore, unreadConversations, withFreshHead, withPage, withRow, type InboxList } from "@/components/messages/inbox-state";
+import { wakesMuted } from "@/components/messages/messages-provider";
 import { titleWithUnread } from "@/components/messages/unread-title";
 import { ThreadPlaceholderView } from "@/components/messages/thread-placeholder";
 import { canReport, MessageItem, textParts, warningsFor } from "@/components/messages/message-item";
@@ -28,10 +29,10 @@ import {
   withReadReceipt,
   withRefreshedPage,
 } from "@/components/messages/thread-state";
-import { prunePending } from "@/components/messages/thread-view";
+import { prunePending, threadUrlFor } from "@/components/messages/thread-view";
 import { ApiError } from "@/lib/auth/client";
 import type { SessionSummary } from "@/lib/contracts/auth";
-import { HIDDEN_MARKER, URL_MARKER, type ConversationView, type ConversationsPage, type MessagesPage, type MessageView } from "@/lib/contracts/messaging";
+import { HIDDEN_MARKER, URL_MARKER, type ConversationView, type ConversationsPage, type MessagesPage, type MessageView, type MessagingEvent } from "@/lib/contracts/messaging";
 
 // The messaging pages' pure parts (design phase-5 D2-D9): inbox paging and live row updates, the
 // thread's pages and read receipts, dates in Morocco's time zone, risk warnings and masked links,
@@ -189,6 +190,24 @@ describe("inbox filters (audit §7)", () => {
 
   it("keeps the open conversation once it is read", () => {
     expect(filterRows(rows, { unread: true, listingId: null }, cid(2)).map((item) => item.cid)).toEqual([cid(1), cid(2), cid(3)]);
+  });
+
+  it("finds words in the name or the title, without accents nor case (audit zone 5 n°21)", () => {
+    const named = [
+      row(1, 500, { counterpart: { publicId: "abcdefghjk", displayName: "Élodie Benali" }, listing: { title: "Vélo de route", price: 900, isDonation: false, photo: null } }),
+      row(2, 400, { counterpart: { publicId: "abcdefghjm", displayName: "Karim" }, listing: { title: "Vélo de route", price: 900, isDonation: false, photo: null } }),
+      row(3, 300, { unread: 1, counterpart: { publicId: "abcdefghjn", displayName: "يوسف" }, listing: { title: "Table basse", price: 200, isDonation: false, photo: null } }),
+    ];
+    const found = (query: string, filter: Partial<typeof NO_FILTER> = {}, selected: string | null = null) => filterRows(named, { ...NO_FILTER, ...filter, query }, selected).map((item) => item.cid);
+    expect(found("   ")).toEqual([cid(1), cid(2), cid(3)]);
+    expect(found("ELODIE")).toEqual([cid(1)]);
+    expect(found("route velo")).toEqual([cid(1), cid(2)]);
+    expect(found("velo karim")).toEqual([cid(2)]);
+    expect(found("يُوسف")).toEqual([cid(3)]);
+    expect(found("table", { unread: true })).toEqual([cid(3)]);
+    // The words narrow the open conversation too.
+    expect(found("karim", { unread: true }, cid(1))).toEqual([]);
+    expect(found("elodie", { unread: true }, cid(1))).toEqual([cid(1)]);
   });
 
   it("lists the listings by number of conversations and counts the unread ones", () => {
@@ -424,6 +443,20 @@ describe("composer and first message", () => {
       expect(ar.Auth.errors[code]).toBeTruthy();
     }
     expect(composeErrorKey(new Error("boom"))).toBeNull();
+  });
+});
+
+describe("thread address and deletion", () => {
+  it("follows the list that holds the conversation, other parameters kept", () => {
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1?archived=1", false)).toBe("https://aalan.ma/fr/messages/c1");
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1?rdv=visit&archived=1", false)).toBe("https://aalan.ma/fr/messages/c1?rdv=visit");
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1", true)).toBe("https://aalan.ma/fr/messages/c1?archived=1");
+  });
+
+  it("refetches a deleted conversation's row only when a new message brings it back", () => {
+    expect(wakesMuted({ type: "message", cid: cid(1), mid: "m1" } as MessagingEvent)).toBe(true);
+    expect(wakesMuted({ type: "conversation", cid: cid(1) } as MessagingEvent)).toBe(false);
+    expect(wakesMuted({ type: "message_updated", cid: cid(1), mid: "m1" } as MessagingEvent)).toBe(false);
   });
 });
 

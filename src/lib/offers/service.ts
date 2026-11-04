@@ -28,12 +28,14 @@ import { offerView } from "./views";
 // Each step is one system message appended in the message transaction (access checks of D4), so
 // it reaches the other participant like a message (badge, live stream, digest mail with its
 // opt-out). An optional note follows as an ordinary message, screened like any message. An
-// accepted offer is no sale and no payment: nothing reaches Stripe, the card says so.
+// accepted offer is no sale and no payment: nothing reaches Stripe, the card says so. Once an
+// offer is accepted the conversation takes no new one: the price is settled there (audit zone 5 n°15).
 
 const newOfferId = () => randomBytes(9).toString("base64url");
 
 const changed = () => new HttpError(409, "offer_changed");
 const expired = () => new HttpError(409, "offer_expired");
+const settled = () => new HttpError(409, "offer_accepted");
 
 function invalidAmount(problem: string): never {
   throw new HttpError(400, "invalid_body", undefined, { details: [{ path: "amount", code: problem }] });
@@ -59,6 +61,7 @@ export function nextOfferStep(current: OfferDoc | undefined, action: OfferAction
   if (action.action === "make") {
     if (role !== "buyer") throw new HttpError(403, "forbidden", "only the buyer makes an offer");
     if (pending(current, at)) throw new HttpError(409, "offer_pending");
+    if (current?.status === "accepted") throw settled();
     if (price === undefined) throw new HttpError(409, "offer_unavailable");
     const problem = offerProblem(action.amount, price);
     if (problem) invalidAmount(problem);
@@ -112,6 +115,7 @@ export async function actOnOffer(actor: MessagingActor, cid: string, action: Off
     // A seller never makes an offer: refused before the listing read.
     if (roleOf(conversation, actor.uid) !== "buyer") throw new HttpError(403, "forbidden", "only the buyer makes an offer");
     if (pending(conversation.offer, now.getTime())) throw new HttpError(409, "offer_pending");
+    if (conversation.offer?.status === "accepted") throw settled();
     offerPrice = assertOfferListing(await getListing(conversation.listingId), now);
   }
   let result: { offer: OfferDoc; role: OfferRole } | undefined;

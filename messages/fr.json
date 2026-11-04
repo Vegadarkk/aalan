@@ -3063,7 +3063,7 @@
       "clear": "Effacer la recherche",
       "category": "Catégorie",
       "allCategories": "Toutes les catégories",
-      "count": "{shown, plural, =0 {Aucune annonce} one {# annonce} other {# annonces}} sur {total}",
+      "count": "{shown, plural, one {# annonce} other {# annonces}} sur {total}",
       "emptyTitle": "Aucune annonce ne correspond",
       "emptyBody": "Essayez d'autres mots ou une autre catégorie.",
       "reset": "Effacer la recherche"

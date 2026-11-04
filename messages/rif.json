@@ -3053,7 +3053,7 @@
       "clear": "Kkes arezzu",
       "category": "Taggayt",
       "allCategories": "Akk taggayin",
-      "count": "{shown, plural, =0 {Walu annonce} one {# n annonce} other {# n annonces}} zi {total}",
+      "count": "{shown, plural, one {# n annonce} other {# n annonces}} zi {total}",
       "emptyTitle": "Walu annonce yemsasan",
       "emptyBody": "Ɛreḍ awalen nniḍen naɣ taggayt nniḍen.",
       "reset": "Kkes arezzu"

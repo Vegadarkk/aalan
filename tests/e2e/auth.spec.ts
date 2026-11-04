@@ -131,7 +131,7 @@ test.describe("account", () => {
     await expect(panel.getByRole("navigation", { name: "Mon compte" })).toBeVisible();
     await expect(panel.getByRole("link", { name: "Mes annonces" })).toBeFocused();
     await expect(panel.getByRole("menuitem")).toHaveCount(0);
-    await expect(panel.getByRole("button", { name: "Se déconnecter" })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Déconnexion" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
     await expect(account).toBeFocused();

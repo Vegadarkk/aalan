@@ -316,10 +316,13 @@ test.describe("search page", () => {
     await words.fill(WORD);
     await words.press("Enter");
     await expect(page).toHaveURL(new RegExp(`q=${WORD}`));
-    await words.fill("");
-    await words.blur();
-    await words.click();
-    await expect(list.getByRole("option", { name: WORD })).toBeVisible();
+    // The new results bind the pill again and refill it with the words: clear until it stays empty.
+    await expect(async () => {
+      await words.fill("");
+      await words.blur();
+      await words.click();
+      await expect(list.getByRole("option", { name: WORD })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
     await list.getByRole("button", { name: "Effacer" }).click();
     await expect(list).toBeHidden();
   });

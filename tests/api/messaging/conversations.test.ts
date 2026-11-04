@@ -384,12 +384,12 @@ describe("GET /api/messages/unread", () => {
     const { cid } = await startOk(buyer, listingId);
     await send(buyer, cid, "Bonjour ?");
     const first = await unread(seller);
-    expect(first.body).toEqual({ total: 2 });
+    expect(first.body).toEqual({ total: 2, streams: 0 });
     expect(valkey.ttlMs(MESSAGING_KEYS.seen(seller.uid))).toBeGreaterThan(0);
     await send(buyer, cid, "Allô ?");
-    expect((await unread(seller)).body).toEqual({ total: 3 });
+    expect((await unread(seller)).body).toEqual({ total: 3, streams: 0 });
     await markRead(seller, cid);
-    expect((await unread(seller)).body).toEqual({ total: 0 });
+    expect((await unread(seller)).body).toEqual({ total: 0, streams: 0 });
     expectError(await unread(undefined), 401, "unauthenticated");
   });
 
@@ -399,6 +399,6 @@ describe("GET /api/messages/unread", () => {
     valkey.failing = true;
     expectError(await unread(seller), 503, "unavailable");
     setMessagingValkeyForTests(null);
-    expect((await unread(seller)).body).toEqual({ total: 1 });
+    expect((await unread(seller)).body).toEqual({ total: 1, streams: 0 });
   });
 });

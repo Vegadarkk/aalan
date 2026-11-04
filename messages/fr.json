@@ -4381,7 +4381,9 @@
       "archivedEmptyBody": "Une conversation archivée revient dans la boîte de réception dès qu'un nouveau message arrive.",
       "selectTitle": "Choisissez une conversation",
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
-      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion."
+      "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
+      "busy": "Vous avez déjà {count} onglets ouverts sur la messagerie : fermez-en un pour reprendre le direct.",
+      "refreshLive": "Actualiser"
     },
     "row": {
       "you": "Vous :",
@@ -4435,7 +4437,9 @@
       "counterpartClosed": "{name} a fermé son compte : vous pouvez relire la conversation, mais plus y écrire.",
       "frozen": "Cette conversation est suspendue : vous pouvez la lire, mais plus y écrire.",
       "suspended": "Votre compte est suspendu : vous pouvez lire vos conversations, mais plus envoyer de message.",
-      "shop": "Voir la boutique « {title} »"
+      "shop": "Voir la boutique « {title} »",
+      "pinsShow": "Afficher le détail de l'offre et du rendez-vous",
+      "pinsHide": "Masquer le détail de l'offre et du rendez-vous"
     },
     "review": {
       "label": "Donner votre avis",

@@ -23,6 +23,11 @@ export function formatSlotDay(at: number, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale(locale), { weekday: "long", day: "numeric", month: "long", timeZone: moroccoTimeZone(at) }).format(new Date(at));
 }
 
+/** "jeu. 5 nov.". */
+export function formatSlotShortDay(at: number, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short", day: "numeric", month: "short", timeZone: moroccoTimeZone(at) }).format(new Date(at));
+}
+
 /** Day tile parts of "YYYY-MM-DD": weekday "jeu.", day "5", month "nov.". */
 export function dayTile(day: string, locale: Locale): { weekday: string; date: string; month: string } {
   const at = new Date(`${day}T12:00:00Z`);

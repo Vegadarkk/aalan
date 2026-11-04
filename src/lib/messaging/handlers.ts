@@ -27,6 +27,7 @@ import { actOnRentalRequest, rentalListingUnit, requestAction } from "@/lib/rent
 import { assertOfferListing } from "@/lib/offers/listing";
 import { actOnOffer, makeAction } from "@/lib/offers/service";
 import { verifyTurnstile } from "@/lib/security/turnstile";
+import { openStreamCount } from "./bus";
 import { conversationId, shopConversationId } from "./ids";
 import { startShopConversationSchema } from "@/lib/contracts/messaging";
 import { proIdSchema } from "@/lib/pro/profile-schema";
@@ -220,6 +221,6 @@ export async function handleState(request: Request, params: Params): Promise<Res
 export async function handleUnread(request: Request): Promise<Response> {
   const auth = await requireUser(request, { checkRevoked: true, allowSuspended: true });
   await enforceLimit("messages.unread.uid", auth.user.uid);
-  const body: UnreadResponse = { total: await unreadBadge(auth.user.uid) };
+  const body: UnreadResponse = { total: await unreadBadge(auth.user.uid), streams: openStreamCount(auth.user.uid) };
   return json(body);
 }

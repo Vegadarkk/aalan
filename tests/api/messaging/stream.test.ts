@@ -81,7 +81,7 @@ const typesFor = (uid: string, from: number) => pubsub.published.slice(from).fil
 describe("GET /api/messages/stream", () => {
   it("answers an event stream: headers, retry, ready, then the account's events (ids only)", async () => {
     const { buyer, seller, cid } = await pair();
-    expect((await unread(seller)).body).toEqual({ total: 1 });
+    expect((await unread(seller)).body).toEqual({ total: 1, streams: 0 });
     const stream = await open(seller);
     expect(stream.status).toBe(200);
     expect(stream.response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
@@ -128,6 +128,8 @@ describe("GET /api/messages/stream", () => {
     setMessagingBusForTests(new MessagingBus(pubsub, { perUid: 1, total: 10, readyTimeoutMs: 10 }));
     expect((await open(buyer)).status).toBe(200);
     expect((await open(buyer)).status).toBe(429);
+    // The refused tab learns why from GET unread: every slot of the account is taken (zone 5 n°7).
+    expect((await unread(buyer)).body).toEqual({ total: 0, streams: 1 });
 
     setMessagingBusForTests(null);
     const none = await open(buyer);

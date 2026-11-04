@@ -90,11 +90,15 @@ export const MESSAGING_API = {
   shopConversation: (proId: string) => `/api/shops/${encodeURIComponent(proId)}/conversations`,
   /** POST { turnstileToken? } -> PhoneRevealResponse: the shop's verified number. */
   shopPhone: (proId: string) => `/api/shops/${encodeURIComponent(proId)}/phone`,
-  /** GET { total } (Valkey). */
+  /** GET { total, streams } (Valkey). */
   unread: "/api/messages/unread",
   /** GET text/event-stream of MessagingEvent (session cookie; one per tab, D2). */
   stream: "/api/messages/stream",
 } as const;
+
+/** Live streams an account may keep open at once (one per tab, D2): the next tab is refused (429)
+ *  and waits for a free slot (live.ts). */
+export const LIVE_STREAMS_PER_ACCOUNT = 5;
 
 /** Explanation of a notice, in characters after trimming (reports.ts re-exports them). */
 export const REPORT_EXPLANATION_MIN = 10;

@@ -26,7 +26,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, existsSync, readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
-import { assertTargets, type Targets } from "./assert-target.ts";
+import { assertTargets, recordedZoneId, zoneOf, type Targets } from "./assert-target.ts";
 import { accountName, serviceAccountEmail } from "./identity-names.ts";
 
 export const DEPLOYED_ENVS = ["staging", "prod"] as const;
@@ -99,6 +99,12 @@ export function r2Endpoint(accountId: string): string {
   return `https://${accountId}.eu.r2.cloudflarestorage.com`;
 }
 
+/** The recorded id of the zone serving `media` (null: no host, a host outside the project zones, or a zone not added yet). */
+export function mediaZoneId(media: string | null, targets: Targets): string | null {
+  const zone = media === null ? null : zoneOf(media);
+  return zone === null ? null : recordedZoneId(targets, zone);
+}
+
 /** Values that follow from infra/targets.json (R2's join only with its keys). */
 export function derivedValues(env: DeployedEnv, targets: Targets): Record<string, string> {
   const recorded = targets.environments[env];
@@ -131,6 +137,9 @@ export function derivedValues(env: DeployedEnv, targets: Targets): Record<string
     R2_BUCKET_MEDIA: recorded.r2.media,
     R2_BUCKET_PRIVATE: recorded.r2.private,
     MEDIA_BASE_URL: media === null ? null : `https://${media}`,
+    // Zone of the media host, for the edge purge of deleted photos (src/lib/cdn); its token,
+    // CF_MEDIA_PURGE_TOKEN, comes from a --from file (docs/phase-1.md).
+    CF_MEDIA_ZONE_ID: mediaZoneId(media, targets),
     // No MEILI_URL (phase 4): infra/vm/search-setup.sh writes it with the two search keys. Alone, it
     // stops web and worker at startup (src/lib/env.ts), and a first start comes before the keys.
   };

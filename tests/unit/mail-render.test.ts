@@ -221,6 +221,15 @@ describe("renderMail", () => {
     expect(renderMail(mail("staffInvite", "fr", { ...DATA.staffInvite, role: "admin" })).text).toContain("administrateur");
     expect(renderMail(mail("staffInvite", "ar", { ...DATA.staffInvite, role: "moderator" })).text).toContain("مشرف");
   });
+
+  it("states until when the staff invitation link works, without tool names (audit zone 7 P3-5)", () => {
+    const fr = renderMail(mail("staffInvite", "fr", { ...DATA.staffInvite, expiresAt: "2026-11-04T10:30:00.000Z" })).text;
+    expect(fr).toContain("Ce lien est valable une heure, jusqu'au 4 novembre 2026");
+    expect(fr).not.toContain("Cloudflare");
+    expect(renderMail(mail("staffInvite", "ar", { ...DATA.staffInvite, expiresAt: "2026-11-04T10:30:00.000Z" })).text).toContain("صالح لمدة ساعة واحدة");
+    // Jobs queued before the expiry was set: no line rather than a wrong date.
+    expect(renderMail(mail("staffInvite", "fr", DATA.staffInvite)).text).not.toContain("valable une heure");
+  });
 });
 
 describe("helpers", () => {

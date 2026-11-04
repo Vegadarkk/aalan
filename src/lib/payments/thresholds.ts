@@ -79,7 +79,7 @@ async function alertLevel(name: string, usedMinor: number, limitEur: number, bef
   await alert({
     severity: level >= 1 ? "P1" : "P2",
     title: `${name} : ${Math.floor(share * 100)} % du seuil annuel`,
-    body: `${euros(usedMinor)} sur ${euros(limitEur * 100)} depuis le 1er janvier. ${level >= 1 ? consequence : "Préparer la suite (docs/tax-runbook.md)."}`,
+    body: `${euros(usedMinor)} sur ${euros(limitEur * 100)} depuis le 1er janvier. ${level >= 1 ? consequence : "Préparer la suite (back-office, Guide démarches > Guide fiscal)."}`,
   });
   return level;
 }
@@ -127,7 +127,7 @@ export async function updateBillingThresholds(now = new Date(), stripe: typeof s
     turnoverMonths,
     alerted: {
       euB2c: await alertLevel("Ventes B2C dans l'UE", euB2cEurMinor, EU_B2C_THRESHOLD_EUR, alerted.euB2c, "Les packs en euros sont retirés de la vente jusqu'à la fin de l'année prochaine, sauf inscription au guichet OSS."),
-      franchise: turnoverEurMinor === null ? alerted.franchise : await alertLevel("Franchise en base de TVA", turnoverEurMinor, FRANCHISE_CEILING_EUR, alerted.franchise, "La franchise prend fin : voir docs/tax-runbook.md avec le comptable."),
+      franchise: turnoverEurMinor === null ? alerted.franchise : await alertLevel("Franchise en base de TVA", turnoverEurMinor, FRANCHISE_CEILING_EUR, alerted.franchise, "La franchise prend fin : voir le guide fiscal du back-office (section 4) avec le comptable."),
     },
     computedAt: now,
   };

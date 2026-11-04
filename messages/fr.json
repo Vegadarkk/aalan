@@ -414,7 +414,11 @@
       "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
       "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro.",
       "sessionEndedSuspended": "Votre session a pris fin : votre compte est suspendu jusqu'au {date} (heure du Maroc).",
-      "sessionEndedSuspendedBody": "Reconnectez-vous pour lire vos conversations, voir le motif de la décision et la contester."
+      "sessionEndedSuspendedBody": "Reconnectez-vous pour lire vos conversations, voir le motif de la décision et la contester.",
+      "sessionEndedProValidated": "Votre boutique a été validée : reconnectez-vous pour ouvrir votre espace Pro.",
+      "sessionEndedProValidatedBody": "Votre session a été renouvelée pour appliquer ce changement sur votre compte.",
+      "sessionEndedChanged": "Votre session a été renouvelée pour appliquer un changement sur votre compte.",
+      "sessionEndedChangedBody": "Reconnectez-vous pour continuer."
     },
     "signUp": {
       "title": "Créer un compte",

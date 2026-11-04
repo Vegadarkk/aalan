@@ -23,6 +23,10 @@ export const staffDocSchema = z
     invitedBy: z.union([z.string().min(1).max(128), z.literal("script")]),
     createdAt: z.date(),
     revokedAt: z.date().optional(),
+    /** Last invitation mailed (audit zone 7 P3-5); absent on entries written before it (active). */
+    invitedAt: z.date().optional(),
+    /** Password set or first sign-in since the last invitation: until then the member is "pending". */
+    activatedAt: z.date().optional(),
   })
   .strict();
 export type StaffDoc = z.infer<typeof staffDocSchema>;
@@ -37,6 +41,8 @@ export interface UpsertStaffInput {
   displayName: string;
   role: StaffRole;
   invitedBy: string | "script";
+  /** An invitation is mailed now: a new or revoked member becomes pending (an active one stays active). */
+  invited?: boolean;
   now?: Date;
 }
 
@@ -49,7 +55,13 @@ function toDate(value: unknown): unknown {
 function fromSnapshot(snapshot: DocumentSnapshot): StaffRecord | null {
   const data = snapshot.data();
   if (!data) return null;
-  const parsed = staffDocSchema.safeParse({ ...data, createdAt: toDate(data["createdAt"]), revokedAt: toDate(data["revokedAt"]) });
+  const parsed = staffDocSchema.safeParse({
+    ...data,
+    createdAt: toDate(data["createdAt"]),
+    revokedAt: toDate(data["revokedAt"]),
+    invitedAt: toDate(data["invitedAt"]),
+    activatedAt: toDate(data["activatedAt"]),
+  });
   return parsed.success ? { uid: snapshot.id, ...parsed.data } : null;
 }
 
@@ -58,22 +70,39 @@ function toFirestore(doc: StaffDoc): Record<string, unknown> {
     ...doc,
     createdAt: Timestamp.fromDate(doc.createdAt),
     ...(doc.revokedAt ? { revokedAt: Timestamp.fromDate(doc.revokedAt) } : {}),
+    ...(doc.invitedAt ? { invitedAt: Timestamp.fromDate(doc.invitedAt) } : {}),
+    ...(doc.activatedAt ? { activatedAt: Timestamp.fromDate(doc.activatedAt) } : {}),
   };
 }
 
 /**
+ * When an invitation leaves the member active: a current member already active (activated, or an
+ * entry older than the pending state, active since its creation) keeps that date; a new or revoked
+ * member waits for the password (undefined).
+ */
+export function keptActivation(existing: StaffDoc | null): Date | undefined {
+  if (!existing || existing.revokedAt) return undefined;
+  return existing.activatedAt ?? (existing.invitedAt ? undefined : existing.createdAt);
+}
+
+/**
  * Creates or replaces the roster entry. A re-invitation keeps the original createdAt, takes the
- * new role and inviter, and clears any revocation (the account is active again).
+ * new role and inviter, and clears any revocation; with `invited`, the entry records the mail and
+ * a new or revoked member is pending until the password is set.
  */
 export async function upsertStaff(input: UpsertStaffInput): Promise<StaffRecord> {
   const now = input.now ?? new Date();
   const existing = await getStaff(input.uid);
+  const invitedAt = input.invited ? now : existing?.invitedAt;
+  const activatedAt = input.invited ? keptActivation(existing) : existing?.activatedAt;
   const doc = staffDocSchema.parse({
     email: input.email,
     displayName: input.displayName,
     role: input.role,
     invitedBy: input.invitedBy,
     createdAt: existing?.createdAt ?? now,
+    ...(invitedAt ? { invitedAt } : {}),
+    ...(activatedAt ? { activatedAt } : {}),
   });
   await staffRef(input.uid).set(toFirestore(doc));
   void consume("firestore.writes", 1);
@@ -84,6 +113,20 @@ export async function upsertStaff(input: UpsertStaffInput): Promise<StaffRecord>
 export async function revokeStaff(uid: string, now = new Date()): Promise<void> {
   await staffRef(uid).update({ revokedAt: Timestamp.fromDate(now) });
   void consume("firestore.writes", 1);
+}
+
+/** The invitation was mailed again (still pending). */
+export async function markStaffInvited(uid: string, now = new Date()): Promise<void> {
+  await staffRef(uid).update({ invitedAt: Timestamp.fromDate(now) });
+  void consume("firestore.writes", 1);
+}
+
+/** The member set their password or signed in: no longer pending. No-op when already active. */
+export async function markStaffActivated(record: StaffRecord | null, now = new Date()): Promise<boolean> {
+  if (!record || record.revokedAt || keptActivation(record)) return false;
+  await staffRef(record.uid).update({ activatedAt: Timestamp.fromDate(now) });
+  void consume("firestore.writes", 1);
+  return true;
 }
 
 export async function getStaff(uid: string): Promise<StaffRecord | null> {

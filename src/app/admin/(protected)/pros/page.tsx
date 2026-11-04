@@ -30,38 +30,59 @@ export default async function ProQueuePage() {
         <EmptyState title="Aucune demande en attente">Les nouvelles demandes de compte Pro apparaîtront ici.</EmptyState>
       ) : (
         <>
-          <ul className="flex flex-col gap-3" data-testid="pro-queue">
-            {queue.items.map((item) => {
-              const city = cityBySlug(item.citySlug);
-              return (
-                <li key={item.proId}>
-                  <Link
-                    href={`/pros/${item.proId}`}
-                    className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <span className="flex min-w-0 flex-col gap-1">
-                      <span className="truncate font-semibold" dir="auto">
-                        {item.name}
-                      </span>
-                      <span className="text-sm text-foreground-muted">
-                        {LEGAL_FORM_LABEL[item.legalForm] ?? item.legalForm}
-                        {city ? ` à ${cityName(city, "fr")}` : ""}
-                        {item.owner ? `, demandé par ${item.owner.displayName}` : ""}
-                      </span>
-                    </span>
-                    <span className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-mono tabular-nums" dir="ltr">
-                        ICE {formatIce(item.ice)}
-                      </span>
-                      {item.iceFormatOk ? null : <Badge variant="warning">Format ICE à vérifier</Badge>}
-                      <Badge>{item.pieces > 1 ? `${item.pieces} pièces` : "1 pièce"}</Badge>
-                      <span className="text-foreground-muted">{formatMorocco(item.submittedAt)}</span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {/* One column per fact (zone 7 audit P4): shop, city, applicant, ICE, documents, date. The shop name links to the record; the whole row is its target. */}
+          <div role="region" aria-labelledby="pro-queue-title" tabIndex={0} className="relative overflow-x-auto rounded-lg border border-border bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            <table className="w-full min-w-[52rem] text-sm" data-testid="pro-queue">
+              <caption id="pro-queue-title" className="sr-only">
+                Demandes de compte Pro, les plus anciennes en premier
+              </caption>
+              <thead className="bg-surface-muted text-foreground-muted">
+                <tr>
+                  <th scope="col" className="px-4 py-2.5 text-start font-medium">Boutique</th>
+                  <th scope="col" className="px-4 py-2.5 text-start font-medium">Ville</th>
+                  <th scope="col" className="px-4 py-2.5 text-start font-medium">Demandeur</th>
+                  <th scope="col" className="px-4 py-2.5 text-start font-medium">ICE</th>
+                  <th scope="col" className="px-4 py-2.5 text-end font-medium">Justificatifs</th>
+                  <th scope="col" className="px-4 py-2.5 text-end font-medium">Demandée le</th>
+                </tr>
+              </thead>
+              <tbody>
+                {queue.items.map((item) => {
+                  const city = cityBySlug(item.citySlug);
+                  return (
+                    <tr key={item.proId} className="relative border-t border-border align-top transition-colors hover:bg-surface-muted/60">
+                      <th scope="row" className="px-4 py-3 text-start font-normal">
+                        <Link
+                          href={`/pros/${item.proId}`}
+                          dir="auto"
+                          className="font-semibold text-foreground underline-offset-4 after:absolute after:inset-0 hover:underline focus-visible:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ring"
+                        >
+                          {item.name}
+                        </Link>
+                        <span className="block text-foreground-muted">{LEGAL_FORM_LABEL[item.legalForm] ?? item.legalForm}</span>
+                      </th>
+                      <td className="px-4 py-3">{city ? cityName(city, "fr") : <span className="text-foreground-muted">Non indiquée</span>}</td>
+                      <td className="px-4 py-3" dir="auto">
+                        {item.owner ? item.owner.displayName : <span className="text-foreground-muted">Non disponible</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono whitespace-nowrap tabular-nums" dir="ltr">
+                          {formatIce(item.ice)}
+                        </span>
+                        {item.iceFormatOk ? null : (
+                          <Badge variant="warning" className="mt-1 block w-fit">
+                            Format à vérifier
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-end tabular-nums">{item.pieces > 1 ? `${item.pieces} pièces` : "1 pièce"}</td>
+                      <td className="px-4 py-3 text-end whitespace-nowrap text-foreground-muted tabular-nums">{formatMorocco(item.submittedAt)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           {queue.hasMore ? <p className="text-sm text-foreground-muted">Seules les {queue.items.length} plus anciennes sont affichées : traitez-les pour voir les suivantes.</p> : null}
         </>
       )}

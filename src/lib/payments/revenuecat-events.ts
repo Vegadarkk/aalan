@@ -259,7 +259,7 @@ async function creditPack(event: BillingEventDoc, deps: ProcessDeps): Promise<Pr
     await alert({
       severity: "P1",
       title: "Pack en euros vendu au-delà du seuil UE",
-      body: `Commande ${orderId(transactionId)} (${pack.id}) : les ventes aux particuliers de l'UE ont atteint le seuil. Rembourser l'achat ou s'inscrire au guichet OSS (docs/tax-runbook.md), et retirer les packs en euros de l'offre RevenueCat.`,
+      body: `Commande ${orderId(transactionId)} (${pack.id}) : les ventes aux particuliers de l'UE ont atteint le seuil. Rembourser l'achat ou s'inscrire au guichet OSS (back-office, Guide démarches > Guide fiscal, section 5), et retirer les packs en euros de l'offre RevenueCat.`,
     });
   }
   if (outcome === "credited" && event.amountMinor !== undefined && event.amountMinor !== pack.priceMinor * quantity) {

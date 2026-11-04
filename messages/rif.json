@@ -2878,7 +2878,8 @@
       "editOf": "Beddel « {title} »",
       "resumeOf": "Err « {title} » ad tban",
       "renewOf": "Snulfu « {title} » i 60 n wussan",
-      "promote": "Err-itt ɣer zdat"
+      "promote": "Err-itt ɣer zdat",
+      "promoteOf": "Mettre en avant « {title} »"
     },
     "confirm": {
       "deleteTitle": "Ad tekkseḍ annonce-a?",
@@ -3260,7 +3261,8 @@
         "signInRental": "Kcem ḥima ad tazneḍ asuter n uqqimi. Uca ad d-tuɣaleḍ ɣer annonce-a."
       },
       "variantText": "Azul, « {title} » s {variant} ɛad yella?",
-      "ownShop": "Ta d taḥanut nnec. Imerza ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen."
+      "ownShop": "Ta d taḥanut nnec. Imerza ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen.",
+      "promote": "Err-itt ɣer zdat"
     },
     "safety": {
       "title": "Inaɣen n taɣellist",
@@ -4179,7 +4181,8 @@
       "rentalAgency": "Tajensit inu n ukra",
       "homes": "Planning n ixxamen",
       "holidayAgency": "Agence inu n lɛuṭla",
-      "choosePlan": "Choisir une offre"
+      "choosePlan": "Choisir une offre",
+      "invoices": "Mes factures"
     },
     "errors": {
       "pro_signup_closed": "Isuturen n umiḍan Pro ttwaqqnen i tura.",
@@ -5119,12 +5122,10 @@
     "frozen": "Tasakkut nnec n idrimen tettwaḥbes deffir n urrar n idrimen. Ad tettwaserreḥ xmi ayen yeqqimen deg-s yuɣal ugar n 0.",
     "walletLink": "Ẓar tasakkut nnec n idrimen",
     "consent": {
-      "terms": "Qebleɣ CGV d ssneɣ azref inu n tuɣalin (rétractation) n 14 n wussan.",
-      "immediate": "Sutreɣ ad texdem commande inu nican, d ssneɣ belli azref inu n tuɣalin ad iruḥ xmi service yettwaxdem marra.",
       "termsLink": "Ɣer CGV (onglet amaynu)",
-      "required": "Sentem snat n tɣawsiwin ḥima ad tegged commande."
+      "single": "Je commande cette option selon les CGV : elle s'applique tout de suite et ne peut plus être annulée ni rétractée une fois appliquée.",
+      "requiredOne": "Cochez la case pour commander."
     },
-    "submit": "Commande s lwajib n udfaɛ",
     "cancel": "Ssbeṭṭel",
     "close": "Qqen",
     "success": {
@@ -5141,8 +5142,21 @@
       "insufficient_credits": "Crédits nnec war kfan i option a.",
       "price_changed": "Ssuma n option a tettwabeddel tura. Sneqd-itt, uca ɛawed commande."
     },
-    "availableAt": "Tella zi {time} : annonce tella zik deg uqerru.",
-    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra."
+    "availableAt": "Tella zi {when} : annonce tella zik deg uqerru.",
+    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra.",
+    "today": "aujourd'hui à {time}",
+    "onDay": "le {date} à {time}",
+    "shortfall": "Il vous manque {count, plural, one {# crédit} other {# crédits}}",
+    "shortfallBody": "Achetez un pack de crédits : vous pourrez revenir à cette annonce depuis votre porte-monnaie dès qu'ils sont arrivés.",
+    "buyCredits": "Acheter des crédits",
+    "confirmIdle": "Choisissez une option",
+    "confirmCredits": "Confirmer pour {count, plural, one {# crédit} other {# crédits}}",
+    "confirmIncluded": "Confirmer (inclus dans votre offre)",
+    "offer": {
+      "title": "Vendez plus vite",
+      "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
+      "action": "Mettre en avant"
+    }
   },
   "Wallet": {
     "metaTitle": "Tasakkut n idrimen",
@@ -5152,7 +5166,7 @@
     "loading": "Ad tettwaɛemmar tasakkut n idrimen",
     "failed": "Tasakkut n idrimen war tettwaɛemmar ca.",
     "retry": "Ɛawed",
-    "unit": "1 n crédit = 1 MAD TTC",
+    "unit": "1 n crédit = 1 DH TTC",
     "balance": "Crédits i taɣeḍ",
     "plan": "Crédits n abonnement nnec",
     "planUntil": "Ṣeḥḥan ar {date}, war ttemyernan",
@@ -5181,7 +5195,9 @@
     "available": "Crédits i tesɛiḍ",
     "buy": "Aɣ crédits",
     "paid": "Adfaɛ yewḍed. Crédits nnec ad d-banen da deg kra n tesdidin.",
-    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)"
+    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)",
+    "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
+    "promoteBackAction": "Mettre en avant"
   },
   "Packs": {
     "metaTitle": "Aɣ crédits",
@@ -5227,7 +5243,13 @@
       "price_changed": "Packs ttwabeddlen : sneqd ayen texṭareḍ.",
       "turnstile_failed": "Tasenqedt anti-robot war teṣḥa ca. Ɛawed.",
       "unavailable": "Adfaɛ war yella ca tura. Ɛawed deffir n kra n wakud."
-    }
+    },
+    "unit": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
+    "closedBody": "Les packs seront en vente à l'ouverture des ventes. Leurs prix sont déjà affichés sur la page Tarifs.",
+    "seePricing": "Voir les tarifs"
   },
   "Subscription": {
     "metaTitle": "Abonnement inu",
@@ -5289,10 +5311,10 @@
       "yearlyHint": "2 n wayyuren bla idrimen"
     },
     "price": {
-      "monthly": "<n>{amount, number}</n> MAD HT i yal ayyur",
-      "yearly": "<n>{amount, number}</n> MAD HT i yal aseggas"
+      "monthly": "<n>{amount, number}</n> DH HT i yal ayyur",
+      "yearly": "<n>{amount, number}</n> DH HT i yal aseggas"
     },
-    "perMonth": "Ad yili {amount, number, ::.00} MAD HT i yal ayyur",
+    "perMonth": "Ad yili {amount, number, ::.00} DH HT i yal ayyur",
     "features": {
       "listings": "{count, plural, one {# annonce deg internet} other {# annonces deg internet}}",
       "unlimited": "Annonces deg internet bla lḥedd",
@@ -5319,8 +5341,8 @@
     },
     "choose": "Xtar offre.",
     "submit": {
-      "monthly": "Awi abonnement: {amount, number} MAD HT i yal ayyur",
-      "yearly": "Awi abonnement: {amount, number} MAD HT i yal aseggas"
+      "monthly": "Awi abonnement: {amount, number} DH HT i yal ayyur",
+      "yearly": "Awi abonnement: {amount, number} DH HT i yal aseggas"
     },
     "submitIdle": "Awi abonnement",
     "errors": {
@@ -5337,7 +5359,7 @@
     "pass": {
       "title": "Pass Boutique",
       "lead": "Taḥanut nnec deg internet i {days} n wussan, s yiwen n udfaɛ. War d abonnement, war d asnulfu: d ayen yelhan ḥima ad tzenzeḍ stock niɣ ad tzenzeḍ deg yiwet n tallit.",
-      "price": "<n>{amount, number}</n> MAD HT i {days} n wussan",
+      "price": "<n>{amount, number}</n> DH HT i {days} n wussan",
       "features": {
         "listings": "{count, plural, one {# annonce deg internet} other {# annonces deg internet}}",
         "credits": "{count, plural, one {# crédit bla idrimen deg pass} other {# crédits bla idrimen deg pass}}",
@@ -5358,14 +5380,15 @@
         "termsLink": "ccuruṭ n uzenzi",
         "once": "n Pass Boutique: yiwen n udfaɛ, bla asnulfu d bla arar n idrimen s umḍan n wussan."
       },
-      "submit": "Xelleṣ {amount, number} MAD HT",
-      "submitExtend": "Rnu {days} n wussan: {amount, number} MAD HT",
+      "submit": "Xelleṣ {amount, number} DH HT",
+      "submitExtend": "Rnu {days} n wussan: {amount, number} DH HT",
       "blocked": {
         "subscribed": "Taḥanut nnec ɣar-s abonnement: Pass Boutique war ixs ca.",
         "launchOffer": "Offre Essentiel nnec ɛad tella bla idrimen: pass ad yili deg tagra n offre.",
         "maxAhead": "Pass nnec yeggur ar lebɛid: ad tzemmreḍ ad as-tarneḍ wussan deffir.",
         "unavailable": "Pass Boutique war yella ca tura.",
-        "otherPlan": "Pass nnec i yeggurun d win n offre nniḍen: pass-a ad yili deg tagra nnes."
+        "otherPlan": "Pass nnec i yeggurun d win n offre nniḍen: pass-a ad yili deg tagra nnes.",
+        "salesClosed": "Le Pass Boutique sera en vente à l'ouverture des ventes."
       },
       "success": {
         "pending": "Pass nnec ad yexdem deg kra n tesdidin.",
@@ -6217,7 +6240,9 @@
       "review": "Tarbaɛt nneɣ tessenqad isallen nnec d ad dak-tɛeyyeḍ, s umata deg sin n wussan n twuri. Uca vitrine nnec ad terzem."
     },
     "legal": "Tiwtilin n uzref n yal tawuri ad ttwasmektint xmi ɣa tesnulfuḍ vitrine. Tikkal n tedbelt nnec: <link>amnir n imhniyen d coopératives</link>.",
-    "directory": "Ẓar tabdart n tḥuna"
+    "directory": "Ẓar tabdart n tḥuna",
+    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
   },
   "Directory": {
     "metaTitle": "{heading} · Tabdart n imhniyen",
@@ -6339,7 +6364,10 @@
       "unlimitedListings": "Annonces xedment bla tilisa",
       "stockImport": "Asekcem n stock s ufaylu",
       "recommended": "Nenṣeḥ-ak yis",
-      "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs."
+      "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
+      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+      "passCredits": "{count, number} crédits offerts pendant le pass",
+      "askQuote": "Demander un devis"
     },
     "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt.",
     "compare": {

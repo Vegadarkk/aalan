@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, BadgeCheck, CircleCheck, CircleDashed, Gift, Hourglass, PhoneCall, ShieldCheck, Store } from "lucide-react";
+import { ArrowRight, BadgeCheck, CircleCheck, CircleDashed, Gift, Hourglass, PhoneCall, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { StatusPanel } from "@/components/auth/status-panel";
@@ -377,6 +377,11 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
                 <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
               </Link>
             )}
+            {/* The invoices were reachable only by their address (zone 6 audit 6-20). */}
+            <Link href="/pro/factures" className={cn("inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+              <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
+              {t("invoices")}
+            </Link>
           </section>
           <Quotas shop={shop} />
         </div>

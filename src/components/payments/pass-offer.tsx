@@ -27,13 +27,15 @@ const PASS_ERRORS = ["sales_closed", "already_subscribed", "pro_not_verified", "
 
 const major = (minor: number) => Math.round(minor) / 100;
 
-export type PassBlock = "subscribed" | "launchOffer" | "otherPlan" | "maxAhead" | "unavailable" | null;
+export type PassBlock = "subscribed" | "launchOffer" | "otherPlan" | "maxAhead" | "salesClosed" | "unavailable" | null;
 
 /** Why the shop cannot buy `offer` now, or null (shown as a sentence while sales are open, the button hidden). */
 export function passBlock(data: SubscriptionResponse, offer: Offer, live: boolean): PassBlock {
   if (live || (data.lifecycle === "active" && data.planSource === "subscription")) return "subscribed";
   if (data.launchOfferOpen) return "launchOffer";
-  if (!data.salesOpen || !data.available || !offer.available) return "unavailable";
+  // The reason, not « pas disponible pour le moment » in both cases (zone 6 audit 6-09).
+  if (!data.salesOpen) return "salesClosed";
+  if (!data.available || !offer.available) return "unavailable";
   if (offer.otherPlan) return "otherPlan";
   if (!offer.withinLimit) return "maxAhead";
   return null;

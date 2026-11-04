@@ -1,10 +1,12 @@
 "use client";
 
-import { ImageOff, Pencil, Play, RefreshCw } from "lucide-react";
+import { useRef, useState } from "react";
+import { ImageOff, Pencil, Play, RefreshCw, TrendingUp } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { catalogueKind, datedRental, subcategoryById } from "@/config/categories";
+import { catalogueKind, datedRental, paidOptionsAllowed, subcategoryById } from "@/config/categories";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
+import { PromoteDialog } from "@/components/payments/promote-dialog";
 import { Button } from "@/components/ui/button";
 import { OwnerAvailability } from "@/components/rental/owner-availability";
 import { quietLinkClassName } from "@/components/ui/text-link";
@@ -37,7 +39,10 @@ interface OwnerListingCardProps {
   onDelete: () => Promise<void>;
   /** An action of this row is running. */
   busy?: boolean;
+  /** Paid options are on sale (config/flags.salesEnabled): a published listing offers "Mettre en avant". */
   salesOpen?: boolean;
+  /** Open "Mettre en avant" at once (back from a credits purchase started in its dialog, 6-03). */
+  autoPromote?: boolean;
   now?: Date;
   /** The row after a change made in place (a promotion set or stopped, a section). */
   onChanged?: (listing: OwnerListingSummary) => void;
@@ -53,8 +58,14 @@ interface OwnerListingCardProps {
  * One row of "Mes annonces": cover, title, price, city, status, expiry, actions. On phones the
  * primary action takes the full row under the cover (its label is longer than the text column).
  */
-export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins }: OwnerListingCardProps) {
+export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, autoPromote = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins }: OwnerListingCardProps) {
   const t = useTranslations("MyListings");
+  // "Mettre en avant" as a visible button of the row, not only in the menu (zone 6 audit 6-04).
+  const promotable = salesOpen && listing.status === "published" && paidOptionsAllowed(listing.subcategoryId);
+  const [promote, setPromote] = useState(autoPromote && promotable);
+  const menu = useRef<HTMLButtonElement>(null);
+  const promoteButton = useRef<HTMLButtonElement>(null);
+  const opener = useRef<"menu" | "button">("button");
   const locale = useLocale() as Locale;
   const city = listing.citySlug ? cityBySlug(listing.citySlug) : undefined;
   const stockKind = catalogueKind(listing.subcategoryId ? subcategoryById(listing.subcategoryId) : undefined);
@@ -101,7 +112,23 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
               </a>
             )}
           </h2>
-          <ListingActions listing={listing} onAction={onAction} onDelete={onDelete} busy={busy} publicHref={publicHref} salesOpen={salesOpen} now={now} />
+          <ListingActions
+            listing={listing}
+            onAction={onAction}
+            onDelete={onDelete}
+            busy={busy}
+            publicHref={publicHref}
+            triggerRef={menu}
+            {...(promotable
+              ? {
+                  onPromote: () => {
+                    opener.current = "menu";
+                    setPromote(true);
+                  },
+                }
+              : {})}
+            now={now}
+          />
         </div>
         <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
           <span className="font-semibold tabular-nums">{price}</span>
@@ -128,10 +155,27 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
         {listing.catalogue && onChanged && showsPromo(listing) ? <OwnerPromo listing={{ ...listing, catalogue: listing.catalogue }} title={title} now={now} onChanged={onChanged} /> : null}
         {listing.paymentLink && onChanged && paymentReady && showsPaymentLink(listing) ? <OwnerPaymentLinkRow listing={{ ...listing, paymentLink: listing.paymentLink }} title={title} onChanged={onChanged} /> : null}
       </div>
-      {primary ? (
-        <div className="col-span-2 mt-3 flex min-w-0 sm:col-span-1 sm:col-start-2 sm:mt-2">
+      {primary || promotable ? (
+        <div className="col-span-2 mt-3 flex min-w-0 flex-wrap gap-2 sm:col-span-1 sm:col-start-2 sm:mt-2">
+          {promotable ? (
+            <Button
+              ref={promoteButton}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="max-sm:h-11"
+              aria-label={t("actions.promoteOf", named)}
+              onClick={() => {
+                opener.current = "button";
+                setPromote(true);
+              }}
+            >
+              <TrendingUp aria-hidden="true" />
+              {t("actions.promote")}
+            </Button>
+          ) : null}
           {/* Accessible names start with the visible label (WCAG 2.5.3), then the title. */}
-          {primary.kind === "continue" || primary.kind === "fix" ? (
+          {!primary ? null : primary.kind === "continue" || primary.kind === "fix" ? (
             <Button asChild variant="outline" size="sm" className="max-sm:h-11">
               <Link href={wizardPath(listing.id)} aria-label={t(primary.kind === "continue" ? "actions.continueDraftOf" : "actions.editOf", named)}>
                 <Pencil aria-hidden="true" />
@@ -154,6 +198,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
           )}
         </div>
       ) : null}
+      {promote ? <PromoteDialog listingId={listing.id} title={title} onClose={() => setPromote(false)} returnFocus={() => (opener.current === "menu" ? menu.current : promoteButton.current)} /> : null}
     </li>
   );
 }

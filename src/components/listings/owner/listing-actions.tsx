@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { Eye, MoreHorizontal, Pause, Pencil, Play, RefreshCw, Tag, Trash2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DropdownMenu } from "radix-ui";
 import { Button } from "@/components/ui/button";
-import { paidOptionsAllowed } from "@/config/categories";
 import { Link } from "@/i18n/navigation";
 import type { OwnerListingSummary } from "@/lib/contracts/listings";
 import { isolate } from "@/lib/i18n/bidi";
@@ -14,7 +13,6 @@ import { wizardPath } from "@/lib/listings/client/routes";
 import { cn } from "@/lib/utils";
 import { canResume } from "./buckets";
 import { ConfirmDialog } from "@/components/post/controls/confirm-dialog";
-import { PromoteDialog } from "@/components/payments/promote-dialog";
 
 interface ListingActionsProps {
   listing: OwnerListingSummary;
@@ -23,8 +21,10 @@ interface ListingActionsProps {
   busy?: boolean;
   /** Localized path of the public page (published listings). */
   publicHref?: string | null;
-  /** Paid options are on sale (config/flags.salesEnabled): published listings offer "Mettre en avant". */
-  salesOpen?: boolean;
+  /** Opens "Mettre en avant" (the row owns the dialog, zone 6 audit 6-04); absent when not offered. */
+  onPromote?: () => void;
+  /** The menu button, where the focus returns after a dialog opened from the menu (6-18). */
+  triggerRef?: Ref<HTMLButtonElement>;
   now?: Date;
 }
 
@@ -44,10 +44,9 @@ export function allowedActions(listing: OwnerListingSummary, now = new Date()): 
   };
 }
 
-export function ListingActions({ listing, onAction, onDelete, busy, publicHref, salesOpen = false, now }: ListingActionsProps) {
+export function ListingActions({ listing, onAction, onDelete, busy, publicHref, onPromote, triggerRef, now }: ListingActionsProps) {
   const t = useTranslations("MyListings");
   const [confirm, setConfirm] = useState<"delete" | "sold" | null>(null);
-  const [promote, setPromote] = useState(false);
   const [working, setWorking] = useState(false);
   const allowed = allowedActions(listing, now);
   // The seller's title keeps its own direction inside the translated labels.
@@ -68,7 +67,7 @@ export function ListingActions({ listing, onAction, onDelete, busy, publicHref, 
     <>
       <DropdownMenu.Root modal={false}>
         <DropdownMenu.Trigger asChild>
-          <Button type="button" variant="ghost" size="icon" aria-label={t("actions.menu", { title })} loading={busy || working}>
+          <Button ref={triggerRef} type="button" variant="ghost" size="icon" aria-label={t("actions.menu", { title })} loading={busy || working}>
             <MoreHorizontal aria-hidden="true" />
           </Button>
         </DropdownMenu.Trigger>
@@ -90,8 +89,8 @@ export function ListingActions({ listing, onAction, onDelete, busy, publicHref, 
                 </Link>
               </DropdownMenu.Item>
             ) : null}
-            {salesOpen && listing.status === "published" && paidOptionsAllowed(listing.subcategoryId) ? (
-              <DropdownMenu.Item className={item} onSelect={() => setPromote(true)}>
+            {onPromote ? (
+              <DropdownMenu.Item className={item} onSelect={onPromote}>
                 <TrendingUp aria-hidden="true" />
                 {t("actions.promote")}
               </DropdownMenu.Item>
@@ -132,7 +131,6 @@ export function ListingActions({ listing, onAction, onDelete, busy, publicHref, 
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      {salesOpen && promote ? <PromoteDialog listingId={listing.id} title={listing.title || t("untitled")} onClose={() => setPromote(false)} /> : null}
       <ConfirmDialog
         open={confirm === "delete"}
         onOpenChange={(open) => !open && setConfirm(null)}

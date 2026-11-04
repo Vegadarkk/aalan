@@ -73,3 +73,8 @@ environ 230 documents par pose ou retrait. Les nouvelles annonces s'ajoutent à 
 Poser les exemples en production (`node dist/worker/seed-demo.mjs --production --apply` dans le
 worker de production) attend le feu vert du propriétaire ; la liste de contrôle de lancement le
 rappelle (`scripts/launch-check.ts`, `docs/lancement/mise-en-production.md`).
+
+Feu vert donné le 4 novembre 2026 (propriétaire, choix « Maintenant ») : le seed de production
+part dès que le worker de production tourne, détaché comme `infra/demo/seed.sh` mais avec le projet
+Compose de production, puis le relevé de `infra/demo/seed-log.sh` sur ce même projet (staging, 4 novembre :
+246 documents, 207 photos, 201 indexés).

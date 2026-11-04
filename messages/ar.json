@@ -3150,7 +3150,11 @@
     "share": {
       "share": "مشاركة",
       "copyLink": "نسخ الرابط",
-      "copied": "تم نسخ الرابط"
+      "copied": "تم نسخ الرابط",
+      "whatsapp": "واتساب",
+      "facebook": "فيسبوك",
+      "email": "البريد الإلكتروني",
+      "more": "تطبيقات أخرى…"
     },
     "place": "{place}، {region}",
     "publishedOn": "نُشر في {date}",

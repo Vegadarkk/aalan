@@ -3160,7 +3160,11 @@
     "share": {
       "share": "Partager",
       "copyLink": "Copier le lien",
-      "copied": "Lien copié"
+      "copied": "Lien copié",
+      "whatsapp": "WhatsApp",
+      "facebook": "Facebook",
+      "email": "E-mail",
+      "more": "Autres applications…"
     },
     "place": "{place}, {region}",
     "publishedOn": "Publiée le {date}",

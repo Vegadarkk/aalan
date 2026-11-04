@@ -234,7 +234,7 @@ function CropPanel({ sources, index, mode, onCropped, onDone }: Pick<PhotoCropDi
                   if (turns === 0) setSource((current) => current + 1);
                   else setFailed(true);
                 }}
-                className="block max-h-[50dvh] w-auto max-w-full"
+                className="block max-h-[40dvh] w-auto max-w-full sm:max-h-[50dvh]"
               />
             ) : null}
             {loaded && !busy ? (
@@ -314,12 +314,13 @@ function CropPanel({ sources, index, mode, onCropped, onDone }: Pick<PhotoCropDi
           </Button>
         </div>
       ) : null}
-      <p id="photo-crop-keys" className="text-xs text-foreground-muted">
+      <p id="photo-crop-keys" className="text-xs text-foreground-muted max-sm:sr-only">
         {t("keys")}
       </p>
       {failed ? <ErrorBanner title={t("failed")} /> : null}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      {/* On a phone the actions stay at the bottom of the sheet, whatever the photo's height. */}
+      <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-2 gap-2 border-t border-border bg-surface px-5 py-3 sm:static sm:mx-0 sm:mb-0 sm:flex sm:justify-end sm:border-0 sm:p-0">
         <Dialog.Close asChild>
           <Button type="button" variant="outline">
             {t("cancel")}

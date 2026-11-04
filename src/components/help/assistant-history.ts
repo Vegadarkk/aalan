@@ -1,7 +1,6 @@
 import { LOCALES } from "@/config/site";
 import type { AssistantResponse } from "@/lib/contracts/assistant";
 import { ASSISTANT_QUESTION_MAX } from "@/lib/contracts/endpoints";
-import { z } from "@/lib/zod";
 
 // The Assistant's conversation kept for the tab (audit zone 5 n°17): an article link, a page
 // change or a reload no longer empties it. sessionStorage, so it ends with the tab and never
@@ -16,26 +15,28 @@ export const STORED_TURNS_MAX = 20;
 
 export type AssistantTurnView = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; response: AssistantResponse };
 
-const hitSchema = z.object({
-  slug: z.string().min(1).max(100),
-  title: z.string().max(300),
-  summary: z.string().max(1000),
-  locale: z.enum(LOCALES).optional(),
-});
+// Checked by hand on read: zod would join the client JavaScript of every public page.
+const isText = (value: unknown, max: number, min = 0): value is string => typeof value === "string" && value.length >= min && value.length <= max;
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-const turnSchema = z.union([
-  z.object({ id: z.number().int().nonnegative(), role: z.literal("user"), text: z.string().min(1).max(ASSISTANT_QUESTION_MAX) }),
-  z.object({
-    id: z.number().int().nonnegative(),
-    role: z.literal("assistant"),
-    response: z.union([
-      z.object({ mode: z.literal("ai"), answer: z.string().max(5000), articles: z.array(hitSchema).max(10) }),
-      z.object({ mode: z.literal("search"), articles: z.array(hitSchema).max(10) }),
-    ]),
-  }),
-]);
+function isHit(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isText(value.slug, 100, 1) &&
+    isText(value.title, 300) &&
+    isText(value.summary, 1000) &&
+    (value.locale === undefined || (LOCALES as readonly unknown[]).includes(value.locale))
+  );
+}
 
-const storedSchema = z.object({ v: z.literal(1), turns: z.array(turnSchema).max(STORED_TURNS_MAX) });
+function isTurn(value: unknown): value is AssistantTurnView {
+  if (!isRecord(value) || !Number.isInteger(value.id) || (value.id as number) < 0) return false;
+  if (value.role === "user") return isText(value.text, ASSISTANT_QUESTION_MAX, 1);
+  if (value.role !== "assistant" || !isRecord(value.response)) return false;
+  const { mode, answer, articles } = value.response;
+  const hits = Array.isArray(articles) && articles.length <= 10 && articles.every(isHit);
+  return hits && (mode === "search" || (mode === "ai" && isText(answer, 5000)));
+}
 
 /** The stored form: the last turns only, starting with a question. */
 export function encodeTurns(turns: readonly AssistantTurnView[]): string {
@@ -48,8 +49,10 @@ export function encodeTurns(turns: readonly AssistantTurnView[]): string {
 export function decodeTurns(raw: string | null): AssistantTurnView[] {
   if (!raw) return [];
   try {
-    const parsed = storedSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? (parsed.data.turns as AssistantTurnView[]) : [];
+    const stored: unknown = JSON.parse(raw);
+    if (!isRecord(stored) || stored.v !== 1) return [];
+    const { turns } = stored;
+    return Array.isArray(turns) && turns.length <= STORED_TURNS_MAX && turns.every(isTurn) ? turns : [];
   } catch {
     return [];
   }

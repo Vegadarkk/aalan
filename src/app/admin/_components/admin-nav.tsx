@@ -23,11 +23,11 @@ const ITEMS = [
 /** Pages reached from a section without being listed (a decision opens from the reports and the appeals). */
 const PARENT: Record<string, string> = { "/decisions": "/signalements", "/conversations": "/signalements" };
 
-/** Section links of the back office; the current one carries the ochre underline. */
+/** Section links of the back office; the current one carries the ochre underline. Phones scroll the row, wider screens wrap it: no section is ever hidden. */
 export function AdminNav({ admin, className }: { admin: boolean; className?: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Sections du back-office" className={cn("flex items-stretch gap-1 overflow-x-auto [scrollbar-width:none] xl:h-14", className)}>
+    <nav aria-label="Sections du back-office" className={cn("flex min-w-0 items-stretch gap-1 overflow-x-auto xl:gap-0 [scrollbar-width:none] md:flex-wrap md:overflow-x-visible", className)}>
       {ITEMS.filter((item) => admin || !item.adminOnly).map((item) => {
         const section = Object.entries(PARENT).find(([prefix]) => pathname.startsWith(prefix))?.[1] ?? pathname;
         const current = item.href === "/" ? pathname === "/" : section.startsWith(item.href);
@@ -37,8 +37,8 @@ export function AdminNav({ admin, className }: { admin: boolean; className?: str
             href={item.href}
             aria-current={current ? "page" : undefined}
             className={cn(
-              "relative flex min-h-11 shrink-0 items-center px-2 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground",
-              "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-t after:bg-primary after:opacity-0 after:transition-opacity",
+              "relative flex min-h-11 shrink-0 items-center px-2 text-sm xl:px-1.5 font-medium text-foreground-muted transition-colors hover:text-foreground",
+              "after:absolute after:inset-x-2 after:bottom-0 xl:after:inset-x-1.5 after:h-0.5 after:rounded-t after:bg-primary after:opacity-0 after:transition-opacity",
               "aria-[current=page]:text-foreground aria-[current=page]:after:opacity-100",
             )}
           >

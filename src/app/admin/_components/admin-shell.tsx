@@ -16,15 +16,16 @@ interface AdminShellProps {
 }
 
 /**
- * Compact chrome of the signed-in back office: a green frame line, the logo, sections, who is signed
- * in. One row from `xl` (the e-mail from `2xl`); below, the sections drop to a second row under the
- * logo and the account.
+ * Compact chrome of the signed-in back office: a green frame line, the logo and who is signed in
+ * (the e-mail from `2xl`), then the sections on their own full-width row. The admin's 13 sections
+ * need about 1 350 px: sharing the logo's row hid half of them and pushed the page 50 px wide
+ * between 1280 and 1366 px (zone 6 audit 6-24).
  */
 export function AdminShell({ email, role, children }: AdminShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-t-[3px] border-b border-border border-t-structure bg-surface-brand dark:border-t-bab-600">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-stretch gap-x-6 px-4 sm:px-6 xl:flex-nowrap">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-stretch gap-x-6 px-4 sm:px-6">
           <Link href="/" className="flex h-14 shrink-0 items-center gap-3 rounded-sm" aria-label="Back-office Aalan, accueil">
             <Logo label="Aalan" className="h-7" />
             <Badge variant="pro" className="whitespace-nowrap dark:bg-bab-700">
@@ -33,7 +34,7 @@ export function AdminShell({ email, role, children }: AdminShellProps) {
           </Link>
           <AdminNav
             admin={role === "admin"}
-            className="order-last -mx-4 w-[calc(100%+2rem)] border-t border-border px-2 sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-4 xl:order-none xl:mx-0 xl:w-auto xl:border-t-0 xl:px-0"
+            className="order-last -mx-4 w-[calc(100%+2rem)] border-t border-border px-2 sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-4"
           />
           <div className="ms-auto flex h-14 min-w-0 items-center gap-2 sm:gap-3">
             <span className="hidden max-w-56 truncate text-sm text-foreground-muted 2xl:inline" title={email}>

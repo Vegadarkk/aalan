@@ -34,6 +34,8 @@ describe("team activity feed", () => {
     expect(activityKind("decision.remove")?.label).toBe("Retrait");
     expect(activityKind("listing.reject")?.label).toBe("Annonce retenue refusée");
     expect(activityKind("pro.verify")?.label).toBe("Compte Pro validé");
+    expect(activityKind("pro.sector.correct")?.label).toBe("Activité d'une boutique corrigée");
+    expect(activityShown("pro.note", false)).toBe(true);
     expect(activityKind("pro.kybc.view")).toBeNull();
     expect(activityKind("conversation.read")).toBeNull();
     expect(activityKind("legal.updated")).toBeNull();

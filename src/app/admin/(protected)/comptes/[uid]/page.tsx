@@ -142,7 +142,7 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
         {user.decisions.length === 0 ? (
           <p className="text-sm text-foreground-muted">Aucune décision sur ce compte ni sur ses contenus.</p>
         ) : (
-          <div role="region" aria-label="Décisions du compte" tabIndex={0} className="overflow-x-auto">
+          <div role="region" aria-label="Décisions du compte" tabIndex={0} className="relative overflow-x-auto">
             <table className="w-full min-w-[40rem] text-sm">
               <thead className="text-start text-foreground-muted">
                 <tr>

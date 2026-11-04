@@ -39,7 +39,7 @@ export default async function StatsPage() {
         </p>
       </div>
 
-      <div role="region" aria-labelledby="sla-title" tabIndex={0} className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div role="region" aria-labelledby="sla-title" tabIndex={0} className="relative overflow-x-auto rounded-lg border border-border bg-surface">
         <h2 id="sla-title" className="sr-only">
           Signalements par priorité
         </h2>

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { inputClassName } from "@/components/ui/input";
+import { HIDDEN_MARKER, URL_MARKER, type MessageRiskFlag } from "@/lib/contracts/messaging";
 import type { StaffConversationView } from "@/lib/decisions/contracts";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "../_lib/moderation-format";
@@ -22,6 +23,20 @@ const MESSAGES: Record<string, string> = {
 };
 
 const FROM_LABEL = { buyer: "Acheteur", seller: "Vendeur", system: "Aalan" } as const;
+
+/** Risk signals of a message, in French (the stored codes stay out of sight, zone 7 audit P3-6). */
+const FLAG_LABEL: Record<MessageRiskFlag, string> = {
+  external_url: "Lien externe",
+  iban: "IBAN",
+  payment_kw: "Paiement évoqué",
+  contact_with_payment_kw: "Coordonnées et paiement",
+};
+
+/** The text as the recipient sees it: the stored markers become words, never the raw `⟦hidden⟧` or `⟦url⟧`. */
+export function visibleText(text: string): { text: string; hidden: boolean } {
+  if (text.trim() === HIDDEN_MARKER) return { text: "", hidden: true };
+  return { text: text.split(HIDDEN_MARKER).join("[masqué]").split(URL_MARKER).join("[lien masqué]"), hidden: false };
+}
 
 /** The transcript, oldest first (the API answers newest first), with the evidence of masked or hidden messages. */
 function Transcript({ conversation }: { conversation: StaffConversationView }) {
@@ -43,6 +58,7 @@ function Transcript({ conversation }: { conversation: StaffConversationView }) {
       <ol aria-label="Messages, du plus ancien au plus récent" className="flex flex-col gap-2">
         {messages.map((message) => {
           const evidence = conversation.evidence[message.id];
+          const shown = visibleText(message.text);
           return (
             <li
               key={message.id}
@@ -56,12 +72,16 @@ function Transcript({ conversation }: { conversation: StaffConversationView }) {
                 <span className="font-medium text-foreground">{FROM_LABEL[message.from]}</span>
                 <time dateTime={message.createdAt}>{formatDateTime(message.createdAt)}</time>
                 {message.reported ? <Badge variant="danger">Signalé</Badge> : null}
-                {message.hidden ? <Badge variant="warning">Masqué</Badge> : null}
-                {message.flags.length > 0 ? <Badge variant="neutral">{message.flags.join(", ")}</Badge> : null}
+                {message.hidden || shown.hidden ? <Badge variant="warning">Masqué au destinataire</Badge> : null}
+                {message.flags.length > 0 ? <Badge variant="neutral">{message.flags.map((flag) => FLAG_LABEL[flag as MessageRiskFlag] ?? flag).join(", ")}</Badge> : null}
               </span>
-              <p dir="auto" className="text-pretty whitespace-pre-line">
-                {message.text}
-              </p>
+              {shown.hidden ? (
+                <p className="text-foreground-muted italic">Le destinataire voit « Message masqué par la modération ». Le texte d&apos;origine est ci-dessous quand il est conservé.</p>
+              ) : (
+                <p dir="auto" className="text-pretty whitespace-pre-line">
+                  {shown.text}
+                </p>
+              )}
               {evidence ? (
                 <p dir="auto" className="rounded-md bg-warning-surface p-2 whitespace-pre-line">
                   <span className="block text-xs font-medium">Texte d&apos;origine ({evidence.reason === "hidden" ? "message masqué" : "liens masqués"})</span>

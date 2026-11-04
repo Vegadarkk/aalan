@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "@/lib/zod";
 import { requireUser, type AuthContext } from "@/lib/auth/guards";
 import { applyDevice, applyTurnstilePass, deviceOf, jsonResponse } from "@/lib/auth/respond";
-import { FLEET_MAX, OWNER_LIST_BUCKETS, createListingSchema, fleetSaveSchema, listingPatchSchema, publishListingSchema, rentalAvailabilityInputSchema, type CreateListingResponse, type ListingResponse, type OwnerListingsResponse, type OwnerRowResponse, type RentalAvailabilityResponse } from "@/lib/contracts/listings";
+import { FLEET_MAX, OWNER_LIST_BUCKETS, fleetKindOf, createListingSchema, fleetSaveSchema, listingPatchSchema, publishListingSchema, rentalAvailabilityInputSchema, type CreateListingResponse, type ListingResponse, type OwnerListingsResponse, type OwnerRowResponse, type RentalAvailabilityResponse } from "@/lib/contracts/listings";
 import { turnstileTokenSchema } from "@/lib/contracts/auth";
 import { promoInputSchema, sectionUpdateSchema, stockUpdateSchema } from "@/lib/contracts/catalog";
 import { listingPaymentLinkInputSchema } from "@/lib/contracts/seller-payment";
@@ -248,11 +248,11 @@ export async function handleAvailability(request: Request, params: Params): Prom
   return json(body);
 }
 
-/** GET /api/pro/fleet: a car rental agency's fleet planning, charged in documents read. */
+/** GET /api/pro/fleet?kind=homes: a car rental agency's fleet planning (or a holiday agency's homes), charged in documents read. */
 export async function handleFleet(request: Request): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("listing.owner.read.uid", auth.user.uid);
-  const body = await listFleet(auth);
+  const body = await listFleet(auth, new Date(), fleetKindOf(new URL(request.url).searchParams.get("kind")));
   await chargeOwnerRead(auth.user.uid, body.vehicles.length);
   return json(body);
 }

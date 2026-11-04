@@ -21,6 +21,7 @@ import { publishesAsPro, type ProState } from "@/lib/pro/lifecycle";
 import { loadProMe } from "@/lib/pro/client";
 import { paymentEligible } from "@/lib/pro/seller-payment-rules";
 import { cn } from "@/lib/utils";
+import { RentalRequestsPanel } from "@/components/rental/rental-requests-panel";
 import { RentalSetup } from "@/components/rental/rental-setup";
 import { AgencySettings } from "./agency-settings";
 import { ShopEmblem } from "./shop-emblem";
@@ -320,6 +321,16 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
               </Button>
             </>
           ) : null}
+          {canPublish && shop.sector === "holiday_rental" ? (
+            <>
+              <Button asChild variant="outline">
+                <Link href="/pro/logements">{t("homes")}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/pro/sejours">{t("holidayAgency")}</Link>
+              </Button>
+            </>
+          ) : null}
           <Button asChild variant="outline">
             <Link href="/mes-annonces">{t("myListings")}</Link>
           </Button>
@@ -375,6 +386,9 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish ? <ShopStats /> : null}
 
       {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
+      {canPublish && shop.sector === "holiday_rental" ? <RentalSetup shop={shop} kind="homes" /> : null}
+      {/* The booking requests waiting for an answer and the rentals coming up (audit L4-06). */}
+      {canPublish && (shop.sector === "car_rental" || shop.sector === "holiday_rental") ? <RentalRequestsPanel stays={shop.sector === "holiday_rental"} /> : null}
 
       {/* The storefront's card first: what a buyer sees besides the listings (UX audit lot 1). */}
       {canPublish ? <ShopCardSettings shop={shop} onLogo={setLogo} /> : null}
@@ -382,7 +396,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish && shop.storefront && !suspended ? <ShopShare storefront={shop.storefront} /> : null}
       {suspended ? null : <AgencySettings shop={shop} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
-      {canPublish && shop.sector !== "car_rental" ? <SectionsSettings shop={shop} /> : null}
+      {canPublish && shop.sector !== "car_rental" && shop.sector !== "holiday_rental" ? <SectionsSettings shop={shop} /> : null}
 
     </div>
   );

@@ -18,6 +18,8 @@ import {
   PRO_SECTORS,
   RENTAL_CHECK_REASON_MAX,
   rentalAgencySchema,
+  holidayAgencySchema,
+  type HolidayAgency,
   type PhoneCheckOutcome,
   type ProSector,
   type RentalAgency,
@@ -247,6 +249,8 @@ export const PRO_API = {
   /** PUT (the image itself as the body) / DELETE: the shop's logo. */
   logo: "/api/pro/me/logo",
   rental: "/api/pro/me/rental",
+  /** PUT ProHolidayInput -> ProHolidayResponse: a holiday rental agency's settings (audit L4-02). */
+  holiday: "/api/pro/me/holiday",
   rentalCheck: "/api/pro/me/rental/check",
   social: "/api/pro/me/social",
   /** PUT: the shop card (presentation FR/AR, city, address, hours, contact, website, banner). */
@@ -301,6 +305,11 @@ export interface SocialLinkIssueDetails {
   network: SocialNetwork;
   problem: SocialLinkIssue;
 }
+
+/** PUT /api/pro/me/holiday (audit L4-02): the holiday rental agency's settings, replaced whole. */
+export const proHolidaySchema = holidayAgencySchema;
+export type ProHolidayInput = HolidayAgency;
+export type ProHolidayResponse = { holiday: HolidayAgency };
 
 /** PUT /api/pro/me/rental (rental pack §5): the car rental agency's settings, replaced whole. */
 export const proRentalSchema = rentalAgencySchema;
@@ -393,6 +402,8 @@ export interface ProSelfView {
   sections: ShopSection[];
   /** Car rental agency settings, null until saved (publishing a rental needs the licence reference). */
   rental: RentalAgency | null;
+  /** Holiday rental agency settings, null until saved (audit L4-02). */
+  holiday: HolidayAgency | null;
   /** Check of the licence decision, null until a document is sent (or after the reference changed). */
   rentalCheck: RentalCheckView | null;
   /** Social links shown on the storefront. */

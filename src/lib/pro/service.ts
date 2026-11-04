@@ -4,7 +4,7 @@ import { launchOfferOpen, listingQuotas } from "@/config/pricing";
 import type { AuthContext } from "@/lib/auth/guards";
 import { getAbuseRules, getFlags, getPricing } from "@/lib/config/runtime";
 import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
-import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
+import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProHolidayInput, ProHolidayResponse, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
 import { cityBySlug } from "@/config/regions";
 import { DEFAULT_BANNER } from "@/config/storefront";
 import { db } from "@/lib/firebase/admin";
@@ -183,6 +183,7 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       feeSchedule: profile.agency?.feeSchedule ?? "",
       sections: profile.sections ?? [],
       rental: profile.rental ?? null,
+      holiday: profile.holiday ?? null,
       rentalCheck: profile.rentalCheck ? rentalCheckView(profile.rentalCheck) : null,
       social: socialView(profile.social),
       card: shopCard(profile, user?.badges.phoneVerified ?? false),
@@ -344,6 +345,16 @@ export async function ownedPublishingShop(auth: AuthContext): Promise<ProProfile
   const profile = await getProProfile(proId);
   if (!profile || profile.ownerUid !== auth.user.uid || !publishesAsPro(profile.lifecycle)) throw new HttpError(409, "pro_not_verified");
   return profile;
+}
+
+/** PUT /api/pro/me/holiday: a holiday rental agency's settings (audit L4-02). */
+export async function updateHolidayAgency(auth: AuthContext, input: ProHolidayInput, now = new Date()): Promise<ProHolidayResponse> {
+  const profile = await ownedPublishingShop(auth);
+  await proProfileRef(profile.proId).update({ holiday: input, updatedAt: Timestamp.fromDate(now) });
+  void consume("firestore.reads", 1);
+  void consume("firestore.writes", 1);
+  if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
+  return { holiday: input };
 }
 
 /**

@@ -360,6 +360,9 @@ const rental = (id: CriterionId, options: { filter?: true } = {}): Criterion => 
 /** Car rental by Pro agencies (rental pack): rental terms, availability by dates, fleet storefront. */
 export const RENTAL_SUBCATEGORY = "location-voitures";
 
+/** Holiday homes rented by nights (seasonal rental conception): a holiday agency's planning of homes. */
+export const HOLIDAY_RENTAL_SUBCATEGORY = "location-vacances";
+
 /**
  * What a Pro's declared stock means in a subcategory (zone 3 audit P2-10): "goods" (stock and
  * variants), "fleet" (identical rental cars available, no variants), "none" (real estate, holiday

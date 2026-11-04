@@ -10,6 +10,11 @@ import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/ren
 import { RentalRequestBanner, shownRentalRequest } from "@/components/rental/rental-request-banner";
 import { rentalEstimate } from "@/components/rental/listing-availability";
 import { RentalRequestEventItem } from "@/components/rental/rental-request-event";
+import { agencyRequests, RENTAL_UPCOMING_DAYS } from "@/components/rental/rental-requests-panel";
+import { HolidayAgencyCard } from "@/components/rental/rental-storefront";
+import { RentalGuide } from "@/components/listing/rental-guide";
+import { SafetyTips } from "@/components/listing/safety-tips";
+import type { ConversationView } from "@/lib/contracts/messaging";
 import { moroccoTime } from "@/lib/appointments/time";
 import {
   rentalRequestActionSchema,
@@ -301,5 +306,48 @@ describe("earlier requests (audit L4-04)", () => {
     expect(rentalEstimate({ price: 300 }, 4)).toBe(1200);
     expect(rentalEstimate({ price: 300, week: 250 }, 7)).toBe(1750);
     expect(rentalEstimate({ price: 300, week: 250, month: 200 }, 30)).toBe(6000);
+  });
+});
+
+describe("an agency's requests and holiday settings (audit L4-02, L4-06)", () => {
+  const view = (overrides: Partial<RentalRequestView>): RentalRequestView => ({ id: "AbCdEfGhIjKl", status: "requested", requestedByMe: false, from: day(3), to: day(6), unit: "day", pickup: null, blocked: false, updatedAt: NOW, ...overrides });
+  const row = (cid: string, overrides: Partial<ConversationView>): ConversationView =>
+    ({ cid, listingId: "abcdefghjk", listingSlugId: "logan-abcdefghjk", subject: "listing", listing: { title: "Dacia Logan", price: 300, isDonation: false, photo: null }, role: "seller", counterpart: { publicId: "p1", displayName: "Sophie" }, rentalRequest: null, rentalHistory: [], ...overrides }) as ConversationView;
+
+  it("lists the requests waiting for an answer and the rentals starting soon, earliest first", () => {
+    const result = agencyRequests(
+      [
+        row("c1", { rentalRequest: view({ from: day(9), to: day(10) }) }),
+        row("c2", { rentalRequest: view({ from: day(2), to: day(4) }) }),
+        // An accepted rental now, one beyond the window, one over, a declined one.
+        row("c3", { rentalRequest: view({ status: "accepted", from: day(0), to: day(2) }), rentalHistory: [view({ id: "ZyXwVuTsRqPo", status: "accepted", from: day(RENTAL_UPCOMING_DAYS + 1), to: day(RENTAL_UPCOMING_DAYS + 3) })] }),
+        row("c4", { rentalRequest: view({ status: "accepted", from: day(-6), to: day(-2) }) }),
+        row("c5", { rentalRequest: view({ status: "declined" }) }),
+        // My own request as a renter, and a request whose day went by.
+        row("c6", { role: "buyer", rentalRequest: view({ requestedByMe: true }) }),
+        row("c7", { rentalRequest: view({ from: day(-1), to: day(2) }) }),
+      ],
+      NOW,
+    );
+    expect(result.pending.map((item) => item.cid)).toEqual(["c2", "c1"]);
+    expect(result.upcoming.map((item) => item.cid)).toEqual(["c3"]);
+    expect(result.pending[0]).toMatchObject({ name: "Sophie", title: "Dacia Logan" });
+  });
+
+  it("shows a holiday agency's authorisation, times and shortest stay on its storefront", () => {
+    const html = render(<HolidayAgencyCard holiday={{ authorization: "TS 12/2025", checkIn: "15:00", checkOut: "11:00", minNights: 3 }} />).replaceAll("&#x27;", "'");
+    expect(html).toContain("TS 12/2025");
+    expect(html).toContain("Arrivée à partir de 15:00, départ avant 11:00");
+    expect(html).toContain("3 nuits");
+  });
+
+  it("gives a holiday home its own guide and safety tips, not the sale ones (audit L4-12)", () => {
+    const guide = render(<RentalGuide stay />).replaceAll("&#x27;", "'");
+    expect(guide).toContain("Louer un logement de vacances au Maroc");
+    expect(guide).toContain("loi 80-14");
+    const tips = render(<SafetyTips variant="holiday" />).replaceAll("&#x27;", "'");
+    expect(tips).toContain("confirmation écrite de l'annonceur");
+    expect(tips).not.toContain("titre foncier");
+    expect(render(<SafetyTips variant="carRental" />).replaceAll("&#x27;", "'")).toContain("signé le contrat de l'agence");
   });
 });

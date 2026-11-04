@@ -257,7 +257,7 @@ function filterLabel(params: SearchParams, key: FilterKey, locale: Locale, label
       const day = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "short", timeZone: "UTC" });
       const at = (value: string) => day.format(new Date(`${value}T12:00:00Z`));
       const nights = datedRental(params.subcategory)?.unit === "night";
-      return nights ? labels.chip("datesNights", { from: at(params.dates.from), to: at(params.dates.to), days: rentalDuration(params.dates) }) : labels.chip("dates", { from: at(params.dates.from), to: at(params.dates.to), days: String(rentalDuration(params.dates)) });
+      return nights ? labels.chip("datesNights", { from: at(params.dates.from), to: at(params.dates.to), days: rentalDuration(params.dates) }) : labels.chip("dates", { from: at(params.dates.from), to: at(params.dates.to), days: rentalDuration(params.dates) });
     }
   }
   return key;

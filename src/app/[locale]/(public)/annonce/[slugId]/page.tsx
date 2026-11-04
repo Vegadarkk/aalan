@@ -33,7 +33,7 @@ import { SellerCard } from "@/components/listing/seller-card";
 import { ShareButton } from "@/components/listing/share-button";
 import { ListingMapBlock } from "@/components/map/listing-map-block";
 import { ReportButton } from "@/components/report/report-button";
-import { RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, subcategoryById } from "@/config/categories";
+import { HOLIDAY_RENTAL_SUBCATEGORY, RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, subcategoryById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
@@ -212,6 +212,9 @@ export default async function ListingPage({ params }: { params: Params }) {
   // where a photo would be (photos are optional), the salary wording on offers, no amount on a
   // job-seeker ad.
   const jobs = listing.categoryId === "emploi";
+  // Rentals (audit L4-12): their own guide and safety tips, not the sale ones.
+  const carRental = listing.subcategoryId === RENTAL_SUBCATEGORY;
+  const holidayHome = listing.subcategoryId === HOLIDAY_RENTAL_SUBCATEGORY;
   // An example listing (src/lib/demo) shows the page of an offer without being one: no contact, no
   // favorite, no Product markup.
   const contactable = published && !listing.example;
@@ -400,8 +403,9 @@ export default async function ListingPage({ params }: { params: Params }) {
             </section>
 
             {VEHICLE_SALE_SUBCATEGORIES.includes(listing.subcategoryId) ? <VehicleBuyingGuide attributes={listing.attributes} sellerType={listing.seller.type} /> : null}
-            {guideRubric ? <GuideCategoryLink rubric={guideRubric} locale={locale} /> : null}
-            {listing.subcategoryId === RENTAL_SUBCATEGORY ? <RentalGuide /> : null}
+            {/* A rental has its own guide, not the sale one (audit L4-12); a holiday home links to the tourist rental procedure. */}
+            {guideRubric && !carRental ? <GuideCategoryLink rubric={guideRubric} procedure={holidayHome ? "immo-location-touristique" : undefined} locale={locale} /> : null}
+            {carRental || holidayHome ? <RentalGuide stay={holidayHome} /> : null}
 
             {/* Report link, then the safety tips: a non-interactive block always stands between the ad
                 and the contact or report controls (D6). */}
@@ -409,7 +413,7 @@ export default async function ListingPage({ params }: { params: Params }) {
             <div id="signaler" className="scroll-mt-24">
               <ReportButton target={{ type: "listing", id: listing.id, categoryId: listing.categoryId }} subject={listing.title} ownerPublicId={listing.seller.publicId} email={legal.dsaContactEmail} url={canonicalUrl} />
             </div>
-            <SafetyTips variant={jobs ? "jobs" : realEstate ? "realEstate" : "goods"} />
+            <SafetyTips variant={jobs ? "jobs" : holidayHome ? "holiday" : carRental ? "carRental" : realEstate ? "realEstate" : "goods"} />
             <AdSlot placement="listing-bottom" eligible={found.adsEligible} promos={availablePromos(flags)} seed={listing.id} />
           </div>
         </div>

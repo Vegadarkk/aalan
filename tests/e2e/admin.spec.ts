@@ -216,11 +216,6 @@ test("staff sign in with their password, see the team dashboard, the quota board
   await expect(page).toHaveURL(`${admin}/personnel`);
   await expect(page.getByRole("heading", { name: "Personnel", level: 1 })).toBeVisible();
   await expect(page.getByRole("table").getByText(email)).toBeVisible();
-  // Pending until the password is set, with the link's expiry and a resend (audit zone 7 P3-5).
-  const invitedRow = page.getByRole("row").filter({ hasText: email });
-  await expect(invitedRow.getByText("Invité, en attente")).toBeVisible();
-  await expect(invitedRow.getByText(/Lien valable jusqu'au/)).toBeVisible();
-  await expect(invitedRow.getByRole("button", { name: "Renvoyer l'invitation" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Inviter un membre" })).toBeVisible();
 
   // An unknown admin path shows the back office's own "Page introuvable", inside the shell.
@@ -257,6 +252,11 @@ test("an admin invites a moderator, who sets a password from the mailed link and
   await page.getByRole("button", { name: "Envoyer l'invitation" }).click();
   await expect(page.getByText(`Invitation envoyée à ${email}`)).toBeVisible();
   await expect(page.getByRole("table").getByText(email)).toBeVisible();
+  // Pending until the password is set, with the link's expiry and a resend (audit zone 7 P3-5).
+  const invitedRow = page.getByRole("row").filter({ hasText: email });
+  await expect(invitedRow.getByText("Invité, en attente")).toBeVisible();
+  await expect(invitedRow.getByText(/Lien valable jusqu'au/)).toBeVisible();
+  await expect(invitedRow.getByRole("button", { name: "Renvoyer l'invitation" })).toBeVisible();
 
   // The invitation link is our own page on the admin origin, with the code of the Admin SDK link.
   const mail = await waitForMail(request, email, "staffInvite");

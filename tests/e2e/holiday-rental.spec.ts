@@ -146,6 +146,9 @@ test.describe("seasonal rental agency", () => {
     await signUpAndIn(guest, request, `saison-guest-${randomId(10)}@joutiya.test`, "Imane Voyageuse");
     await guest.goto(`/fr/annonce/${slugId}`);
     await expect(guest.getByTestId("visit-button")).toHaveCount(0);
+    // A stay's own guide and safety tips (audit L4-12).
+    await expect(guest.getByTestId("rental-guide").getByRole("heading", { name: "Louer un logement de vacances au Maroc" })).toBeVisible();
+    await expect(guest.getByTestId("safety-tips")).not.toContainText("titre foncier");
     const listingCalendar = guest.getByTestId("rental-availability");
     await listingCalendar.locator(`button[data-day="${day(5)}"]`).tap();
     await expect(guest.getByTestId("rental-availability-pick")).toContainText("Choisissez maintenant le jour de départ.");
@@ -179,6 +182,27 @@ test.describe("seasonal rental agency", () => {
     await expect(guest.getByTestId("rental-request-card")).toHaveAttribute("data-status", "requested-mine", { timeout: 15_000 });
     await expect(guest.getByTestId("rental-request-card")).toContainText("En attente de la réponse de l'annonceur.");
     await expect(guest.getByTestId("rental-request-event").first()).toContainText("Vous avez demandé un séjour");
+
+    // The agency's Pro area (audit L4-02, L4-06): the guide for its homes, the request waiting for
+    // its answer, its settings (shown on the storefront) and the planning of its homes.
+    await page.goto("/fr/pro");
+    await expect(page.getByTestId("rental-setup")).toHaveAttribute("data-kind", "homes");
+    const requests = page.getByTestId("rental-requests");
+    await expect(requests.getByTestId("rental-requests-pending")).toHaveAttribute("data-count", "1", { timeout: 15_000 });
+    await expect(requests.getByTestId("rental-requests-item")).toHaveAttribute("href", `/fr/messages/${cid}`);
+    await page.screenshot({ path: "test-results/holiday-pro-space.png", fullPage: true });
+    await page.getByRole("link", { name: "Mon agence de séjours" }).click();
+    const holiday = page.getByTestId("holiday-agency-settings");
+    await holiday.getByLabel("Numéro d'autorisation").fill("ts 12/2025");
+    await holiday.getByLabel("Séjour minimum").selectOption("3");
+    await holiday.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(page.getByText("Réglages enregistrés. Votre vitrine est mise à jour.")).toBeVisible();
+    await page.goto("/fr/pro/logements");
+    await expect(page.getByRole("heading", { name: "Planning des logements" })).toBeVisible();
+    await expect(page.getByRole("grid", { name: "Disponibilités des logements, nuit par nuit" })).toContainText(title, { timeout: 15_000 });
+    await page.goto(`/fr/boutique/${segment}`);
+    await expect(page.getByTestId("holiday-authorization")).toHaveText("TS 12/2025");
+    await expect(page.getByTestId("holiday-agency")).toContainText("3 nuits");
 
     await page.goto(`/fr/messages/${cid}`);
     const requestCard = page.getByTestId("rental-request-card");

@@ -864,6 +864,11 @@
       "charactersMin": "Encore {count, plural, one {# caractère} other {# caractères}} au minimum",
       "condition": "État",
       "price": "Prix",
+      "pricePer": {
+        "day": "Prix par jour",
+        "night": "Prix par nuit",
+        "month": "Loyer par mois"
+      },
       "priceHint": "En dirhams, sans centimes.",
       "pricePlaceholder": "1 500",
       "currency": "DH",
@@ -3282,7 +3287,12 @@
         "noFees": "Ne payez jamais pour postuler : ni frais de dossier, ni formation obligatoire, ni caution, ni visa.",
         "checkEmployer": "Vérifiez l'employeur : nom de la société, adresse, registre de commerce, et rencontrez-le dans ses locaux.",
         "abroad": "Pour un emploi à l'étranger, le contrat doit porter le visa du ministère chargé du Travail ; les services de l'ANAPEC sont gratuits.",
-        "noDocuments": "Ne transmettez jamais la copie de votre carte d'identité ou de votre passeport avant un contrat signé."
+        "noDocuments": "Ne transmettez jamais la copie de votre carte d'identité ou de votre passeport avant un contrat signé.",
+        "noDepositCar": "Ne versez ni acompte ni caution avant d'avoir vu le véhicule et signé le contrat de l'agence.",
+        "checkAgency": "Vérifiez l'agence : son numéro d'agrément et ses adresses figurent sur sa vitrine.",
+        "noDepositStay": "Ne versez rien pour « bloquer » des dates avant une confirmation écrite de l'annonceur ; méfiez-vous d'un prix très bas pour la saison.",
+        "checkHost": "Vérifiez l'annonceur et le logement : numéro d'autorisation d'une agence, adresse exacte, photos récentes.",
+        "noLinks": "Restez dans la messagerie : un lien de paiement ou un échange déplacé vers un autre service est le signe d'une arnaque."
       },
       "report": "Un doute sur cette annonce ? <report>Signalez-la</report> ou <contact>écrivez-nous</contact>.",
       "host": "Aalan héberge les annonces de ses utilisateurs : elle n'est ni vendeur ni acheteur, et n'est partie ni aux transactions ni aux litiges entre eux.",
@@ -3417,7 +3427,18 @@
         "licence": "Ayez votre permis valide sur vous (permis international si l'agence le demande) et respectez l'âge et l'ancienneté de permis exigés.",
         "payment": "{brand} ne loue pas ce véhicule et ne reçoit aucun paiement : la location est un contrat entre vous et l'agence. Ne versez aucun acompte avant d'avoir vu l'agence et le véhicule."
       },
-      "source": "Conseils indicatifs : les conditions et le contrat de l'agence priment."
+      "source": "Conseils indicatifs : les conditions et le contrat de l'agence priment.",
+      "home": {
+        "title": "Louer un logement de vacances au Maroc",
+        "steps": {
+          "host": "Vérifiez l'annonceur : une agence affiche son numéro d'autorisation d'hébergement touristique (loi 80-14) ; un particulier doit pouvoir vous dire qui il est et où se trouve le logement.",
+          "confirmation": "Obtenez une confirmation écrite avant de partir : dates, prix total pour le séjour, nombre de voyageurs, caution éventuelle et conditions d'annulation.",
+          "arrival": "À l'arrivée, vérifiez que le logement correspond à l'annonce (photos, équipements, capacité) avant de remettre le solde ou la caution.",
+          "register": "L'hébergeur relève l'identité de chaque voyageur pour la déclaration aux autorités et peut demander la taxe de séjour de la commune : c'est normal. Ne laissez jamais votre passeport en garantie.",
+          "payment": "{brand} ne loue pas ce logement et ne reçoit aucun paiement : le séjour est un accord entre vous et l'annonceur. Ne versez rien par mandat ou par un lien reçu hors de la messagerie."
+        },
+        "source": "Conseils indicatifs : les conditions et la confirmation de l'annonceur priment."
+      }
     },
     "catalogue": {
       "title": "Choix et disponibilité",
@@ -3752,6 +3773,12 @@
       "title": "Aucune annonce ne correspond à votre recherche",
       "body": "Retirez un filtre ou élargissez le lieu pour voir plus d'annonces.",
       "bodyWords": "Vérifiez l'orthographe, essayez un mot plus général ou retirez un filtre.",
+      "datesBody": "Aucun véhicule correspondant n'est libre du {from} au {to} : il est peut-être déjà loué. Essayez des dates proches ou retirez un filtre.",
+      "datesBodyNights": "Aucun logement correspondant n'est libre du {from} au {to} : il est peut-être déjà réservé. Essayez des dates proches ou retirez un filtre.",
+      "nearbyDates": "Les mêmes dates, un peu plus tôt ou plus tard :",
+      "datesOption": "{from} – {to}",
+      "withoutDates": "Voir les véhicules sans dates",
+      "withoutDatesNights": "Voir les logements sans dates",
       "removeFilter": "Retirer un filtre :",
       "widenRegion": "Chercher dans toute la région {region}",
       "widenCountry": "Chercher dans tout le Maroc",
@@ -3940,7 +3967,7 @@
       "rangeFrom": "{label} : dès {min}",
       "rangeTo": "{label} : jusqu'à {max}",
       "options": "{label} : {values}",
-      "dates": "{from} – {to} · {days} j",
+      "dates": "{from} – {to} · {days, plural, one {# jour} other {# jours}}",
       "datesNights": "{from} – {to} · {days, plural, one {# nuit} other {# nuits}}",
       "includeSoldOut": "Épuisés inclus",
       "promo": "En promotion"
@@ -4162,6 +4189,8 @@
       "fleet": "Planning de flotte",
       "sellerPayment": "Paiement chez le vendeur",
       "rentalAgency": "Mon agence de location",
+      "homes": "Planning des logements",
+      "holidayAgency": "Mon agence de séjours",
       "choosePlan": "Choisir une offre",
       "invoices": "Mes factures"
     },
@@ -4983,7 +5012,14 @@
     },
     "holiday": {
       "label": "Agence de location saisonnière",
-      "verifiedNote": "Les identifiants professionnels de cette agence (ICE, registre du commerce) ont été vérifiés. Le séjour se conclut directement entre vous et l'agence : le site n'est partie à aucune location et ne perçoit ni acompte, ni caution. Ne versez rien avant d'avoir un contrat ou une confirmation écrite de l'agence."
+      "verifiedNote": "Les identifiants professionnels de cette agence (ICE, registre du commerce) ont été vérifiés. Le séjour se conclut directement entre vous et l'agence : le site n'est partie à aucune location et ne perçoit ni acompte, ni caution. Ne versez rien avant d'avoir un contrat ou une confirmation écrite de l'agence.",
+      "agencyTitle": "L'agence",
+      "authorization": "Autorisation n°",
+      "authorizationDeclared": "Numéro d'autorisation d'hébergement touristique déclaré par l'agence, sous sa seule responsabilité.",
+      "times": "Arrivée et départ",
+      "timesValue": "Arrivée à partir de {checkIn}, départ avant {checkOut}",
+      "minNights": "Séjour minimum",
+      "minNightsValue": "{count, plural, one {# nuit} other {# nuits}}, sauf mention contraire sur l'annonce"
     },
     "fleet": {
       "fleetTitle": "La flotte",
@@ -5852,7 +5888,26 @@
     "save": "Enregistrer",
     "saved": "Planning enregistré pour {count, plural, one {# véhicule} other {# véhicules}}.",
     "confirmed": "Disponibilités confirmées pour {count, plural, one {# véhicule} other {# véhicules}}.",
-    "partial": "{count, plural, one {# véhicule n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# véhicules n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}"
+    "partial": "{count, plural, one {# véhicule n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# véhicules n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}",
+    "home": {
+      "title": "Planning des logements",
+      "lead": "Vos logements de vacances sur les 60 prochains jours. Choisissez une nuit pour la bloquer ou la libérer, ou glissez à la souris pour un séjour entier. Une nuit bloquée veut dire que le logement n'est pas libre cette nuit-là.",
+      "emptyTitle": "Aucun logement de vacances en ligne",
+      "emptyBody": "Publiez vos logements dans « Location de vacances » : ils apparaîtront ici, prêts à être planifiés.",
+      "emptyAction": "Publier un logement",
+      "city": "Ville",
+      "search": "Rechercher un logement",
+      "vehicles": "{count, plural, one {# logement affiché,} other {# logements affichés,}}",
+      "truncated": "Vous avez plus de 200 logements : le planning montre les 200 premiers par titre. Filtrez par ville ou utilisez « Mes annonces » pour les autres.",
+      "noMatch": "Aucun logement ne correspond à ce filtre.",
+      "gridLabel": "Disponibilités des logements, nuit par nuit",
+      "vehicle": "Logement",
+      "pending": "{count, plural, one {# logement modifié, pas encore enregistré.} other {# logements modifiés, pas encore enregistrés.}}",
+      "tooMany": "Au plus {max} périodes par logement : regroupez des nuits proches.",
+      "saved": "Planning enregistré pour {count, plural, one {# logement} other {# logements}}.",
+      "confirmed": "Disponibilités confirmées pour {count, plural, one {# logement} other {# logements}}.",
+      "partial": "{count, plural, one {# logement n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# logements n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}"
+    }
   },
   "RentalAgency": {
     "title": "Mon agence de location",
@@ -5917,7 +5972,18 @@
       "step3Hint": "Bloquez les jours loués et confirmez vos disponibilités au moins tous les 14 jours.",
       "step3Action": "Mon planning",
       "doneLabel": "Étape {index} faite :",
-      "todoLabel": "Étape {index} à faire :"
+      "todoLabel": "Étape {index} à faire :",
+      "home": {
+        "title": "Mettre votre agence de séjours en ligne",
+        "lead": "Trois étapes pour une vitrine de logements prête à recevoir des demandes.",
+        "ready": "Les voyageurs voient vos logements libres à leurs dates. Confirmez votre planning au moins tous les 14 jours.",
+        "step1": "Autorisation et horaires",
+        "step1Hint": "Le numéro d'autorisation (loi 80-14), obligatoire pour publier, les heures d'arrivée et de départ, le séjour minimum.",
+        "step2": "Vos logements",
+        "step2Hint": "Une annonce par logement : l'autorisation et le séjour minimum sont déjà remplis.",
+        "step2Action": "Déposer un logement",
+        "step3Hint": "Bloquez les nuits réservées et confirmez vos disponibilités au moins tous les 14 jours."
+      }
     },
     "check": {
       "title": "Contrôle de l'agrément sur document",
@@ -5940,7 +6006,55 @@
         "active_content": "Ce PDF contient du contenu actif (script, formulaire) : exportez-le à nouveau en PDF simple.",
         "expired": "L'envoi n'a pas abouti à temps. Réessayez."
       }
+    },
+    "requests": {
+      "title": "Demandes de réservation",
+      "inbox": "Toute la messagerie",
+      "loading": "Chargement des demandes",
+      "loadFailed": "Les demandes n'ont pas pu être chargées : retrouvez-les dans la messagerie.",
+      "pending": "{count, plural, one {# demande en attente de réponse} other {# demandes en attente de réponse}}",
+      "noPending": "Aucune demande en attente",
+      "answer": "Répondre",
+      "upcoming": "Remises des {days} prochains jours",
+      "home": {
+        "upcoming": "Arrivées des {days} prochains jours"
+      },
+      "noUpcoming": "Rien de prévu pour l'instant.",
+      "open": "Voir",
+      "dates": "Du {from} au {to}"
     }
+  },
+  "HolidayAgency": {
+    "title": "Mon agence de séjours",
+    "back": "Retour à l'espace Pro",
+    "lead": "Ces informations s'affichent sur votre vitrine et remplissent d'avance chaque nouveau logement que vous déposez.",
+    "loading": "Chargement des réglages",
+    "loadFailed": "Les réglages n'ont pas pu être chargés.",
+    "retry": "Réessayer",
+    "notVerified": "Ces réglages sont réservés aux boutiques Pro vérifiées.",
+    "sectorTitle": "Votre secteur n'est pas « Location de vacances »",
+    "sectorBody": "Vous pouvez enregistrer ces réglages, mais votre vitrine ne les montrera qu'une fois ce secteur choisi.",
+    "sectorAction": "Changer de secteur",
+    "authorizationTitle": "Autorisation",
+    "authorizationLead": "Le numéro de l'autorisation d'exploiter votre établissement d'hébergement touristique (loi 80-14). Il est exigé sur chaque annonce de location de vacances d'une agence et s'affiche comme « déclaré par l'agence » : vous en restez seul responsable.",
+    "authorization": "Numéro d'autorisation",
+    "authorizationHint": "Tel qu'il figure sur votre autorisation. Repris d'office sur vos nouveaux logements, modifiable sur chacun.",
+    "authorizationPlaceholder": "Exemple : 12/2025",
+    "authorizationRequired": "Renseignez votre numéro d'autorisation.",
+    "authorizationInvalid": "De 3 à 40 caractères : lettres latines, chiffres, espaces et . / - _, avec au moins un chiffre.",
+    "stayTitle": "Séjours",
+    "stayLead": "Les heures affichées sur votre vitrine et le séjour minimum de vos nouveaux logements (chaque annonce peut avoir le sien).",
+    "checkIn": "Arrivée à partir de",
+    "checkInHint": "L'heure de remise des clés.",
+    "checkOut": "Départ avant",
+    "checkOutHint": "L'heure à laquelle le logement est libéré.",
+    "minNights": "Séjour minimum",
+    "minNightsHint": "Proposé sur chaque nouveau logement.",
+    "nights": "{count, plural, one {# nuit} other {# nuits}}",
+    "failed": "L'enregistrement a échoué.",
+    "save": "Enregistrer",
+    "saved": "Réglages enregistrés. Votre vitrine est mise à jour.",
+    "upToDate": "Réglages à jour."
   },
   "RentalRequest": {
     "card": {

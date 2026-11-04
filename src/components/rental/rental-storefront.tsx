@@ -1,11 +1,11 @@
-import { Banknote, BadgeInfo, Clock, IdCard, KeyRound, MapPin, Plane, ShieldCheck, Wallet, type LucideIcon } from "lucide-react";
+import { Banknote, BadgeInfo, CalendarDays, Clock, IdCard, KeyRound, MapPin, Plane, ShieldCheck, Wallet, type LucideIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { airportById } from "@/config/airports";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { formatPrice } from "@/lib/listings/client/format";
-import type { RentalAgency } from "@/lib/pro/profile-schema";
+import type { HolidayAgency, RentalAgency } from "@/lib/pro/profile-schema";
 import type { FleetConditions } from "@/lib/search/rental-fleet-view";
 import { cn } from "@/lib/utils";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
@@ -179,6 +179,36 @@ export function RentalConditions({ conditions, locale, className }: { conditions
         <BadgeInfo className="mt-px size-3.5 shrink-0" aria-hidden="true" />
         {t("conditionsNote")}
       </p>
+    </section>
+  );
+}
+
+/** A holiday rental agency's card (audit L4-02): its authorisation (declared), arrival and departure times, shortest stay. */
+export function HolidayAgencyCard({ holiday, className }: { holiday: HolidayAgency; className?: string }) {
+  const t = useTranslations("Storefront.holiday");
+  return (
+    <section aria-labelledby="holiday-agency" data-testid="holiday-agency" className={cn("flex flex-col gap-4 rounded-lg border border-border bg-surface p-5", className)}>
+      <h2 id="holiday-agency" className="sr-only">
+        {t("agencyTitle")}
+      </h2>
+      <div className="flex items-start gap-3">
+        <Badge icon={IdCard} />
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="font-medium">
+            {t("authorization")}{" "}
+            <span dir="ltr" data-testid="holiday-authorization" className="tabular-nums">
+              {holiday.authorization}
+            </span>
+          </p>
+          <p className="text-sm text-foreground-muted text-pretty">{t("authorizationDeclared")}</p>
+        </div>
+      </div>
+      <Row icon={Clock} title={t("times")}>
+        <span dir="auto">{t("timesValue", { checkIn: holiday.checkIn, checkOut: holiday.checkOut })}</span>
+      </Row>
+      <Row icon={CalendarDays} title={t("minNights")}>
+        {t("minNightsValue", { count: holiday.minNights })}
+      </Row>
     </section>
   );
 }

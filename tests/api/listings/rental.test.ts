@@ -16,9 +16,10 @@ import { PUT as putAvailability } from "@/app/api/listings/[id]/availability/rou
 import { GET as getFleet, PUT as putFleet } from "@/app/api/pro/fleet/route";
 import { GET as getMe } from "@/app/api/pro/me/route";
 import { PUT as putRental } from "@/app/api/pro/me/rental/route";
+import { PUT as putHoliday } from "@/app/api/pro/me/holiday/route";
 import { DEFAULT_PRICING } from "@/config/pricing";
 import type { CreateListingResponse, FieldIssue, FleetResponse, FleetSaveResponse, RentalAvailabilityResponse } from "@/lib/contracts/listings";
-import type { ProMeResponse, ProRentalResponse } from "@/lib/contracts/pro";
+import type { ProHolidayResponse, ProMeResponse, ProRentalResponse } from "@/lib/contracts/pro";
 import { getListing } from "@/lib/db/repositories/listings";
 import { getSearchOutbox } from "@/lib/db/repositories/search-outbox";
 import { dayString, moroccoToday } from "@/lib/listings/rental-availability";
@@ -49,7 +50,7 @@ const SETTINGS = {
 };
 
 /** A verified rental agency on the launch offer, signed in as its owner; `settings: false` before it filled its settings. */
-async function agency({ settings = true }: { settings?: boolean } = {}): Promise<Member> {
+async function agency({ settings = true, sector = "car_rental" }: { settings?: boolean; sector?: "car_rental" | "holiday_rental" } = {}): Promise<Member> {
   const owner = await member({ displayName: "Océan Rent" });
   const proId = newProId();
   const now = new Date();
@@ -69,7 +70,7 @@ async function agency({ settings = true }: { settings?: boolean } = {}): Promise
       plan: "essentiel",
       planSource: "launch_offer",
       quotas: DEFAULT_PRICING.pro.essentiel,
-      sector: "car_rental",
+      sector,
       ...(settings ? { rental: { ...SETTINGS, payments: ["cash", "card"] as const, airports: ["rak"] as const } } : {}),
       createdAt: now,
       updatedAt: now,
@@ -287,5 +288,54 @@ describe("car rental agency settings", () => {
     expect(phone.status).toBe(422);
     expect(phone.body.error.code).toBe("invalid_text");
     expect((await put(owner, { ...SETTINGS, branches: [{ citySlug: "marrakech", address: "contact@agence.ma, Guéliz" }] })).status).toBe(422);
+  });
+});
+
+describe("holiday rental agency (audit L4-02)", () => {
+  const HOLIDAY = { authorization: "ts 12/2025", checkIn: "15:00", checkOut: "11:00", minNights: 3 };
+  const put = (owner: Member, body: unknown) => api<ProHolidayResponse & ErrorBody>(putHoliday, "PUT", "/api/pro/me/holiday", { member: owner, body });
+  const homes = (owner: Member) => api<FleetResponse & ErrorBody>(getFleet, "GET", "/api/pro/fleet?kind=homes", { member: owner });
+  const cars = (owner: Member) => api<FleetResponse & ErrorBody>(getFleet, "GET", "/api/pro/fleet", { member: owner });
+
+  it("saves its settings (the authorisation upper-cased), read back in the Pro area", async () => {
+    const owner = await agency({ settings: false, sector: "holiday_rental" });
+    const saved = await put(owner, HOLIDAY);
+    expect(saved.status).toBe(200);
+    expect(saved.body.holiday).toEqual({ ...HOLIDAY, authorization: "TS 12/2025" });
+    const me = await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
+    expect(me.body.shop).toMatchObject({ sector: "holiday_rental", holiday: { ...HOLIDAY, authorization: "TS 12/2025" } });
+  });
+
+  it("refuses a malformed authorisation, time or stay, and an individual", async () => {
+    const owner = await agency({ settings: false, sector: "holiday_rental" });
+    for (const body of [
+      { ...HOLIDAY, authorization: "AB" },
+      { ...HOLIDAY, authorization: "sans chiffre" },
+      { ...HOLIDAY, checkIn: "25:00" },
+      { ...HOLIDAY, minNights: 0 },
+      { ...HOLIDAY, minNights: 31 },
+      { ...HOLIDAY, extra: true },
+    ]) {
+      expect((await put(owner, body)).status, JSON.stringify(body)).toBe(400);
+    }
+    expect((await put(await member(), HOLIDAY)).status).toBe(409);
+  });
+
+  it("plans its homes on offer apart from cars", async () => {
+    const owner = await agency({ sector: "holiday_rental" });
+    expect((await put(owner, HOLIDAY)).status).toBe(200);
+    const id = await rentalDraft(owner, {
+      categoryId: "immobilier",
+      subcategoryId: "location-vacances",
+      title: "Riad avec patio dans la médina d'Essaouira",
+      attributes: { "property-type": "maison", guests: 6, "min-nights": 3, "tourism-authorization": "TS 12/2025" },
+      price: 900,
+    });
+    const published = await api<PublishBody>(publish, "POST", `/api/listings/${id}/publish`, { member: owner, body: { ...ACCEPT, realEstateAttestation: true } });
+    expect(published.body.status, JSON.stringify(published.body)).toBe("published");
+    const listed = await homes(owner);
+    expect(listed.status).toBe(200);
+    expect(listed.body.vehicles.map((home) => home.id)).toEqual([id]);
+    expect((await cars(owner)).body.vehicles).toEqual([]);
   });
 });

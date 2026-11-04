@@ -25,6 +25,7 @@ import { RefineChips } from "@/components/search/refine-chips";
 import { ResultsGrid } from "@/components/search/results-grid";
 import { SearchChallenge } from "@/components/search/search-challenge";
 import { SearchEmpty } from "@/components/search/search-empty";
+import { moroccoToday } from "@/lib/listings/rental-availability";
 import { SearchError } from "@/components/search/search-error";
 import { PendingBar, PendingRegion, SearchNavigationProvider } from "@/components/search/search-navigation";
 import { SortSelect } from "@/components/search/sort-select";
@@ -169,7 +170,7 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
           <MapFailedNotice />
           <ExamplesHiddenNotice className="search-examples" />
 
-          {hits.length === 0 ? <SearchEmpty params={params} locale={locale} outOfRange={response.total > 0} className="search-empty" /> : null}
+          {hits.length === 0 ? <SearchEmpty params={params} locale={locale} outOfRange={response.total > 0} today={moroccoToday(new Date())} className="search-empty" /> : null}
 
           {/* Map view and its no-script list: the rows (no basemap configured: the grid only). */}
           {map ? (

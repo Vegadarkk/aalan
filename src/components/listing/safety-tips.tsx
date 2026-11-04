@@ -21,6 +21,20 @@ const TIPS = {
     { key: "checkTitle", icon: Store },
     { key: "noCodes", icon: ShieldAlert },
   ],
+  // Rentals (audit L4-12): no deposit before the contract or a written confirmation, the agency
+  // or host checked, payment links outside the messaging refused.
+  carRental: [
+    { key: "noDepositCar", icon: HandCoins },
+    { key: "checkAgency", icon: Store },
+    { key: "noLinks", icon: ShieldAlert },
+    { key: "noCodes", icon: ShieldAlert },
+  ],
+  holiday: [
+    { key: "noDepositStay", icon: HandCoins },
+    { key: "checkHost", icon: Store },
+    { key: "noLinks", icon: ShieldAlert },
+    { key: "noCodes", icon: ShieldAlert },
+  ],
   // Job ads (Phase 6 frame, rule 10): the scam is a fee asked from the candidate (dossier,
   // training, visa), or identity papers collected before any contract.
   jobs: [

@@ -189,6 +189,16 @@ export type RentalAvailabilityInput = z.infer<typeof rentalAvailabilityInputSche
 export const FLEET_MAX = 200;
 
 /**
+ * What a planning shows: a car rental agency's cars (/pro/flotte) or a holiday rental agency's
+ * homes (/pro/logements, audit L4-02), `?kind=` of GET /api/pro/fleet.
+ */
+export const FLEET_KINDS = ["cars", "homes"] as const;
+export type FleetKind = (typeof FLEET_KINDS)[number];
+
+/** The kind of a `?kind=` value: cars unless it names the homes. */
+export const fleetKindOf = (value: string | null | undefined): FleetKind => (value === "homes" ? "homes" : "cars");
+
+/**
  * PUT /api/pro/fleet: the fleet planning's changes, each like a calendar save (its own `since`
  * lock). The vehicles left as they are sent unchanged confirm their availability ("Tout est à jour").
  */

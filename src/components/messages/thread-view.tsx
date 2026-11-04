@@ -529,63 +529,67 @@ export function ThreadView({ cid }: { cid: string }) {
         <ErrorBanner tone="info" title={t("blockedMe")} className="mx-3 mt-3 lg:mx-5" />
       ) : null}
 
-      {conversation.rentalRequest ? (
-        <RentalRequestCard
-          key={conversation.rentalRequest.id}
-          cid={cid}
-          request={conversation.rentalRequest}
-          counterpartName={name}
-          writable={writable}
-          now={now}
-          onChange={onRentalRequest}
-          onNote={send}
-          onPickup={
-            conversation.appointment && isActive(conversation.appointment, now)
-              ? undefined
-              : () => {
-                  const request = conversation.rentalRequest;
-                  if (!request) return;
-                  const kind: AppointmentKind = request.unit === "night" ? "check_in" : "pickup";
-                  setPicker({ open: true, kind, kinds: [kind], startDay: request.from, title: rentalText(kind === "check_in" ? "card.home.pickupAppointment" : "card.pickupAppointment") });
-                }
-          }
-        />
-      ) : null}
-      {conversation.rentalHistory && conversation.rentalHistory.length > 0 ? <RentalRequestHistory history={conversation.rentalHistory} now={now} /> : null}
+      {/* The pinned cards (request, offer, appointment) scroll on their own past 45 % of the
+          screen: the messages keep the rest (audit L4-23). */}
+      <div data-testid="thread-cards" className="flex max-h-[45dvh] shrink-0 flex-col overflow-y-auto overscroll-contain">
+        {conversation.rentalRequest ? (
+          <RentalRequestCard
+            key={conversation.rentalRequest.id}
+            cid={cid}
+            request={conversation.rentalRequest}
+            counterpartName={name}
+            writable={writable}
+            now={now}
+            onChange={onRentalRequest}
+            onNote={send}
+            onPickup={
+              conversation.appointment && isActive(conversation.appointment, now)
+                ? undefined
+                : () => {
+                    const request = conversation.rentalRequest;
+                    if (!request) return;
+                    const kind: AppointmentKind = request.unit === "night" ? "check_in" : "pickup";
+                    setPicker({ open: true, kind, kinds: [kind], startDay: request.from, title: rentalText(kind === "check_in" ? "card.home.pickupAppointment" : "card.pickupAppointment") });
+                  }
+            }
+          />
+        ) : null}
+        {conversation.rentalHistory && conversation.rentalHistory.length > 0 ? <RentalRequestHistory history={conversation.rentalHistory} now={now} /> : null}
 
-      {conversation.offer ? (
-        <OfferCard
-          key={conversation.offer.id}
-          cid={cid}
-          offer={conversation.offer}
-          counterpartName={name}
-          writable={writable}
-          now={now}
-          onChange={onOffer}
-          onCounter={() => {
-            const offer = conversation.offer;
-            if (offer) setOfferForm({ open: true, price: offer.price, answering: { id: offer.id, amount: offer.amount } });
-          }}
-        />
-      ) : null}
+        {conversation.offer ? (
+          <OfferCard
+            key={conversation.offer.id}
+            cid={cid}
+            offer={conversation.offer}
+            counterpartName={name}
+            writable={writable}
+            now={now}
+            onChange={onOffer}
+            onCounter={() => {
+              const offer = conversation.offer;
+              if (offer) setOfferForm({ open: true, price: offer.price, answering: { id: offer.id, amount: offer.amount } });
+            }}
+          />
+        ) : null}
 
-      {conversation.appointment ? (
-        <AppointmentCard
-          key={conversation.appointment.id}
-          cid={cid}
-          appointment={conversation.appointment}
-          role={conversation.role}
-          counterpartName={name}
-          listingTitle={conversation.listing.title}
-          writable={writable}
-          now={now}
-          onChange={onAppointment}
-          onReschedule={() => {
-            const kind = conversation.appointment?.kind;
-            setPicker({ open: true, kind, ...(kind === "check_in" ? { kinds: [kind] } : {}) });
-          }}
-        />
-      ) : null}
+        {conversation.appointment ? (
+          <AppointmentCard
+            key={conversation.appointment.id}
+            cid={cid}
+            appointment={conversation.appointment}
+            role={conversation.role}
+            counterpartName={name}
+            listingTitle={conversation.listing.title}
+            writable={writable}
+            now={now}
+            onChange={onAppointment}
+            onReschedule={() => {
+              const kind = conversation.appointment?.kind;
+              setPicker({ open: true, kind, ...(kind === "check_in" ? { kinds: [kind] } : {}) });
+            }}
+          />
+        ) : null}
+      </div>
 
       <div ref={scroller} className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto overscroll-contain" data-testid="thread">
         <div className="flex flex-col gap-2 px-3 py-4 sm:px-5 lg:px-8">
@@ -609,7 +613,7 @@ export function ThreadView({ cid }: { cid: string }) {
             const label = first ? formatDayLabel(first.createdAt, now, locale, labels) : group.day;
             return (
               <section key={group.day} aria-label={label} className="flex flex-col gap-2">
-                <p className="sticky top-2 z-10 mx-auto my-2 w-fit rounded-full border border-border bg-surface/95 px-3 py-0.5 text-xs font-medium text-foreground-muted shadow-sm">{label}</p>
+                <p className="pointer-events-none sticky top-2 z-10 mx-auto my-2 w-fit rounded-full border border-border bg-surface/95 px-3 py-0.5 text-xs font-medium text-foreground-muted shadow-sm">{label}</p>
                 <ol className="flex flex-col gap-2">
                   {group.messages.map((message) => (
                     <MessageItem

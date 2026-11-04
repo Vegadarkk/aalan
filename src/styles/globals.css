@@ -986,6 +986,15 @@ html[data-welcome~="door"] .welcome-glints {
       inset-inline: 0;
       padding-inline: 1rem;
     }
+    /* The chips row scrolls under the view toggle: its end fades out, a hint that more chips
+       (the dates, « Tout effacer ») follow (audit L4-10). */
+    & .search-toolbar-scroll {
+      padding-inline-end: 2rem;
+      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+    }
+    & .search-toolbar-scroll:dir(rtl) {
+      mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     & :is(.search-panel, .search-toolbar, .search-panel-handle) {

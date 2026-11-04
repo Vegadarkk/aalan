@@ -1,7 +1,7 @@
 import "server-only";
-import { RENTAL_SUBCATEGORY } from "@/config/categories";
+import { HOLIDAY_RENTAL_SUBCATEGORY, RENTAL_SUBCATEGORY } from "@/config/categories";
 import type { AuthContext } from "@/lib/auth/guards";
-import { FLEET_MAX, type FleetResponse, type FleetSaveInput, type FleetSaveResponse } from "@/lib/contracts/listings";
+import { FLEET_MAX, type FleetKind, type FleetResponse, type FleetSaveInput, type FleetSaveResponse } from "@/lib/contracts/listings";
 import { listOwnerListingsOf, type ListingRecord } from "@/lib/db/repositories/listings";
 import { HttpError } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
@@ -9,15 +9,16 @@ import { setRentalAvailability } from "./availability";
 import { toOwnerSummary } from "./owner-view";
 
 // Fleet planning of a car rental agency (rental pack §3, /pro/flotte): its rentals on offer in one
-// grid, and the changes of a session saved at once, each like the listing's own calendar.
+// grid, and the changes of a session saved at once, each like the listing's own calendar. A holiday
+// rental agency's homes take the same planning by nights (/pro/logements, audit L4-02).
 
 /** Rentals a fleet planning shows: on offer or about to be (drafts and ended ones stay in "Mes annonces"). */
 const FLEET_STATUSES: readonly ListingRecord["status"][] = ["published", "paused", "pending_review"];
 
-/** GET /api/pro/fleet: the agency's car rentals on offer, by title (Pro accounts only). */
-export async function listFleet(auth: AuthContext, now = new Date()): Promise<FleetResponse> {
+/** GET /api/pro/fleet?kind=: the agency's car rentals (or homes) on offer, by title (Pro accounts only). */
+export async function listFleet(auth: AuthContext, now = new Date(), kind: FleetKind = "cars"): Promise<FleetResponse> {
   if (auth.user.claims.role !== "pro") throw new HttpError(403, "forbidden", "fleet planning is for Pro agencies");
-  const listings = await listOwnerListingsOf(auth.user.uid, RENTAL_SUBCATEGORY, FLEET_STATUSES, FLEET_MAX + 1);
+  const listings = await listOwnerListingsOf(auth.user.uid, kind === "homes" ? HOLIDAY_RENTAL_SUBCATEGORY : RENTAL_SUBCATEGORY, FLEET_STATUSES, FLEET_MAX + 1);
   const vehicles = listings
     .slice(0, FLEET_MAX)
     .map((listing) => toOwnerSummary(listing, now))

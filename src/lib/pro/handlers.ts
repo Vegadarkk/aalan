@@ -2,7 +2,7 @@ import "server-only";
 import { requireUser } from "@/lib/auth/guards";
 import { uploadIdSchema } from "@/lib/contracts/media";
 import { pinsInputSchema, sectionsInputSchema } from "@/lib/contracts/catalog";
-import { LOGO_MAX_BYTES, LOGO_TYPES, kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
+import { LOGO_MAX_BYTES, LOGO_TYPES, kybcSignSchema, proShopCardSchema, proAgencySchema, proApplySchema, proHolidaySchema, proRentalSchema, proSocialSchema, rentalCheckSubmitSchema, type ProApplyResponse } from "@/lib/contracts/pro";
 import { STOCK_IMPORT_BODY_MAX_BYTES, stockImportRequestSchema } from "@/lib/contracts/stock-import";
 import { serverEnv } from "@/lib/env";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -16,7 +16,7 @@ import { verifyTurnstile } from "@/lib/security/turnstile";
 import { completeKybcUpload, deleteKybcUpload, signKybcUpload } from "./kybc-uploads";
 import { deleteLogo, updateLogo } from "./logo";
 import { submitRentalCheck } from "./rental-check";
-import { proSelf, submitApplication, updateAgency, updatePins, updateRentalAgency, updateSections, updateShopCard } from "./service";
+import { proSelf, submitApplication, updateAgency, updateHolidayAgency, updatePins, updateRentalAgency, updateSections, updateShopCard } from "./service";
 import { updateSocialLinks } from "./social-links";
 import { importStock, stockList } from "./stock-import/service";
 import { readShopStats } from "./stats";
@@ -150,6 +150,14 @@ export async function handleRentalAgency(request: Request): Promise<Response> {
   const input = await readJson(request, proRentalSchema);
   await enforceLimit("pro.agency.uid", auth.user.uid);
   return json(await updateRentalAgency(auth, input));
+}
+
+/** PUT /api/pro/me/holiday: a holiday rental agency's settings (audit L4-02). */
+export async function handleHolidayAgency(request: Request): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true });
+  const input = await readJson(request, proHolidaySchema);
+  await enforceLimit("pro.agency.uid", auth.user.uid);
+  return json(await updateHolidayAgency(auth, input));
 }
 
 /** POST /api/pro/me/rental/check: sends the licence decision for its check (decision 5). */

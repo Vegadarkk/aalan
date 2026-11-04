@@ -12,6 +12,7 @@ vi.mock("@/lib/security/turnstile", () => ({ verifyTurnstile: vi.fn(async () => 
 
 import { POST as postDecision } from "@/app/api/admin/pros/[proId]/route";
 import { POST as postWithdraw } from "@/app/api/admin/pros/[proId]/withdraw/route";
+import { POST as postModeration } from "@/app/api/admin/moderation/[id]/route";
 import { POST as create } from "@/app/api/listings/route";
 import { PATCH as patch } from "@/app/api/listings/[id]/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
@@ -32,7 +33,7 @@ import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { csrfToken } from "@/lib/security/csrf";
 import { lastMail } from "../auth/helpers";
 import { api, attachPhoto, freshPhone, member, readyPatch, seedReadyUpload, type ErrorBody, type ListingBody, type Member, type PublishBody } from "../listings/helpers";
-import { admin, application, applyAs, code, kybPiece, staffAccount, type Staff } from "./helpers";
+import { admin, adminRequest, application, applyAs, code, kybPiece, staffAccount, type Staff } from "./helpers";
 
 const me = (owner: Member) => api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
 
@@ -148,6 +149,19 @@ describe("POST /api/admin/pros/{proId}/withdraw", () => {
     expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos SARL", launchOffer: true });
     await signInAgain(owner);
     expect((await me(owner)).body.shop?.storefront).toBe(`${restored!.slug}-${proId}`);
+  });
+
+  it("keeps a Pro listing still held for review offline: the queue cannot approve it until the new validation", async () => {
+    const { proId, listingId } = await validatedShop();
+    // Held at the time of the withdrawal (the screening sent it to the queue).
+    await db().collection(COLLECTIONS.listings).doc(listingId).update({ status: "pending_review" });
+    expect((await admin<ProWithdrawResponse>(postWithdraw, "POST", `/api/admin/pros/${proId}/withdraw`, adminStaff, withdrawBody)).status).toBe(200);
+    const held = await getListing(listingId);
+    expect(held?.status).toBe("pending_review");
+    const response = await adminRequest(postModeration, "POST", `/api/admin/moderation/${listingId}`, moderator, { action: "approve", version: held!.version }, { params: { id: listingId } });
+    expect(response.status).toBe(409);
+    expect(code(await response.json())).toBe("pro_revalidation");
+    expect((await getListing(listingId))?.status).toBe("pending_review");
   });
 
   it("keeps a refused resubmission hidden, without a purge date, and lets the Pro send another", async () => {

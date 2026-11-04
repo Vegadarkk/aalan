@@ -9,8 +9,14 @@
 
 import { canonicalSearchParams, searchParamsToQuery, type SearchParams } from "@/lib/search/params";
 
-/** The desktop breakpoint (lg), shared with the client root. */
+/** The desktop breakpoint (lg): the map opens by itself, the detail panel beside it. Shared with the client root. */
 export const DESKTOP_QUERY = "(min-width: 64rem)";
+
+/**
+ * The map's list as a side panel from md, a narrower one on a tablet (globals.css, `--search-panel-w`);
+ * a bottom sheet below (audit zone 2 P3-9). The view a tablet opens in still follows DESKTOP_QUERY.
+ */
+export const SIDE_PANEL_QUERY = "(min-width: 48rem)";
 
 export type SearchView = "map" | "list";
 

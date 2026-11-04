@@ -8,7 +8,7 @@ import { useSearchMap } from "./search-map-root";
 
 // The map behind the list (Carte vivante, lot 2): mounted only in the map view, once hydrated (the
 // list painted first), so the ~430 KB of MapLibre never loads for a list reader. At its foot the
-// OSM credits (ODbL: always in sight, never under another piece) and, from lg, the legend: one
+// OSM credits (ODbL: always in sight, never under another piece) and, from md, the legend: one
 // wrapping row between the panels, the credits on the bottom line at the end side, the legend
 // beside them or on the line above when the room is short (globals.css, `search-mapfoot`).
 
@@ -49,8 +49,12 @@ export function MapStage() {
         </p>
         <ul aria-label={t("legend.label")} className="search-legend float-card">
           <li className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="h-3 w-4 rounded-full border border-border-strong bg-surface" />
+            <span aria-hidden="true" className="search-legend-tag" />
             {t("legend.price")}
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="search-legend-cluster" />
+            {t("legend.cluster")}
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden="true" className="h-3.5 w-2.5 rounded-t-full rounded-b-[2px] bg-featured" />

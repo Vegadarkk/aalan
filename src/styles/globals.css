@@ -795,13 +795,21 @@ html[data-welcome~="door"] .welcome-glints {
 /* ── Search page, map first (Carte vivante, lot 2) ──
  * One server-rendered panel, three layouts read from [data-search-root]:
  *  - list view (data-search-view="list"): the page flow, the card grid, the page footer;
- *  - map view with script: a full-bleed map, the panel floating at the start side (desktop) or as a
- *    bottom sheet (phones), the filters row floating over the map, the legal links in the panel;
+ *  - map view with script: a full-bleed map, the panel floating at the start side (from md: 20rem on
+ *    a tablet, 25rem from lg) or as a bottom sheet (phones), the filters row floating over the map,
+ *    the legal links in the panel (audit zone 2 P3-9: a tablet gets the side panel);
  *  - map view without script: the rows as a plain list in the page flow.
  * Logical properties only: in Arabic the panel stands on the right.
  */
 :root {
   --search-sheet: 10.5rem;
+  /* The side panel's width (from md); the floating pieces beside it follow. */
+  --search-panel-w: 20rem;
+}
+@media (width >= 64rem) {
+  :root {
+    --search-panel-w: 25rem;
+  }
 }
 :root[data-search-snap="half"] {
   --search-sheet: 50dvh;
@@ -912,8 +920,9 @@ html[data-welcome~="door"] .welcome-glints {
     background: linear-gradient(to top, var(--surface), transparent);
     pointer-events: none;
   }
+  /* Narrow padding: the desktop panel's page numbers keep a neighbour each side (pagination.tsx). */
   & .search-map-pagination {
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem;
     border-top: 1px solid var(--border);
   }
   & .search-panel-legal {
@@ -962,19 +971,19 @@ html[data-welcome~="door"] .welcome-glints {
     mask-image: linear-gradient(to left, #000 calc(100% - 1.75rem), transparent);
   }
 
-  @media (width >= 64rem) {
+  @media (width >= 48rem) {
     & .search-panel {
       top: 5.25rem;
       bottom: 1rem;
       inset-inline-start: 1rem;
-      width: 25rem;
+      width: var(--search-panel-w);
       border-radius: 1.25rem;
       transition:
         inset-inline-start 0.35s var(--ease-door),
         visibility 0s;
     }
     &[data-search-panel="collapsed"] .search-panel {
-      inset-inline-start: -27rem;
+      inset-inline-start: calc(-2rem - var(--search-panel-w));
       visibility: hidden;
       transition:
         inset-inline-start 0.35s var(--ease-door),
@@ -982,7 +991,7 @@ html[data-welcome~="door"] .welcome-glints {
     }
     & .search-toolbar {
       top: 5.25rem;
-      inset-inline: 27rem 1rem;
+      inset-inline: calc(var(--search-panel-w) + 2rem) 1rem;
       transition: inset-inline-start 0.35s var(--ease-door);
     }
     &[data-search-panel="collapsed"] .search-toolbar {
@@ -995,7 +1004,7 @@ html[data-welcome~="door"] .welcome-glints {
       position: fixed;
       z-index: 21;
       top: calc(50% + 2rem);
-      inset-inline-start: 26rem;
+      inset-inline-start: calc(var(--search-panel-w) + 1rem);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1016,7 +1025,7 @@ html[data-welcome~="door"] .welcome-glints {
     }
   }
 
-  @media (width < 64rem) {
+  @media (width < 48rem) {
     & .search-panel {
       inset-inline: 0;
       bottom: 0;
@@ -1086,7 +1095,7 @@ html[data-welcome~="door"] .welcome-glints {
   position: fixed;
   z-index: 10;
   bottom: 0.375rem;
-  inset-inline: 27rem 1rem;
+  inset-inline: calc(var(--search-panel-w) + 2rem) 1rem;
   display: flex;
   flex-direction: row-reverse;
   flex-wrap: wrap-reverse;
@@ -1106,7 +1115,9 @@ html[data-welcome~="door"] .welcome-glints {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 0.875rem;
-  /* Alone on its line it keeps to the start side. */
+  /* Alone on its line it keeps to the start side, clear of the zoom buttons' column at the end
+     (2.75rem): a wrapped legend never covers « − » (tablet, small desktop). */
+  max-width: calc(100% - 3.5rem);
   margin-inline-end: auto;
   margin-bottom: 0.625rem;
   border-radius: 0.875rem;
@@ -1165,7 +1176,7 @@ html[data-welcome~="door"] .welcome-glints {
   position: fixed;
   z-index: 15;
   top: 8.75rem;
-  inset-inline: 27rem 1rem;
+  inset-inline: calc(var(--search-panel-w) + 2rem) 1rem;
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -1200,10 +1211,14 @@ html[data-welcome~="door"] .welcome-glints {
     translate: 0 -0.375rem;
   }
 }
-@media (width < 64rem) {
+@media (width < 48rem) {
   .search-zone-slot {
     top: 7.75rem;
     inset-inline: 1rem;
+  }
+  /* Phones zoom with their fingers; the sheet would cover the buttons anyway. */
+  .search-zoom {
+    display: none;
   }
   .search-mapfoot {
     bottom: calc(var(--search-sheet) + 0.375rem);
@@ -1263,22 +1278,30 @@ html[data-welcome~="door"] .welcome-glints {
   }
 }
 
-/* Pins: price pills, À la Une photo arches ringed in gold, count bubbles. Real buttons (44 px hit area). */
+/* Pins: price tags pointing at their spot, À la Une photo arches ringed in gold, count bubbles. Real
+   buttons (44 px hit area). A price tag and a count bubble never share a shape or a fill: a light
+   rounded tag with a point under it against a solid teal disc in a light ring (audit zone 2 P3-6). */
 /* The element MapLibre moves (its `transform`): the pin inside scales without moving its anchor. */
 .search-marker {
   display: flex;
+}
+/* A price tag stands on its point: the holder's bottom (the marker's anchor) is the point's tip. */
+.search-marker[data-tag] {
+  padding-bottom: 0.3125rem;
 }
 .search-pin {
   position: relative;
   display: inline-flex;
   min-height: 1.875rem;
   align-items: center;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border: 1.5px solid var(--structure);
+  border-radius: 0.5rem;
   background: var(--surface);
   padding: 0 0.625rem;
   font: 600 0.8125rem/1 var(--font-sans);
   color: var(--foreground);
+  /* Grows from its point, which stays on the spot. */
+  transform-origin: 50% 100%;
   white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 4px 10px -4px rgb(11 30 31 / 0.35);
@@ -1292,6 +1315,28 @@ html[data-welcome~="door"] .welcome-glints {
   content: "";
   position: absolute;
   inset: -0.4375rem -0.25rem;
+}
+/* The tag's point: a square turned on its corner, in the tag's own fill and edge (states included). */
+.search-pin-tail {
+  position: absolute;
+  bottom: -0.3125rem;
+  left: 50%;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border: inherit;
+  border-top: 0;
+  border-left: 0;
+  border-radius: 0 0 0.125rem 0;
+  background: inherit;
+  translate: -50% 0;
+  rotate: 45deg;
+  pointer-events: none;
+}
+/* Dark map: the tags turn cream, the bubbles stay teal. */
+[data-theme="dark"] .search-pin:not(.search-pin-featured) {
+  border-color: var(--color-cream-100);
+  background: var(--color-cream-100);
+  color: var(--color-bab-950);
 }
 .search-pin[data-today]::after {
   content: "";
@@ -1324,6 +1369,16 @@ html[data-welcome~="door"] .welcome-glints {
   scale: 1.2;
   background: var(--primary);
   border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+[data-theme="dark"] .search-pin:not(.search-pin-featured)[data-state="highlight"] {
+  border-color: var(--structure);
+  background: var(--structure);
+  color: var(--structure-foreground);
+}
+[data-theme="dark"] .search-pin:not(.search-pin-featured)[data-state="selected"] {
+  border-color: var(--primary);
+  background: var(--primary);
   color: var(--primary-foreground);
 }
 .search-pin:focus-visible,
@@ -1385,12 +1440,13 @@ html[data-welcome~="door"] .welcome-glints {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-bab-700) 92%, transparent);
-  font: 600 0.8125rem/1 var(--font-sans);
-  color: var(--color-cream-200);
+  background: var(--color-bab-700);
+  font: 700 0.8125rem/1 var(--font-sans);
+  color: var(--color-cream-50);
   cursor: pointer;
   box-shadow:
-    0 0 0 0.375rem color-mix(in srgb, var(--color-bab-700) 18%, transparent),
+    0 0 0 2px var(--color-cream-50),
+    0 0 0 0.5rem color-mix(in srgb, var(--color-bab-700) 22%, transparent),
     0 6px 14px -6px rgb(11 30 31 / 0.5);
   font-variant-numeric: tabular-nums;
   transition: scale 0.15s var(--ease-door);
@@ -1414,6 +1470,55 @@ html[data-welcome~="door"] .welcome-glints {
 [data-theme="dark"] .search-cluster {
   background: var(--color-bab-500);
   color: var(--color-cream-50);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-cream-50) 85%, transparent),
+    0 0 0 0.5rem color-mix(in srgb, var(--color-bab-300) 28%, transparent),
+    0 6px 14px -6px rgb(0 0 0 / 0.6);
+}
+/* Legend swatches, drawn like the markers they stand for. */
+.search-legend-tag {
+  position: relative;
+  display: inline-block;
+  width: 1rem;
+  height: 0.75rem;
+  margin-bottom: 0.1875rem;
+  border: 1.5px solid var(--structure);
+  border-radius: 0.1875rem;
+  background: var(--surface);
+}
+.search-legend-tag::after {
+  content: "";
+  position: absolute;
+  bottom: -0.25rem;
+  left: 50%;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border: inherit;
+  border-top: 0;
+  border-left: 0;
+  background: inherit;
+  translate: -50% 0;
+  rotate: 45deg;
+}
+.search-legend-cluster {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 999px;
+  background: var(--color-bab-700);
+  box-shadow:
+    0 0 0 1.5px var(--color-cream-50),
+    0 0 0 3.5px color-mix(in srgb, var(--color-bab-700) 22%, transparent);
+}
+[data-theme="dark"] .search-legend-tag {
+  border-color: var(--color-cream-100);
+  background: var(--color-cream-100);
+}
+[data-theme="dark"] .search-legend-cluster {
+  background: var(--color-bab-500);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--color-cream-50) 85%, transparent),
+    0 0 0 3.5px color-mix(in srgb, var(--color-bab-300) 28%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .search-pin,
@@ -1464,7 +1569,7 @@ html[data-welcome~="door"] .welcome-glints {
   &[data-search-detail="open"] .home-view-toggle {
     inset-inline-end: 26rem;
   }
-  @media (width < 64rem) {
+  @media (width < 48rem) {
     & .home-panel-head {
       padding-top: 0.25rem;
     }

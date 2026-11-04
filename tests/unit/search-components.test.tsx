@@ -204,6 +204,19 @@ describe("Pagination", () => {
     expect(html).toContain('href="/fr/recherche?q=velo&amp;page=20"');
   });
 
+  it("numbers the map panel's pages: first, current, last, and the neighbours where the panel is wide enough", () => {
+    const html = render(<Pagination params={url("q=velo")} page={10} totalPages={20} compact />);
+    expect(html).toContain("@container");
+    // Narrow panel: 1 … 10 … 20; wide: 1 … 9 10 11 … 20 (container query, one set shown).
+    expect(html).toMatch(/<li class="@min-\[24\.25rem\]:hidden"><span aria-current="page"[^>]*>10<\/span>/);
+    expect(html).toMatch(/<li class="@max-\[24\.25rem\]:hidden"><a [^>]*href="\/fr\/recherche\?q=velo&amp;page=9"/);
+    expect(html).toMatch(/<li class="@max-\[24\.25rem\]:hidden"><a [^>]*href="\/fr\/recherche\?q=velo&amp;page=11"/);
+    expect(html).not.toMatch(/<li class="@min-\[24\.25rem\]:hidden"><a [^>]*page=9"/);
+    expect(html).toContain('href="/fr/recherche?q=velo&amp;page=20"');
+    expect(html).toContain('href="/fr/recherche?q=velo"');
+    expect(text(html)).not.toContain("Page 10 sur 20");
+  });
+
   it("caps at 50 pages and says so on the last one", () => {
     const html = render(<Pagination params={{}} page={50} totalPages={80} total={5000} />);
     expect(html).not.toContain('rel="next"');

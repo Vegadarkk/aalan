@@ -8,14 +8,14 @@ import { useExamplesHidden } from "@/components/examples/use-examples";
 import { useSearchNavigation } from "../search-navigation";
 import { JOB_SEEKER_SUBCATEGORY, type MapListing } from "./map-listings";
 import { SHEET_SNAPS, type SheetSnap } from "./sheet";
-import { DESKTOP_QUERY, browserViewContext, initialView, mapPossible, rememberView, viewKey, type SearchMapVariant, type SearchView } from "./view-mode";
+import { DESKTOP_QUERY, SIDE_PANEL_QUERY, browserViewContext, initialView, mapPossible, rememberView, viewKey, type SearchMapVariant, type SearchView } from "./view-mode";
 
 export type { SearchMapVariant } from "./view-mode";
 
 // Client root of the map-first search (Carte vivante, lot 2) and of the home page's living map (lot
 // 3). The server renders the whole panel (rows, grid, filters) inside it; this island only holds the
 // view state: map or list, the result under the pointer, the one open in the detail panel (desktop),
-// the list panel folded or not, the height of the phone sheet. The CSS reads it from data attributes
+// the list panel folded or not (tablet and desktop), the height of the phone sheet. The CSS reads it from data attributes
 // (globals.css, `search-map`).
 
 export { DESKTOP_QUERY };
@@ -32,7 +32,10 @@ interface SearchMapState {
   failed: boolean;
   fail: () => void;
   map: PublicMapConfig | null;
+  /** From lg: the detail panel opens beside the map. */
   desktop: boolean;
+  /** From md: the list is a side panel (narrower below lg), not a bottom sheet. */
+  side: boolean;
   listings: readonly MapListing[];
   /** Job seekers' ads on this page, and whether the map shows them (hidden unless searched for). */
   jobSeekers: { count: number; shown: boolean; setShown: (shown: boolean) => void };
@@ -57,14 +60,14 @@ export function useSearchMap(): SearchMapState | null {
 
 const subscribeNever = () => () => {};
 
-function useDesktop(): boolean {
+function useMediaQuery(media: string): boolean {
   return useSyncExternalStore(
     (listener) => {
-      const query = window.matchMedia(DESKTOP_QUERY);
+      const query = window.matchMedia(media);
       query.addEventListener("change", listener);
       return () => query.removeEventListener("change", listener);
     },
-    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => window.matchMedia(media).matches,
     () => true,
   );
 }
@@ -107,7 +110,8 @@ export function SearchMapRoot({ serverView, variant = "search", startSnap = "pee
     [examplesHidden, given, jobSeekersShown],
   );
   const webgl2 = useSyncExternalStore(subscribeNever, supportsWebGL2, () => false);
-  const desktop = useDesktop();
+  const desktop = useMediaQuery(DESKTOP_QUERY);
+  const side = useMediaQuery(SIDE_PANEL_QUERY);
   const [failed, setFailed] = useState(false);
   const canMap = mapPossible({ hasMap: map !== null, webgl2 }) && !failed;
   // A toggle choice belongs to these results: a new search starts over (list at home, map for a search).
@@ -187,6 +191,7 @@ export function SearchMapRoot({ serverView, variant = "search", startSnap = "pee
       fail: () => setFailed(true),
       map,
       desktop,
+      side,
       listings,
       jobSeekers: { count: jobSeekerCount, shown: jobSeekersShown, setShown: setJobSeekersShown },
       params,
@@ -200,7 +205,7 @@ export function SearchMapRoot({ serverView, variant = "search", startSnap = "pee
       setSnap: (next: SheetSnap) => setSnap(SHEET_SNAPS.includes(next) ? next : "peek"),
       searchZone,
     }),
-    [variant, view, setView, enhanced, canMap, failed, map, desktop, listings, jobSeekerCount, jobSeekersShown, params, highlighted, selected, select, collapsed, snap, searchZone],
+    [variant, view, setView, enhanced, canMap, failed, map, desktop, side, listings, jobSeekerCount, jobSeekersShown, params, highlighted, selected, select, collapsed, snap, searchZone],
   );
 
   return (

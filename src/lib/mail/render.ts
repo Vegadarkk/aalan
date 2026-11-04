@@ -28,6 +28,7 @@ import { socialLinksNotice } from "./templates/socialLinksNotice";
 import { proApproved } from "./templates/proApproved";
 import { proApplicationReceived } from "./templates/proApplicationReceived";
 import { proRejected } from "./templates/proRejected";
+import { proValidationWithdrawn } from "./templates/proValidationWithdrawn";
 import { reportReceived } from "./templates/reportReceived";
 import { reviewPublished } from "./templates/reviewPublished";
 import { reviewReceived } from "./templates/reviewReceived";
@@ -74,6 +75,7 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   proApplicationReceived,
   proApproved,
   proRejected,
+  proValidationWithdrawn,
   launchOfferNotice,
   passNotice,
   withdrawalReceipt,

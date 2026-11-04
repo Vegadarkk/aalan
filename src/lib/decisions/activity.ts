@@ -18,6 +18,7 @@ const EXACT: Record<string, ActivityKind> = {
   "pro.phone.check": { label: "Appel de vérification Pro" },
   "pro.note": { label: "Note sur une boutique Pro" },
   "pro.sector.correct": { label: "Activité d'une boutique corrigée" },
+  "pro.validation.withdraw": { label: "Validation d'une boutique Pro retirée" },
   "pro.rental_check.verify": { label: "Agrément de location validé" },
   "pro.rental_check.reject": { label: "Agrément de location refusé" },
   "pro.payment.suspended": { label: "Paiement chez le vendeur suspendu" },

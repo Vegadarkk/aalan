@@ -37,6 +37,7 @@ const ALL_EVENTS: ProEvent[] = [
   { type: "pass_ended" },
   { type: "suspended" },
   { type: "reinstated" },
+  { type: "validation_withdrawn" },
 ];
 
 describe("Pro lifecycle table", () => {
@@ -48,7 +49,11 @@ describe("Pro lifecycle table", () => {
   it("only produces transitions listed in the table", () => {
     for (const state of PRO_STATES) {
       for (const event of ALL_EVENTS) {
-        const view = pro(state, { suspendedFrom: state === "suspended" ? "active" : undefined, planSource: state === "verified" ? "launch_offer" : "none" });
+        const view = pro(state, {
+          suspendedFrom: state === "suspended" ? "active" : undefined,
+          revalidationFrom: state === "revalidation_required" ? "verified" : undefined,
+          planSource: state === "verified" ? "launch_offer" : "none",
+        });
         try {
           const { patch } = transition(view, event, ctx);
           expect(canTransition(state, patch.lifecycle)).toBe(true);
@@ -149,6 +154,50 @@ describe("suspension", () => {
 
   it("refuses a reinstatement without a known previous state", () => {
     expect(() => transition(pro("suspended"), { type: "reinstated" }, ctx)).toThrow(IllegalProTransitionError);
+  });
+});
+
+describe("validation withdrawn (P2-10)", () => {
+  it("sends a publishing shop to a new review, keeping its plan and the state to restore", () => {
+    for (const from of ["verified", "active", "grace", "downgraded"] as const) {
+      const { patch, effects } = transition(pro(from, { plan: "essentiel", planSource: from === "verified" ? "launch_offer" : "subscription" }), { type: "validation_withdrawn" }, ctx);
+      expect(patch).toEqual({ lifecycle: "revalidation_required", plan: "essentiel", planSource: from === "verified" ? "launch_offer" : "subscription", revalidationFrom: from });
+      expect(effects).toMatchObject({ revokeProClaims: true, revalidationPause: true, storefrontVisible: false, grantProClaims: false });
+    }
+  });
+
+  it("refuses a shop that is not validated, suspended or already under revalidation", () => {
+    for (const view of [pro("pending_verification"), pro("rejected"), pro("suspended", { suspendedFrom: "active" }), pro("revalidation_required", { revalidationFrom: "verified" })]) {
+      expect(() => transition(view, { type: "validation_withdrawn" }, ctx)).toThrow(IllegalProTransitionError);
+    }
+  });
+
+  it("restores the state held before at the new validation, whatever the launch offer says now", () => {
+    const view = pro("revalidation_required", { plan: "essentiel", planSource: "launch_offer", revalidationFrom: "verified" });
+    for (const launchOfferActive of [true, false]) {
+      const { patch, effects } = transition(view, { type: "kybc_verified", launchOfferActive }, ctx);
+      expect(patch).toEqual({ lifecycle: "verified", plan: "essentiel", planSource: "launch_offer", revalidationFrom: null });
+      expect(effects).toMatchObject({ grantProClaims: true, revalidationPause: false, storefrontVisible: true });
+    }
+    const downgraded = transition(pro("revalidation_required", { revalidationFrom: "downgraded" }), { type: "kybc_verified", launchOfferActive: true }, ctx);
+    expect(downgraded.patch.lifecycle).toBe("downgraded");
+    expect(downgraded.effects.storefrontVisible).toBe(false);
+    expect(() => transition(pro("revalidation_required"), { type: "kybc_verified", launchOfferActive: true }, ctx)).toThrow(IllegalProTransitionError);
+  });
+
+  it("keeps a refused resubmission under revalidation, with its plan", () => {
+    const { patch, effects } = transition(pro("revalidation_required", { plan: "essentiel", planSource: "launch_offer", revalidationFrom: "verified" }), { type: "kybc_rejected" }, ctx);
+    expect(patch).toEqual({ lifecycle: "revalidation_required", plan: "essentiel", planSource: "launch_offer" });
+    expect(effects).toEqual({ grantProClaims: false, retagListings: false, pauseOverQuota: false, reindexListings: false });
+  });
+
+  it("hides the storefront and publishes nothing meanwhile; billing events wait", () => {
+    expect(publishesAsPro("revalidation_required")).toBe(false);
+    expect(storefrontShown("revalidation_required", "business")).toBe(false);
+    const view = pro("revalidation_required", { plan: "essentiel", planSource: "subscription", revalidationFrom: "active" });
+    for (const event of [{ type: "subscription_active", plan: "business" }, { type: "billing_issue" }, { type: "subscription_expired" }, { type: "pass_purchased", plan: "essentiel" }] as const) {
+      expect(() => transition(view, event, ctx)).toThrow(IllegalProTransitionError);
+    }
   });
 });
 

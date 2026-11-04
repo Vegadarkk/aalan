@@ -55,9 +55,16 @@ describe("endedSessionReason", () => {
 
   it("says the account changed for another rights change, and nothing when the rights are the same", async () => {
     mocks.getSuspension.mockResolvedValue(null);
-    mocks.verifySession.mockResolvedValueOnce({ uid: "u1", claims: { role: "pro", proId: "p1", proRole: "owner", v: 2 } });
+    mocks.verifySession.mockResolvedValueOnce({ uid: "u1", claims: { role: "individual", st: "suspended", v: 2 } });
     await expect(endedSessionReason("cookie", NOW)).resolves.toEqual({ kind: "account-changed" });
     await expect(endedSessionReason("cookie", NOW)).resolves.toBeNull();
+  });
+
+  // Zone 7 audit P2-10: an admin withdrew the shop's validation, the Pro role left the account.
+  it("says the shop's validation was withdrawn when the Pro role left the account", async () => {
+    mocks.getSuspension.mockResolvedValue(null);
+    mocks.verifySession.mockResolvedValueOnce({ uid: "u1", claims: { role: "pro", proId: "p1", proRole: "owner", v: 2 } });
+    await expect(endedSessionReason("cookie", NOW)).resolves.toEqual({ kind: "pro-withdrawn" });
   });
 });
 
@@ -67,6 +74,7 @@ describe("claimsChange", () => {
     expect(claimsChange({ role: "individual" }, { role: "pro", proId: "p1", proRole: "owner" })).toEqual({ kind: "pro-validated" });
     expect(claimsChange({ role: "pro", proId: "p1", proRole: "owner" }, { role: "pro", proId: "p1", proRole: "editor" })).toEqual({ kind: "account-changed" });
     expect(claimsChange({ role: "individual", st: "suspended" }, { role: "individual" })).toEqual({ kind: "account-changed" });
-    expect(claimsChange({ role: "pro", proId: "p1" }, { role: "individual" })).toEqual({ kind: "account-changed" });
+    expect(claimsChange({ role: "pro", proId: "p1" }, { role: "individual" })).toEqual({ kind: "pro-withdrawn" });
+    expect(claimsChange({ role: "pro", proId: "p1", st: "suspended" }, { role: "individual", st: "suspended" })).toEqual({ kind: "pro-withdrawn" });
   });
 });

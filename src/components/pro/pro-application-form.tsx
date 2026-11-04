@@ -152,9 +152,11 @@ interface ProApplicationFormProps {
   needsPhone: boolean;
   /** Sent, or refused because the account's state changed meanwhile: the area reloads. */
   onDone: () => void;
+  /** The button's text when it is neither a first application nor a correction (a shop's new KYBC, P2-10). */
+  submitLabel?: string;
 }
 
-export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicationFormProps) {
+export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel }: ProApplicationFormProps) {
   const t = useTranslations("Pro.form");
   const errors = useTranslations("Pro.errors");
   const issues = useTranslations("FreeText");
@@ -347,7 +349,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone }: ProApplicat
 
       <div className="flex justify-end border-t border-border pt-6">
         <Button type="submit" loading={pending} className="w-full sm:w-auto">
-          {previous ? t("resubmit") : t("submit")}
+          {submitLabel ?? (previous ? t("resubmit") : t("submit"))}
         </Button>
       </div>
     </form>

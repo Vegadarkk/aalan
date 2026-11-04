@@ -258,8 +258,11 @@ export type QuotaDailyDoc = z.infer<typeof quotaDailySchema>;
 
 export const SELLER_TYPES = ["individual", "pro"] as const;
 export const SORT_SOURCES = ["publish", "renew", "bump"] as const;
-/** "moderation": paused for the length of an account suspension, resumed when it is lifted (phase 5, D14). */
-export const PAUSED_REASONS = ["owner", "quota", "moderation"] as const;
+/**
+ * "moderation": paused for the length of an account suspension, resumed when it is lifted (phase 5, D14).
+ * "pro_revalidation": the shop's validation was withdrawn (zone 7 P2-10), resumed by its next validation.
+ */
+export const PAUSED_REASONS = ["owner", "quota", "moderation", "pro_revalidation"] as const;
 
 /** City (later district) centroid, rounded (~1 km): never the seller's address. */
 export const geoPointSchema = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).strict();

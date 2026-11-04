@@ -200,6 +200,9 @@ export interface ProReview {
     submittedAt: string | null;
     rejectReason: string | null;
     registrySource: string | null;
+    /** Validation withdrawn by an admin (P2-10): when (ISO) and the statement sent to the Pro. */
+    withdrawnAt: string | null;
+    withdrawReason: string | null;
     /** The moderator's last call to the applicant's number (ISO `at`). */
     phoneCheck: { at: string; by: string; outcome: PhoneCheckOutcome; phone: string; note: string | null } | null;
   };
@@ -254,6 +257,31 @@ export interface ProLifecycleResponse {
 }
 
 export const PRO_LIFECYCLE_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/lifecycle`;
+
+// Validation withdrawn (zone 7 audit P2-10, owner decision 2026-11-04): an admin sends a validated
+// shop back to a new KYBC review. `statement` is mailed to the Pro and shown in their space; `note`
+// stays with the team (record notes and audit log). `lifecycle` pins the state the page showed.
+
+export const PRO_WITHDRAW_STATEMENT_MIN = 20;
+export const PRO_WITHDRAW_STATEMENT_MAX = 1000;
+
+export const proWithdrawSchema = z
+  .object({
+    statement: z.string().trim().min(PRO_WITHDRAW_STATEMENT_MIN).max(PRO_WITHDRAW_STATEMENT_MAX),
+    note: z.string().trim().min(PRO_LIFECYCLE_REASON_MIN).max(PRO_NOTE_MAX),
+    lifecycle: z.enum(["verified", "active", "grace", "downgraded"]),
+  })
+  .strict();
+export type ProWithdrawInput = z.infer<typeof proWithdrawSchema>;
+
+export interface ProWithdrawResponse {
+  proId: string;
+  lifecycle: "revalidation_required";
+  /** Published listings paused until the new validation. */
+  paused: number;
+}
+
+export const PRO_WITHDRAW_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/withdraw`;
 
 export interface ProDecisionResponse {
   proId: string;
@@ -418,6 +446,9 @@ export interface ProSelfView {
   planSource: string;
   kybcStatus: string;
   rejectReason: string | null;
+  /** Validation withdrawn by an admin (P2-10): the statement sent to the Pro and when (ISO). */
+  withdrawReason: string | null;
+  withdrawnAt: string | null;
   /** ISO. */
   submittedAt: string | null;
   quotas: { activeListings: number | null; listingsPerDay: number | null; photosPerListing: number };

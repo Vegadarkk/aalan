@@ -51,7 +51,8 @@ export const proLegalSchema = z.discriminatedUnion("form", [
 ]);
 export type ProLegal = z.infer<typeof proLegalSchema>;
 
-export const KYBC_STATUSES = ["none", "submitted", "verified", "rejected"] as const;
+/** `withdrawn`: an admin withdrew the validation (P2-10); a new submission is awaited. */
+export const KYBC_STATUSES = ["none", "submitted", "verified", "rejected", "withdrawn"] as const;
 export type KybcStatus = (typeof KYBC_STATUSES)[number];
 
 /** Pieces uploaded with an application (private bucket, purpose `kyb`). */

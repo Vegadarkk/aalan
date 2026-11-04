@@ -18,6 +18,8 @@ export type EndedSessionReason =
     }
   /** The shop was validated: the account became Pro after the cookie was signed. */
   | { kind: "pro-validated" }
+  /** The shop's validation was withdrawn (P2-10): the Pro role left the account, a new KYBC is awaited. */
+  | { kind: "pro-withdrawn" }
   /** Another change of the account's rights (a role, a shop, the end of a suspension). */
   | { kind: "account-changed" };
 
@@ -26,13 +28,15 @@ const CLAIM_KEYS = ["role", "proId", "proRole", "st"] as const satisfies readonl
 /** What a claims change says to the member, or null when the rights are the same. */
 export function claimsChange(before: Claims, after: Claims): EndedSessionReason | null {
   if (CLAIM_KEYS.every((key) => before[key] === after[key])) return null;
-  return after.role === "pro" && before.role !== "pro" ? { kind: "pro-validated" } : { kind: "account-changed" };
+  if (after.role === "pro" && before.role !== "pro") return { kind: "pro-validated" };
+  // Only a withdrawn validation takes the Pro role back from a member account (a closure disables it).
+  if (before.role === "pro" && after.role === "individual") return { kind: "pro-withdrawn" };
+  return { kind: "account-changed" };
 }
 
 export async function endedSessionReason(cookie: string | undefined, now: Date = new Date()): Promise<EndedSessionReason | null> {
   try {
-    const user = await verifySession(cookie, { checkRevoked: false });
-    if (!user) return null;
+    const user = await verifySession(cookie, { checkRevoked: false });    if (!user) return null;
     const suspension = await getSuspension(user.uid);
     if (suspension && suspension.until.getTime() > now.getTime()) return { kind: "suspended", until: suspension.until };
     // The cookie carries the claims it was signed with; the account holds the current ones.

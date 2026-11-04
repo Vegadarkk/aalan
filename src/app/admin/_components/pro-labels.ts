@@ -33,6 +33,7 @@ export const LIFECYCLE_LABEL: Record<string, string> = {
   downgraded: "Sans offre",
   rejected: "Refusée",
   suspended: "Suspendue",
+  revalidation_required: "Validation retirée, nouvelle vérification",
 };
 
 export const PHONE_OUTCOME_LABEL: Record<string, string> = {

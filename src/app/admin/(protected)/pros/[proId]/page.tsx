@@ -8,6 +8,7 @@ import { requirePageStaff } from "@/lib/auth/current-user";
 import { displayPhone } from "@/lib/phone/normalize";
 import { proIdSchema } from "@/lib/pro/profile-schema";
 import type { ProReview as ProReviewView } from "@/lib/contracts/pro";
+import { publishesAsPro, type ProState } from "@/lib/pro/lifecycle";
 import { proReview } from "@/lib/pro/review";
 import { shopPaymentAdmin } from "@/lib/pro/seller-payment";
 import { shopSocialAdmin } from "@/lib/pro/social-links";
@@ -15,6 +16,7 @@ import { ProDecisionForm, ProEffectsRerun } from "../../../_components/pro-decis
 import { IDENTIFIER_LABEL, LEGAL_FORM_LABEL, LIFECYCLE_LABEL, PHONE_OUTCOME_LABEL, RENTAL_CHECK_ISSUE_LABEL, RENTAL_CHECK_STATUS_LABEL, SECTOR_LABEL, formatIce } from "../../../_components/pro-labels";
 import { ProNotes, ProSanctionLinks, ProSectorForm } from "../../../_components/pro-lifecycle-panel";
 import { ProPhoneCheckForm } from "../../../_components/pro-phone-check-form";
+import { ProWithdrawForm } from "../../../_components/pro-withdraw-form";
 import { RentalCheckDecisionForm } from "../../../_components/rental-check-decision-form";
 import { ShopPaymentPanel } from "../../../_components/shop-payment-panel";
 import { ShopSocialPanel } from "../../../_components/shop-social-panel";
@@ -70,20 +72,23 @@ function formatSize(bytes: number | null): string {
 }
 
 export default async function ProReviewPage({ params }: { params: Promise<{ proId: string }> }) {
-  await requirePageStaff(["moderator", "admin"]);
+  const staff = await requirePageStaff(["moderator", "admin"]);
   const id = proIdSchema.safeParse((await params).proId);
   if (!id.success) notFound();
   const [review, payment, social] = await Promise.all([proReview(id.data), shopPaymentAdmin(id.data).catch(() => null), shopSocialAdmin(id.data).catch(() => null)]);
   if (!review) notFound();
 
   const city = cityBySlug(review.citySlug);
-  const pending = review.kybc.status === "submitted" && review.lifecycle === "pending_verification";
+  // A validated shop sent back to a KYBC review (P2-10): its new submission, or the wait for one.
+  const revalidation = review.lifecycle === "revalidation_required";
+  const pending = review.kybc.status === "submitted" && (review.lifecycle === "pending_verification" || revalidation);
   const owner = review.owner;
   const phoneVerified = owner?.phoneVerified === true;
   const { form, ...identifiers } = review.legal;
   const check = review.kybc.phoneCheck;
   // A validated shop (publishing, or suspended since): its lifecycle actions (zone 7 audit P2-10).
-  const validated = review.kybc.status === "verified" && review.lifecycle !== "pending_verification" && review.lifecycle !== "rejected";
+  const validated = review.kybc.status === "verified" && review.lifecycle !== "pending_verification" && review.lifecycle !== "rejected" && !revalidation;
+  const withdrawable = validated && publishesAsPro(review.lifecycle as ProState);
 
   return (
     <>
@@ -95,7 +100,7 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
           {review.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Badge variant={pending ? "warning" : review.lifecycle === "rejected" ? "danger" : "success"}>{LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle}</Badge>
+          <Badge variant={pending || revalidation ? "warning" : review.lifecycle === "rejected" ? "danger" : "success"}>{LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle}</Badge>
           {review.kybc.submittedAt ? <span className="text-foreground-muted">Envoyée le {formatMorocco(review.kybc.submittedAt)}</span> : null}
           {review.effectsPending ? <Badge variant="danger">Effets de la validation en attente</Badge> : null}
         </div>
@@ -226,7 +231,23 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
             />
           ) : review.effectsPending && review.kybc.submittedAt && review.kybc.registrySource ? (
             <ProEffectsRerun proId={review.proId} submittedAt={review.kybc.submittedAt} registrySource={review.kybc.registrySource} />
-          ) : review.kybc.rejectReason ? (
+          ) : null}
+
+          {revalidation ? (
+            <Panel title="Validation retirée">
+              <div data-testid="pro-revalidation-record" className="flex flex-col gap-2 text-sm">
+                {review.kybc.withdrawnAt ? <p className="text-foreground-muted">Retirée le {formatMorocco(review.kybc.withdrawnAt)}. La boutique est masquée et ses annonces en pause jusqu&apos;à une nouvelle validation.</p> : null}
+                {review.kybc.withdrawReason ? (
+                  <p dir="auto" className="rounded-md bg-surface-muted p-3 whitespace-pre-line">
+                    Motif envoyé au Pro : {review.kybc.withdrawReason}
+                  </p>
+                ) : null}
+                <p>{pending ? "Nouveaux justificatifs reçus : décidez ci-dessus. Valider rétablit la boutique, son offre et ses annonces." : review.kybc.status === "rejected" ? "Les derniers justificatifs ont été refusés : le Pro peut en renvoyer." : "En attente de nouveaux justificatifs du Pro."}</p>
+              </div>
+            </Panel>
+          ) : null}
+
+          {pending || (review.effectsPending && review.kybc.submittedAt && review.kybc.registrySource) ? null : review.kybc.rejectReason ? (
             <Panel title="Motif du refus">
               <p className="text-sm whitespace-pre-line" dir="auto">
                 {review.kybc.rejectReason}
@@ -250,6 +271,16 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
                 <h3 className="text-sm font-semibold">Corriger l&apos;activité</h3>
                 <ProSectorForm proId={review.proId} sector={review.sector} sectors={review.correctableSectors} />
               </div>
+              {withdrawable ? (
+                <div className="flex flex-col gap-2 border-t border-border pt-4">
+                  <h3 className="text-sm font-semibold">Retirer la validation</h3>
+                  {staff.role === "admin" ? (
+                    <ProWithdrawForm proId={review.proId} lifecycle={review.lifecycle as "verified" | "active" | "grace" | "downgraded"} shopName={review.name} />
+                  ) : (
+                    <p className="text-sm text-foreground-muted">Réservé aux administrateurs : demandez à un admin si les justificatifs de la boutique ne sont plus valables.</p>
+                  )}
+                </div>
+              ) : null}
               {owner ? (
                 <div className="flex flex-col gap-2 border-t border-border pt-4">
                   <h3 className="text-sm font-semibold">Suspendre ou fermer</h3>

@@ -101,12 +101,15 @@ function ProScreen({ me, onReload }: { me: ProMeResponse; onReload: () => void }
   const lifecycle = shop.lifecycle as ProState;
   if (lifecycle === "pending_verification") return <Pending shop={shop} />;
   if (lifecycle === "rejected") return <Application me={me} previous={shop} onReload={onReload} />;
+  // Validation withdrawn (P2-10): the new submission under review, or the form to send one.
+  if (lifecycle === "revalidation_required") return shop.kybcStatus === "submitted" ? <Pending shop={shop} revalidation /> : <Application me={me} previous={shop} revalidation onReload={onReload} />;
   return <Dashboard me={me} shop={shop} lifecycle={lifecycle} />;
 }
 
-function Application({ me, previous, onReload }: { me: ProMeResponse; previous: ProSelfView | null; onReload: () => void }) {
+function Application({ me, previous, revalidation = false, onReload }: { me: ProMeResponse; previous: ProSelfView | null; revalidation?: boolean; onReload: () => void }) {
   const t = useTranslations("Pro");
-  if (!me.signupOpen) return <ErrorBanner tone="info" title={t("closed")} />;
+  // A shop sent back to a KYBC review resubmits even while new applications are closed.
+  if (!me.signupOpen && !revalidation) return <ErrorBanner tone="info" title={t("closed")} />;
   const { emailVerified, phoneVerified, accountActive } = me.eligibility;
   // A Pro's phone is checked by a moderator's call during the KYBC review (decision of 19 Oct 2026,
   // WhatsApp parked with Meta): an unverified number never blocks the application (Z1-03, L4-01).
@@ -114,7 +117,9 @@ function Application({ me, previous, onReload }: { me: ProMeResponse; previous: 
   const eligible = accountActive && emailVerified;
   return (
     <div className="flex flex-col gap-10">
-      {previous ? (
+      {previous && revalidation ? (
+        <RevalidationBanner shop={previous} />
+      ) : previous ? (
         <ErrorBanner tone="warning" title={t("rejected.title")}>
           {previous.rejectReason ? (
             <p dir="auto" className="whitespace-pre-line">
@@ -155,8 +160,37 @@ function Application({ me, previous, onReload }: { me: ProMeResponse; previous: 
       ) : (
         <ErrorBanner tone="danger" title={t("eligibility.inactive")} />
       )}
-      {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} /> : null}
+      {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})} /> : null}
     </div>
+  );
+}
+
+/** Validation withdrawn (P2-10): the statement as the admin wrote it, what is hidden, the way back. */
+function RevalidationBanner({ shop }: { shop: ProSelfView }) {
+  const t = useTranslations("Pro.revalidation");
+  return (
+    <ErrorBanner tone="warning" title={t("title")}>
+      <div data-testid="pro-revalidation" className="flex flex-col gap-2">
+        {shop.withdrawReason ? (
+          <p dir="auto" className="whitespace-pre-line">
+            {t("reason", { reason: isolate(shop.withdrawReason) })}
+          </p>
+        ) : null}
+        {shop.kybcStatus === "rejected" && shop.rejectReason ? (
+          <p dir="auto" className="whitespace-pre-line">
+            {t("refused", { reason: isolate(shop.rejectReason) })}
+          </p>
+        ) : null}
+        <p className="text-pretty">{t("hidden")}</p>
+        <p className="text-pretty">{t("resubmit")}</p>
+        <p>
+          {t("contact")}{" "}
+          <Link href="/aide/contact" className={cn("font-medium text-link", textLinkClassName)}>
+            {t("contactLink")}
+          </Link>
+        </p>
+      </div>
+    </ErrorBanner>
   );
 }
 
@@ -215,12 +249,13 @@ function useDate() {
   return (iso: string) => new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(new Date(iso).getTime()) }).format(new Date(iso));
 }
 
-function Pending({ shop }: { shop: ProSelfView }) {
-  const t = useTranslations("Pro.pending");
+function Pending({ shop, revalidation = false }: { shop: ProSelfView; revalidation?: boolean }) {
+  const t = useTranslations("Pro");
   const date = useDate();
+  const values = { name: isolate(shop.name), date: shop.submittedAt ? date(shop.submittedAt) : "" };
   return (
-    <StatusPanel icon={Hourglass} title={t("title")} autoFocus={false}>
-      {t("body", { name: isolate(shop.name), date: shop.submittedAt ? date(shop.submittedAt) : "" })}
+    <StatusPanel icon={Hourglass} title={t(revalidation ? "revalidation.pendingTitle" : "pending.title")} autoFocus={false}>
+      {t(revalidation ? "revalidation.pendingBody" : "pending.body", values)}
     </StatusPanel>
   );
 }

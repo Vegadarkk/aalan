@@ -13,8 +13,14 @@ import type { ProPlan } from "@/config/pricing";
 // Pass Boutique (owner decision 2026-10-28): a one-off payment gives a plan for a fixed time
 // (`planSource: "pass"`, end in `passEndsAt`); at its end the shop is downgraded at once, without
 // grace (nothing failed). A subscription taken during a pass replaces it (`subscription_active`).
+//
+// Validation withdrawn (owner decision 2026-11-04, zone 7 audit P2-10): an admin sends a validated
+// shop back to a new KYBC review (`revalidation_required`). Not a refusal nor a sanction: the account
+// stays, the plan and its source are kept as they are (no money is touched), the storefront is
+// hidden, the Pro claims are removed and the published listings paused until the review validates
+// the shop again (`kybc_verified`, back to `revalidationFrom`).
 
-export const PRO_STATES = ["pending_verification", "verified", "active", "grace", "downgraded", "rejected", "suspended"] as const;
+export const PRO_STATES = ["pending_verification", "verified", "active", "grace", "downgraded", "rejected", "suspended", "revalidation_required"] as const;
 export type ProState = (typeof PRO_STATES)[number];
 
 export const PLAN_SOURCES = ["launch_offer", "subscription", "pass", "none"] as const;
@@ -24,12 +30,14 @@ export type PaidPlan = Exclude<ProPlan, "none">;
 
 export const TRANSITIONS: Record<ProState, readonly ProState[]> = {
   pending_verification: ["verified", "rejected", "suspended"],
-  verified: ["active", "downgraded", "suspended"],
-  active: ["active", "grace", "downgraded", "suspended"],
-  grace: ["active", "downgraded", "suspended"],
-  downgraded: ["active", "suspended"],
+  verified: ["active", "downgraded", "suspended", "revalidation_required"],
+  active: ["active", "grace", "downgraded", "suspended", "revalidation_required"],
+  grace: ["active", "downgraded", "suspended", "revalidation_required"],
+  downgraded: ["active", "suspended", "revalidation_required"],
   rejected: ["pending_verification", "suspended"],
-  suspended: ["pending_verification", "verified", "active", "grace", "downgraded", "rejected"],
+  suspended: ["pending_verification", "verified", "active", "grace", "downgraded", "rejected", "revalidation_required"],
+  // A refused resubmission stays in revalidation (the shop keeps its data and may resubmit).
+  revalidation_required: ["verified", "active", "grace", "downgraded", "suspended", "revalidation_required"],
 };
 
 export type ProEvent =
@@ -52,6 +60,8 @@ export type ProEvent =
   /** `passEndsAt` passed without another pass or a subscription. */
   | { type: "pass_ended" }
   | { type: "suspended" }
+  /** An admin withdrew the validation (P2-10): a new KYBC review is required. */
+  | { type: "validation_withdrawn" }
   /** Suspension lifted (appeal granted or term over): back to the state held before. */
   | { type: "reinstated" };
 
@@ -62,6 +72,8 @@ export interface ProLifecycleView {
   graceUntil?: Date;
   /** State held when the suspension started, restored by `reinstated`. */
   suspendedFrom?: ProState;
+  /** State held when the validation was withdrawn, restored by the new `kybc_verified`. */
+  revalidationFrom?: ProState;
 }
 
 export interface ProPatch {
@@ -72,6 +84,7 @@ export interface ProPatch {
   graceUntil?: Date | null;
   downgradedAt?: Date;
   suspendedFrom?: ProState | null;
+  revalidationFrom?: ProState | null;
 }
 
 export interface ProEffects {
@@ -87,6 +100,10 @@ export interface ProEffects {
   suspend?: boolean;
   /** Reindex the account's listings (seller badge, visibility). */
   reindexListings: boolean;
+  /** Remove the Pro claims (`role: "individual"`, no `proId`), sessions revoked. */
+  revokeProClaims?: boolean;
+  /** Published listings paused for the revalidation (true) or those paused for it restored (false). */
+  revalidationPause?: boolean;
 }
 
 export interface ProTransitionResult {
@@ -134,6 +151,7 @@ function apply(current: ProLifecycleView, event: ProEvent, ctx: ProTransitionCon
   const from = current.lifecycle;
   switch (event.type) {
     case "kybc_verified":
+      if (from === "revalidation_required") return revalidated(current);
       if (from !== "pending_verification") return null;
       return {
         patch: event.launchOfferActive
@@ -142,6 +160,8 @@ function apply(current: ProLifecycleView, event: ProEvent, ctx: ProTransitionCon
         effects: { ...NO_EFFECTS, grantProClaims: true, retagListings: true, reindexListings: true, storefrontVisible: event.launchOfferActive },
       };
     case "kybc_rejected":
+      // A refused resubmission: the shop stays hidden, with its plan, until the next one.
+      if (from === "revalidation_required") return { patch: { lifecycle: from, plan: current.plan, planSource: current.planSource }, effects: NO_EFFECTS };
       if (from !== "pending_verification") return null;
       return { patch: { lifecycle: "rejected", plan: "none", planSource: "none" }, effects: NO_EFFECTS };
     case "reapplied":
@@ -183,6 +203,12 @@ function apply(current: ProLifecycleView, event: ProEvent, ctx: ProTransitionCon
         patch: { lifecycle: "suspended", plan: current.plan, planSource: current.planSource, suspendedFrom: from },
         effects: { ...NO_EFFECTS, suspend: true, storefrontVisible: false, reindexListings: true },
       };
+    case "validation_withdrawn":
+      if (!publishesAsPro(from)) return null;
+      return {
+        patch: { lifecycle: "revalidation_required", plan: current.plan, planSource: current.planSource, revalidationFrom: from },
+        effects: { ...NO_EFFECTS, revokeProClaims: true, revalidationPause: true, storefrontVisible: false, reindexListings: true },
+      };
     case "reinstated": {
       if (from !== "suspended" || !current.suspendedFrom || current.suspendedFrom === "suspended") return null;
       const back = current.suspendedFrom;
@@ -192,6 +218,16 @@ function apply(current: ProLifecycleView, event: ProEvent, ctx: ProTransitionCon
       };
     }
   }
+}
+
+/** A new validation after a withdrawal: back to the state held before, plan untouched. */
+function revalidated(current: ProLifecycleView): ProTransitionResult | null {
+  const back = current.revalidationFrom;
+  if (!back || !publishesAsPro(back)) return null;
+  return {
+    patch: { lifecycle: back, plan: current.plan, planSource: current.planSource, revalidationFrom: null },
+    effects: { ...NO_EFFECTS, grantProClaims: true, revalidationPause: false, storefrontVisible: storefrontShown(back, current.plan), reindexListings: true },
+  };
 }
 
 function downgrade(ctx: ProTransitionContext): ProTransitionResult {

@@ -11,13 +11,15 @@ import { actOnAuthForm, ownClientIp } from "./helpers";
 // configured here: the number is seeded straight into the emulator, as scripts/dev-verify-phone.ts
 // does; the moderator's call is covered by tests/api/pro), applies from /fr/pro, a moderator
 // validates the shop on admin.localhost, then the member signs in again, sees the dashboard and
-// opens the storefront.
+// opens the storefront. Then an admin withdraws the validation (zone 7 audit P2-10): the sign-in
+// page names it, the Pro space shows the statement and the resubmission, the storefront is gone.
 process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 const admin = "http://admin.localhost:3100";
 const STAFF_EMAIL = "moderator.pro.e2e@joutiya.test";
 const STAFF_PASSWORD = ["Porte", "Ouverte", "2026"].join("-");
+const ADMIN_EMAIL = "admin.pro.e2e@joutiya.test";
 const PASSWORD = ["Souk", "Tanger", "2026!"].join("-");
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from(randomBytes(length), (byte) => ALPHABET[byte % ALPHABET.length]).join("");
@@ -27,18 +29,23 @@ function firebase(): App {
   return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
 }
 
-async function seedModerator(): Promise<void> {
+async function seedStaff(email: string, role: "moderator" | "admin", displayName: string): Promise<void> {
   const app = firebase();
   const auth = getAuth(app);
   const uid = await auth
-    .createUser({ email: STAFF_EMAIL, password: STAFF_PASSWORD, emailVerified: true, displayName: "Modération e2e" })
+    .createUser({ email, password: STAFF_PASSWORD, emailVerified: true, displayName })
     .then((record) => record.uid)
     .catch(async (error: { code?: string }) => {
       if (error.code !== "auth/email-already-exists") throw error;
-      return (await auth.getUserByEmail(STAFF_EMAIL)).uid;
+      return (await auth.getUserByEmail(email)).uid;
     });
-  await auth.setCustomUserClaims(uid, { role: "moderator", v: 2 });
-  await getFirestore(app).collection("staff").doc(uid).set({ email: STAFF_EMAIL, displayName: "Modération e2e", role: "moderator", invitedBy: "script", createdAt: new Date() });
+  await auth.setCustomUserClaims(uid, { role, v: 2 });
+  await getFirestore(app).collection("staff").doc(uid).set({ email, displayName, role, invitedBy: "script", createdAt: new Date() });
+}
+
+async function seedModerator(): Promise<void> {
+  await seedStaff(STAFF_EMAIL, "moderator", "Modération e2e");
+  await seedStaff(ADMIN_EMAIL, "admin", "Admin e2e");
 }
 
 /** The verified number the WhatsApp check would have set (one account per number: a random one). */
@@ -102,14 +109,36 @@ async function watchErrors(page: Page): Promise<string[]> {
   return errors;
 }
 
-async function moderate(browser: Browser, shopName: string): Promise<void> {
-  const context = await browser.newContext({ extraHTTPHeaders: { "x-dev-access-email": STAFF_EMAIL } });
+async function staffPage(browser: Browser, email: string): Promise<{ page: Page; close: () => Promise<void> }> {
+  const context = await browser.newContext({ extraHTTPHeaders: { "x-dev-access-email": email } });
   const page = await context.newPage();
   await page.goto(`${admin}/connexion`);
   await page.getByLabel("Mot de passe", { exact: true }).fill(STAFF_PASSWORD);
   await waitForTurnstile(page);
   await page.getByRole("button", { name: "Se connecter" }).click();
   await expect(page).toHaveURL(`${admin}/`);
+  return { page, close: () => context.close() };
+}
+
+/** An admin withdraws the shop's validation from its record: both texts, the recap, then the decision. */
+async function withdraw(browser: Browser, proId: string, statement: string): Promise<void> {
+  const { page, close } = await staffPage(browser, ADMIN_EMAIL);
+  await page.goto(`${admin}/pros/${proId}`);
+  const form = page.getByTestId("pro-withdraw");
+  await form.getByLabel("Motif envoyé au Pro").fill(statement);
+  await form.getByLabel("Note interne").fill("Radiation vue sur le registre, contrôle e2e.");
+  await form.getByRole("button", { name: "Vérifier le retrait" }).click();
+  const recap = form.getByRole("group", { name: "Récapitulatif avant le retrait de la validation" });
+  await expect(recap.getByText(statement, { exact: false })).toBeVisible();
+  await page.screenshot({ path: "test-results/pro-admin-withdraw-recap.png", fullPage: true });
+  await recap.getByRole("button", { name: "Retirer la validation" }).click();
+  await expect(page.getByTestId("pro-revalidation-record")).toBeVisible({ timeout: 15_000 });
+  await page.screenshot({ path: "test-results/pro-admin-withdrawn.png", fullPage: true });
+  await close();
+}
+
+async function moderate(browser: Browser, shopName: string): Promise<void> {
+  const { page, close } = await staffPage(browser, STAFF_EMAIL);
 
   await page.goto(`${admin}/pros`);
   await page.getByRole("link", { name: new RegExp(shopName) }).click();
@@ -121,14 +150,14 @@ async function moderate(browser: Browser, shopName: string): Promise<void> {
   await page.getByLabel("Registre consulté").selectOption("ompic");
   await page.getByRole("button", { name: "Valider la boutique" }).click();
   await expect(page).toHaveURL(`${admin}/pros`, { timeout: 15_000 });
-  await context.close();
+  await close();
 }
 
 test.describe("Pro accounts", () => {
   test.beforeAll(seedModerator);
 
   test("a member applies, a moderator validates, the shop opens its storefront", async ({ page, request, browser }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
     const errors = await watchErrors(page);
     const email = `pro-${randomId(10)}@joutiya.test`;
     const shopName = `Atelier ${randomId(6)}`;
@@ -219,6 +248,26 @@ test.describe("Pro accounts", () => {
     await page.screenshot({ path: "test-results/pro-storefront-ar.png", fullPage: true });
 
     expect((await page.goto("/fr/boutique/inconnue-abcd2345"))?.status()).toBe(404);
+
+    // An admin withdraws the validation (P2-10): the session ends, the member signs in again.
+    const statement = "Le registre du commerce indique une radiation de la société.";
+    await withdraw(browser, segment.slice(-8), statement);
+    await page.goto("/fr/pro");
+    await expect(page).toHaveURL(/\/fr\/connexion/, { timeout: 15_000 });
+    // (The reason on the sign-in page is covered by the unit and API tests: the Auth emulator checks
+    // revocation on every cookie read, so here it shows the generic notice.)
+    await page.getByLabel("Adresse e-mail").fill(email);
+    await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);
+    await waitForTurnstile(page);
+    await page.getByRole("button", { name: "Se connecter" }).click();
+    await expect(page).toHaveURL(/\/fr\/pro$/, { timeout: 15_000 });
+    const banner = page.getByTestId("pro-revalidation");
+    await expect(banner).toBeVisible({ timeout: 15_000 });
+    await expect(banner.getByText(statement, { exact: false })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Envoyer mes nouveaux justificatifs" })).toBeVisible();
+    await page.screenshot({ path: "test-results/pro-revalidation-fr.png", fullPage: true });
+    await waitForMail(request, email, "proValidationWithdrawn");
+    expect((await page.goto(storefront))?.status()).toBe(404);
     expect(errors).toEqual([]);
   });
 });

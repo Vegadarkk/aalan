@@ -299,7 +299,7 @@ export interface OwnerListing {
   status: ListingStatus;
   /** Pro-only criteria (stock reference) are offered to Pro listings only. */
   sellerType: "individual" | "pro";
-  pausedReason: "owner" | "quota" | "moderation" | null;
+  pausedReason: "owner" | "quota" | "moderation" | "pro_revalidation" | null;
   categoryId: string | null;
   subcategoryId: string | null;
   title: string;

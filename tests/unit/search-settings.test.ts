@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CRITERIA } from "@/config/categories";
+import { CATEGORIES, CRITERIA } from "@/config/categories";
 import { cityBySlug } from "@/config/regions";
 import { CITY_LEXICON, DARIJA_LEXICON, entrySpellings } from "@/config/search/darija";
 import { SEARCH_MAX_TOTAL_HITS } from "@/lib/search/params";
@@ -49,6 +49,10 @@ describe("SEARCH_SETTINGS", () => {
 
   it("can facet every card field a filter needs", () => {
     for (const field of ["citySlug", "subcategoryId", "sellerType", "isDonation"]) expect(CARD_FIELDS).toContain(field);
+  });
+
+  it("retrieves every category's card facts (a search card without them shows no year or km)", () => {
+    for (const category of CATEGORIES) for (const id of category.cardFacts ?? []) expect(CARD_FIELDS).toContain(attributeField(id));
   });
 });
 

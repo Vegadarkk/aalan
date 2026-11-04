@@ -3991,7 +3991,13 @@
     "includeSoldOutHint": "Tiḥuna ttejjint deg internet tiɣawsiwin ideg stock d 0.",
     "promo": "S promotion",
     "modelPickBrand": "Xtar tamarka zi tazwara.",
-    "modelNone": "Ulac tabdart n imudilen i tmarka-ya: ari amudil deg unadi."
+    "modelNone": "Ulac tabdart n imudilen i tmarka-ya: ari amudil deg unadi.",
+    "quickCondition": {
+      "label": "Lḥala n tɣawsa",
+      "all": "Akk",
+      "new": "Amaynu",
+      "used": "Occasion"
+    }
   },
   "Pro": {
     "metaTitle": "Amkan n Pro",

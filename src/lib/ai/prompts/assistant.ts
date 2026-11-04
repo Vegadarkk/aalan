@@ -4,7 +4,7 @@ import { articleBody, type HelpArticle } from "@/content/help";
 import type { Locale } from "@/config/site";
 import type { AssistantTurn } from "@/lib/contracts/assistant";
 
-// System prompt of the Assistant Joutiya (design phase-5 D25, AF §7 Z4): the rules, then the
+// System prompt of the Assistant Aalan (design phase-5 D25, AF §7 Z4): the rules, then the
 // locale's whole help corpus. It is the cached prefix (1-hour TTL): byte-identical between calls of
 // a locale while the corpus and config/legal's values do not change. No date, no id, nothing about
 // the person asking. The question and the previous turns go in the user and assistant turns,

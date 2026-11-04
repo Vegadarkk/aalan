@@ -96,7 +96,7 @@ async function seedShop(email: string, shopName: string): Promise<{ segment: str
 test.describe("seasonal rental agency", () => {
   test("a shop becomes a seasonal rental agency after its commitments; holiday homes search by stay dates; a guest asks for a stay", async ({ page, request, browser }) => {
     test.setTimeout(180_000);
-    const email = `saison-${randomId(10)}@joutiya.test`;
+    const email = `saison-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Karim Saison");
     const { segment, slugId, title } = await seedShop(email, `Souss Séjours ${randomId(4)}`);
 
@@ -143,7 +143,7 @@ test.describe("seasonal rental agency", () => {
     // dialog's own calendar and back.
     const guestContext = await browser.newContext({ hasTouch: true });
     const guest = await guestContext.newPage();
-    await signUpAndIn(guest, request, `saison-guest-${randomId(10)}@joutiya.test`, "Imane Voyageuse");
+    await signUpAndIn(guest, request, `saison-guest-${randomId(10)}@aalan.test`, "Imane Voyageuse");
     await guest.goto(`/fr/annonce/${slugId}`);
     await expect(guest.getByTestId("visit-button")).toHaveCount(0);
     // A stay's own guide and safety tips (audit L4-12).

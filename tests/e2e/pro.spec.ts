@@ -17,16 +17,16 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 const admin = "http://admin.localhost:3100";
-const STAFF_EMAIL = "moderator.pro.e2e@joutiya.test";
+const STAFF_EMAIL = "moderator.pro.e2e@aalan.test";
 const STAFF_PASSWORD = ["Porte", "Ouverte", "2026"].join("-");
-const ADMIN_EMAIL = "admin.pro.e2e@joutiya.test";
+const ADMIN_EMAIL = "admin.pro.e2e@aalan.test";
 const PASSWORD = ["Souk", "Tanger", "2026!"].join("-");
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from(randomBytes(length), (byte) => ALPHABET[byte % ALPHABET.length]).join("");
 const MINIMAL_PDF = Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n");
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 async function seedStaff(email: string, role: "moderator" | "admin", displayName: string): Promise<void> {
@@ -159,7 +159,7 @@ test.describe("Pro accounts", () => {
   test("a member applies, a moderator validates, the shop opens its storefront", async ({ page, request, browser }) => {
     test.setTimeout(180_000);
     const errors = await watchErrors(page);
-    const email = `pro-${randomId(10)}@joutiya.test`;
+    const email = `pro-${randomId(10)}@aalan.test`;
     const shopName = `Atelier ${randomId(6)}`;
     await signUpAndIn(page, request, email);
 

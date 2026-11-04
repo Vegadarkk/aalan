@@ -10,7 +10,7 @@ import { INLINE_HASH_MARKER, inlineScripts, withScriptHashes } from "../lib/secu
 
 const MAX_BUFFER = 5 * 1024 * 1024;
 const CSP_HEADERS = ["content-security-policy", "content-security-policy-report-only"];
-const STATE = Symbol("joutiya.cspHash");
+const STATE = Symbol("aalan.cspHash");
 
 interface Buffering {
   chunks: Buffer[];
@@ -164,4 +164,4 @@ proto.end = function end(this: Res, chunk?: unknown, encoding?: unknown, callbac
   return original.end.call(this, body, done);
 } as typeof proto.end;
 
-(globalThis as { __joutiyaCspHashHook?: boolean }).__joutiyaCspHashHook = true;
+(globalThis as { __aalanCspHashHook?: boolean }).__aalanCspHashHook = true;

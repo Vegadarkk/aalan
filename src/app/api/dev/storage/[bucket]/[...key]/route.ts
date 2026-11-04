@@ -9,7 +9,7 @@ import type { BucketRole } from "@/lib/storage/types";
 
 // Development only (APP_ENV=dev): the "R2" the browser and the worker talk to locally (D11).
 // PUT needs the signature issued by FsObjectStore.presignPut (HMAC + expiry, Content-Type bound);
-// GET/HEAD on the media bucket are public like media.joutiya.ma, the other buckets need a signed
+// GET/HEAD on the media bucket are public like media.aalan.ma, the other buckets need a signed
 // GET. Anywhere else the route does not exist.
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ function headers(contentType: string, size: number, role: BucketRole, cacheContr
     // Public media: the Cache-Control stored with the object (MEDIA_CACHE_CONTROL); the other
     // buckets are read once by the worker.
     "Cache-Control": role === "media" ? (cacheControl ?? "public, max-age=300") : "no-store",
-    // Like media.joutiya.ma (no CORP): the admin host, another origin, shows the media photos too.
+    // Like media.aalan.ma (no CORP): the admin host, another origin, shows the media photos too.
     // next.config.ts leaves this path out of its global same-origin CORP.
     "Cross-Origin-Resource-Policy": role === "media" ? "cross-origin" : "same-origin",
   };

@@ -33,7 +33,7 @@ const jsonResponse = (status: number, body: unknown, headers: Record<string, str
 describe("ResendTransport", () => {
   it("posts the documented body with auth, user agent and idempotency key", async () => {
     const { fn, calls } = fetchMock(jsonResponse(200, { id: "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794" }));
-    const result = await new ResendTransport("re_test_key", fn, "joutiya/1.2.3").send(MAIL, "verify-uid-1");
+    const result = await new ResendTransport("re_test_key", fn, "aalan/1.2.3").send(MAIL, "verify-uid-1");
     expect(result).toEqual({ provider: "resend", id: "49a3999c-0ce1-4ea6-ab68-afcd6dc2e794" });
     expect(calls).toHaveLength(1);
     const [call] = calls as [Call];
@@ -42,7 +42,7 @@ describe("ResendTransport", () => {
     const headers = call.init.headers as Record<string, string>;
     expect(headers["Authorization"]).toBe("Bearer re_test_key");
     expect(headers["Content-Type"]).toBe("application/json");
-    expect(headers["User-Agent"]).toBe("joutiya/1.2.3");
+    expect(headers["User-Agent"]).toBe("aalan/1.2.3");
     expect(headers["Idempotency-Key"]).toBe("verify-uid-1");
     expect(call.init.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(String(call.init.body))).toEqual({
@@ -172,14 +172,14 @@ describe("ResendTransport", () => {
 describe("BrevoTransport", () => {
   it("posts the Brevo body with the api-key header", async () => {
     const { fn, calls } = fetchMock(jsonResponse(201, { messageId: "<202610161030.1@relay.brevo.com>" }));
-    const result = await new BrevoTransport("xkeysib-test", fn, "joutiya/1.2.3").send(MAIL);
+    const result = await new BrevoTransport("xkeysib-test", fn, "aalan/1.2.3").send(MAIL);
     expect(result).toEqual({ provider: "brevo", id: "<202610161030.1@relay.brevo.com>" });
     const [call] = calls as [Call];
     expect(call.url).toBe(BREVO_ENDPOINT);
     const headers = call.init.headers as Record<string, string>;
     expect(headers["api-key"]).toBe("xkeysib-test");
     expect(headers["Content-Type"]).toBe("application/json");
-    expect(headers["User-Agent"]).toBe("joutiya/1.2.3");
+    expect(headers["User-Agent"]).toBe("aalan/1.2.3");
     const body = JSON.parse(String(call.init.body));
     expect(body.sender).toEqual({ name: "Aalan", email: "no-reply@notif.joutiya.ma" });
     expect(body.to).toEqual([{ email: MAIL.to }]);

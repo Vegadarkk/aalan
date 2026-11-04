@@ -12,11 +12,11 @@ const { authUserLine } = await import("@/lib/backup/export");
 const user = (extra: Partial<UserRecord> = {}) =>
   ({
     uid: "u1",
-    email: "pro@joutiya.test",
+    email: "pro@aalan.test",
     emailVerified: true,
     disabled: false,
     displayName: undefined,
-    providerData: [{ providerId: "google.com", uid: "g-1", email: "pro@joutiya.test" }],
+    providerData: [{ providerId: "google.com", uid: "g-1", email: "pro@aalan.test" }],
     customClaims: { role: "pro" },
     metadata: { creationTime: "Tue, 20 Oct 2026 08:00:00 GMT", lastSignInTime: undefined },
     tokensValidAfterTime: undefined,
@@ -27,11 +27,11 @@ describe("authUserLine", () => {
   it("keeps what an import needs, nulls for absent fields", () => {
     expect(JSON.parse(authUserLine(user()))).toEqual({
       uid: "u1",
-      email: "pro@joutiya.test",
+      email: "pro@aalan.test",
       emailVerified: true,
       disabled: false,
       displayName: null,
-      providerData: [{ providerId: "google.com", uid: "g-1", email: "pro@joutiya.test" }],
+      providerData: [{ providerId: "google.com", uid: "g-1", email: "pro@aalan.test" }],
       customClaims: { role: "pro" },
       createdAt: "Tue, 20 Oct 2026 08:00:00 GMT",
       lastSignInAt: null,

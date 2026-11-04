@@ -6,7 +6,7 @@ export { roundingStep };
 // « Prix repère » (Carte vivante lot 5): a typical price range for a listing, computed from the
 // comparable published listings (same subcategory and the criteria that drive the price), widening
 // the area from the city to the region, then Morocco, until enough are found. Pure and zod-free:
-// the server (service.ts), the listing page and the tests share it. Joutiya is a neutral host: the
+// the server (service.ts), the listing page and the tests share it. Aalan is a neutral host: the
 // guide gives a position, never a verdict ("bon prix", "trop cher"), and no single seller makes it:
 // each seller counts for PRICE_GUIDE_MAX_PER_SELLER prices at most, and a guide needs
 // PRICE_GUIDE_MIN_SELLERS distinct sellers (a dealer's stock or sock-puppet listings cannot set the

@@ -14,10 +14,10 @@ const PASSWORD = ["Souk", "Tanger", "2026!"].join("-");
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from(randomBytes(length), (byte) => ALPHABET[byte % ALPHABET.length]).join("");
 /** src/lib/security/hash.ts: the server's pepper, the dev one when HASH_PEPPER is unset. */
-const PEPPER = process.env.HASH_PEPPER ?? "joutiya-dev-pepper-not-a-secret-0000";
+const PEPPER = process.env.HASH_PEPPER ?? "aalan-dev-pepper-not-a-secret-0000";
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 async function waitForMail(request: APIRequestContext, to: string, template: string): Promise<{ data: { actionUrl?: string } }> {

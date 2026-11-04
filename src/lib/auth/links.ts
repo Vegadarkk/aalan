@@ -7,7 +7,7 @@ import { HttpError } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
 
 // Links of the auth mails (§6 "Inscription par e-mail", PLAN): the Admin SDK generates the action
-// code, Joutiya builds its own /action link around it and sends it with its own template. Firebase
+// code, Aalan builds its own /action link around it and sends it with its own template. Firebase
 // never e-mails anyone. The queue holds only the link request: the worker generates the code when
 // it delivers the mail, so no live code waits in Valkey (audit B3-12).
 

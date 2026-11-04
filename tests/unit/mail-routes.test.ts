@@ -20,7 +20,7 @@ const SECRET = `whsec_${rawKey.toString("base64")}`;
 function signedRequest(raw: string, overrides: Record<string, string> = {}): Request {
   const timestamp = String(Math.floor(Date.now() / 1000));
   const signature = `v1,${createHmac("sha256", rawKey).update(`msg_1.${timestamp}.${raw}`).digest("base64")}`;
-  return new Request("https://joutiya.test/api/webhooks/mail", {
+  return new Request("https://aalan.test/api/webhooks/mail", {
     method: "POST",
     headers: { "content-type": "application/json", "svix-id": "msg_1", "svix-timestamp": timestamp, "svix-signature": signature, ...overrides },
     body: raw,
@@ -55,7 +55,7 @@ describe("POST /api/webhooks/mail", () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ error: { code: "unauthenticated" } });
     expect(addSuppression).not.toHaveBeenCalled();
-    const missing = await call(webhook.POST, new Request("https://joutiya.test/api/webhooks/mail", { method: "POST", body: bounce }));
+    const missing = await call(webhook.POST, new Request("https://aalan.test/api/webhooks/mail", { method: "POST", body: bounce }));
     expect(missing.status).toBe(401);
   });
 
@@ -96,29 +96,29 @@ describe("/api/dev/mailbox", () => {
 
   it("is a 404 outside the development mailbox", async () => {
     setEnv({ APP_ENV: "dev" });
-    expect((await call(mailbox.GET, new Request("https://joutiya.test/api/dev/mailbox"))).status).toBe(404);
-    expect((await call(mailbox.DELETE, new Request("https://joutiya.test/api/dev/mailbox", { method: "DELETE" }))).status).toBe(404);
+    expect((await call(mailbox.GET, new Request("https://aalan.test/api/dev/mailbox"))).status).toBe(404);
+    expect((await call(mailbox.DELETE, new Request("https://aalan.test/api/dev/mailbox", { method: "DELETE" }))).status).toBe(404);
     expect(memoryMailbox().list()).toHaveLength(2);
   });
 
   it("lists mails newest first, filtered by recipient (case-insensitive) and template", async () => {
-    const all = await call(mailbox.GET, new Request("https://joutiya.test/api/dev/mailbox"));
+    const all = await call(mailbox.GET, new Request("https://aalan.test/api/dev/mailbox"));
     expect(all.status).toBe(200);
     expect(all.headers.get("Cache-Control")).toBe("no-store");
     const { mails } = (await all.json()) as { mails: { subject: string; template: string; locale: string; to: string }[] };
     expect(mails.map((mail) => mail.subject)).toEqual(["two", "one"]);
     expect(mails[0]).toMatchObject({ template: "resetPassword", locale: "ar", to: "other@example.com" });
 
-    const mine = await call(mailbox.GET, new Request("https://joutiya.test/api/dev/mailbox?to=nadia%40example.com"));
+    const mine = await call(mailbox.GET, new Request("https://aalan.test/api/dev/mailbox?to=nadia%40example.com"));
     expect(((await mine.json()) as { mails: unknown[] }).mails).toHaveLength(1);
-    const byTemplate = await call(mailbox.GET, new Request("https://joutiya.test/api/dev/mailbox?template=resetPassword"));
+    const byTemplate = await call(mailbox.GET, new Request("https://aalan.test/api/dev/mailbox?template=resetPassword"));
     expect(((await byTemplate.json()) as { mails: { subject: string }[] }).mails.map((mail) => mail.subject)).toEqual(["two"]);
-    const none = await call(mailbox.GET, new Request("https://joutiya.test/api/dev/mailbox?to=nobody%40example.com"));
+    const none = await call(mailbox.GET, new Request("https://aalan.test/api/dev/mailbox?to=nobody%40example.com"));
     expect(((await none.json()) as { mails: unknown[] }).mails).toEqual([]);
   });
 
   it("clears the mailbox on DELETE", async () => {
-    const response = await call(mailbox.DELETE, new Request("https://joutiya.test/api/dev/mailbox", { method: "DELETE" }));
+    const response = await call(mailbox.DELETE, new Request("https://aalan.test/api/dev/mailbox", { method: "DELETE" }));
     expect(response.status).toBe(204);
     expect(memoryMailbox().list()).toEqual([]);
   });

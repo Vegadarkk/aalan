@@ -181,7 +181,7 @@ export const SEARCH_PAGE_CLIENT_NAMESPACES = [
 
 /**
  * The help centre (src/app/[locale]/(public)/aide/layout.tsx): the article search box and the
- * Assistant Joutiya widget (design phase-5 D25), and the contact page's "Signaler un contenu
+ * Assistant Aalan widget (design phase-5 D25), and the contact page's "Signaler un contenu
  * illicite" form (DSA art. 16) with the report dialog.
  */
 export const HELP_PAGE_CLIENT_NAMESPACES = ["Help.search", "Help.assistant", "Contact.report", "Report", "Auth.common", "Auth.errors", "Listing.errors"] as const;

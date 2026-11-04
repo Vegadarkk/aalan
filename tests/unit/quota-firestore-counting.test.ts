@@ -228,7 +228,7 @@ describe("users repository", () => {
 
 describe("staff repository", () => {
   it("counts the roster reads and writes", async () => {
-    await staff.upsertStaff({ uid: "staff-1", email: "mod@joutiya.ma", displayName: "Modération", role: "moderator", invitedBy: "script", now: NOW });
+    await staff.upsertStaff({ uid: "staff-1", email: "mod@aalan.ma", displayName: "Modération", role: "moderator", invitedBy: "script", now: NOW });
     expect(used()).toEqual({ "firestore.reads": 1, "firestore.writes": 1 });
     vi.mocked(consume).mockClear();
     await staff.revokeStaff("staff-1", NOW);
@@ -241,8 +241,8 @@ describe("staff repository", () => {
     // The fake ignores the role filter (Firestore applies it): admins only are seeded.
     expect(await staff.listActiveAdmins()).toEqual([]);
     expect(used()).toEqual({ "firestore.reads": 1 });
-    await staff.upsertStaff({ uid: "admin-1", email: "a1@joutiya.ma", displayName: "Admin Un", role: "admin", invitedBy: "script", now: NOW });
-    await staff.upsertStaff({ uid: "admin-2", email: "a2@joutiya.ma", displayName: "Admin Deux", role: "admin", invitedBy: "admin-1", now: NOW });
+    await staff.upsertStaff({ uid: "admin-1", email: "a1@aalan.ma", displayName: "Admin Un", role: "admin", invitedBy: "script", now: NOW });
+    await staff.upsertStaff({ uid: "admin-2", email: "a2@aalan.ma", displayName: "Admin Deux", role: "admin", invitedBy: "admin-1", now: NOW });
     await staff.revokeStaff("admin-2", NOW);
     vi.mocked(consume).mockClear();
     expect((await staff.listActiveAdmins()).map((admin) => admin.uid)).toEqual(["admin-1"]);

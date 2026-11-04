@@ -23,7 +23,7 @@ export function isValkeyConfigured(role: ValkeyRole): boolean {
 /** Options shared by app clients; BullMQ workers need maxRetriesPerRequest: null instead. */
 export function clientOptions(role: ValkeyRole, overrides: RedisOptions = {}): RedisOptions {
   return {
-    connectionName: `joutiya-${role}`,
+    connectionName: `aalan-${role}`,
     lazyConnect: true,
     // Fail fast in request paths: limiter policies decide fail-open or fail-closed (§6).
     maxRetriesPerRequest: role === "ratelimit" ? 1 : 3,

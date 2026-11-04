@@ -3,7 +3,7 @@
 // explicit tick for this tab only (back to the step, a reload). Storage can be missing or throw
 // (private window, blocked site data): a memory copy keeps the choice for the visit.
 
-const PREFIX = "joutiya:price-to-discuss:";
+const PREFIX = "aalan:price-to-discuss:";
 const memory = new Map<string, boolean>();
 
 function storage(): Storage | null {

@@ -18,7 +18,7 @@ describe("dev-verify-phone", () => {
   });
 
   it("parses the CLI, lower-cases the e-mail and defaults to a dry run", () => {
-    expect(parseCli(["--email", "Test@Joutiya.MA", "--phone", "06 12 34 56 78"])).toEqual({ email: "test@joutiya.ma", phone: "+212612345678", apply: false });
+    expect(parseCli(["--email", "Test@Aalan.MA", "--phone", "06 12 34 56 78"])).toEqual({ email: "test@aalan.ma", phone: "+212612345678", apply: false });
     expect(parseCli(["--email", "a@b.co", "--phone", "+212712345678", "--apply"]).apply).toBe(true);
     expect(() => parseCli(["--phone", "0612345678"])).toThrow(/usage/);
     expect(() => parseCli(["--email", "nope", "--phone", "0612345678"])).toThrow(/usage/);
@@ -28,7 +28,7 @@ describe("dev-verify-phone", () => {
   });
 
   it("never runs against production, by APP_ENV or by the project id", () => {
-    expect(envProblems(targets, { APP_ENV: "prod", FIREBASE_PROJECT_ID: "demo-joutiya" })).toEqual(["APP_ENV=prod: this script never runs against production"]);
+    expect(envProblems(targets, { APP_ENV: "prod", FIREBASE_PROJECT_ID: "demo-aalan" })).toEqual(["APP_ENV=prod: this script never runs against production"]);
     const prodProject = targets.environments.prod.firebase.projectId;
     expect(prodProject).toBeTypeOf("string");
     const byProject = envProblems(targets, { APP_ENV: "staging", FIREBASE_PROJECT_ID: prodProject as string });
@@ -39,14 +39,14 @@ describe("dev-verify-phone", () => {
   });
 
   it("accepts dev and staging when the project is the recorded one", () => {
-    expect(envProblems(targets, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-joutiya" })).toEqual([]);
+    expect(envProblems(targets, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-aalan" })).toEqual([]);
     expect(envProblems(targets, { APP_ENV: "staging", FIREBASE_PROJECT_ID: targets.environments.staging.firebase.projectId as string })).toEqual([]);
     const mismatch = envProblems(targets, { APP_ENV: "staging", FIREBASE_PROJECT_ID: "joutiya-staging-1234" });
     expect(mismatch).toHaveLength(1);
     expect(mismatch[0]).toMatch(/^FIREBASE_PROJECT_ID (is set but|does not match) environments\.staging\.firebase\.projectId/);
     expect(mismatch[0]).not.toContain("joutiya-staging-1234");
-    expect(envProblems(targets, { FIREBASE_PROJECT_ID: "demo-joutiya" })).toEqual(["APP_ENV is required when FIREBASE_PROJECT_ID is set"]);
-    expect(envProblems({ shared: {} }, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-joutiya" })[0]).toMatch(/^infra\/targets\.json: /);
+    expect(envProblems(targets, { FIREBASE_PROJECT_ID: "demo-aalan" })).toEqual(["APP_ENV is required when FIREBASE_PROJECT_ID is set"]);
+    expect(envProblems({ shared: {} }, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-aalan" })[0]).toMatch(/^infra\/targets\.json: /);
   });
 
   it("seeds only an activated, active account whose number nobody else holds", () => {

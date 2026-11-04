@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 /*
- * Joutiya design tokens. Palette from the "door" logo (v3-2):
+ * Aalan design tokens. Palette from the "door" logo (v3-2):
  * bab green #0D4B4D (frame), khoukha ochre #C0582C, threshold gold #D2A24C, cream #F2E9D8, ink #0B1E1F.
  * Ochre is the action colour, green the structure, gold marks what is featured, cream the brand moments.
  * Physical directions are never used: logical properties keep RTL (ar) and LTR (fr, rif) in sync.

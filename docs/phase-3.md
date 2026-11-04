@@ -7,7 +7,7 @@ Le code de la phase 3 est fusionné dans `main` (PR #40), avec des correctifs ul
 - Phase 1 : VM, tunnels et Access en place pour l'environnement visé ; la zone `joutiya.ma` active chez Cloudflare (bascule des serveurs de noms après la validation du .MA) pour le domaine des médias.
 - Phase 2 : variables de la VM posées (étape 7 de `docs/phase-2.md`, c'est-à-dire l'étape 16 de `docs/phase-1.md`).
 - Les 9 buckets R2 `joutiya-{dev,staging,prod}-{quarantine,media,private}` existent déjà (phase 0).
-- Sans R2, le site fonctionne en développement avec un stockage local (`os.tmpdir()/joutiya-dev-storage`) et refuse les envois de photos en staging et en production (réponse 503) : rien ne casse, la fonction attend.
+- Sans R2, le site fonctionne en développement avec un stockage local (`os.tmpdir()/aalan-dev-storage`) et refuse les envois de photos en staging et en production (réponse 503) : rien ne casse, la fonction attend.
 
 ## Qui fait quoi (règle n°1)
 

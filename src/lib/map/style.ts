@@ -10,11 +10,11 @@ import { metersPerPixel } from "./projection";
 import { REGIONS_GEOJSON } from "./regions-geojson";
 
 export const PROTOMAPS_SOURCE = "protomaps";
-export const REGIONS_SOURCE = "joutiya-regions";
-export const APPROX_SOURCE = "joutiya-approx";
+export const REGIONS_SOURCE = "aalan-regions";
+export const APPROX_SOURCE = "aalan-approx";
 
 /** Ids of our own layers, above the basemap. */
-export const HOUSE_LAYERS = { regions: "joutiya-regions-line", approx: "joutiya-approx-area" } as const;
+export const HOUSE_LAYERS = { regions: "aalan-regions-line", approx: "aalan-approx-area" } as const;
 
 /** Zoom range: the extract stops at z12 (MapLibre overzooms a little); street-level detail stays hidden. */
 export const MAP_ZOOM = { min: 5, max: 12.4, listing: 12 } as const;

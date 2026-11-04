@@ -4,8 +4,8 @@ import { staffDocSchema } from "@/lib/db/repositories/staff";
 
 describe("staffLoginSchema", () => {
   it("normalizes the e-mail and accepts an optional Turnstile token", () => {
-    const parsed = staffLoginSchema.parse({ email: "  Admin@Joutiya.MA ", password: "x", turnstileToken: "tok" });
-    expect(parsed).toEqual({ email: "admin@joutiya.ma", password: "x", turnstileToken: "tok" });
+    const parsed = staffLoginSchema.parse({ email: "  Admin@Aalan.MA ", password: "x", turnstileToken: "tok" });
+    expect(parsed).toEqual({ email: "admin@aalan.ma", password: "x", turnstileToken: "tok" });
     expect(staffLoginSchema.safeParse({ email: "a@b.co", password: "x" }).success).toBe(true);
   });
 
@@ -34,8 +34,8 @@ describe("staffPasswordSchema", () => {
 
 describe("inviteSchema", () => {
   it("accepts a moderator or an admin with a clean display name", () => {
-    expect(inviteSchema.parse({ email: "Mod@Joutiya.ma", displayName: " Salma El Idrissi ", role: "moderator" })).toEqual({
-      email: "mod@joutiya.ma",
+    expect(inviteSchema.parse({ email: "Mod@Aalan.ma", displayName: " Salma El Idrissi ", role: "moderator" })).toEqual({
+      email: "mod@aalan.ma",
       displayName: "Salma El Idrissi",
       role: "moderator",
     });

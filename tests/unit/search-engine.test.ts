@@ -29,7 +29,7 @@ describe("search engine factory", () => {
     expect(first).toBeInstanceOf(MemoryEngine);
     expect(createSearchEngine(env({ APP_ENV: "dev" }))).toBe(first);
     expect(devMemoryEngine()).toBe(first);
-    expect((globalThis as Record<symbol, unknown>)[Symbol.for("joutiya.search.devMemoryEngine")]).toBe(first);
+    expect((globalThis as Record<symbol, unknown>)[Symbol.for("aalan.search.devMemoryEngine")]).toBe(first);
   });
 
   it("refuses to run without MEILI_URL outside development", () => {

@@ -126,7 +126,7 @@ export const APPEAL_API = {
   link: "/api/appeals/link",
 } as const;
 
-/** Assistant Joutiya (assistant.ts re-exports them): question, earlier turns, how many turns. */
+/** Assistant Aalan (assistant.ts re-exports them): question, earlier turns, how many turns. */
 export const ASSISTANT_QUESTION_MAX = 500;
 export const ASSISTANT_TURN_MAX = 900;
 export const ASSISTANT_HISTORY_MAX = 4;

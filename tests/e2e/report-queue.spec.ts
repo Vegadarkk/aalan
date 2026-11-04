@@ -13,7 +13,7 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 const admin = "http://admin.localhost:3100";
-const EMAIL = "moderator.queue.e2e@joutiya.test";
+const EMAIL = "moderator.queue.e2e@aalan.test";
 // Assembled at runtime: a literal would look like a credential to the secret scan.
 const PASSWORD = ["Souk", "Rabat", "Queue", "2026"].join("-");
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -23,7 +23,7 @@ const DAY = 86_400_000;
 test.use({ extraHTTPHeaders: { "x-dev-access-email": EMAIL } });
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 /** The moderator account with its roster entry (idempotent across Playwright workers). */
@@ -46,7 +46,7 @@ async function seedReportedListing(): Promise<{ id: string; title: string; repor
   const app = firebase();
   const firestore = getFirestore(app);
   const now = new Date();
-  const email = `seller-queue-${randomId(10)}@joutiya.test`;
+  const email = `seller-queue-${randomId(10)}@aalan.test`;
   const { uid } = await getAuth(app).createUser({ email, emailVerified: true, displayName: "Vendeur file e2e" });
   const publicId = randomId(10);
   await firestore.collection("users").doc(uid).set({
@@ -106,7 +106,7 @@ async function seedReportedListing(): Promise<{ id: string; title: string; repor
     explanation: "Le vendeur exige une avance par Wafacash avant de montrer le téléphone.",
     goodFaith: true,
     source: "user",
-    reporter: { name: "Visiteur e2e", email: `reporter-${randomId(8)}@joutiya.test`, locale: "fr", ipPrefixHash: "e2e-ip", deviceHash: "e2e-device", trusted: false },
+    reporter: { name: "Visiteur e2e", email: `reporter-${randomId(8)}@aalan.test`, locale: "fr", ipPrefixHash: "e2e-ip", deviceHash: "e2e-device", trusted: false },
     hidden: false,
     status: "open",
     slaDueAt: new Date(now.getTime() + DAY),

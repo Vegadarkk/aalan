@@ -29,7 +29,7 @@ function post(name: string, ip: string): { request: Request; pulls: () => number
       controller.close();
     },
   }, { highWaterMark: 0 });
-  const request = new Request(`https://joutiya.test/api/webhooks/${name}`, { method: "POST", headers: { "x-forwarded-for": ip }, body, duplex: "half" } as RequestInit);
+  const request = new Request(`https://aalan.test/api/webhooks/${name}`, { method: "POST", headers: { "x-forwarded-for": ip }, body, duplex: "half" } as RequestInit);
   return { request, pulls: () => pulls };
 }
 
@@ -71,7 +71,7 @@ describe("webhook.ip", () => {
   it("counts the WhatsApp subscription handshake too (verify-token guesses)", async () => {
     const ip = "203.0.113.8";
     await consumeLimit("webhook.ip", ip, RATE_LIMITS["webhook.ip"].points);
-    const request = new Request("https://joutiya.test/api/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=x&hub.challenge=1", { headers: { "x-forwarded-for": ip } });
+    const request = new Request("https://aalan.test/api/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=x&hub.challenge=1", { headers: { "x-forwarded-for": ip } });
     expect((await (routes.whatsapp.GET as Handler)(request as NextRequest, context)).status).toBe(429);
   });
 });

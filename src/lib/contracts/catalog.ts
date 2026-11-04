@@ -6,7 +6,7 @@ import { LISTING_ID_PATTERN } from "@/lib/listings/ids";
 
 // Shop catalogue of a Pro listing (lot 4, design phase-7/catalogue-boutique.md §2-3): variants on
 // one or two axes (size, colour, a free axis such as « Contenance »), a declared stock, per
-// combination or for the whole listing. Joutiya never sells nor counts sales: the stock is what
+// combination or for the whole listing. Aalan never sells nor counts sales: the stock is what
 // the Pro declares. Client-safe (the wizard, the listing page and the server share it).
 
 /** Axes of a listing (« Taille » x « Couleur »). */
@@ -208,7 +208,7 @@ export const PROMO_PERCENT_MAX = 90;
 
 /**
  * `PUT /api/listings/{id}/promo`: one cut for every price (`percent`), or the new price of a
- * listing without variants (`price`). Joutiya computes the struck-out price, never the Pro.
+ * listing without variants (`price`). Aalan computes the struck-out price, never the Pro.
  * `startsAt` absent: now.
  */
 export const promoInputSchema = z

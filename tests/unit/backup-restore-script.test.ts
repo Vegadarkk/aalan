@@ -76,7 +76,7 @@ describe("projectProblem", () => {
   const recorded = targets({ dev: "joutiya-dev", staging: "joutiya-staging", prod: "joutiya-prod" });
 
   it("lets the emulator take any project id", () => {
-    expect(projectProblem(recorded, "demo-joutiya", { emulated: true, allowProduction: false })).toBeNull();
+    expect(projectProblem(recorded, "demo-aalan", { emulated: true, allowProduction: false })).toBeNull();
     expect(projectProblem(recorded, "joutiya-prod", { emulated: true, allowProduction: false })).toBeNull();
   });
 
@@ -160,7 +160,7 @@ describe("restore-firestore under plain Node", () => {
 
   it("checks and plans without writing, printing counts only", async () => {
     // Port 1: the dry run must not connect to anything.
-    const { stdout, stderr } = await run(process.execPath, ["scripts/restore-firestore.ts", "--identity", join(dir, "key.txt"), "--from", join(dir, "dl"), "--project", "demo-joutiya"], {
+    const { stdout, stderr } = await run(process.execPath, ["scripts/restore-firestore.ts", "--identity", join(dir, "key.txt"), "--from", join(dir, "dl"), "--project", "demo-aalan"], {
       env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", FIRESTORE_EMULATOR_HOST: "127.0.0.1:1" },
     });
     expect(stdout).toContain("1 part(s) from 2026-10-16 to 2026-10-16; manifests checked for 1 of 1 date(s)");
@@ -176,7 +176,7 @@ describe("restore-firestore under plain Node", () => {
     const damaged = identity.slice(0, -1) + (identity.endsWith("Q") ? "P" : "Q");
     await writeFile(join(dir, "damaged.txt"), `${damaged}\n`);
     await chmod(join(dir, "damaged.txt"), 0o600);
-    const failure = await run(process.execPath, ["scripts/restore-firestore.ts", "--identity", join(dir, "damaged.txt"), "--from", join(dir, "dl"), "--project", "demo-joutiya"], {
+    const failure = await run(process.execPath, ["scripts/restore-firestore.ts", "--identity", join(dir, "damaged.txt"), "--from", join(dir, "dl"), "--project", "demo-aalan"], {
       env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", FIRESTORE_EMULATOR_HOST: "127.0.0.1:1" },
     }).catch((error: { code: number; stdout: string; stderr: string }) => error);
     expect(failure).toMatchObject({ code: 1, stderr: expect.stringContaining("the key is damaged") });

@@ -64,7 +64,7 @@ export async function startupReport(service: Service, env: Record<string, string
   if (fileErrors.length > 0) fatal.push(...fileErrors.map((error) => `infra/targets.json: ${error}`));
   else fatal.push(...assertTargets(targets as Targets, env, { strict: deployed }));
 
-  if (service === "web" && deployed && !(globalThis as { __joutiyaCspHashHook?: boolean }).__joutiyaCspHashHook) {
+  if (service === "web" && deployed && !(globalThis as { __aalanCspHashHook?: boolean }).__aalanCspHashHook) {
     fatal.push("CSP hash hook not loaded: start with `node --import ./dist/server/csp-hash-hook.mjs server.js`");
   }
 

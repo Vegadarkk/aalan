@@ -49,7 +49,7 @@ const noop = async () => undefined;
 function render(listing: OwnerListingSummary, locale: Locale = "fr", salesOpen = false) {
   return renderToStaticMarkup(
     <NextIntlClientProvider locale={locale} messages={locale === "ar" ? ar : fr} timeZone="Africa/Casablanca">
-      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.joutiya.test" onAction={noop} onDelete={noop} now={NOW} salesOpen={salesOpen} />
+      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.aalan.test" onAction={noop} onDelete={noop} now={NOW} salesOpen={salesOpen} />
     </NextIntlClientProvider>,
   );
 }

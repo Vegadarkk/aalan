@@ -42,7 +42,7 @@ const text = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const MEDIA = "https://media.joutiya.test";
+const MEDIA = "https://media.aalan.test";
 
 const FAVORITE: FavoriteView = {
   listingId: "abcd2345",

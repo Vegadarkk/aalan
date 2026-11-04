@@ -1,6 +1,6 @@
-# Joutiya
+# Aalan
 
-Plateforme web de petites annonces et de seconde main au Maroc (C2C / B2C), domaine `joutiya.ma`.
+Plateforme web de petites annonces et de seconde main au Maroc (C2C / B2C), domaine `aalan.ma` (`joutiya.ma`, l'ancien nom, ne sert plus qu'à rediriger).
 
 Éditeur : Adark Prime, 6 rue d'Armaillé, 75017 Paris.
 
@@ -8,7 +8,7 @@ Plateforme web de petites annonces et de seconde main au Maroc (C2C / B2C), doma
 
 Architecture v3 validée le 12 octobre 2026.
 
-- Phase 0 : ouverture des comptes gratuits dédiés à Joutiya, pas à pas dans [`docs/phase-0.md`](docs/phase-0.md).
+- Phase 0 : ouverture des comptes gratuits dédiés au projet, pas à pas dans [`docs/phase-0.md`](docs/phase-0.md).
 - Phase 1 (fondations) : le code est prêt ; la mise en ligne se fait pas à pas avec [`docs/phase-1.md`](docs/phase-1.md). Pour reconstruire la VM : [`infra/redeploy.md`](infra/redeploy.md).
 - Phase 2 (comptes, connexion Google, vérification WhatsApp, back-office, e-mails, Sentry) : le code est prêt ; le branchement des services se fait pas à pas avec [`docs/phase-2.md`](docs/phase-2.md). Tests locaux : `npm run check`, puis `npm run test:api`, `npm run test:rules` et `npm run build && npm run test:e2e` (émulateurs Firebase, Java 21).
 
@@ -17,6 +17,6 @@ Architecture v3 validée le 12 octobre 2026.
 - Aucun secret ne doit être commité. Les variables nécessaires sont décrites dans [`.env.example`](.env.example) ; copiez-le en `.env.local` (ignoré par Git) et renseignez les valeurs.
 - Le [`.gitignore`](.gitignore) exclut les fichiers d'environnement, clés, comptes de service, artefacts de build et dossiers de dépendances.
 - Chaque push et pull request est analysé par [Gitleaks](https://github.com/gitleaks/gitleaks) (`.github/workflows/secret-scan.yml`). En cas de fuite détectée, révoquez immédiatement la clé concernée chez le fournisseur : la supprimer de Git ne suffit pas.
-- Chaque service tiers utilise une ressource neuve dédiée à Joutiya, avec des jetons à portée minimale. Leurs identifiants exacts sont consignés dans [`infra/targets.json`](infra/targets.json) ; `scripts/assert-target.ts` arrête l'application et la CI au moindre identifiant différent.
+- Chaque service tiers utilise une ressource neuve dédiée à Aalan, avec des jetons à portée minimale. Leurs identifiants exacts sont consignés dans [`infra/targets.json`](infra/targets.json) ; `scripts/assert-target.ts` arrête l'application et la CI au moindre identifiant différent.
 
 Pour signaler une faille, voir [SECURITY.md](SECURITY.md).

@@ -18,7 +18,7 @@ const WORD = `zq${randomFrom(LETTERS, 8)}`;
 const RESULTS = 8;
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 let listingSlug = "";

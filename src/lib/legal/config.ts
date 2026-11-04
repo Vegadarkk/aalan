@@ -8,7 +8,7 @@ import { consume } from "@/lib/quota";
 // on globalThis: route handlers and server components load separate copies of this module, and a
 // back-office save (route handler) must drop the copy the pages read.
 const TTL_MS = 5 * 60 * 1000;
-const STATE_KEY = Symbol.for("joutiya.legal.configCache");
+const STATE_KEY = Symbol.for("aalan.legal.configCache");
 interface CacheState {
   cache?: { value: LegalConfig; expires: number };
   /** Bumped by invalidateLegalConfig: a read started before a save does not cache the old value. */

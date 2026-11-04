@@ -43,7 +43,7 @@ const optionalUrl = z
 const schema = z.object({
   APP_ENV: z.enum(["dev", "staging", "prod"]).default("dev"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  /** Public origin of this environment: https://joutiya.ma, https://staging.aalan.ma. */
+  /** Public origin of this environment: https://aalan.ma, https://staging.aalan.ma. */
   SITE_URL: z.url().default("http://localhost:3000"),
   ADMIN_HOST: optional,
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
@@ -88,7 +88,7 @@ const schema = z.object({
   // three bucket names (checked against infra/targets.json by scripts/assert-target.ts). Set all
   // of them with MEDIA_BASE_URL, or none: without them dev stores files under os.tmpdir()
   // (src/lib/storage/fs.ts) and deployed environments refuse uploads.
-  /** Public media host, e.g. https://media.joutiya.ma; dev defaults to the dev storage route. */
+  /** Public media host, e.g. https://media.aalan.ma; dev defaults to the dev storage route. */
   MEDIA_BASE_URL: optionalUrl,
   R2_S3_ENDPOINT: optional,
   R2_ACCESS_KEY_ID: optional,
@@ -125,7 +125,7 @@ const schema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: optional,
   WHATSAPP_APP_SECRET: optional,
   WHATSAPP_VERIFY_TOKEN: optional,
-  /** Joutiya's WhatsApp number in international format, digits only (wa.me link). */
+  /** Aalan's WhatsApp number in international format, digits only (wa.me link). */
   WHATSAPP_DISPLAY_NUMBER: optional,
   SENTRY_DSN: optional,
   /** age public key of the nightly Firestore backups (D17); the private key stays offline. */
@@ -138,7 +138,7 @@ const schema = z.object({
   MEILI_URL: optionalUrl,
   MEILI_SEARCH_KEY: optional,
   MEILI_INDEX_KEY: optional,
-  // Payments (phase 7, design §6), behind config/flags `salesEnabled`. RevenueCat project "Joutiya"
+  // Payments (phase 7, design §6), behind config/flags `salesEnabled`. RevenueCat project "Aalan"
   // (sandbox outside prod): the v2 secret key reads a customer's purchases, every webhook carries
   // the static Authorization value and the HMAC signature, and the purchase link is the Web
   // Purchase Link of the credit packs offering (`https://pay.rev.cat/<token>`).

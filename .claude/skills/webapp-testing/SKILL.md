@@ -1,6 +1,6 @@
 ---
 name: webapp-testing
-description: Check the Joutiya UI in a real browser with the repo's Node Playwright (@playwright/test): run the e2e suite, take screenshots, catch console errors and CSP violations before handing UI work back.
+description: Check the Aalan UI in a real browser with the repo's Node Playwright (@playwright/test): run the e2e suite, take screenshots, catch console errors and CSP violations before handing UI work back.
 ---
 
 # Web app testing (Node Playwright)

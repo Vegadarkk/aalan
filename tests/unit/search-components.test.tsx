@@ -33,7 +33,7 @@ import type { SearchCard } from "@/lib/search/types";
 // Server markup of the search UI building blocks (lot L3b), French and Arabic. Interaction runs in
 // the browser pass (Playwright); here: structure, labels, links, ARIA and the pure helpers.
 
-vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.joutiya.test" }));
+vi.mock("@/lib/storage/keys", () => ({ mediaBaseUrl: () => "https://media.aalan.test" }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof NextNavigation>()),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), back: vi.fn(), forward: vi.fn() }),
@@ -59,7 +59,7 @@ const text = (html: string) =>
 const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/'/g, "&#x27;").replace(/"/g, "&quot;");
 const url = (query: string) => parseSearchParams(new URLSearchParams(query));
 
-const MEDIA = "https://media.joutiya.test";
+const MEDIA = "https://media.aalan.test";
 
 function searchCard(id: string, overrides: Partial<SearchCard> = {}): SearchCard {
   return {

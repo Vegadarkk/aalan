@@ -15,7 +15,7 @@ const at = (iso: string) => new Date(iso);
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
-    projectId: "demo-joutiya",
+    projectId: "demo-aalan",
     firestore: { rules: readFileSync("firestore.rules", "utf8"), host: "127.0.0.1", port: 8080 },
   });
   await env.clearFirestore();

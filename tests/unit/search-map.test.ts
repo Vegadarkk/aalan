@@ -358,21 +358,21 @@ describe("paid placement on the map (DSA)", () => {
 });
 
 describe("search map style", () => {
-  const style = buildSearchStyle("https://media.joutiya.test/maps/morocco.pmtiles", { theme: "light", pins: pinsCollection([]) });
+  const style = buildSearchStyle("https://media.aalan.test/maps/morocco.pmtiles", { theme: "light", pins: pinsCollection([]) });
 
   it("draws no administrative boundary: neither our regions nor the tiles' lines", () => {
     expect(style.sources[REGIONS_SOURCE]).toBeUndefined();
     const ids = style.layers.map((layer) => layer.id);
     expect(ids).not.toContain(HOUSE_LAYERS.regions);
     expect(ids.filter((id) => /boundar/.test(id))).toEqual([]);
-    expect(buildHouseStyle("https://media.joutiya.test/maps/morocco.pmtiles").sources[REGIONS_SOURCE]).toBeDefined();
+    expect(buildHouseStyle("https://media.aalan.test/maps/morocco.pmtiles").sources[REGIONS_SOURCE]).toBeDefined();
   });
 
   it("clusters the pins in one source, with a halo above the basemap", () => {
     const source = style.sources[PINS_SOURCE];
     expect(source).toMatchObject({ type: "geojson", cluster: true, clusterRadius: CLUSTER_RADIUS_PX, clusterMaxZoom: SEARCH_ZOOM.clusterMax });
     expect(style.layers.at(-1)?.id).toBe(HALO_LAYER);
-    const dark = buildSearchStyle("https://media.joutiya.test/maps/morocco.pmtiles", { theme: "dark", pins: pinsCollection([]) });
+    const dark = buildSearchStyle("https://media.aalan.test/maps/morocco.pmtiles", { theme: "dark", pins: pinsCollection([]) });
     expect(JSON.stringify(dark.layers)).not.toBe(JSON.stringify(style.layers));
   });
 });

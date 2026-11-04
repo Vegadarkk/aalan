@@ -18,7 +18,7 @@ import { isolate } from "@/lib/i18n/bidi";
 
 const ReviewDialog = dynamic(() => loadWithRetry<ReviewDialogProps>(() => import("@/components/reviews/review-dialog").then((module) => module.ReviewDialog), () => null)(), { ssr: false });
 
-const LATER_KEY = "joutiya.review-later";
+const LATER_KEY = "aalan.review-later";
 
 function laterSet(): Set<string> {
   try {

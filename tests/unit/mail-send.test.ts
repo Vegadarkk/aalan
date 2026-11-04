@@ -49,7 +49,7 @@ const MAIL: TemplateMail<"verifyEmail"> = {
   template: "verifyEmail",
   locale: "fr",
   to: "nadia@example.com",
-  data: { displayName: "Nadia", actionUrl: "https://joutiya.test/fr/action" },
+  data: { displayName: "Nadia", actionUrl: "https://aalan.test/fr/action" },
   priority: "security",
   idempotencyKey: "verify:uid-1:497000",
 };

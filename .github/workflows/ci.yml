@@ -39,6 +39,9 @@ jobs:
           --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The former-name guard compares HEAD with its first parent (PR merge commit or main commit).
+          fetch-depth: 2
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -59,6 +62,11 @@ jobs:
         run: |
           node scripts/assert-target.ts
           node --test scripts/assert-target.test.ts scripts/legal-config.test.ts
+      # Rebrand plan: a change may not add the former name (scripts/legacy-name.ts).
+      - name: Former name
+        run: |
+          node scripts/legacy-name.ts --base HEAD^1
+          node --test scripts/legacy-name.test.ts
       - run: npm run lint
       - name: Typecheck (app and uptime Worker)
         run: |
@@ -167,7 +175,7 @@ jobs:
         id: baseline
         if: hashFiles('tests/e2e/visual/static-map.spec.ts-snapshots/*.png') == ''
         run: |
-          npx firebase emulators:exec --only auth,firestore --project demo-joutiya "npx playwright test tests/e2e/visual --update-snapshots"
+          npx firebase emulators:exec --only auth,firestore --project demo-aalan "npx playwright test tests/e2e/visual --update-snapshots"
           for file in tests/e2e/visual/static-map.spec.ts-snapshots/*.png; do
             echo "BASELINE-BEGIN $(basename "$file")"
             base64 -w0 "$file"

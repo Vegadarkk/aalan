@@ -14,7 +14,7 @@ const DESCRIPTION = "Dacia Duster entretenu chez le concessionnaire, carnet comp
 
 /** Auth emulator admin REST (firebase-admin/auth does not load under the Playwright loader here). */
 async function authEmulator<T>(action: string, body: unknown): Promise<T> {
-  const project = process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya";
+  const project = process.env.FIREBASE_PROJECT_ID ?? "demo-aalan";
   const response = await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${project}/accounts:${action}`, {
     method: "POST",
     headers: { authorization: "Bearer owner", "content-type": "application/json" },
@@ -81,7 +81,7 @@ async function attachSeededPhoto(ref: string): Promise<void> {
 test.describe("Stock import", () => {
   test("a dealer imports, publishes and clears a car from a CSV file", async ({ page, request, browser }) => {
     test.setTimeout(120_000);
-    const email = `stock-${randomId(10)}@joutiya.test`;
+    const email = `stock-${randomId(10)}@aalan.test`;
     const ref = `DUS-${randomId(4).toUpperCase()}`;
     await signUpAndIn(page, request, email, "Atlas Auto");
     const proId = await seedShop(email);
@@ -160,7 +160,7 @@ test.describe("Stock import", () => {
 
   test("a shop imports a shirt in sizes and colours from the shop template, one listing for its lines", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const email = `stock-${randomId(10)}@joutiya.test`;
+    const email = `stock-${randomId(10)}@aalan.test`;
     await signUpAndIn(page, request, email, "Maison Lalla");
     const proId = await seedShop(email);
     await signInAgain(page, email);

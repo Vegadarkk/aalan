@@ -6,7 +6,7 @@ import { mailPublisher, PUBLISHER_ADDRESS, renderLayout, setMailPublisher } from
 // S8: the footer identity comes from config/legal (setMailPublisher in deliverMail), never from
 // a hardcoded name; the Paris domiciliation is the only address ever displayed, and the fallback.
 
-const INPUT = { lang: "fr" as const, siteUrl: "https://joutiya.test", subject: "Sujet", title: "Titre", greeting: "Bonjour Nadia,", paragraphs: ["Corps."] };
+const INPUT = { lang: "fr" as const, siteUrl: "https://aalan.test", subject: "Sujet", title: "Titre", greeting: "Bonjour Nadia,", paragraphs: ["Corps."] };
 
 afterEach(() => setMailPublisher());
 
@@ -35,8 +35,8 @@ describe("renderLayout footer", () => {
     setMailPublisher({ companyName: "Société Test", hqAddress: PUBLISHER_ADDRESS });
     const ar = renderLayout({ ...INPUT, lang: "ar" });
     expect(ar.html).toContain(`الناشر: <span dir="ltr">Société Test · ${PUBLISHER_ADDRESS}</span>`);
-    expect(ar.html).toContain(`الذهاب إلى ${BRAND.arabic}</a> · <span dir="ltr">joutiya.test</span>`);
-    expect(ar.text).toContain(`الذهاب إلى ${BRAND.arabic}: \u2068https://joutiya.test\u2069`);
+    expect(ar.html).toContain(`الذهاب إلى ${BRAND.arabic}</a> · <span dir="ltr">aalan.test</span>`);
+    expect(ar.text).toContain(`الذهاب إلى ${BRAND.arabic}: \u2068https://aalan.test\u2069`);
     // French copy needs no isolation.
     const fr = renderLayout(INPUT);
     expect(fr.html).not.toContain('dir="ltr">Société');

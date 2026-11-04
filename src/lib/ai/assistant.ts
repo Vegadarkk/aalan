@@ -15,7 +15,7 @@ import { assistantMessages, assistantPromptVersion, assistantSystemPrompt } from
 import { classifyAnthropicError } from "./providers/anthropic";
 import { ProviderError } from "./types";
 
-// Assistant Joutiya (design phase-5 D25, AF §7 Z4): Claude Haiku 5.5 (`config/ai` models.assistant)
+// Assistant Aalan (design phase-5 D25, AF §7 Z4): Claude Haiku 5.5 (`config/ai` models.assistant)
 // answers from the locale's help corpus, the static system prompt cached one hour. Same SDK use as
 // the moderation provider: `messages.parse` with a Zod output format, thinking disabled, effort
 // low, no SDK retries. Each response's usage is priced into `claude.budget` (the monthly cap counts

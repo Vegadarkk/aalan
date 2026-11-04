@@ -1,7 +1,7 @@
 import type { NextResponse } from "next/server";
 
 // Cookies (§6 CSRF, Sessions). `__Host-` prefix: Secure, Path=/, no Domain, so no subdomain
-// (media., staging.) can set or read them, and each host (joutiya.ma, admin.joutiya.ma) has its own.
+// (media., staging.) can set or read them, and each host (aalan.ma, admin.aalan.ma) has its own.
 // Browsers accept Secure cookies on http://localhost, so development uses the same names.
 
 export const SESSION_COOKIE = "__Host-session";

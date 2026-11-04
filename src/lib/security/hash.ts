@@ -6,7 +6,7 @@ import { serverEnv } from "@/lib/env";
 // stored or used as keys in clear, except where the law requires it (connectionLogs, contentOps).
 
 /** Development fallback: deployed environments refuse to start without HASH_PEPPER (src/lib/env.ts). */
-const DEV_PEPPER = "joutiya-dev-pepper-not-a-secret-0000";
+const DEV_PEPPER = "aalan-dev-pepper-not-a-secret-0000";
 
 export function hmacBase64Url(key: string, data: string): string {
   return createHmac("sha256", key).update(data).digest("base64url");

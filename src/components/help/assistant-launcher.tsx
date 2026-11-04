@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { ASSISTANT_HASH, OPEN_ASSISTANT_EVENT } from "./assistant-event";
 import type { AssistantPanelProps } from "./assistant-panel";
 
-// The help pages' entry to the Assistant Joutiya (design phase-5 D25): a button, the panel loaded on
+// The help pages' entry to the Assistant Aalan (design phase-5 D25): a button, the panel loaded on
 // first use (its own chunk: radix dialog, Turnstile, the API client), kept mounted afterwards so
 // the conversation survives a close. Opens on /aide#assistant (account menu) and on the event.
 

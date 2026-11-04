@@ -28,7 +28,7 @@ describe("create-admin", () => {
   });
 
   it("parses the CLI, lower-cases the e-mail and defaults to a dry run", () => {
-    expect(parseCli(["--email", "Owner@Joutiya.MA", "--name", " Adark "])).toEqual({ email: "owner@joutiya.ma", name: "Adark", apply: false });
+    expect(parseCli(["--email", "Owner@Aalan.MA", "--name", " Adark "])).toEqual({ email: "owner@aalan.ma", name: "Adark", apply: false });
     expect(parseCli(["--email", "a@b.co", "--name", "Ab", "--apply"]).apply).toBe(true);
     expect(() => parseCli(["--name", "Adark"])).toThrow(/usage/);
     expect(() => parseCli(["--email", "nope", "--name", "Adark"])).toThrow(/usage/);
@@ -53,8 +53,8 @@ describe("create-admin", () => {
 
   it("checks FIREBASE_PROJECT_ID against infra/targets.json for APP_ENV", () => {
     // A demo project passes in dev only (the emulators never reach Google for it).
-    expect(projectErrors(targets, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-joutiya" })).toEqual([]);
-    expect(projectErrors(targets, { APP_ENV: "prod", FIREBASE_PROJECT_ID: "demo-joutiya" })).toHaveLength(1);
+    expect(projectErrors(targets, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-aalan" })).toEqual([]);
+    expect(projectErrors(targets, { APP_ENV: "prod", FIREBASE_PROJECT_ID: "demo-aalan" })).toHaveLength(1);
     // Without APP_ENV the project cannot be looked up; the configured value is never printed.
     const noEnv = projectErrors(targets, { FIREBASE_PROJECT_ID: "joutiya-prod-1234" });
     expect(noEnv).toEqual(["APP_ENV is required when FIREBASE_PROJECT_ID is set"]);
@@ -64,7 +64,7 @@ describe("create-admin", () => {
     expect(mismatch).toHaveLength(1);
     expect(mismatch[0]).toMatch(/^FIREBASE_PROJECT_ID (is set but|does not match) environments\.prod\.firebase\.projectId/);
     expect(mismatch[0]).not.toContain("joutiya-prod-1234");
-    expect(projectErrors({ shared: {} }, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-joutiya" })[0]).toMatch(/^infra\/targets\.json: /);
+    expect(projectErrors({ shared: {} }, { APP_ENV: "dev", FIREBASE_PROJECT_ID: "demo-aalan" })[0]).toMatch(/^infra\/targets\.json: /);
   });
 
   it("takes the project and the hosts of staging and prod from infra/targets.json, like the VM does", () => {
@@ -86,8 +86,8 @@ describe("create-admin", () => {
   });
 
   it("keeps dev as given: the emulators' demo project and the local origin", () => {
-    const emulated = { FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099", FIREBASE_PROJECT_ID: "demo-joutiya", ADMIN_HOST: "admin.localhost" };
-    expect(resolveSettings(emulated, targets)).toEqual({ projectId: "demo-joutiya", origin: "http://admin.localhost:3000", emulated: true });
+    const emulated = { FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099", FIREBASE_PROJECT_ID: "demo-aalan", ADMIN_HOST: "admin.localhost" };
+    expect(resolveSettings(emulated, targets)).toEqual({ projectId: "demo-aalan", origin: "http://admin.localhost:3000", emulated: true });
     expect(settingsError({ APP_ENV: "dev" })).toMatch(/^FIREBASE_PROJECT_ID is required \(derived/);
     expect(settingsError({ FIREBASE_PROJECT_ID: "joutiya-prod-1234" })).toBe("APP_ENV is required when FIREBASE_PROJECT_ID is set");
     expect(settingsError({ APP_ENV: "prod" }, { shared: {} })).toMatch(/^infra\/targets\.json: /);

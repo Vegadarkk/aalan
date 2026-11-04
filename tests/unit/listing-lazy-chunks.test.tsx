@@ -58,7 +58,7 @@ describe("listing page chunks that fail to download", () => {
       expect(reveal).toContain('role="alert"');
       expect(reveal).toContain(escape(messages.ListingPage.contact.errors.outdated));
       expect(reveal).toMatch(reload(messages.ListingPage.contact.reload));
-      const lightbox = render(<LightboxUnavailable open={false} start={0} onClose={() => undefined} onCloseAutoFocus={() => undefined} listingId="abcd2345" title="Vélo" photos={[]} mediaBaseUrl="https://media.joutiya.test" />);
+      const lightbox = render(<LightboxUnavailable open={false} start={0} onClose={() => undefined} onCloseAutoFocus={() => undefined} listingId="abcd2345" title="Vélo" photos={[]} mediaBaseUrl="https://media.aalan.test" />);
       expect(lightbox).toContain('role="alert"');
       expect(lightbox).toContain(escape(messages.ListingPage.gallery.unavailable));
       expect(lightbox).toMatch(reload(messages.ListingPage.gallery.reload));

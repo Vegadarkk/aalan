@@ -4,7 +4,7 @@
 // version). Run on the owner's machine (the age identity never leaves it), never against a real
 // project.
 //
-//   firebase emulators:exec --only auth,firestore --project demo-joutiya \
+//   firebase emulators:exec --only auth,firestore --project demo-aalan \
 //     "node scripts/restore-drill.ts --identity <age key file> --from <dir> [--until YYYY-MM-DD]"
 //   (--from-bucket <staging|prod> reads the private bucket directly, as scripts/restore-firestore.ts)
 //

@@ -9,7 +9,7 @@ import sharp from "sharp";
 
 // ADMIN_HOST=admin.localhost (playwright.config.ts). The server runs with APP_ENV=dev and no
 // CF_ACCESS_AUD: the Access identity is the x-dev-access-email header, sent by the browser context
-// below (the dev default is dev@joutiya.test; the test seeds its own admin). Turnstile runs with
+// below (the dev default is dev@aalan.test; the test seeds its own admin). Turnstile runs with
 // Cloudflare's always-pass test keys, so the sign-in form carries the widget like a deployed host.
 // `npm run test:e2e` runs inside `firebase emulators:exec`: the seed below talks to the emulators,
 // and mails stay in memory (DEV_MAILBOX=true), read back from /api/dev/mailbox on the public host.
@@ -17,16 +17,16 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
 process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
 
 const admin = "http://admin.localhost:3100";
-const EMAIL = "admin.e2e@joutiya.test";
+const EMAIL = "admin.e2e@aalan.test";
 // Assembled at runtime: a literal would look like a credential to the secret scan.
 const PASSWORD = ["Porte", "Ouverte", "2026"].join("-");
 const MODERATOR_PASSWORD = ["Souk", "Medina", "Fes", "2026"].join("-");
-const uniqueEmail = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@joutiya.test`;
+const uniqueEmail = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@aalan.test`;
 
 test.use({ extraHTTPHeaders: { "x-dev-access-email": EMAIL } });
 
 function firebase(): App {
-  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-joutiya" });
+  return getApps()[0] ?? initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID ?? "demo-aalan" });
 }
 
 /** A staff account with its roster entry. Idempotent: every Playwright worker seeds the shared admin. */
@@ -56,7 +56,7 @@ test.beforeAll(async () => {
 const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const randomId = (length: number) => Array.from({ length }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
 /** FsObjectStore layout of the dev media bucket (src/lib/storage/fs.ts, keys.ts), served by /api/dev/storage on the public host. */
-const MEDIA_ROOT = path.join(os.tmpdir(), "joutiya-dev-storage", "joutiya-dev-media");
+const MEDIA_ROOT = path.join(os.tmpdir(), "aalan-dev-storage", "joutiya-dev-media");
 
 /** A listing held for review, with one photo (both WebP variants) in the dev media bucket. */
 async function seedHeldListing(): Promise<{ id: string; title: string }> {

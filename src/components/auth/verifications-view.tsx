@@ -23,7 +23,7 @@ import { displayMoroccanPhone, phoneArgument } from "./phone-display";
 import { StatusPanel } from "./status-panel";
 
 // /verifications: WhatsApp phone verification (§6). The person sends the code from their own
-// WhatsApp to Joutiya's number; the webhook sets the badge; this page polls the status.
+// WhatsApp to Aalan's number; the webhook sets the badge; this page polls the status.
 
 /** Status poll while a code is pending: 6 calls a minute, well under phone.status.uid (400/h). */
 const POLL_MS = 10_000;
@@ -314,7 +314,7 @@ export function PendingCode({
           </a>
         </Button>
         <p className="text-center text-sm text-foreground-muted">
-          {t("joutiyaNumber")}{" "}
+          {t("aalanNumber")}{" "}
           <span dir="ltr" className="whitespace-nowrap font-medium text-foreground">
             {displayMoroccanPhone(`+${state.number.replace(/^\+/, "")}`)}
           </span>

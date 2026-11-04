@@ -24,7 +24,7 @@ const REDACT = [
 
 export const logger = pino({
   level: process.env.LOG_LEVEL ?? "info",
-  base: { app: "joutiya", env: process.env.APP_ENV ?? "dev" },
+  base: { app: "aalan", env: process.env.APP_ENV ?? "dev" },
   redact: { paths: REDACT, censor: "[redacted]" },
   timestamp: pino.stdTimeFunctions.isoTime,
 });

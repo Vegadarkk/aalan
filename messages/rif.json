@@ -4354,7 +4354,9 @@
       "archivedEmptyBody": "Tameslayt deg archive ad d-tuɣal ɣer tebratin i d-yewḍen xmi ad d-taweḍ tebrat tamaynut.",
       "selectTitle": "Xtar tameslayt",
       "selectBody": "Timeslayin nnec d imzenza d imsaɣen ad d-banent da.",
-      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna."
+      "offline": "Abeddel nican yeḥbes: tibratin timaynutin ad d-banent xmi ad d-tuɣal tuqqna.",
+      "busy": "Tesɛiḍ yakan {count} n onglets ttwaldin ɣef tebratin: qqen yiwen akken ad d-yuɣal ubeddel nican.",
+      "refreshLive": "Ɛawed ɛemmer"
     },
     "row": {
       "you": "Cek:",
@@ -4408,7 +4410,9 @@
       "counterpartClosed": "{name} yeqqen amiḍan nnes: tzemmreḍ ad tɛawdeḍ ad teɣreḍ tameslayt, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "frozen": "Tameslayt-a tettwaḥbes: tzemmreḍ ad tt-teɣreḍ, maca war tzemmreḍ ca ad tariḍ deg-s.",
       "suspended": "Amiḍan nnec yettwaḥbes: tzemmreḍ ad teɣreḍ timeslayin nnec, maca war tzemmreḍ ca ad tazneḍ tabrat.",
-      "shop": "Ẓar taḥanut « {title} »"
+      "shop": "Ẓar taḥanut « {title} »",
+      "pinsShow": "Sken ttafaṣil n usumer d umyafa",
+      "pinsHide": "Ffer ttafaṣil n usumer d umyafa"
     },
     "review": {
       "label": "Efk tamuɣli nnec",

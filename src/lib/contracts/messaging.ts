@@ -103,6 +103,9 @@ export interface SendMessageResponse {
 
 export interface UnreadResponse {
   total: number;
+  /** Live streams of the account open on this server: at LIVE_STREAMS_PER_ACCOUNT, a refused tab
+   *  waits for a free slot instead of reporting a lost connection (audit zone 5 n°7). */
+  streams?: number;
 }
 
 /** One conversation as its participant sees it (inbox row, thread header; D2). Dates are epoch ms. */

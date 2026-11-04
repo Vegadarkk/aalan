@@ -1,5 +1,11 @@
+import { offerCardShown } from "@/components/offers/offer-card";
+import { isActive } from "@/lib/appointments/rules";
+import type { AppointmentKind, Slot } from "@/lib/contracts/appointments";
 import type { ConversationView, MessagesPage, MessageView } from "@/lib/contracts/messaging";
+import { offerFinalAmount } from "@/lib/contracts/offers";
+import { rentalRequestOpen } from "@/lib/contracts/rental-requests";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
+import { moroccoToday } from "@/lib/listings/rental-availability";
 
 // Pure state of an open thread (design phase-5 D2, D7): pages of GET .../messages (newest first on
 // the wire) kept oldest first for display, older pages prepended, newer messages (`after=latest`)
@@ -128,4 +134,30 @@ export function groupByDay(messages: readonly MessageView[]): { day: string; mes
 /** The thread can take a new message: not frozen, nobody blocked, the other account not closed, mine not suspended. */
 export function canWrite(conversation: ConversationView, suspended: boolean): boolean {
   return !conversation.frozen && !conversation.blockedByMe && !conversation.blockedMe && !conversation.counterpartClosed && !suspended;
+}
+
+/** What the pinned cards say once settled, in one line (audit zone 5 n°6). */
+export interface SettledPins {
+  /** The accepted offer's final amount. */
+  offer: number | null;
+  appointment: { kind: AppointmentKind; slot: Slot } | null;
+}
+
+/**
+ * The one-line summary of the pinned cards when nothing waits for an answer: an accepted offer and/or
+ * a confirmed appointment, nothing else pinned. Null while an offer or a proposal is open (the full
+ * card asks for the answer), with a rental request or its history (their own cards), or with nothing pinned.
+ */
+export function settledPins(conversation: Pick<ConversationView, "offer" | "appointment" | "rentalRequest" | "rentalHistory">, now: number): SettledPins | null {
+  const { offer, appointment, rentalRequest, rentalHistory } = conversation;
+  if ((rentalRequest && rentalRequestOpen(rentalRequest, moroccoToday(now))) || (rentalHistory && rentalHistory.length > 0)) return null;
+  const offerShown = offer && offerCardShown(offer, now) ? offer : null;
+  const appointmentShown = appointment && isActive(appointment, now) ? appointment : null;
+  if (!offerShown && !appointmentShown) return null;
+  if (offerShown && offerShown.status !== "accepted") return null;
+  if (appointmentShown && (appointmentShown.status !== "confirmed" || !appointmentShown.chosen)) return null;
+  return {
+    offer: offerShown ? offerFinalAmount(offerShown) : null,
+    appointment: appointmentShown?.chosen ? { kind: appointmentShown.kind, slot: appointmentShown.chosen } : null,
+  };
 }

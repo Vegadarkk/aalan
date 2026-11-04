@@ -3051,7 +3051,20 @@
     "facts": {
       "surface": "{count} m²",
       "rooms": "{count, plural, one {# pièce} other {# pièces}}",
-      "bedrooms": "{count} ch."
+      "bedrooms": "{count} ch.",
+      "year": "{text}",
+      "mileage": "{count} km",
+      "fuel": {
+        "diesel": "Diesel",
+        "essence": "Essence",
+        "hybride": "Hybride",
+        "electrique": "Électrique",
+        "gpl": "GPL"
+      },
+      "gearbox": {
+        "manuelle": "Manuelle",
+        "automatique": "Automatique"
+      }
     },
     "example": "Exemple",
     "rentalTotal": "≈ {total} pour {days, plural, one {# jour} other {# jours}}",
@@ -3945,7 +3958,9 @@
     "stayDatesHint": "Les annonceurs déclarent leurs nuits indisponibles : les logements libres sur tout le séjour s'affichent, ceux à confirmer en dernier.",
     "includeSoldOut": "Inclure les articles épuisés",
     "includeSoldOutHint": "Les boutiques laissent en ligne les articles dont le stock est à 0.",
-    "promo": "En promotion"
+    "promo": "En promotion",
+    "modelPickBrand": "Choisissez d'abord une marque.",
+    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche."
   },
   "Pro": {
     "metaTitle": "Espace Pro",

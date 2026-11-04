@@ -1,4 +1,4 @@
-import { CRITERIA } from "@/config/categories";
+import { CRITERIA, DERIVED_CRITERIA } from "@/config/categories";
 import { CITIES } from "@/config/regions";
 import { CITY_LEXICON, DARIJA_LEXICON, SYNONYM_GUARDED, citySpellings, entrySpellings } from "@/config/search/darija";
 import { foldArabicWord, foldToken } from "./normalize";
@@ -35,7 +35,8 @@ const EQUALITY_BASE = [
 /** Numeric fields that also take `<`, `<=`, `>`, `>=`. */
 const COMPARISON_BASE = ["price", "sortAt", "featuredUntil", "rentFreshUntil", "promoStartsAt", "promoEndsAt"] as const;
 
-const criteria = Object.values(CRITERIA);
+// Form criteria and the search-only derived ones (`a_car_model`).
+const criteria = [...Object.values(CRITERIA), ...Object.values(DERIVED_CRITERIA)];
 /** `a_*` fields of select, multiselect and boolean criteria (free-text criteria stay searchable only). */
 export const EQUALITY_FILTERS: readonly string[] = [
   ...EQUALITY_BASE,

@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { criterionLabelId, derivedOptionLabel } from "@/config/car-models";
 
 // Labels of the category tree and of the criteria (ids come from src/config/categories.ts and are
 // plain strings, so the typed message keys need one cast, kept here). A missing key shows the id.
@@ -19,7 +20,13 @@ export function useCriteriaLabels(): { label: (criterionId: string) => string; o
   const t = useTranslations("Criteria");
   type Key = Parameters<typeof t.has>[0];
   return {
-    label: useCallback((criterionId: string) => (t.has(`${criterionId}.label` as Key) ? t(`${criterionId}.label` as Key) : criterionId), [t]),
-    option: useCallback((criterionId: string, optionId: string) => (t.has(`${criterionId}.options.${optionId}` as Key) ? t(`${criterionId}.options.${optionId}` as Key) : optionId), [t]),
+    label: useCallback((criterionId: string) => {
+      const id = criterionLabelId(criterionId);
+      return t.has(`${id}.label` as Key) ? t(`${id}.label` as Key) : criterionId;
+    }, [t]),
+    option: useCallback(
+      (criterionId: string, optionId: string) => derivedOptionLabel(criterionId, optionId) ?? (t.has(`${criterionId}.options.${optionId}` as Key) ? t(`${criterionId}.options.${optionId}` as Key) : optionId),
+      [t],
+    ),
   };
 }

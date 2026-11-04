@@ -1,4 +1,5 @@
 import { CONDITIONS, categoryById, datedRental, criterionById, searchCriteria, subcategoryById, type Condition, type RentalUnit } from "@/config/categories";
+import { carModelById } from "@/config/car-models";
 import { cityBySlug, MOROCCO_BBOX, regionByCode } from "@/config/regions";
 import { DAY_PATTERN, RENTAL_SEARCH_DAYS_MAX, dayNumber } from "@/lib/listings/rental-availability";
 import { z } from "@/lib/zod";
@@ -359,6 +360,14 @@ export function canonicalSearchParams(input: SearchParams): SearchParams {
       } else if (filter.kind === "flag" && criterion.type === "boolean") {
         criteria[id] = { kind: "flag" };
       }
+    }
+    // A catalogue model belongs to one brand: with a brand filter, only that brand's models stay.
+    const brands = criteria["car-brand"];
+    const models = criteria["car-model"];
+    if (brands?.kind === "options" && models?.kind === "options") {
+      const values = models.values.filter((id) => brands.values.includes(carModelById(id)?.brand ?? ""));
+      if (values.length) criteria["car-model"] = { kind: "options", values };
+      else delete criteria["car-model"];
     }
     if (Object.keys(criteria).length) params.criteria = criteria;
     else delete params.criteria;

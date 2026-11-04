@@ -1,4 +1,5 @@
 import "server-only";
+import { carModelOf } from "@/config/car-models";
 import { criterionById, subcategoryById } from "@/config/categories";
 import { cityBySlug, regionByCode } from "@/config/regions";
 import { availableValues, isSoldOut, isVariantCriterion, priceRange, promoSummary } from "@/lib/contracts/catalog";
@@ -168,6 +169,11 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
     attrsText.push(...criterionText(criterion.id, value));
     const filterable = criterionValue(criterion.id, value);
     if (filterable !== undefined) attributes[attributeField(criterion.id)] = filterable;
+  }
+  // Search-only: the catalogue model read from the free-text model (src/config/car-models.ts).
+  if (criteria.some((criterion) => criterion.id === "model") && criteria.some((criterion) => criterion.id === "car-brand")) {
+    const carModel = carModelOf(listing.attributes["car-brand"], listing.attributes["model"]);
+    if (carModel) attributes[attributeField("car-model")] = carModel;
   }
   if (listing.condition) attrsText.push(...labels(["Criteria", "condition", "options", listing.condition]));
   // Variants (Pro catalogue §2): a criterion axis filters on the values still sold (« taille 42

@@ -6,6 +6,7 @@ import { ChipCheckboxGroup } from "@/components/post/controls/chips";
 import { SwitchField } from "@/components/post/controls/switch";
 import { NumberInput } from "@/components/post/criteria-fields";
 import { useCriteriaLabels } from "@/components/post/labels";
+import { carModelsOf } from "@/config/car-models";
 import type { Criterion } from "@/config/categories";
 import type { CriterionFilter } from "@/lib/search/params";
 import { filterableCriteria, setCriterion } from "./filter-model";
@@ -57,12 +58,14 @@ function RangeFilter({ criterion, label, unit, value, onChange }: { criterion: C
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
           <label htmlFor={`${id}-min`} className="text-xs text-foreground-muted">
+            <span className="sr-only">{label}, </span>
             {t("min")}
           </label>
           <NumberInput id={`${id}-min`} value={range.min} min={criterion.min} max={criterion.max} unit={unit} onChange={(next) => set("min", next)} />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor={`${id}-max`} className="text-xs text-foreground-muted">
+            <span className="sr-only">{label}, </span>
             {t("max")}
           </label>
           <NumberInput id={`${id}-max`} value={range.max} min={criterion.min} max={criterion.max} unit={unit} onChange={(next) => set("max", next)} />
@@ -74,6 +77,7 @@ function RangeFilter({ criterion, label, unit, value, onChange }: { criterion: C
 
 export function CriteriaFilters({ categoryId, subcategoryId, value, onChange }: CriteriaFiltersProps) {
   const id = useId();
+  const t = useTranslations("SearchFilters");
   const labels = useCriteriaLabels();
   const units = useTranslations("Listing.units");
   const criteria = filterableCriteria(categoryId, subcategoryId);
@@ -92,7 +96,21 @@ export function CriteriaFilters({ categoryId, subcategoryId, value, onChange }: 
         if (criterion.type === "boolean") {
           return <SwitchField key={criterion.id} label={label} checked={current?.kind === "flag"} onCheckedChange={(checked) => update(checked ? { kind: "flag" } : undefined)} className="py-0" />;
         }
-        const options = (criterion.options ?? []).map((option) => ({ value: option, label: labels.option(criterion.id, option) }));
+        // The catalogue models of the chosen brands only (a model without its brand reads as noise).
+        if (criterion.id === "car-model") {
+          const brands = value?.["car-brand"]?.kind === "options" ? value["car-brand"].values : [];
+          const models = brands.length ? carModelsOf(brands) : [];
+          if (models.length === 0) {
+            return (
+              <div key={criterion.id} className="flex flex-col gap-1">
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-sm text-foreground-muted">{t(brands.length ? "modelNone" : "modelPickBrand")}</p>
+              </div>
+            );
+          }
+        }
+        const source = criterion.id === "car-model" ? carModelsOf(value?.["car-brand"]?.kind === "options" ? value["car-brand"].values : []).map((model) => model.id) : (criterion.options ?? []);
+        const options = source.map((option) => ({ value: option, label: labels.option(criterion.id, option) }));
         const values = current?.kind === "options" ? current.values : [];
         const setValues = (next: string[]) => update({ kind: "options", values: next });
         return (

@@ -47,7 +47,8 @@ await build({
   // Search scripts run in the worker image (design D3, D12): `node dist/worker/reindex-search.mjs`,
   // `node dist/worker/search-setup.mjs` (with the master key of meilisearch.env in its environment);
   // so do the P0 drill (phase 6 D16): `node dist/worker/alert-drill.mjs`, and the load test data
-  // set (D17): `node dist/worker/seed-loadtest.mjs`, and the staging demo listings:
+  // set (D17): `node dist/worker/seed-loadtest.mjs`, its search-only generator
+  // (`node dist/worker/load-search.mjs`), and the staging demo listings:
   // `node dist/worker/seed-demo.mjs`.
   entryPoints: {
     "worker/index": "src/worker/index.ts",
@@ -55,6 +56,7 @@ await build({
     "worker/search-setup": "scripts/search-setup.ts",
     "worker/alert-drill": "scripts/alert-drill.ts",
     "worker/seed-loadtest": "scripts/seed-loadtest.ts",
+    "worker/load-search": "scripts/load-search.ts",
     "worker/seed-demo": "scripts/seed-demo.ts",
   },
   packages: "external",
@@ -63,7 +65,7 @@ await build({
 });
 
 const worker = "dist/worker/index.mjs";
-const { fileList, warnings } = await nodeFileTrace([worker, "dist/worker/reindex-search.mjs", "dist/worker/search-setup.mjs", "dist/worker/alert-drill.mjs", "dist/worker/seed-loadtest.mjs", "dist/worker/seed-demo.mjs"], { base: root });
+const { fileList, warnings } = await nodeFileTrace([worker, "dist/worker/reindex-search.mjs", "dist/worker/search-setup.mjs", "dist/worker/alert-drill.mjs", "dist/worker/seed-loadtest.mjs", "dist/worker/load-search.mjs", "dist/worker/seed-demo.mjs"], { base: root });
 for (const warning of warnings) {
   // Expected: optional dependencies that are not installed, and non-JS assets (proto LICENSE files).
   if (!/Cannot find module|Failed to resolve dependency|Failed to parse/.test(warning.message)) console.warn(`trace: ${warning.message}`);

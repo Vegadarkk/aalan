@@ -141,6 +141,10 @@ describe("ContactBar", () => {
     const html = render({}, own);
     expect(html).toContain(escape(fr.ListingPage.contact.own));
     expect(html).toContain('href="/fr/mes-annonces"');
+    // Edit the listing from its page (zone 3 audit P3-9).
+    expect(html).toContain('href="/fr/deposer/abcd2345"');
+    expect(html).toContain(escape(fr.ListingPage.contact.edit));
+    expect(render({ shop: true }, own)).not.toContain("/deposer/");
     expect(html).not.toContain(fr.ListingPage.contact.showPhone);
     expect(html).not.toContain(fr.ListingPage.contact.message);
     expect(html).not.toContain("aria-haspopup");

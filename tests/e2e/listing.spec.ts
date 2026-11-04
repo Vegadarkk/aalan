@@ -233,9 +233,9 @@ test.describe("listing page", () => {
     await expect(page.getByTestId("listing-description")).toContainText("pneus neufs.");
     await expect(page.getByRole("navigation", { name: "Fil d'Ariane" })).toContainText("Vélos");
     // Beside the favourite: "Partager" (the share sheet on a phone, the link copied elsewhere); the report
-    // control within reach of the contact, leading to the dialog below (UX journeys counter-review, 8).
+    // control within reach of the contact (UX journeys counter-review, 8) opens the form itself (zone 3 audit P3-6).
     await expect(page.getByTestId("share-button")).toHaveText(/Partager|Copier le lien/);
-    await expect(page.getByRole("complementary", { name: "Vendeur et contact" }).getByRole("link", { name: "Signaler l'annonce" })).toHaveAttribute("href", "#signaler");
+    await expect(page.getByRole("complementary", { name: "Vendeur et contact" }).getByRole("button", { name: "Signaler l'annonce" })).toHaveAttribute("aria-haspopup", "dialog");
     // The phone bar (hidden from lg, so on the phone project only): the message, the listing's own
     // action (an offer here) and the number as an icon.
     if (isMobile) {
@@ -263,7 +263,7 @@ test.describe("listing page", () => {
     await expect(map).toBeVisible();
     await expect(map).toContainText("OpenStreetMap");
     await expect(page.getByTestId("safety-tips")).toBeVisible();
-    const report = page.getByRole("button", { name: "Signaler l'annonce" });
+    const report = page.locator("#signaler").getByRole("button", { name: "Signaler l'annonce" });
     await expect(report).toBeVisible();
 
     await page.waitForLoadState("networkidle");
@@ -275,6 +275,12 @@ test.describe("listing page", () => {
     await page.keyboard.press("Escape");
     await expect(notice).toBeHidden();
     await expect(report).toBeFocused();
+    // The seller card's own button opens the same form where it stands, without scrolling away (zone 3 audit P3-6).
+    const nearContact = page.getByRole("complementary", { name: "Vendeur et contact" }).getByRole("button", { name: "Signaler l'annonce" });
+    await nearContact.click();
+    await expect(notice).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(nearContact).toBeFocused();
     expect(violations).toEqual([]);
   });
 

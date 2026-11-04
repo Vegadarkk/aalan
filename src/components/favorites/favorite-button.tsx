@@ -22,6 +22,8 @@ export interface FavoriteButtonProps {
   className?: string;
   /** `overlay` (default): round button over a card photo; `inline`: labelled button (listing page). */
   variant?: "overlay" | "inline";
+  /** publicId of the listing's seller: the heart hides from them on their own listing (zone 3 audit P3-9). */
+  ownerPublicId?: string;
 }
 
 function currentPath(): string {
@@ -33,7 +35,7 @@ function signInNext(listingId: string): string {
   return `${currentPath()}${favoriteFragment(window.location.hash, listingId)}`;
 }
 
-export function FavoriteButton({ listingId, className, variant = "overlay" }: FavoriteButtonProps) {
+export function FavoriteButton({ listingId, className, variant = "overlay", ownerPublicId }: FavoriteButtonProps) {
   const t = useTranslations("Favorites.button");
   const apiMessage = useApiErrorMessage();
   const router = useRouter();
@@ -74,6 +76,8 @@ export function FavoriteButton({ listingId, className, variant = "overlay" }: Fa
   const known = uid !== undefined && uid !== null && favorites.uid === uid && favorites.status === "ready";
   const active = known && favorites.ids.has(listingId);
   const busy = favorites.busy.has(listingId);
+  // The page is cached for everyone: the owner is known in the browser only.
+  if (ownerPublicId && status === "ready" && session?.publicId === ownerPublicId) return null;
 
   async function onClick() {
     const viewer = status === "ready" ? session : await loadSession();

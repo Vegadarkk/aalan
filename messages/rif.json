@@ -3119,7 +3119,6 @@
     "breadcrumb": "Abrid n tsniwin",
     "sellerLabel": "Amzenzu d umsawal",
     "printSource": "Adres n annonce:",
-    "reportLink": "Smekti x annonce",
     "share": {
       "share": "Bḍu",
       "copyLink": "Nqel asaɣ",
@@ -3187,6 +3186,21 @@
       "message": "Azen tabrat",
       "messageShort": "Tabrat",
       "messageHint": "Tabrat nnec ad tawḍ ɣer tibratin n Aalan n umzenzu. War das-ttawḍen ca wala e-mail nnec wala uṭṭun nnec.",
+      "conversation": "Ẓeṛ ameslay",
+      "conversationShort": "Ameslay",
+      "conversationHint": "Turiḍ yakan i umzenzu: ameslay ad yekemmel zeg mani t-teǧǧiḍ.",
+      "status": {
+        "offerAccepted": "Asumer yettwaqbel s {amount}",
+        "offerOpen": "Asumer nnec s {amount} yettraǧu tiririt n umzenzu",
+        "offerCountered": "Amzenzu dak-d yessumer {amount}",
+        "appointment": {
+          "meeting": "Amyafa yettwasentem: {day} deg {time}",
+          "visit": "Aẓuṛ yettwasentem: {day} deg {time}",
+          "test_drive": "Tajeṛṛabt tettwasentem: {day} deg {time}",
+          "pickup": "Asefk yettwasentem: {day} deg {time}",
+          "check_in": "Tudfa tettwasentem: {day} deg {time}"
+        }
+      },
       "testDrive": "Ssuter ad t-tjerbeḍ",
       "testDriveShort": "Ajerreb",
       "testDriveHint": "Ari i umzenzu, uca ini-as melmi tzemmreḍ deg tmeslayt.",
@@ -3196,6 +3210,7 @@
       "signIn": "Kcem",
       "own": "Ta d annonce nnec. Imsaɣen ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen.",
       "manage": "Sged annonces inu",
+      "edit": "Beddel annonce",
       "errors": {
         "reveal_not_allowed": "Uṭṭunen ttbanen i imiḍanen yettwasnulfan zi uggar n 24 n tsaɛtin, s e-mail yettwasentmen. Sentem e-mail nnec niɣ ɛawed azekka.",
         "listing_unavailable": "Annonce-a war teddir ca: uṭṭun nnes war d-yettban ca.",
@@ -3397,6 +3412,11 @@
       "feesIncluded": "Deg ssuma",
       "feesIncludedAmount": "{amount}, deg ssuma",
       "feesNone": "Bla idrimen i umsaɣ",
+      "feesOnTopRent": "X ukra, i ɣer umekri",
+      "feesOnTopRentAmount": "{amount} x ukra, i ɣer umekri",
+      "feesIncludedRent": "Deg ukra",
+      "feesIncludedRentAmount": "{amount}, deg ukra",
+      "feesNoneRent": "Bla idrimen i umekri",
       "offPlan": "Azenzi x plan",
       "offPlanYes": "Ih (VEFA)",
       "delivery": "Ad yettwafk deg {year}",
@@ -3485,7 +3505,6 @@
     "roleBusiness": "Professionnel",
     "pro": "Pro",
     "memberSince": "Deg Aalan zi {date}",
-    "reportLink": "Smekti x umiḍan-a",
     "listingsTitle": "{count, plural, one {# annonce i yettbanen} other {# n annonces i yettbanen}}",
     "emptyTitle": "Walu n annonce i yettbanen ar ruxa",
     "emptyBody": "Annonces i d-yusin n {name} ad d-banent dagi.",
@@ -4969,7 +4988,6 @@
     "label": "Taḥanut Pro",
     "verified": "Taḥanut yettwasneqden",
     "verifiedNote": "Aalan tesneqd isefka n Pro n taḥanut a (ICE, registre). Azenzi yettili jar-ak d taḥanut kan : Aalan war tettekki ca deg uzenzi, war tettḍemmen ca tiɣawsiwin. Taḥanut teqqim tettaṭṭaf lwajibat nnes n umzenzu Pro x imsaɣen (loi n° 31-08 sur la protection du consommateur).",
-    "reportLink": "Smekti x taḥanut",
     "about": "X taḥanut",
     "meta": {
       "title": "{name}, taḥanut deg {city}",

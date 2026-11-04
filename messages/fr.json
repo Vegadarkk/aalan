@@ -3129,7 +3129,6 @@
     "breadcrumb": "Fil d'Ariane",
     "sellerLabel": "Vendeur et contact",
     "printSource": "Adresse de l'annonce :",
-    "reportLink": "Signaler l'annonce",
     "share": {
       "share": "Partager",
       "copyLink": "Copier le lien",
@@ -3197,6 +3196,21 @@
       "message": "Envoyer un message",
       "messageShort": "Message",
       "messageHint": "Votre message arrive dans la messagerie Aalan du vendeur. Ni votre e-mail ni votre numéro ne lui sont transmis.",
+      "conversation": "Voir la conversation",
+      "conversationShort": "Conversation",
+      "conversationHint": "Vous avez déjà écrit au vendeur : la conversation reprend là où vous l'avez laissée.",
+      "status": {
+        "offerAccepted": "Offre acceptée à {amount}",
+        "offerOpen": "Votre offre de {amount} attend la réponse du vendeur",
+        "offerCountered": "Le vendeur vous propose {amount}",
+        "appointment": {
+          "meeting": "Rendez-vous confirmé : {day} à {time}",
+          "visit": "Visite confirmée : {day} à {time}",
+          "test_drive": "Essai confirmé : {day} à {time}",
+          "pickup": "Remise confirmée : {day} à {time}",
+          "check_in": "Arrivée confirmée : {day} à {time}"
+        }
+      },
       "testDrive": "Demander un essai",
       "testDriveShort": "Essai",
       "testDriveHint": "Écrivez au vendeur, puis proposez-lui vos créneaux dans la conversation.",
@@ -3206,6 +3220,7 @@
       "signIn": "Se connecter",
       "own": "C'est votre annonce. Les acheteurs voient ici les boutons pour vous contacter.",
       "manage": "Gérer mes annonces",
+      "edit": "Modifier l'annonce",
       "errors": {
         "reveal_not_allowed": "Les numéros s'affichent pour les comptes créés depuis plus de 24 heures, avec une adresse e-mail confirmée. Confirmez votre adresse ou réessayez demain.",
         "listing_unavailable": "Cette annonce n'est plus en ligne : son numéro ne s'affiche plus.",
@@ -3407,6 +3422,11 @@
       "feesIncluded": "Inclus dans le prix",
       "feesIncludedAmount": "{amount}, inclus dans le prix",
       "feesNone": "Sans frais pour le client",
+      "feesOnTopRent": "En plus du loyer, à la charge du locataire",
+      "feesOnTopRentAmount": "{amount} en plus du loyer, à la charge du locataire",
+      "feesIncludedRent": "Inclus dans le loyer",
+      "feesIncludedRentAmount": "{amount}, inclus dans le loyer",
+      "feesNoneRent": "Sans frais pour le locataire",
       "offPlan": "Vente sur plan",
       "offPlanYes": "Oui (VEFA)",
       "delivery": "Livraison prévue en {year}",
@@ -3495,7 +3515,6 @@
     "roleBusiness": "Professionnel",
     "pro": "Pro",
     "memberSince": "Membre depuis {date}",
-    "reportLink": "Signaler ce profil",
     "listingsTitle": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
     "emptyTitle": "Aucune annonce en ligne pour le moment",
     "emptyBody": "Les prochaines annonces de {name} apparaîtront ici.",
@@ -4979,7 +4998,6 @@
     "label": "Boutique professionnelle",
     "verified": "Boutique vérifiée",
     "verifiedNote": "Aalan a vérifié les identifiants professionnels de cette boutique (ICE, registre). Les ventes se font directement entre vous et la boutique : Aalan n'est pas partie à la vente et ne garantit pas les produits. La boutique reste tenue de ses obligations de vendeur professionnel envers les consommateurs (loi n° 31-08 sur la protection du consommateur).",
-    "reportLink": "Signaler la boutique",
     "about": "Présentation",
     "meta": {
       "title": "{name}, boutique à {city}",

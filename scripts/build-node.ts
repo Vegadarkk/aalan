@@ -49,7 +49,7 @@ await build({
   // so do the P0 drill (phase 6 D16): `node dist/worker/alert-drill.mjs`, and the load test data
   // set (D17): `node dist/worker/seed-loadtest.mjs`, its search-only generator
   // (`node dist/worker/load-search.mjs`), and the staging demo listings:
-  // `node dist/worker/seed-demo.mjs`.
+  // `node dist/worker/seed-demo.mjs`, and the staging test listings' photos (`listing-photos.mjs`).
   entryPoints: {
     "worker/index": "src/worker/index.ts",
     "worker/reindex-search": "scripts/reindex-search.ts",
@@ -58,6 +58,7 @@ await build({
     "worker/seed-loadtest": "scripts/seed-loadtest.ts",
     "worker/load-search": "scripts/load-search.ts",
     "worker/seed-demo": "scripts/seed-demo.ts",
+    "worker/listing-photos": "scripts/listing-photos.ts",
   },
   packages: "external",
   // The web server revalidates ISR pages itself; Node cannot import "next/cache" from the worker.
@@ -65,7 +66,7 @@ await build({
 });
 
 const worker = "dist/worker/index.mjs";
-const { fileList, warnings } = await nodeFileTrace([worker, "dist/worker/reindex-search.mjs", "dist/worker/search-setup.mjs", "dist/worker/alert-drill.mjs", "dist/worker/seed-loadtest.mjs", "dist/worker/load-search.mjs", "dist/worker/seed-demo.mjs"], { base: root });
+const { fileList, warnings } = await nodeFileTrace([worker, "dist/worker/reindex-search.mjs", "dist/worker/search-setup.mjs", "dist/worker/alert-drill.mjs", "dist/worker/seed-loadtest.mjs", "dist/worker/load-search.mjs", "dist/worker/seed-demo.mjs", "dist/worker/listing-photos.mjs"], { base: root });
 for (const warning of warnings) {
   // Expected: optional dependencies that are not installed, and non-JS assets (proto LICENSE files).
   if (!/Cannot find module|Failed to resolve dependency|Failed to parse/.test(warning.message)) console.warn(`trace: ${warning.message}`);

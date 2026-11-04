@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Container } from "@/components/layout/container";
 import { quietLinkClassName, textLinkClassName } from "@/components/ui/text-link";
 import { Link } from "@/i18n/navigation";
+import { PrintSource } from "@/components/print/print-source";
 import type { Inline, MdBlock } from "@/lib/legal/markdown";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,8 @@ export interface LegalPageProps {
   archive?: { version: string; from: string; replacedOn: string; href: string }[];
   /** This is an earlier version: until when it applies, and the current text. */
   archived?: { version: string; replacedOn: string; inForce: boolean; currentHref: string };
+  /** The page's path (/fr/legal/cgu), printed under the version line. */
+  path?: string;
 }
 
 /** French typography: no line break before « : ; ! ? » or after «. */
@@ -206,7 +209,7 @@ function VersionsNote({ upcoming, archive, archived }: Pick<LegalPageProps, "upc
   );
 }
 
-export function LegalPage({ blocks, language, translated, frenchOnly, provisional = false, upcoming, archive, archived }: LegalPageProps) {
+export function LegalPage({ blocks, language, translated, frenchOnly, provisional = false, upcoming, archive, archived, path }: LegalPageProps) {
   const t = useTranslations("Legal");
   const french = language === "fr";
   const titleIndex = blocks.findIndex((block) => block.type === "heading" && block.level === 1);
@@ -227,6 +230,8 @@ export function LegalPage({ blocks, language, translated, frenchOnly, provisiona
             <InlineView nodes={versionLine.children} french={french} />
           </p>
         ) : null}
+        {/* On paper: where the text comes from, beside its version and date (audit zone 8, impression 3). */}
+        {path ? <PrintSource label={t("printSource")} path={path} className="mt-1 text-foreground-muted" /> : null}
       </header>
       {provisional || translated || frenchOnly ? (
         <aside className="mt-6 flex max-w-[68ch] flex-col gap-1 border-s-4 border-featured bg-surface-muted px-4 py-3 text-sm">

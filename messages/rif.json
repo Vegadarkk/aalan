@@ -162,6 +162,7 @@
     "frenchPrevails": "Iḍrisen n lqanun : d tafransist i yettwaḥsaben.",
     "contents": "Ayen yellan",
     "backToTop": "Ɣer ufella n tasna",
+    "printSource": "Adres n tasna:",
     "frenchOnly": "Aḍris-a s tefransist kan i yella ar dǧa. D netta i yettwaḥsaben.",
     "upcomingTitle": "Nnusxa tamaynut ad tebdu deg {date}",
     "upcomingBody": "Ar ass-nni, nnusxa {version} ad teqqim tetteddu. I uɛeḍḍu i yettwaselɣen qell zi 30 n wussan zzat n wass-nni, ad teqqim ar ass i d-yuran deg usselɣu nnes.",
@@ -3081,6 +3082,7 @@
     "home": "Tasna tamezwarut",
     "breadcrumb": "Abrid n tsniwin",
     "sellerLabel": "Amzenzu d umsawal",
+    "printSource": "Adres n annonce:",
     "reportLink": "Smekti x annonce",
     "share": {
       "share": "Bḍu",

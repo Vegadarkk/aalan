@@ -1593,3 +1593,106 @@ html[data-welcome~="door"] .welcome-glints {
   }
 }
 /* ── end micro-animations ── */
+
+/*
+ * Paper (audit zone 8, impression 3: the CGU printed on 37 A4 pages with the header, the menus and
+ * the 182-link footer). Only the page's own content prints: everything outside #main (header, CGU
+ * band, footer, floating buttons, banners, toasts, dialogs) steps aside, and inside it the menus,
+ * forms, ads, controls and the table of contents. Black on white whatever the theme, the text on
+ * the whole width, headings kept with what follows. A listing prints its first photo only; pages
+ * add `print:hidden` for their own screen-only parts and PrintSource for their address.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 14mm 16mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10pt;
+    line-height: 1.4;
+    color-scheme: light;
+  }
+  body *:not(:has(#main), #main, #main *) {
+    display: none !important;
+  }
+  #main {
+    min-height: 0 !important;
+    display: block !important;
+  }
+  #main * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  #main :is(nav, form, [data-ad-slot], [role="dialog"], [data-testid="contact-bar"], .fixed, a[href="#"], a[href="#signaler"]),
+  #main button:not([data-testid="gallery"] button) {
+    display: none !important;
+  }
+  /* Text on the whole width of the paper (68ch columns doubled the CGU's page count). */
+  #main [class*="max-w-"] {
+    max-width: none !important;
+  }
+  #main a {
+    text-decoration: underline;
+  }
+  /* Long texts (legal pages): a book's density rather than a screen's (16 px, 1.625, 1 rem gaps). */
+  #main article {
+    gap: 0.4rem !important;
+    line-height: 1.4 !important;
+  }
+  #main article :is(ul, ol) {
+    gap: 0.15rem !important;
+  }
+  #main article h2 {
+    margin-top: 0.9rem !important;
+    font-size: 1.2rem !important;
+  }
+  #main article h3 {
+    margin-top: 0.3rem !important;
+    font-size: 1.05rem !important;
+  }
+  #main h1 {
+    font-size: 1.6rem !important;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+  p,
+  li {
+    orphans: 3;
+    widows: 3;
+  }
+  tr,
+  img,
+  li {
+    break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
+  }
+  /* A listing: its first photo, at a sensible size; no thumbnails, arrows or counters. */
+  [data-testid="gallery"] :is(li:not(:first-child), [aria-hidden="true"]),
+  [data-testid="gallery"] > ul,
+  [data-testid="gallery"] > div > button {
+    display: none !important;
+  }
+  [data-testid="gallery"] {
+    max-width: 110mm;
+    margin-bottom: 4mm;
+  }
+  [data-testid="gallery"] > div > ul {
+    overflow: visible !important;
+    display: block !important;
+  }
+  [data-testid="gallery"] li {
+    position: relative;
+    width: 100% !important;
+  }
+}

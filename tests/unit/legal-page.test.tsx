@@ -14,11 +14,11 @@ import { renderTemplate } from "@/lib/legal/template";
 import { legalScope } from "@/lib/legal/values";
 import { archivedVersionNote, currentVersionNotes } from "@/lib/legal/versions";
 
-async function html(locale: Locale, markdown: string, props: { language?: "fr" | "ar"; provisional?: boolean } & Pick<LegalPageProps, "upcoming" | "archive" | "archived"> = {}): Promise<string> {
+async function html(locale: Locale, markdown: string, props: { language?: "fr" | "ar"; provisional?: boolean } & Pick<LegalPageProps, "upcoming" | "archive" | "archived" | "path"> = {}): Promise<string> {
   const language = props.language ?? (locale === "ar" ? "ar" : "fr");
   return renderToStaticMarkup(
     <NextIntlClientProvider locale={locale} messages={await loadMessages(locale)} timeZone="Africa/Casablanca">
-      <LegalPage blocks={parseMarkdown(markdown)} language={language} translated={language === "ar"} frenchOnly={locale !== "fr" && language === "fr"} provisional={props.provisional} upcoming={props.upcoming} archive={props.archive} archived={props.archived} />
+      <LegalPage blocks={parseMarkdown(markdown)} language={language} translated={language === "ar"} frenchOnly={locale !== "fr" && language === "fr"} provisional={props.provisional} upcoming={props.upcoming} archive={props.archive} archived={props.archived} path={props.path} />
     </NextIntlClientProvider>,
   );
 }
@@ -38,6 +38,13 @@ describe("LegalPage", () => {
     // One list for phones (folded) and wide screens (fold-open-lg): the entries are not repeated.
     expect(out.match(/<a href="#role"/g)).toHaveLength(1);
     expect(out).toMatch(/<details class="[^"]*fold-open-lg/);
+  });
+
+  it("prints its address under the version line, on paper only (audit zone 8, impression 3)", async () => {
+    const out = await html("fr", page("cgu", "fr"), { path: "/fr/legal/cgu" });
+    // The server render carries the path; the browser puts its own host in front once hydrated.
+    expect(out).toContain('<p class="hidden text-sm print:block mt-1 text-foreground-muted">Adresse de la page : <span dir="ltr">/fr/legal/cgu</span></p>');
+    expect(await html("fr", page("cgu", "fr"))).not.toContain("Adresse de la page");
   });
 
   it("dates the Arabic text in Arabic and notes that French prevails", async () => {

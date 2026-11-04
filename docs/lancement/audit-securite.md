@@ -35,7 +35,7 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 |---|---|---|---|---|
 | 10038 CSP absente | Moyen | 5 | pages du staging | Voulu : le staging envoie sa CSP en `Report-Only` (§6), d'où l'info « CSP report-only » sur les mêmes 5 pages. En production elle est appliquée, et la règle y est `FAIL`. |
 | 10202 Pas de jeton anti-CSRF | Moyen | 5 | formulaires | Faux positif : la protection CSRF passe par un en-tête signé et l'Origin exact, pas par un champ de formulaire (règle ignorée). |
-| 10044 Grosse redirection | Bas | 9 | pages du compte sans session (`/fr/deposer`, `/fr/messages`…) | Corrigé dans la PR_NEXT : la redirection vers la connexion portait toute la page de connexion (~360 Ko), ce qui permettait d'amplifier les requêtes anonymes. Le proxy redirige maintenant directement (307, corps vide). |
+| 10044 Grosse redirection | Bas | 9 | pages du compte sans session (`/fr/deposer`, `/fr/messages`…) | Corrigé dans la PR #382 : la redirection vers la connexion portait toute la page de connexion (~360 Ko), ce qui permettait d'amplifier les requêtes anonymes. Le proxy redirige maintenant directement (307, corps vide). |
 | 90004 COOP | Bas | 4 | `/fr`, `/fr/connexion`… | Voulu : `same-origin-allow-popups`, exigé par la connexion Google (§6). |
 | 90004 COEP | Bas | 4 | pages HTML | Voulu : `require-corp` bloquerait les photos du domaine média et les annonces. |
 | 90004 CORP | Bas | 2 | `/cdn-cgi/styles/*` | Fichiers de Cloudflare, hors de l'application. |
@@ -75,8 +75,8 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 
 | Id | Niveau | Constat | Recommandation |
 |---|---|---|---|
-| C-4 | Moyen | Deux comptes neufs (appareil et IP différents) suffisaient au signal « multi » d'un signalement : un signalement P0 « menace » restreignait un compte et masquait ses annonces ; un vendeur et un faux compte pouvaient masquer un avis négatif. | Choix du propriétaire (4 nov.) : seuls les signaleurs vérifiés comptent, et un profil ou un avis n'est masqué qu'après revue humaine. PR_NEXT. |
-| C-3 | Moyen | Les photos des annonces refusées ou masquées restaient publiques jusqu'à 12 mois (seules les annonces supprimées passaient en privé), avec un cache navigateur d'un an. | Choix du propriétaire (4 nov.) : photos privées et purgées du cache Cloudflare, cache raccourci. PR_NEXT. |
+| C-4 | Moyen | Deux comptes neufs (appareil et IP différents) suffisaient au signal « multi » d'un signalement : un signalement P0 « menace » restreignait un compte et masquait ses annonces ; un vendeur et un faux compte pouvaient masquer un avis négatif. | Choix du propriétaire (4 nov.) : seuls les signaleurs vérifiés comptent, et un profil ou un avis n'est masqué qu'après revue humaine. PR #382. |
+| C-3 | Moyen | Les photos des annonces refusées ou masquées restaient publiques jusqu'à 12 mois (seules les annonces supprimées passaient en privé), avec un cache navigateur d'un an. | Choix du propriétaire (4 nov.) : photos privées et purgées du cache Cloudflare, cache raccourci. PR #382. |
 | P-3 | Moyen | Le badge « agrément contrôlé » de location de voitures est accordé par l'IA seule ; la référence comparée est saisie par la boutique. | Confirmation par un modérateur. Le #350 exige déjà l'ICE pour le badge. Décision n° 5 du propriétaire : à revoir. |
 | D-8 | Bas | `infra/targets.json` publie des identifiants internes (OCID, comptes et zones Cloudflare, tags Access, comptes Stripe) dans le dépôt public. Ce ne sont pas des secrets : aucun ne donne accès seul. | Accepter : les retirer maintenant ne les dépublie pas (forks, historique). Le dépôt redevient privé à l'ouverture. |
 

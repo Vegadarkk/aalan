@@ -3,6 +3,7 @@ import { canonicalSearchParams, effectiveSort, type CriterionFilter, type Search
 import { carModelById } from "@/config/car-models";
 import { CAR_WORDS, FILLER_WORDS, PLACE_WORDS, brandPhrases, lexiconPhrases, type Entry, type PhraseEntry, type ThingEntry } from "./lexicon";
 import { findAmounts, unreadPriceCues } from "./prices";
+import { findRoomCounts } from "./rooms";
 import { keptText, tokenForms, tokenizeQuery, type Token } from "./tokens";
 
 // "Chercher en parlant" (Carte vivante, lot 4): a typed sentence turned into the search filters it
@@ -228,6 +229,23 @@ function vehicleCriteria(target: Resolved, tokens: readonly Token[], brands: rea
   return out;
 }
 
+/** Rooms and bedrooms of a real-estate target ("2 chambres", "3 pièces", "F3"), where it filters them (audit zone 2 P3-5). */
+function propertyCriteria(target: Resolved, tokens: readonly Token[], taken: Set<number>): Understood[] {
+  if (target.category !== "immobilier") return [];
+  const filters = new Set(searchCriteria(target.category, target.subcategory).map((criterion) => criterion.id));
+  const out: Understood[] = [];
+  for (const found of findRoomCounts(tokens, taken)) {
+    const criterion = criterionById(found.id);
+    if (!filters.has(found.id) || criterion?.type !== "number") continue;
+    const inBounds = (value: number | undefined) => value === undefined || (value >= (criterion.min ?? 0) && value <= (criterion.max ?? 0));
+    if (!inBounds(found.min) || !inBounds(found.max)) continue;
+    for (const at of found.tokens) taken.add(at);
+    const bounds = { ...(found.min !== undefined ? { min: found.min } : {}), ...(found.max !== undefined ? { max: found.max } : {}) };
+    out.push({ key: `criterion:${found.id}`, label: labelOf(tokens, found.tokens), patch: { criteria: { [found.id]: { kind: "range", ...bounds } } }, tokens: found.tokens, content: true, needsCategory: true });
+  }
+  return out;
+}
+
 const span = (match: { start: number; length: number }) => Array.from({ length: match.length }, (_, offset) => match.start + offset);
 
 function labelOf(tokens: readonly Token[], indices: readonly number[]): string {
@@ -341,6 +359,7 @@ export function interpretQuery(input: string): Interpretation {
       }
     }
     understood.push(...vehicleCriteria(target, tokens, brands, models, taken));
+    understood.push(...propertyCriteria(target, tokens, taken));
   }
 
   // Where.

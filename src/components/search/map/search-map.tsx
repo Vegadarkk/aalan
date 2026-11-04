@@ -61,8 +61,18 @@ function pinElement(listing: MapListing, label: string): HTMLButtonElement {
   price.className = "search-pin-price";
   price.textContent = listing.pin;
   element.append(price);
+  if (!listing.featured) {
+    // A price tag points at its spot (audit zone 2 P3-6): never mistaken for a count bubble.
+    const tail = document.createElement("span");
+    tail.className = "search-pin-tail";
+    tail.setAttribute("aria-hidden", "true");
+    element.append(tail);
+  }
   return element;
 }
+
+/** Half a price tag's height, its point included (globals.css: 30 px tag, 5 px point). */
+const TAG_HALF_HEIGHT_PX = 18;
 
 /** The clustered source holds the organic results; the À la Une arches are placed on their own. */
 const clustered = (listings: readonly MapListing[]) => pinsCollection(listings.filter((listing) => !listing.featured));
@@ -105,7 +115,7 @@ export default function SearchMap({ onReady }: SearchMapProps) {
   const rtl = isRtl(locale);
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const markers = useRef(new Map<string, { marker: Marker; element: HTMLButtonElement }>());
+  const markers = useRef(new Map<string, { marker: Marker; element: HTMLButtonElement; anchor: "center" | "bottom" }>());
   // A count bubble opened at the last zoom: its listings fanned out around it.
   const fan = useRef<{ key: string; ids: string[] } | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -219,12 +229,14 @@ export default function SearchMap({ onReady }: SearchMapProps) {
       // A marker: the button in a holder, at a spot, moved by a pixel offset when fanned out of a bubble.
       // MapLibre places the marker with `transform`: a `scale` on that same element would scale its
       // offset too (the pin leaps away from the pointer, then back). The pin grows inside a holder.
+      // A price tag stands on its point (`data-tag`: the holder's foot is the point's tip).
       const place = (key: string, element: HTMLButtonElement, at: [number, number], anchor: "center" | "bottom", offset: [number, number] = [0, 0]) => {
         const holder = document.createElement("div");
         holder.className = "search-marker";
+        if (element.querySelector(".search-pin-tail")) holder.dataset.tag = "";
         holder.append(element);
         const marker = new Marker({ element: holder, anchor, offset }).setLngLat(at).addTo(instance);
-        markers.current.set(key, { marker, element });
+        markers.current.set(key, { marker, element, anchor });
       };
       const pinFor = (listing: MapListing): HTMLButtonElement => {
         const key = listing.id;
@@ -241,9 +253,11 @@ export default function SearchMap({ onReady }: SearchMapProps) {
             current.select(key, element);
             return;
           }
-          // Phones: the sheet comes up to the row.
+          // Tablets: the side panel opens on the row; phones: the sheet comes up to it.
           current.highlight(key);
-          if (current.snap === "peek") current.setSnap("half");
+          if (current.side) {
+            if (current.collapsed) current.setCollapsed(false);
+          } else if (current.snap === "peek") current.setSnap("half");
           window.setTimeout(() => {
             document.querySelector(`[data-map-row][data-listing-id="${CSS.escape(key)}"]`)?.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
           }, 320);
@@ -261,7 +275,7 @@ export default function SearchMap({ onReady }: SearchMapProps) {
           if (markers.current.has(key)) continue;
           const listing = byId.get(key);
           if (!listing) continue;
-          place(key, pinFor(listing), [lng, lat], listing.featured ? "bottom" : "center");
+          place(key, pinFor(listing), [lng, lat], "bottom");
           continue;
         }
         const count = props.point_count ?? 0;
@@ -276,7 +290,8 @@ export default function SearchMap({ onReady }: SearchMapProps) {
             seen.add(leafKey);
             if (markers.current.has(leafKey)) return;
             const angle = -Math.PI / 2 + (2 * Math.PI * index) / leaves.length;
-            place(leafKey, pinFor(listing), [lng, lat], "center", [Math.round(radius * Math.cos(angle)), Math.round(radius * Math.sin(angle))]);
+            // The tag's middle on the ring (it stands on its point: half its height lower).
+            place(leafKey, pinFor(listing), [lng, lat], "bottom", [Math.round(radius * Math.cos(angle)), Math.round(radius * Math.sin(angle)) + TAG_HALF_HEIGHT_PX]);
           });
         }
         const existing = markers.current.get(key);
@@ -332,11 +347,13 @@ export default function SearchMap({ onReady }: SearchMapProps) {
       type Box = { left: number; right: number; top: number; bottom: number };
       const obstacles: Box[] = [...markers.current.values()]
         .filter(({ element }) => !element.classList.contains("search-pin-featured"))
-        .map(({ marker, element }) => {
+        .map(({ marker, element, anchor }) => {
           const at = instance.project(marker.getLngLat()).add(marker.getOffset());
           const halfWidth = element.offsetWidth / 2;
-          const halfHeight = element.offsetHeight / 2;
-          return { left: at.x - halfWidth, right: at.x + halfWidth, top: at.y - halfHeight, bottom: at.y + halfHeight };
+          // A price tag stands on its point (the holder's height, the point included); a bubble is centred.
+          const height = anchor === "bottom" ? (element.parentElement?.offsetHeight ?? element.offsetHeight) : element.offsetHeight;
+          const top = anchor === "bottom" ? at.y - height : at.y - height / 2;
+          return { left: at.x - halfWidth, right: at.x + halfWidth, top, bottom: top + height };
         });
       for (const { marker, element } of markers.current.values()) {
         if (!element.classList.contains("search-pin-featured")) continue;
@@ -405,9 +422,11 @@ export default function SearchMap({ onReady }: SearchMapProps) {
     // Fit inside the room the panels leave (fitBounds adds its padding to the map's own).
     const current = latest.current.state;
     const wide = current?.desktop ?? true;
+    const side = current?.side ?? true;
     instance.setPadding(
       mapPadding({
-        desktop: wide,
+        side,
+        narrow: side && !wide,
         rtl: latest.current.rtl,
         collapsed: current?.collapsed ?? false,
         detail: wide && Boolean(current?.selected),
@@ -451,15 +470,16 @@ export default function SearchMap({ onReady }: SearchMapProps) {
 
   // ---- The visible room left by the panels, sheet and toolbar.
   const desktop = state?.desktop ?? true;
+  const side = state?.side ?? true;
   const collapsed = state?.collapsed ?? false;
   const detail = state?.selected !== null && state?.selected !== undefined && desktop;
   const snap = state?.snap ?? "peek";
   useEffect(() => {
     const instance = mapRef.current;
     if (!instance || !loaded) return;
-    const padding = mapPadding({ desktop, rtl, collapsed, detail, snap, viewportHeight: window.innerHeight });
+    const padding = mapPadding({ side, narrow: side && !desktop, rtl, collapsed, detail, snap, viewportHeight: window.innerHeight });
     instance.easeTo({ padding, duration: reducedMotion() ? 0 : 300 });
-  }, [loaded, desktop, rtl, collapsed, detail, snap]);
+  }, [loaded, desktop, side, rtl, collapsed, detail, snap]);
 
   // ---- The pin under the pointer and the open one.
   const highlighted = state?.highlighted ?? null;
@@ -534,7 +554,7 @@ export default function SearchMap({ onReady }: SearchMapProps) {
         </div>
       ) : null}
       {loaded ? (
-        <div className="search-zoom max-lg:hidden">
+        <div className="search-zoom">
           <button type="button" onClick={() => zoom(1)} aria-label={tMap("zoomIn")} className="search-zoom-button float-card">
             <Plus className="size-5" aria-hidden="true" />
           </button>

@@ -5,7 +5,7 @@ import fr from "../../messages/fr.json";
 import rif from "../../messages/rif.json";
 import { approximatePosition, cityBySlug, MOROCCO_BBOX } from "@/config/regions";
 import { buildMapListings, pinAmount, type MapListingLabels } from "@/components/search/map/map-listings";
-import { mapPadding, DETAIL_PX, PANEL_PX } from "@/components/search/map/map-layout";
+import { mapPadding, DETAIL_PX, NARROW_PANEL_PX, PANEL_PX } from "@/components/search/map/map-layout";
 import { dragHeight, settleSnap, sheetHeights, SHEET_PEEK_PX, stepSnap } from "@/components/search/map/sheet";
 import { defaultView, initialView, mapPossible, rememberView, slowConnection, storedView, viewKey } from "@/components/search/map/view-mode";
 import { CLUSTER_RADIUS_PX, HALO_LAYER, PINS_SOURCE, SEARCH_ZOOM, buildSearchStyle, pinsCollection } from "@/lib/map/search-style";
@@ -324,7 +324,7 @@ describe("starting view", () => {
 
 
 describe("map padding", () => {
-  const base = { desktop: true, rtl: false, collapsed: false, detail: false, snap: "peek" as const, viewportHeight: 800 };
+  const base = { side: true, rtl: false, collapsed: false, detail: false, snap: "peek" as const, viewportHeight: 800 };
 
   it("leaves the list panel and the detail panel out of the framing, mirrored in Arabic", () => {
     expect(mapPadding(base)).toEqual({ top: 140, bottom: 72, left: PANEL_PX + 32, right: 64 });
@@ -333,8 +333,13 @@ describe("map padding", () => {
     expect(mapPadding({ ...base, collapsed: true }).left).toBe(32);
   });
 
+  it("leaves the tablet's narrower side panel out of the framing (audit zone 2 P3-9)", () => {
+    expect(mapPadding({ ...base, narrow: true })).toEqual({ top: 140, bottom: 72, left: NARROW_PANEL_PX + 32, right: 64 });
+    expect(mapPadding({ ...base, narrow: true, rtl: true }).right).toBe(NARROW_PANEL_PX + 32);
+  });
+
   it("keeps the phone map above the sheet", () => {
-    const phone = { ...base, desktop: false, viewportHeight: 844 };
+    const phone = { ...base, side: false, viewportHeight: 844 };
     expect(mapPadding(phone).bottom).toBe(SHEET_PEEK_PX + 16);
     expect(mapPadding({ ...phone, snap: "half" }).bottom).toBe(422 + 16);
     expect(mapPadding({ ...phone, snap: "full" }).bottom).toBe(422 + 16);

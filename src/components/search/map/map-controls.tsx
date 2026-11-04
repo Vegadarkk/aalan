@@ -57,7 +57,7 @@ export function PanelHandle() {
       aria-controls="search-panel"
       onClick={() => setCollapsed(!collapsed)}
       data-testid="panel-handle"
-      className="search-panel-handle float-card max-lg:hidden"
+      className="search-panel-handle float-card max-md:hidden"
     >
       <ChevronLeft className={cn("size-4 transition-transform duration-300 ease-door rtl:-scale-x-100", collapsed && "rotate-180")} aria-hidden="true" />
       <span className="sr-only">{collapsed ? t("expand") : t("collapse")}</span>
@@ -152,7 +152,7 @@ export function SheetHandle() {
       onPointerCancel={onPointerUp}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className="search-sheet-handle lg:hidden"
+      className="search-sheet-handle md:hidden"
     >
       <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-border-strong" />
     </button>
@@ -174,7 +174,7 @@ export function RowsArea({ children, className }: { children: ReactNode; classNa
 
   // A new page of results starts at the top of the list.
   useEffect(() => {
-    // Desktop: the rows scroll; phones: the whole sheet does.
+    // Side panel (tablet, desktop): the rows scroll; phones: the whole sheet does.
     area.current?.scrollTo?.({ top: 0 });
     area.current?.closest(".search-panel")?.scrollTo?.({ top: 0 });
   }, [ids]);

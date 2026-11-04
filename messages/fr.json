@@ -3891,6 +3891,7 @@
     "legend": {
       "label": "Légende de la carte",
       "price": "Prix",
+      "cluster": "Plusieurs annonces",
       "featured": "À la Une · Sponsorisé",
       "today": "Nouveau aujourd'hui",
       "approximate": "Positions approximatives"

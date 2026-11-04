@@ -118,7 +118,8 @@ const NEGATIVES: string[] = [
 
 /** A category may be named, but no number becomes a price, a distance or a sort (a car's mileage or year becomes its criterion). */
 const NO_AMOUNTS: [text: string, q: string][] = [
-  ["appartement 3 pièces", "3 pièces"],
+  // Rooms are read for real estate only (ROOMS below): elsewhere a count of pieces stays words.
+  ["puzzle 1000 pièces", "puzzle 1000 pièces"],
   ["TV 4k 55 pouces", "4k 55 pouces"],
   ["تلفاز 4k", "4k"],
   ["pneus 205/55 R16", "205/55 R16"],
@@ -132,7 +133,7 @@ const NO_AMOUNTS: [text: string, q: string][] = [
   ["voiture plus de 2 ans", "2 ans"],
   ["frigo max 300 litres", "300 litres"],
   ["moto plus de 125 cc", "125 cc"],
-  ["appartement au moins 3 pièces", "3 pièces"],
+  ["vélo 2 places", "2 places"],
   ["سيارة أقل من 100000 كلم", ""],
   // A weak cue is an ordinary word too: it stays.
   ["voiture sous 3 ans", "sous 3 ans"],
@@ -170,11 +171,57 @@ const VEHICLES: [text: string, patch: SearchParams, q: string][] = [
   ["pneu renault", { category: "vehicules", subcategory: "pieces-accessoires", criteria: { "part-type": options("pneus-jantes") } }, "renault"],
 ];
 
+const property = (criteria: Record<string, CriterionFilter>, extra: SearchParams = {}): SearchParams => ({ category: "immobilier", criteria, ...extra });
+const exactly = (value: number): CriterionFilter => ({ kind: "range", min: value, max: value });
+const apartment = options("appartement");
+
+/** Rooms and bedrooms of a real-estate search (audit zone 2 P3-5). */
+const ROOMS: [text: string, patch: SearchParams, q: string][] = [
+  ["appartement à louer à Rabat 2 chambres", property({ "property-type": apartment, bedrooms: exactly(2) }, { subcategory: "location", city: "rabat", region: "04" }), ""],
+  ["appartement 3 pièces", property({ "property-type": apartment, rooms: exactly(3) }), ""],
+  ["appartement F3 Casablanca", property({ "property-type": apartment, rooms: exactly(3) }, { city: "casablanca", region: "06" }), ""],
+  ["appartement au moins 3 pièces", property({ "property-type": apartment, rooms: { kind: "range", min: 3 } }), ""],
+  ["villa à vendre 4 chambres et plus", property({ "property-type": options("villa-riad"), bedrooms: { kind: "range", min: 4 } }, { subcategory: "vente" }), ""],
+  ["appartement moins de 3 chambres", property({ "property-type": apartment, bedrooms: { kind: "range", max: 3 } }), ""],
+  ["appartement entre 2 et 3 chambres", property({ "property-type": apartment, bedrooms: { kind: "range", min: 2, max: 3 } }), ""],
+  ["appartement deux chambres à coucher et salon", property({ "property-type": apartment, bedrooms: exactly(2) }), "salon"],
+  ["appartement 4 pièces 2 chambres", property({ "property-type": apartment, rooms: exactly(4), bedrooms: exactly(2) }), ""],
+  ["maison neuf pièces", property({ "property-type": options("maison"), rooms: exactly(9) }), ""],
+  ["villa vacances 3 chambres Agadir", property({ "property-type": options("villa-riad"), bedrooms: exactly(3) }, { subcategory: "location-vacances", city: "agadir", region: "09" }), ""],
+  // Arabic and Darija.
+  ["شقة 3 غرف للكراء", property({ "property-type": apartment, bedrooms: exactly(3) }, { subcategory: "location" }), ""],
+  ["شقة غرفتين", property({ "property-type": apartment, bedrooms: exactly(2) }), ""],
+  ["شقة جوج بيوت", property({ "property-type": apartment, bedrooms: exactly(2) }), ""],
+  ["ch9a 2 byout f casa", property({ "property-type": apartment, bedrooms: exactly(2) }, { city: "casablanca", region: "06" }), ""],
+  // A count the filter cannot hold, or an offer without the filter, stays words.
+  ["appartement 80 pièces", property({ "property-type": apartment }), "80 pièces"],
+  ["colocation 2 chambres", { category: "immobilier", subcategory: "colocation" }, "2 chambres"],
+  ["villa vacances 3 pièces", property({ "property-type": options("villa-riad") }, { subcategory: "location-vacances" }), "3 pièces"],
+];
+
 describe("interpretQuery", () => {
   it.each(VEHICLES)("reads the vehicle in %j", (text, patch, q) => {
     const result = interpretQuery(text);
     expect(result.patch).toEqual(canonicalSearchParams(patch));
     expect(result.q).toBe(q);
+  });
+
+  it.each(ROOMS)("reads the rooms in %j", (text, patch, q) => {
+    const result = interpretQuery(text);
+    expect(result.patch).toEqual(canonicalSearchParams(patch));
+    expect(result.q).toBe(q);
+  });
+
+  it("leaves a room count out of a search with no real estate", () => {
+    expect(interpretQuery("2 chambres").understood).toEqual([]);
+    expect(interpretQuery("voiture 5 places").patch.criteria).toBeUndefined();
+  });
+
+  it("gives the room words back when the rooms are removed", () => {
+    const applied = applyInterpretation({ q: "appartement 2 chambres" }, interpretQuery("appartement 2 chambres"));
+    const bedrooms = applied?.items.find((item) => item.key === "criterion:bedrooms");
+    expect(bedrooms?.words).toBe("2 chambres");
+    expect(bedrooms?.without).toEqual({ q: "2 chambres", raw: true, category: "immobilier", criteria: { "property-type": apartment } });
   });
 
   it("gives the words back when the category of a brand is removed", () => {
@@ -218,8 +265,8 @@ describe("interpretQuery", () => {
   });
 
   it("names a property type without an offer at the category level", () => {
-    expect(interpretQuery("appartement 3 pièces").patch).toEqual({ category: "immobilier", criteria: opts("property-type", "appartement") });
-    expect(interpretQuery("appartement 3 pièces").q).toBe("3 pièces");
+    expect(interpretQuery("appartement lumineux").patch).toEqual({ category: "immobilier", criteria: opts("property-type", "appartement") });
+    expect(interpretQuery("appartement lumineux").q).toBe("lumineux");
   });
 
   it("keeps everything when two categories are named", () => {

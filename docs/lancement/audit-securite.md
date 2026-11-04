@@ -8,7 +8,7 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 - **Scan ZAP actif du staging** : aucune alerte haute, aucune règle `FAIL` déclenchée.
 - **Revue manuelle** (4 revues Opus en parallèle : comptes et rôles, paiements et Pro, contenus et
   accès aux objets, plateforme) : aucune faille critique ni haute. 9 moyennes, 19 basses et 5 notes ;
-  15 sont corrigées dans la PR #347, les autres sont justifiées ci-dessous ou attendent une
+  15 sont corrigées dans la PR #347 et 3 dans la PR #363, les autres sont justifiées ci-dessous ou attendent une
   décision.
 - **HTTP Observatory** : à mesurer sur la production à l'ouverture (`scripts/launch-check.ts`).
 
@@ -50,6 +50,9 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 | D-6 | Bas | `/api/health` public et non limité, 4 appels Valkey/Meilisearch par requête. | Résultat mis en cache 5 s. |
 | D-7 | Bas | `/api/csp-report` : fenêtre d'échantillonnage partagée par tous, champs journalisés non typés. | Limite par IP (`csp.report.ip`) et champs typés et tronqués. |
 | D-9 | Bas | `.dockerignore` sans une partie des motifs de secrets. | Motifs de `.gitignore` repris. |
+| A-3 | Bas | Changer de mot de passe n'exigeait pas Turnstile après 20 échecs par heure sur le compte (test de mots de passe avec une session volée). | Changement refusé (429) jusqu'à la fin de l'heure ; la réinitialisation par mail reste possible. PR #363. |
+| A-5 | Bas | Les limites d'inscription « par appareil » ne tiennent pas face à un script (un cookie neuf à chaque requête). | Limite quotidienne par IP (`signup.ip.day`, 150/jour, réglable dans `config/abuse`). PR #363. |
+| D-5 | Bas | Un paramètre de requête au hasard contournait le cache sur l'accueil et les pages publiques non comptées (aide, textes légaux, tarifs…). | Redirection 308 vers l'adresse sans paramètre sur ces pages, comme pour les catégories. PR #363. |
 | — | — | Un test unitaire a appelé l'API Stripe avec une clé du shell cloud qui n'appartient pas à Aalan (lecture, clé expirée, refus 401, rien modifié). | Les tests unitaires effacent les variables de secrets au démarrage (`tests/unit/setup-env.ts`). |
 
 ## 3. Constats non corrigés
@@ -68,15 +71,12 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 | Id | Niveau | Constat | Suite |
 |---|---|---|---|
 | C-7 | Bas | Un avis est « vérifié » dès une seule réponse du vendeur, sans âge de compte ni téléphone. | Avec C-4 (même règle de confiance). |
-| A-3 | Bas | Changer de mot de passe n'exige pas Turnstile après 20 échecs par heure sur le compte. | Il faut déjà une session volée ; à ajouter avec la prochaine passe comptes. |
-| A-5 | Bas | Les limites d'inscription « par appareil » ne tiennent pas face à un script (un cookie neuf à chaque requête). | Les limites par IP et Turnstile restent ; limite quotidienne par IP à ajouter. |
 | P-5 | Bas | Un litige gagné sur un pack ne rend pas les crédits. | Correction manuelle par l'équipe d'ici là (rare). |
 | P-6 | Bas | Retrait puis litige total : le compte n'est ni débité ni gelé. | Alerte RevenueCat ; à coder avant l'ouverture des ventes. |
 | P-7 | Bas | Une page de paiement reste payable 24 h après la suspension d'une boutique. | Expirer les sessions ouvertes à la suspension, avant l'ouverture des ventes. |
 | P-8 | Info | Les passes ne se terminent pas tant que les ventes sont fermées. | Voulu. |
 | D-2 | Bas | Le DSN Sentry public (navigateur) permet d'épuiser le quota mensuel. | Limites par clé et protection contre les pics dans Sentry (Nav). |
 | D-3 | Bas | Les hôtes AdSense (dont un joker) restent dans le `script-src` des pages à CSP par hash. | Ne gêne que si une injection HTML existe déjà ; à resserrer avec l'activation d'AdSense. |
-| D-5 | Bas | Paramètres de requête et faux cookie de session contournent le cache sur quelques pages publiques non comptées. | Limite Cloudflare globale (300 req/10 s par IP) ; redirection des requêtes à paramètres à ajouter. |
 | H-1 à H-4 | Info | Défense en profondeur : routes aux extensions statiques hors proxy, GET à effet de bord (lu, budget de lecture), pas de connexion récente pour les actions sensibles du personnel (Access vérifié à chaque requête), délai uniforme de 600 ms à l'inscription. | Aucun exploit aujourd'hui. |
 
 ## 4. Contrôles vérifiés et conformes

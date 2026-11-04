@@ -122,14 +122,14 @@ async function offerSteps(page: Page, input: { title: string; description: strin
   await expect(page.getByRole("heading", { level: 1, name: "Salaire", exact: true })).toBeVisible();
   const salary = page.getByRole("textbox", { name: /Salaire mensuel brut/ });
   const toAgree = page.getByRole("switch", { name: "Salaire à convenir" });
-  await expect(toAgree).toBeChecked();
-  await expect(salary).toBeDisabled();
-  await toAgree.click();
+  // « Salaire à convenir » is the seller's tick, off by default; it never locks the box (zone 3 P3-4).
+  await expect(toAgree).not.toBeChecked();
   await expect(salary).toBeEnabled();
   await salary.fill("4500");
   await expect(salary).toHaveValue(/4\s500/);
   await toAgree.click();
-  await expect(salary).toBeDisabled();
+  await expect(toAgree).toBeChecked();
+  await expect(salary).toBeEnabled();
   await expect(salary).toHaveValue("");
   await next(page);
 

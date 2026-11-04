@@ -14,6 +14,7 @@ vi.mock("@/lib/rate-limit/limiter", { spy: true });
 // roster is shared with other runs, so "the last admin" cannot be arranged in Firestore itself).
 vi.mock("@/lib/db/repositories/staff", { spy: true });
 
+import { POST as postInvitation } from "@/app/api/admin/staff/[uid]/invitation/route";
 import { DELETE as deleteStaff } from "@/app/api/admin/staff/[uid]/route";
 import { GET as getStaff, POST as postStaff } from "@/app/api/admin/staff/route";
 import { POST as postLogin } from "@/app/api/admin/auth/login/route";
@@ -372,6 +373,9 @@ describe("invitation, password and revocation", () => {
     const roster = await readRoster(invitedUid);
     expect(roster).toMatchObject({ uid: invitedUid, email: EMAIL.invited, displayName: "Invitée Test", role: "moderator", invitedBy: uids.admin });
     expect(roster?.revokedAt).toBeUndefined();
+    // Pending until the password is set (audit zone 7 P3-5).
+    expect(roster?.invitedAt).toBeInstanceOf(Date);
+    expect(roster?.activatedAt).toBeUndefined();
 
     expect(vi.mocked(sendMail)).toHaveBeenCalledTimes(1);
     const mail = vi.mocked(sendMail).mock.calls[0]![0];
@@ -385,6 +389,31 @@ describe("invitation, password and revocation", () => {
     expect(url.searchParams.get("mode")).toBe("setPassword");
     oobCode = url.searchParams.get("oobCode") ?? "";
     expect(oobCode.length).toBeGreaterThan(10);
+  });
+
+  const resend = (uid: string, session: Session = admin, access = EMAIL.admin) =>
+    postInvitation(call("POST", `/api/admin/staff/${encodeURIComponent(uid)}/invitation`, { access, cookies: session.cookies, csrf: session.csrf }), ctx({ uid }));
+
+  it("resends the invitation of a pending member (admins only), with a new link", async () => {
+    const before = (await readRoster(invitedUid))?.invitedAt?.getTime() ?? 0;
+    await nextSecond();
+    const response = await resend(invitedUid);
+    expect(response.status).toBe(200);
+    expect(vi.mocked(sendMail)).toHaveBeenCalledTimes(1);
+    const mail = vi.mocked(sendMail).mock.calls[0]![0];
+    expect(mail).toMatchObject({ template: "staffInvite", to: EMAIL.invited, priority: "security" });
+    oobCode = new URL(await actionUrlOf(mail)).searchParams.get("oobCode") ?? "";
+    const roster = await readRoster(invitedUid);
+    expect(roster?.invitedAt?.getTime()).toBeGreaterThan(before);
+    expect(roster?.activatedAt).toBeUndefined();
+    const entries = await db().collection(COLLECTIONS.auditLogs).where("action", "==", "staff.invite_resend").where("target.id", "==", invitedUid).get();
+    expect(entries.size).toBe(1);
+
+    const moderator = await signIn(EMAIL.moderator);
+    expect((await resend(invitedUid, moderator, EMAIL.moderator)).status).toBe(403);
+    expect((await resend("nobody")).status).toBe(404);
+    // An active member (entry older than the pending state included) has nothing to accept.
+    expect((await resend(uids.moderator)).status).toBe(409);
   });
 
   it("refuses to set the password under another Access identity", async () => {
@@ -409,6 +438,9 @@ describe("invitation, password and revocation", () => {
     const response = await postPassword(call("POST", "/api/admin/auth/password", { access: EMAIL.invited, body: { oobCode, password: FIRST_PASSWORD } }), ctx());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ status: "password_set" });
+    // Accepted: no longer pending, nothing to resend.
+    expect((await readRoster(invitedUid))?.activatedAt).toBeInstanceOf(Date);
+    expect((await resend(invitedUid)).status).toBe(409);
 
     // The code is consumed.
     const reused = await postPassword(call("POST", "/api/admin/auth/password", { access: EMAIL.invited, body: { oobCode, password: OTHER_PASSWORD } }), ctx());
@@ -495,7 +527,10 @@ describe("invitation, password and revocation", () => {
     const record = await auth().getUser(invitedUid);
     expect(record.disabled).toBe(false);
     expect(record.customClaims).toEqual({ role: "admin", v: 2 });
-    expect((await readRoster(invitedUid))?.revokedAt).toBeUndefined();
+    const roster = await readRoster(invitedUid);
+    expect(roster?.revokedAt).toBeUndefined();
+    // Pending again until the member sets a password or signs in.
+    expect(roster?.activatedAt).toBeUndefined();
     // A revoked entry given a role again is a re-invitation, not a role change.
     expect((await db().collection(COLLECTIONS.auditLogs).where("action", "==", "staff.role_change").where("target.id", "==", invitedUid).get()).size).toBe(0);
   });

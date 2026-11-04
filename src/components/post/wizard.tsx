@@ -19,6 +19,7 @@ import { parseWizardPath, wizardPath, type WizardScreen } from "@/lib/listings/c
 import { WizardProvider, useWizard } from "@/lib/listings/client/store";
 import { firstIncompleteStep, nextStep, previousStep, stepState, wizardSteps, type StepState } from "@/lib/listings/client/validation";
 import { DoneScreen } from "./done-screen";
+import { StepBlockers } from "./step-blockers";
 import { useSaveErrorMessage, useStepLabel } from "./field-messages";
 import { CategoryStep } from "./steps/category-step";
 import { ContactStep } from "./steps/contact-step";
@@ -260,6 +261,7 @@ function WizardScreens({ nonce }: { nonce?: string }) {
       onSaveNow={() => void onSaveNow()}
       held={held.length > 0}
     >
+      {step !== "apercu" ? <StepBlockers key={step} step={step} /> : null}
       {step === "categorie" ? <CategoryStep onNext={onNext} /> : null}
       {step === "criteres" ? <CriteriaStep onNext={onNext} /> : null}
       {step === "titre" ? <TitleStep onNext={onNext} /> : null}

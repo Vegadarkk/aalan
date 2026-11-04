@@ -26,6 +26,11 @@ import type { ScreenState } from "@/lib/moderation/types";
 //   itself, never by the pre-moderation screen; the listing is held until a moderator checks it.
 // - work_abroad 0: a job offer for a post abroad (Emploi frame of 2026-10-30; Code du travail
 //   arts. 489, 512-515): a moderator checks the visa and agency mentions, never the agent.
+// - offsite_payment 40: a cash-transfer network or a payment before shipping in the text (the
+//   advance-fee scam; the site never takes a payment for a listing) -> always review.
+// - phone_in_words 30: a phone number spelled out in words to get round the step-3 filter -> always
+//   review (audit zone 7 P2-1, synthesis B5: such a listing scored 15 and went public). Risk
+//   signals, not rules: the agent may lift them only if config/ai agent.autoApproveSoftFlags names them.
 // - previous rejections: +10 each, max 30, no flag (history, not content).
 // Live values: Firestore `config/abuse` `risk` (src/config/abuse.ts) overrides the thresholds, the
 // weights and the rejection terms through `riskRules`; the committed values here are the defaults.
@@ -53,13 +58,15 @@ export const RISK_WEIGHTS: Readonly<Record<ModerationFlag, RiskWeight>> = {
   rental_review: { weight: 25, reason: "car rental with driver, identity paper or blank cheque as a guarantee, or vehicle past the fleet age limit, human review required" },
   promo_check: { weight: 0, reason: "promotion cutting more than 70 % off the struck-out price, human check of the starting price required" },
   work_abroad: { weight: 0, reason: "job offer for a post abroad, human check of the visa and agency mentions required" },
+  offsite_payment: { weight: 40, reason: "payment through a cash-transfer network or before shipping, human review required" },
+  phone_in_words: { weight: 30, reason: "phone number spelled out in words, human review required" },
 };
 
 export const PREVIOUS_REJECTION_WEIGHT = DEFAULT_ABUSE.risk.previousRejectionWeight;
 export const PREVIOUS_REJECTION_CAP = DEFAULT_ABUSE.risk.previousRejectionCap;
 
 /** Flags that send the listing to review whatever the score (step 2 soft hits, step 3 legal review, step 5 nudity). */
-export const ALWAYS_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "nsfw_review", "restricted_category", "face", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad"]);
+export const ALWAYS_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["prohibited_kw", "prohibited_soft", "sensitive_text", "third_party_phone", "nsfw_review", "restricted_category", "face", "credit_ad", "sanitary_check", "rental_review", "promo_check", "work_abroad", "offsite_payment", "phone_in_words"]);
 
 /** Flags the agent may never lift alone, whatever `agent.autoApproveSoftFlags` says (a moderator decides). */
 export const HUMAN_REVIEW_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["restricted_category", "face", "sanitary_check", "promo_check", "work_abroad"]);

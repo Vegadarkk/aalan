@@ -189,7 +189,7 @@ export default async function ModerationReviewPage({ params }: { params: Promise
           </Panel>
 
           {pending && review.approval ? (
-            <ModerationDecisionForm listingId={listing.id} version={listing.version} approval={review.approval} expiresAt={listing.expiresAt} />
+            <ModerationDecisionForm listingId={listing.id} version={listing.version} approval={review.approval} expiresAt={listing.expiresAt} riskScore={Math.max(moderation.score, screening?.score ?? 0)} />
           ) : (
             <Panel title="Décision">
               <p className="text-sm text-foreground-muted">

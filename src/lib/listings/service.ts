@@ -146,8 +146,13 @@ function step(compute: () => TransitionResult): TransitionResult {
   }
 }
 
-/** `activeListings` quota (published + pending_review): 409 `listing_limit` when another listing would exceed it. */
+/**
+ * `activeListings` quota (published + pending_review): 409 `listing_limit` when another listing
+ * would exceed it, 409 `no_plan` when the quota is 0 (a Pro without a plan: the real cause, not
+ * "maximum reached" for 0 listings, zone 6 audit 6-02).
+ */
 async function assertWithinQuota(uid: string, quotas: ListingQuotas): Promise<void> {
+  if (quotas.activeListings === 0) throw new HttpError(409, "no_plan");
   if (!withinQuota(quotas.activeListings, await countActive(uid))) throw new HttpError(409, "listing_limit");
 }
 
@@ -166,6 +171,8 @@ export async function createDraft(actor: Actor, input: CreateListingInput, now =
   const sellerContext = options.seller ?? (await sellerOf(actor.auth));
   const { user, seller } = sellerContext;
   const { uid, claims } = actor.auth.user;
+  // A Pro without a plan could never publish the draft: said before the nine steps (zone 6 audit 6-02).
+  if (seller.type === "pro" && sellerContext.quotas.activeListings === 0) throw new HttpError(409, "no_plan");
   const subcategory = input.subcategoryId ? subcategoryById(input.subcategoryId) : undefined;
   const id = newListingId();
   const blank: ListingDoc = listingSchema.parse({

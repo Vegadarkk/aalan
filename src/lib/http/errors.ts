@@ -36,6 +36,8 @@ export type ErrorCode =
   | "draft_limit"
   /** Active listings quota of the account (individual 20, Pro by plan). */
   | "listing_limit"
+  /** A Pro without a plan (none, or suspended): no active slot at all (zone 6 audit 6-02). */
+  | "no_plan"
   /** 5 listings created per day (individuals). */
   | "listing_daily_limit"
   /** Photos per listing (10, Pro 20). */

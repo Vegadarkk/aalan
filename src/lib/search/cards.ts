@@ -1,5 +1,6 @@
 import { datedRental } from "@/config/categories";
 import { promoRunning, type CardPromo } from "@/lib/contracts/catalog-core";
+import { exampleTitlesField } from "@/lib/demo/localized";
 import { cardFactsField, cardFactsOf } from "@/lib/listings/card-facts";
 import { rentalDayRate } from "@/lib/listings/rental";
 import { rentalDuration, type RentalDates } from "./params";
@@ -53,6 +54,7 @@ export function toSearchCard(doc: CardDocument, now: Date, featured = false, dat
     featured: featured && typeof doc.featuredUntil === "number" && doc.featuredUntil > now.getTime(),
     ...cardFactsField(cardFactsOf(doc.subcategoryId, (id) => (doc as Record<string, unknown>)[attributeField(id)])),
     ...(doc.isExample === true ? { example: true as const } : {}),
+    ...exampleTitlesField(doc.id, doc.isExample === true),
     ...(doc.soldOut === true ? { soldOut: true as const } : {}),
     ...(doc.priceFrom === true ? { priceFrom: true as const } : {}),
     ...promoOf(doc, now),

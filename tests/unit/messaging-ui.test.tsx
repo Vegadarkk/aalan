@@ -10,6 +10,7 @@ import { MESSAGING_ERROR_KEYS, messagingErrorKey } from "@/components/messages/e
 import { formatDayLabel, formatRowTime } from "@/components/messages/format";
 import { previewText, threadHref } from "@/components/messages/inbox";
 import { firstPage, inboxIsEmpty, removeRow, shouldLoadMore, withFreshHead, withPage, withRow, type InboxList } from "@/components/messages/inbox-state";
+import { wakesMuted } from "@/components/messages/messages-provider";
 import { ThreadPlaceholderView } from "@/components/messages/thread-placeholder";
 import { canReport, MessageItem, textParts, warningsFor } from "@/components/messages/message-item";
 import { badgeText } from "@/components/messages/messages-link";
@@ -27,10 +28,10 @@ import {
   withReadReceipt,
   withRefreshedPage,
 } from "@/components/messages/thread-state";
-import { prunePending } from "@/components/messages/thread-view";
+import { prunePending, threadUrlFor } from "@/components/messages/thread-view";
 import { ApiError } from "@/lib/auth/client";
 import type { SessionSummary } from "@/lib/contracts/auth";
-import { HIDDEN_MARKER, URL_MARKER, type ConversationView, type ConversationsPage, type MessagesPage, type MessageView } from "@/lib/contracts/messaging";
+import { HIDDEN_MARKER, URL_MARKER, type ConversationView, type ConversationsPage, type MessagesPage, type MessageView, type MessagingEvent } from "@/lib/contracts/messaging";
 
 // The messaging pages' pure parts (design phase-5 D2-D9): inbox paging and live row updates, the
 // thread's pages and read receipts, dates in Morocco's time zone, risk warnings and masked links,
@@ -376,6 +377,20 @@ describe("composer and first message", () => {
       expect(ar.Auth.errors[code]).toBeTruthy();
     }
     expect(composeErrorKey(new Error("boom"))).toBeNull();
+  });
+});
+
+describe("thread address and deletion", () => {
+  it("follows the list that holds the conversation, other parameters kept", () => {
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1?archived=1", false)).toBe("https://aalan.ma/fr/messages/c1");
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1?rdv=visit&archived=1", false)).toBe("https://aalan.ma/fr/messages/c1?rdv=visit");
+    expect(threadUrlFor("https://aalan.ma/fr/messages/c1", true)).toBe("https://aalan.ma/fr/messages/c1?archived=1");
+  });
+
+  it("refetches a deleted conversation's row only when a new message brings it back", () => {
+    expect(wakesMuted({ type: "message", cid: cid(1), mid: "m1" } as MessagingEvent)).toBe(true);
+    expect(wakesMuted({ type: "conversation", cid: cid(1) } as MessagingEvent)).toBe(false);
+    expect(wakesMuted({ type: "message_updated", cid: cid(1), mid: "m1" } as MessagingEvent)).toBe(false);
   });
 });
 

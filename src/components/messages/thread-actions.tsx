@@ -52,11 +52,13 @@ export function afterAction(conversation: ConversationView, action: ThreadAction
 export interface ThreadActionsProps {
   conversation: ConversationView;
   onDone: (action: ThreadAction, conversation: ConversationView) => void;
+  /** An action is posted (true), or failed (false): the thread stops its own requests while a delete runs. */
+  onPending?: (action: ThreadAction, pending: boolean) => void;
   /** Opens the notice form about the other participant. */
   onReport: () => void;
 }
 
-export function ThreadActions({ conversation, onDone, onReport }: ThreadActionsProps) {
+export function ThreadActions({ conversation, onDone, onPending, onReport }: ThreadActionsProps) {
   const t = useTranslations("Messaging.thread");
   const report = useTranslations("Report.trigger");
   const errorMessage = useMessagingErrorMessage();
@@ -67,6 +69,7 @@ export function ThreadActions({ conversation, onDone, onReport }: ThreadActionsP
   async function run(action: ThreadAction) {
     if (busy) return;
     setBusy(action);
+    onPending?.(action, true);
     try {
       await changeConversationState(conversation.cid, stateChangeOf(action));
       setConfirm(null);
@@ -80,6 +83,7 @@ export function ThreadActions({ conversation, onDone, onReport }: ThreadActionsP
       toast.success(toasts[action]);
       onDone(action, afterAction(conversation, action));
     } catch (error) {
+      onPending?.(action, false);
       toast.error(errorMessage(error));
     } finally {
       setBusy(null);

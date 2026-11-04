@@ -7,7 +7,7 @@ import { threadHref } from "@/components/listing/contact-bar";
 import { previewText } from "@/components/messages/inbox";
 import { canOffer, requestedOffer } from "@/components/messages/thread-view";
 import { amountProblem, suggestedAmounts } from "@/components/offers/amount-field";
-import { OfferCard, offerCardShown } from "@/components/offers/offer-card";
+import { OfferCard, offerCardShown, offerHoursLeft } from "@/components/offers/offer-card";
 import { OfferEventItem } from "@/components/offers/offer-event";
 import { RATE_LIMITS } from "@/config/rate-limits";
 import {
@@ -161,9 +161,13 @@ describe("nextOfferStep", () => {
     expect(thrown(() => nextOfferStep(undefined, { action: "make", amount: 850 }, "buyer", now)).code).toBe("offer_unavailable");
     expect(thrown(() => nextOfferStep(offerDoc(), { action: "make", amount: 850 }, "buyer", now, 1000)).code).toBe("offer_pending");
     expect(thrown(() => nextOfferStep(offerDoc({ status: "countered", counter: 950 }), { action: "make", amount: 850 }, "buyer", now, 1000)).code).toBe("offer_pending");
-    // Once answered or expired, a new offer starts over.
+    // Once declined, withdrawn or expired, a new offer starts over; once accepted, the price is settled (audit zone 5 n°15).
     expect(nextOfferStep(offerDoc({ status: "declined" }), { action: "make", amount: 850 }, "buyer", now, 1000).event).toBe("made");
+    expect(nextOfferStep(offerDoc({ status: "withdrawn" }), { action: "make", amount: 850 }, "buyer", now, 1000).event).toBe("made");
     expect(nextOfferStep(offerDoc({ expiresAt: new Date(NOW - 1) }), { action: "make", amount: 850 }, "buyer", now, 1000).event).toBe("made");
+    const settled = thrown(() => nextOfferStep(offerDoc({ status: "accepted", expiresAt: new Date(NOW - 1) }), { action: "make", amount: 850 }, "buyer", now, 1000));
+    expect(settled.status).toBe(409);
+    expect(settled.code).toBe("offer_accepted");
   });
 
   it("lets the seller accept, decline or counter once, above the offer and within the bounds", () => {
@@ -238,6 +242,20 @@ describe("entry points", () => {
     expect(canOffer(conversation({ offer: view() }), NOW)).toBe(false);
     expect(canOffer(conversation({ offer: view({ status: "declined" }) }), NOW)).toBe(true);
     expect(canOffer(conversation({ offer: view({ expiresAt: NOW - 1 }) }), NOW)).toBe(true);
+    // Accepted: « Offre acceptée » takes the place of « Faire une offre », even past the week it stays pinned.
+    expect(canOffer(conversation({ offer: view({ status: "accepted" }) }), NOW)).toBe(false);
+    expect(canOffer(conversation({ offer: view({ status: "accepted", updatedAt: NOW - 30 * 24 * HOUR }) }), NOW)).toBe(false);
+  });
+
+  it("counts the hours left without going past 48 h, under an hour as soon, none once expired", () => {
+    expect(offerHoursLeft(NOW + OFFER_TTL_MS, NOW)).toBe(48);
+    // A device clock 30 s behind the server's right after sending: 48, not 49 (audit zone 5 n°11).
+    expect(offerHoursLeft(NOW + OFFER_TTL_MS + 30_000, NOW)).toBe(48);
+    expect(offerHoursLeft(NOW + OFFER_TTL_MS - 30_000, NOW)).toBe(48);
+    expect(offerHoursLeft(NOW + 20 * HOUR + 10 * 60_000, NOW)).toBe(20);
+    expect(offerHoursLeft(NOW + 90 * 60_000, NOW)).toBe(2);
+    expect(offerHoursLeft(NOW + 59 * 60_000, NOW)).toBe(0);
+    expect(offerHoursLeft(NOW, NOW)).toBeNull();
   });
 
   it("pins the card while pending and a week once accepted", () => {
@@ -286,6 +304,7 @@ describe("thread", () => {
     expect(render(<OfferEventItem step={{ event: "expired", byMe: false, amount: 900 }} counterpartName="Youssef" time="10:02" />)).toContain("a expiré sans réponse");
     expect(render(<OfferEventItem step={step} counterpartName="Youssef" time="10:02" />, "ar")).toContain("عرضًا مضادًا");
     expect(card(view(), { locale: "ar" })).toContain("العرض المقبول لا يحجز السلعة ولا يُلزم بالبيع ولا بالشراء");
+    expect(card(view({ expiresAt: NOW + OFFER_TTL_MS + 30_000 }))).toContain("Expire dans 48 heures");
     const row = { lastMessage: { preview: offerMarker("accepted"), mine: false, at: NOW, flagged: false } };
     expect(previewText(row, { hidden: "", maskedLink: "", offer: (event) => fr.Offers.preview[event] })).toBe("Offre acceptée");
   });

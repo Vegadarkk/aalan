@@ -98,6 +98,8 @@ describe("price offer", () => {
     expect(accepted.offer).toMatchObject({ status: "accepted", madeByMe: true, counter: 900 });
     const sellerView = await row(seller, cid);
     expect(sellerView.body.conversation.offer).toMatchObject({ status: "accepted", madeByMe: false });
+    // The price is settled in this conversation: no new offer in it (audit zone 5 n°15).
+    expectError(await act(buyer, cid, { action: "make", amount: 850 }), 409, "offer_accepted");
     const events = (await thread(seller, cid)).body.messages.flatMap((message) => (message.offer ? [[message.offer.event, message.offer.amount]] : []));
     expect(events).toEqual([
       ["accepted", 900],

@@ -289,7 +289,8 @@ test.describe("Car rental", () => {
       await expect(compose.getByLabel("Départ")).toHaveAttribute("data-value", day(6));
       await expect(compose.getByLabel("Retour")).toHaveAttribute("data-value", day(9));
       await compose.getByLabel("Lieu de remise (facultatif)").fill("Aéroport Marrakech-Ménara");
-      await expect(compose.getByLabel("Votre message")).toHaveValue(/du .+ au .+ \(3 jours\), remise à Aéroport Marrakech-Ménara\. Est-ce disponible \?$/u);
+      // The dates and the place ride with the request (its card and step): the message does not repeat them (audit L4-18).
+      await expect(compose.getByLabel("Votre message")).toHaveValue(/^Bonjour, je souhaite louer « .+ » aux dates de ma demande\. Est-ce disponible \?$/u);
       await expect(compose.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
       await renter.screenshot({ path: "test-results/rental-request-compose.png" });
       await compose.getByRole("button", { name: "Envoyer la demande" }).click();

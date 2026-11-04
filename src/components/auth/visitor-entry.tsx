@@ -28,7 +28,7 @@ export function VisitorEntry({ signInHref, className }: { signInHref: SignInHref
   const triggerClassName = cn(className, "data-[state=open]:bg-surface-muted");
   const content = <UserRound aria-hidden="true" />;
   const trigger = (
-    <button type="button" aria-haspopup="menu" aria-expanded={false} aria-label={t("visitorMenu")} data-testid="visitor-menu" className={triggerClassName} onPointerEnter={warmMenu} onFocus={warmMenu} onClick={() => setRequested(true)}>
+    <button type="button" aria-haspopup="dialog" aria-expanded={false} aria-label={t("visitorMenu")} data-testid="visitor-menu" className={triggerClassName} onPointerEnter={warmMenu} onFocus={warmMenu} onClick={() => setRequested(true)}>
       {content}
     </button>
   );

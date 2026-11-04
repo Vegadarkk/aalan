@@ -33,6 +33,7 @@
     "contact": "اتصل بنا",
     "procedures": "الإجراءات الإدارية",
     "visitorMenu": "القائمة",
+    "floating": "اختصارات",
     "signUp": "إنشاء حساب"
   },
   "Locale": {
@@ -3815,7 +3816,7 @@
       "label": "{title}، {price}",
       "featured": "في الواجهة · مُموَّل",
       "today": "نُشر اليوم",
-      "cluster": "{count, plural, zero {لا إعلانات} one {إعلان واحد} two {إعلانان} few {# إعلانات} many {# إعلانًا} other {# إعلان}} هنا، كبّر الخريطة لرؤيتها",
+      "cluster": "{n} {count, plural, zero {إعلان} one {إعلان} two {إعلان} few {إعلانات} many {إعلانًا} other {إعلان}} هنا، كبّر الخريطة لرؤيتها",
       "per": {
         "night": "/ليلة",
         "month": "/شهر",

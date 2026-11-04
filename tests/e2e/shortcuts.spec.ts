@@ -43,17 +43,27 @@ test.describe("header shortcuts", () => {
     const menu = page.getByTestId("visitor-menu");
     await expect(menu).toHaveAccessibleName("Menu");
     await menu.click();
-    await page.getByRole("menuitem", { name: /Louer une voiture/ }).click();
+    // A navigation dialog of links (audit zone 8, 5.2-3): focus on its first link, Tab moves along.
+    const panel = page.getByRole("dialog", { name: "Menu" });
+    await expect(panel.getByRole("navigation", { name: "Menu" })).toBeVisible();
+    await expect(panel.getByRole("link", { name: /Se connecter/ })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(panel.getByRole("link", { name: "Créer un compte" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(menu).toBeFocused();
+    await menu.click();
+    await panel.getByRole("link", { name: /Louer une voiture/ }).click();
     await expect(page).toHaveURL(CAR_RENTAL);
 
     await page.goto("/fr/c/vehicules");
     await page.getByTestId("visitor-menu").click();
-    await expect(page.getByRole("menuitem", { name: /Se connecter/ })).toHaveAttribute("href", /\/fr\/connexion\?next=/);
+    await expect(panel.getByRole("link", { name: /Se connecter/ })).toHaveAttribute("href", /\/fr\/connexion\?next=/);
     // Help and the other language too (the map home has no footer on a phone).
-    await expect(page.getByRole("menuitem", { name: "Aide" })).toHaveAttribute("href", "/fr/aide");
-    await expect(page.getByRole("menuitem", { name: "Nous contacter" })).toHaveAttribute("href", "/fr/aide/contact");
-    await expect(page.getByRole("menuitem", { name: "العربية" })).toHaveAttribute("href", /^\/ar/);
-    await page.getByRole("menuitem", { name: /Espace Pro/ }).click();
+    await expect(panel.getByRole("link", { name: "Aide" })).toHaveAttribute("href", "/fr/aide");
+    await expect(panel.getByRole("link", { name: "Nous contacter" })).toHaveAttribute("href", "/fr/aide/contact");
+    await expect(panel.getByRole("link", { name: "العربية" })).toHaveAttribute("href", /^\/ar/);
+    await panel.getByRole("link", { name: /Espace Pro/ }).click();
     await expect(page).toHaveURL(/\/fr\/professionnels$/);
   });
 

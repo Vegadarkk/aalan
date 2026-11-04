@@ -33,6 +33,7 @@
     "contact": "Nous contacter",
     "procedures": "Démarches administratives",
     "visitorMenu": "Menu",
+    "floating": "Raccourcis",
     "signUp": "Créer un compte"
   },
   "Locale": {
@@ -3825,7 +3826,7 @@
       "label": "{title}, {price}",
       "featured": "À la Une · Sponsorisé",
       "today": "publiée aujourd'hui",
-      "cluster": "{count, plural, one {# annonce} other {# annonces}} ici, zoomer pour les voir",
+      "cluster": "{n} {count, plural, one {annonce} other {annonces}} ici, zoomer pour les voir",
       "per": {
         "night": "/nuit",
         "month": "/mois",

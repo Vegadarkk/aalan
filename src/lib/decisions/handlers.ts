@@ -11,10 +11,12 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { parseTargetKey } from "@/lib/reports/target-key";
 import { z } from "@/lib/zod";
 import { appealLinkView, appealQueue, myDecisions, openAppealAsMember, openAppealByLink, reviewAppeal } from "./appeals";
+import { resolveAuthorityTargets } from "./authority-targets";
 import { createAuthorityRequest, getAuthorityRequest, authorityView, listAuthorityRequests, updateAuthorityRequest } from "./authorities";
 import {
   AUTHORITY_STATUSES,
   bulkDismissSchema,
+  authorityTargetQuerySchema,
   createAuthorityRequestSchema,
   decideSchema,
   docIdSchema,
@@ -28,6 +30,7 @@ import {
   type AppealQueueResponse,
   type AppealableDecision,
   type AuthorityRequestView,
+  type AuthorityTargetsResponse,
   type BulkDismissResponse,
   type CreateAuthorityResponse,
   type DecideResponse,
@@ -177,6 +180,14 @@ export async function handleAuthorityCreate(request: Request): Promise<Response>
   await enforceLimit("moderation.decision.uid", staff.user.uid);
   const input = await readJson(request, createAuthorityRequestSchema);
   return json<CreateAuthorityResponse>(await createAuthorityRequest(adminActor(staff), input, { ip: ipOf(request) }), { status: 201 });
+}
+
+/** GET /api/admin/authorities/targets?q=: the form's content picker (audit zone 7 P3-4). */
+export async function handleAuthorityTargets(request: Request): Promise<Response> {
+  const staff = await requireStaff(request, ADMIN);
+  const { q } = queryOf(request, authorityTargetQuerySchema);
+  await enforceLimit("admin.read.uid", staff.user.uid);
+  return json<AuthorityTargetsResponse>(await resolveAuthorityTargets({ uid: staff.user.uid, role: "admin" }, q, { ip: ipOf(request) }));
 }
 
 /** GET /api/admin/authorities/{id} */

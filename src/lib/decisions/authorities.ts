@@ -10,7 +10,7 @@ import { logger } from "@/lib/logging/logger";
 import { freezeConversation } from "@/lib/messaging";
 import { consume } from "@/lib/quota";
 import { createSystemReport } from "@/lib/reports";
-import type { AuthorityRequestView, CreateAuthorityRequest, CreateAuthorityResponse, UpdateAuthorityRequest } from "./contracts";
+import type { AuthorityNotice, AuthorityRequestView, CreateAuthorityRequest, CreateAuthorityResponse, UpdateAuthorityRequest } from "./contracts";
 import { decide, type DecisionActor } from "./decide";
 import { conversationRef, privateFromSnapshot, privateRef } from "./repository";
 
@@ -301,4 +301,33 @@ export async function openAuthorityIds(ids: readonly string[]): Promise<string[]
   const snapshots = await db().getAll(...unique.map((id) => authoritiesCol().doc(id)));
   void consume("firestore.reads", snapshots.length);
   return snapshots.filter((snapshot) => snapshot.exists && snapshot.get("status") !== "closed").map((snapshot) => snapshot.id);
+}
+
+/** Most entries a page asks about (Firestore `array-contains-any` takes 30). */
+export const NOTICE_ENTRIES_MAX = 10;
+const NOTICE_REQUESTS_MAX = 20;
+
+/**
+ * The requests still in force (open or answered: their holds stay until closed) whose scope names
+ * one of these entries, newest received first (audit zone 7 P3-3: the banner of the reported
+ * content's page). Single-field `array-contains-any` on `scope`: no composite index.
+ */
+export async function authorityNoticesFor(entries: readonly string[]): Promise<AuthorityNotice[]> {
+  const asked = [...new Set(entries)].filter((entry) => parseScope(entry) !== null).slice(0, NOTICE_ENTRIES_MAX);
+  if (asked.length === 0) return [];
+  const snapshot = await authoritiesCol().where("scope", "array-contains-any", asked).limit(NOTICE_REQUESTS_MAX).get();
+  void consume("firestore.reads", Math.max(1, snapshot.size));
+  return snapshot.docs
+    .map((doc) => recordFrom(doc.id, doc.data()))
+    .filter((record): record is AuthorityRequestRecord & { status: "open" | "answered" } => record !== null && record.status !== "closed")
+    .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime())
+    .map((record) => ({
+      id: record.id,
+      authority: record.authority,
+      kind: record.kind,
+      status: record.status,
+      receivedAt: record.receivedAt.toISOString(),
+      dueAt: record.dueAt ? record.dueAt.toISOString() : null,
+      entries: record.scope.filter((entry) => asked.includes(entry)),
+    }));
 }

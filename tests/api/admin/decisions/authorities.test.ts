@@ -18,9 +18,11 @@ vi.mock("@/lib/rate-limit/limiter", { spy: true });
 
 import { GET as getAuthority, PATCH as patchAuthority } from "@/app/api/admin/authorities/[id]/route";
 import { GET as listAuthorities, POST as createAuthority } from "@/app/api/admin/authorities/route";
+import { GET as findTargets } from "@/app/api/admin/authorities/targets/route";
 import { GET as readConversation } from "@/app/api/admin/conversations/[cid]/route";
 import { POST as appealRoute } from "@/app/api/appeals/route";
-import type { AuthorityRequestView, CreateAuthorityResponse, StaffConversationView } from "@/lib/decisions/contracts";
+import { authorityNoticesFor } from "@/lib/decisions/authorities";
+import type { AuthorityRequestView, AuthorityTargetsResponse, CreateAuthorityResponse, StaffConversationView } from "@/lib/decisions/contracts";
 import { setDecisionAiHooks } from "@/lib/decisions/hooks";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { resetServerEnv } from "@/lib/env";
@@ -28,7 +30,7 @@ import { db } from "@/lib/firebase/admin";
 import { sendMail } from "@/lib/mail";
 import * as limiter from "@/lib/rate-limit/limiter";
 import { getReport } from "@/lib/reports";
-import { member, publishedListing, seedConversation } from "../../reports/helpers";
+import { member, publicIdOf, publishedListing, seedConversation } from "../../reports/helpers";
 import { adminCall, audits, decision, listing, mailTo, privateAccount, publicCall, staff, type Staff } from "./helpers";
 
 let moderator: Staff;
@@ -149,5 +151,48 @@ describe("authority requests", () => {
     expect(await listing(id)).toMatchObject({ status: "removed" });
     expect(mailTo(sendMail, "decisionNotice", seller.email)).toBeUndefined();
     expect((await decision(created.body.decisionIds[0] as string)).notifiedAt).toBeUndefined();
+  });
+
+  it("find the contents of a pasted link for the form's picker (admin only)", async () => {
+    const { id, seller } = await publishedListing();
+    const listingQuery = `/api/admin/authorities/targets?q=${encodeURIComponent(`https://aalan.ma/fr/annonce/velo-${id}`)}`;
+    expect((await adminCall(findTargets, "GET", listingQuery, { as: moderator })).status).toBe(403);
+    const byLink = await adminCall<AuthorityTargetsResponse>(findTargets, "GET", listingQuery, { as: adminStaff });
+    expect(byLink.status).toBe(200);
+    expect(byLink.body.candidates).toEqual([expect.objectContaining({ kind: "listing", entry: `listing:${id}`, status: "published" })]);
+
+    const profile = `https://aalan.ma/fr/profil/${await publicIdOf(seller.uid)}`;
+    const byProfile = await adminCall<AuthorityTargetsResponse>(findTargets, "GET", `/api/admin/authorities/targets?q=${encodeURIComponent(profile)}`, { as: adminStaff });
+    expect(byProfile.body.candidates).toEqual([expect.objectContaining({ kind: "user", entry: `user:${seller.uid}` })]);
+
+    const unreadable = await adminCall<AuthorityTargetsResponse>(findTargets, "GET", `/api/admin/authorities/targets?q=${encodeURIComponent("12345")}`, { as: adminStaff });
+    expect(unreadable.body).toEqual({ candidates: [], unreadable: true });
+    expect((await adminCall(findTargets, "GET", "/api/admin/authorities/targets", { as: adminStaff })).status).toBe(400);
+  });
+
+  it("show the requests in force on the scoped contents until closed (banner)", async () => {
+    const { id, seller } = await publishedListing();
+    const created = await adminCall<CreateAuthorityResponse>(createAuthority, "POST", "/api/admin/authorities", {
+      as: adminStaff,
+      body: {
+        authority: "Parquet de Casablanca",
+        country: "MA",
+        legalBasis: "Code de procédure pénale, art. 57",
+        kind: "preservation",
+        scope: [`listing:${id}`],
+        identityCheck: { method: "Courriel signé du parquet" },
+        receivedAt: new Date().toISOString(),
+      },
+    });
+    expect(created.status).toBe(201);
+    const requestId = created.body.request.id;
+    const notices = await authorityNoticesFor([`listing:${id}`, `user:${seller.uid}`]);
+    expect(notices).toEqual([expect.objectContaining({ id: requestId, authority: "Parquet de Casablanca", kind: "preservation", status: "open", entries: [`listing:${id}`] })]);
+    expect(await authorityNoticesFor([`user:${seller.uid}`])).toEqual([]);
+
+    await adminCall(patchAuthority, "PATCH", `/api/admin/authorities/${requestId}`, { as: adminStaff, params: { id: requestId }, body: { status: "answered", response: "Données conservées." } });
+    expect((await authorityNoticesFor([`listing:${id}`]))[0]).toMatchObject({ status: "answered" });
+    await adminCall(patchAuthority, "PATCH", `/api/admin/authorities/${requestId}`, { as: adminStaff, params: { id: requestId }, body: { status: "closed" } });
+    expect(await authorityNoticesFor([`listing:${id}`])).toEqual([]);
   });
 });

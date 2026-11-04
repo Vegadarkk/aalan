@@ -6,10 +6,12 @@ import type { ReactNode } from "react";
 import type { DecisionTargetType } from "@/config/decision-templates";
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
+import { authorityNoticesFor } from "@/lib/decisions/authorities";
 import { serverEnv } from "@/lib/env";
 import { requestIdentity } from "@/lib/rate-limit/keys";
 import { reportTargetView, type ReportDetail, type ReportTargetView, type TargetSnapshot } from "@/lib/reports/admin";
 import { parseTargetKey } from "@/lib/reports/target-key";
+import { noticeEntries } from "../../../_lib/authority-notice";
 import { staffPhotoPath } from "../../../_lib/staff-photos";
 import {
   ACCOUNT_STATUS_LABEL,
@@ -30,6 +32,7 @@ import { Facts, linkClassName, Panel } from "../../../_components/panel";
 import { LiveSlaTimer } from "../../../_components/sla-timer";
 import { aiTemplate, STRIKE_LABEL } from "../../../_components/decide-state";
 import { AiProposalPanel } from "../../../_components/ai-proposal";
+import { AuthorityNoticeBanner } from "../../../_components/authority-notice-banner";
 
 // Target view of the report queues (design D24): the reported content as it stands (a review: its
 // note, text and the seller's reply), its open reports with the reporters' accuracy, its history
@@ -285,6 +288,7 @@ export default async function TargetPage({ searchParams }: { searchParams: Searc
   if (typeof key !== "string" || !parseTargetKey(key)) notFound();
   const view = await reportTargetView(key, { user: staff, role: staff.role }, requestIdentity(await headers()));
   if (!view) notFound();
+  const notices = await authorityNoticesFor(noticeEntries(view.target, view.owner?.uid));
   const site = serverEnv().SITE_URL.replace(/\/$/, "");
   const renderedAt = new Date().toISOString();
   const { title, status } = heading(view);
@@ -324,6 +328,8 @@ export default async function TargetPage({ searchParams }: { searchParams: Searc
           {view.open.length > 0 ? `${plural(view.open.length, "signalement ouvert", "signalements ouverts")}, priorité ${first?.priority}.` : "Aucun signalement ouvert."} Référence {view.targetKey}.
         </p>
       </div>
+
+      <AuthorityNoticeBanner notices={notices} target={view.target} admin={staff.role === "admin"} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
         <div className="flex flex-col gap-6">

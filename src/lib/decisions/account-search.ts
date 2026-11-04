@@ -84,7 +84,11 @@ async function run(lookup: AccountLookup): Promise<UserRecord[]> {
 }
 
 export async function searchAccounts(searcher: Searcher, query: string, options: { ip?: string; now?: Date } = {}): Promise<AccountHit[]> {
-  const lookups = accountLookups(query);
+  return searchAccountLookups(searcher, accountLookups(query), options);
+}
+
+/** The accounts these lookups find (the authority content picker reads the query its own way). */
+export async function searchAccountLookups(searcher: Searcher, lookups: readonly AccountLookup[], options: { ip?: string; now?: Date } = {}): Promise<AccountHit[]> {
   const hits = new Map<string, AccountHit>();
   const results = await Promise.all(lookups.map(async (lookup) => ({ lookup, users: await run(lookup) })));
   for (const { lookup, users } of results) {

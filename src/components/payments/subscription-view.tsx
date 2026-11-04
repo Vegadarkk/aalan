@@ -277,17 +277,18 @@ export function SubscriptionView() {
             <p className="text-2xl font-semibold">{t("current.none")}</p>
           )}
         </div>
-        {data.subscription && data.available && !suspended ? (
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          {data.subscription && data.available && !suspended ? (
             <Button type="button" variant={live ? "structure" : "outline"} loading={pending === "portal"} disabled={pending === "checkout"} onClick={() => void manage()}>
               {t("current.manage")}
             </Button>
-            <Link href="/pro/factures" className={cn("inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
-              <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
-              {t("current.invoices")}
-            </Link>
-          </div>
-        ) : null}
+          ) : null}
+          {/* Always reachable (zone 6 audit 6-20): a pass or a first payment brings the first invoice. */}
+          <Link href="/pro/factures" className={cn("inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+            <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
+            {t("current.invoices")}
+          </Link>
+        </div>
       </section>
       {live && !suspended ? <p className="-mt-5 text-sm text-foreground-muted text-pretty">{t("current.manageHint")}</p> : null}
 

@@ -145,8 +145,31 @@ export function PackPicker({ contactEmail }: { contactEmail: string }) {
         </div>
       </header>
 
-      {!data.salesOpen ? <ErrorBanner tone="info" title={t("closed")} /> : null}
+      {!data.salesOpen ? (
+        <ErrorBanner
+          tone="info"
+          title={t("closed")}
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link href="/tarifs">{t("seePricing")}</Link>
+            </Button>
+          }
+        >
+          {t("closedBody")}
+        </ErrorBanner>
+      ) : null}
       {data.salesOpen && !data.available ? <ErrorBanner tone="warning" title={t("unavailable")} /> : null}
+      {/* Payment down while sales are open (6-10): the packs and their prices stay readable. */}
+      {data.salesOpen && !data.available && shown.length > 0 ? (
+        <ul className={cn("grid gap-3 sm:grid-cols-2", shown.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4")} aria-label={t("legend")}>
+          {shown.map((pack) => (
+            <li key={pack.id} className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-5 opacity-80">
+              <span className="text-lg font-medium">{t.rich("credits", { count: pack.credits, n: (chunks) => <span className="text-3xl font-semibold tabular-nums">{chunks}</span> })}</span>
+              <span className="font-semibold tabular-nums">{t("price", { amount: major(pack.priceMinor), currency: t(`unit.${pack.currency}`) })}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       {buyable ? (
         <form
@@ -183,7 +206,8 @@ export function PackPicker({ contactEmail }: { contactEmail: string }) {
 
           <fieldset className="flex flex-col gap-3" aria-invalid={problems.choice ? true : undefined}>
             <legend className="mb-3 text-lg font-semibold">{t("legend")}</legend>
-            <div className="grid gap-3 sm:grid-cols-3">
+            {/* Four packs on two rows of two, or one row on a wide screen: no orphan on a second row (6-16). */}
+            <div className={cn("grid gap-3 sm:grid-cols-2", shown.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
               {shown.map((pack) => (
                 <PackCard key={pack.id} pack={pack} best={pack.id === best} selected={pack.id === choice} onSelect={() => setChoice(pack.id)} />
               ))}
@@ -218,9 +242,9 @@ export function PackPicker({ contactEmail }: { contactEmail: string }) {
 
           {failure !== undefined ? <FormMessage error={failure} title={messageOf(failure)} /> : null}
 
-          <div className="flex justify-end border-t border-border pt-6">
-            <Button type="submit" variant="structure" loading={pending} className="w-full sm:w-auto">
-              {selected ? t("submit", { amount: major(selected.priceMinor), currency: selected.currency }) : t("submitIdle")}
+          <div className="flex border-t border-border pt-6">
+            <Button type="submit" variant="structure" size="lg" loading={pending} className="w-full">
+              {selected ? t("submit", { amount: major(selected.priceMinor), currency: t(`unit.${selected.currency}`) }) : t("submitIdle")}
             </Button>
           </div>
         </form>
@@ -246,8 +270,8 @@ function PackCard({ pack, best, selected, onSelect }: { pack: PackOffer; best: b
         {pack.bonus > 0 ? <span className="text-sm font-medium text-structure dark:text-gold-300">{t("bonus", { count: pack.bonus })}</span> : <span className="text-sm text-foreground-muted">{t("noBonus")}</span>}
       </span>
       <span className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-        <span className="text-lg font-semibold tabular-nums">{t("price", { amount: major(pack.priceMinor), currency: pack.currency })}</span>
-        <span className="text-xs text-foreground-muted tabular-nums">{t("perCredit", { amount: Math.round(pack.priceMinor / pack.credits) / 100, currency: pack.currency })}</span>
+        <span className="text-lg font-semibold tabular-nums">{t("price", { amount: major(pack.priceMinor), currency: t(`unit.${pack.currency}`) })}</span>
+        <span className="text-xs text-foreground-muted tabular-nums">{t("perCredit", { amount: Math.round(pack.priceMinor / pack.credits) / 100, currency: t(`unit.${pack.currency}`) })}</span>
       </span>
       {best ? <span className="absolute -top-2.5 end-4 rounded-sm bg-featured px-1.5 py-0.5 text-xs font-medium text-featured-foreground">{t("bestValue")}</span> : null}
     </label>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Plus, TrendingUp } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useApiErrorMessage } from "@/components/auth/form-message";
@@ -15,7 +15,9 @@ import { useNumbersTranslations } from "@/i18n/numbers";
 import { numbersLocale } from "@/i18n/params";
 import type { LedgerEntryView, WalletResponse } from "@/lib/contracts/payments";
 import { loadWallet } from "@/lib/payments/client";
+import { isolate } from "@/lib/i18n/bidi";
 import { cn } from "@/lib/utils";
+import { PROMOTE_AFTER_PURCHASE } from "./promote-dialog";
 import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 
 // Wallet page (phase 7 design §5, §6): what can be spent now (the plan's credits first, then the
@@ -26,6 +28,28 @@ import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 
 /** Reloads after a payment, in seconds after the page opened (billing retries start at one minute). */
 const AFTER_PAYMENT_RELOADS = [3, 6, 10, 15, 25, 40, 60, 90, 120];
+
+const noSubscription = () => () => {};
+
+function readPromoteAfter(): string | null {
+  try {
+    return window.sessionStorage.getItem(PROMOTE_AFTER_PURCHASE);
+  } catch {
+    return null;
+  }
+}
+
+/** `{ id, title }` stored by the promote dialog; anything else (storage edited by hand) is ignored. */
+function parseWaiting(value: string | null): { id: string; title: string } | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as { id?: unknown; title?: unknown } | null;
+    if (typeof parsed?.id !== "string" || typeof parsed.title !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(parsed.id)) return null;
+    return { id: parsed.id, title: parsed.title.slice(0, 200) };
+  } catch {
+    return null;
+  }
+}
 
 type State = { kind: "loading" } | { kind: "failed"; error: unknown } | { kind: "ready"; data: WalletResponse; entries: LedgerEntryView[]; next: string | null; more: boolean };
 
@@ -58,6 +82,18 @@ export function WalletView() {
     started.current = true;
     void fetchWallet();
   }, [fetchWallet]);
+
+  // The listing whose "Mettre en avant" sent the person here to buy credits (zone 6 audit 6-03):
+  // read from the tab's storage after hydration (null on the server), parsed once per value.
+  const stored = useSyncExternalStore(noSubscription, readPromoteAfter, () => null);
+  const waiting = useMemo(() => parseWaiting(stored), [stored]);
+  const forget = () => {
+    try {
+      window.sessionStorage.removeItem(PROMOTE_AFTER_PURCHASE);
+    } catch {
+      // Nothing to clear.
+    }
+  };
 
   const paid = useSearchParams().get("achat") === "ok";
   useEffect(() => {
@@ -125,6 +161,20 @@ export function WalletView() {
       </header>
 
       {paid ? <ErrorBanner tone="info" title={t("paid")} /> : null}
+      {waiting && data.salesOpen && available > 0 ? (
+        <ErrorBanner
+          tone="info"
+          title={t("promoteBack", { title: isolate(waiting.title) })}
+          action={
+            <Button asChild variant="structure" size="sm" className="max-sm:h-11">
+              <Link href={{ pathname: "/mes-annonces", query: { promouvoir: waiting.id } }} onClick={forget}>
+                <TrendingUp aria-hidden="true" />
+                {t("promoteBackAction")}
+              </Link>
+            </Button>
+          }
+        />
+      ) : null}
       {!data.salesOpen ? <ErrorBanner tone="info" title={t("closed")} /> : null}
       {wallet.frozen ? <ErrorBanner tone="warning" title={t("frozen")} /> : null}
 
@@ -147,21 +197,26 @@ export function WalletView() {
             </Button>
           ) : null}
         </div>
-        <dl className="grid gap-4 border-t border-border pt-5 sm:grid-cols-3">
+        <dl className={cn("grid gap-4 border-t border-border pt-5", data.account === "shop" && "sm:grid-cols-3")}>
           <div className="flex flex-col gap-0.5">
             <dt className="text-sm text-foreground-muted">{t("balance")}</dt>
             <dd className={cn("text-lg font-semibold tabular-nums", wallet.balance < 0 && "text-danger")}>{t("amount", { count: wallet.balance })}</dd>
           </div>
-          <div className="flex flex-col gap-0.5">
-            <dt className="text-sm text-foreground-muted">{t("plan")}</dt>
-            <dd className="text-lg font-semibold tabular-nums">{t("amount", { count: wallet.planCredits })}</dd>
-            <dd className="text-xs text-foreground-muted text-pretty">{wallet.planCreditsResetsAt ? t("planUntil", { date: date(wallet.planCreditsResetsAt) }) : t("planNone")}</dd>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <dt className="text-sm text-foreground-muted">{t("allowance")}</dt>
-            <dd className="text-lg font-semibold tabular-nums">{wallet.featuredAllowance}</dd>
-            <dd className="text-xs text-foreground-muted text-pretty">{t("allowanceHint")}</dd>
-          </div>
+          {/* Plan credits and the À la Une allowance belong to a shop's offer: for a person they were noise (6-22). */}
+          {data.account === "shop" ? (
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-sm text-foreground-muted">{t("plan")}</dt>
+              <dd className="text-lg font-semibold tabular-nums">{t("amount", { count: wallet.planCredits })}</dd>
+              <dd className="text-xs text-foreground-muted text-pretty">{wallet.planCreditsResetsAt ? t("planUntil", { date: date(wallet.planCreditsResetsAt) }) : t("planNone")}</dd>
+            </div>
+          ) : null}
+          {data.account === "shop" ? (
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-sm text-foreground-muted">{t("allowance")}</dt>
+              <dd className="text-lg font-semibold tabular-nums">{wallet.featuredAllowance}</dd>
+              <dd className="text-xs text-foreground-muted text-pretty">{t("allowanceHint")}</dd>
+            </div>
+          ) : null}
         </dl>
         <p className="text-sm text-foreground-muted text-pretty">{t("spendOrder")}</p>
         {data.account === "personal" ? (

@@ -18,10 +18,12 @@ import { apiPost, isApiError } from "@/lib/auth/client";
 import type { AssistantResponse, AssistantTurn, HelpHit } from "@/lib/contracts/assistant";
 import { ASSISTANT_API, ASSISTANT_HISTORY_MAX, ASSISTANT_QUESTION_MAX, ASSISTANT_TURN_MAX } from "@/lib/contracts/endpoints";
 import { cn } from "@/lib/utils";
+import { loadTurns, saveTurns, type AssistantTurnView } from "./assistant-history";
 
 // The Assistant Joutiya panel (design phase-5 D25): a side sheet (bottom sheet on phones). The AI
 // disclosure (AI Act art. 50) heads the conversation and stays in view of the first question; the
-// conversation lives in this component only (the API stores nothing) and the last turns go back
+// conversation stays in the browser tab (sessionStorage, assistant-history.ts: it survives an
+// article link or a reload, audit zone 5 n°17; the API stores nothing) and the last turns go back
 // with each question. When the AI is unavailable the answer is the matching help articles. Past
 // the IP allowance the API asks for Turnstile (403 turnstile_required): the widget then shows.
 
@@ -32,7 +34,7 @@ export interface AssistantPanelProps {
   returnFocus?: () => HTMLElement | null;
 }
 
-type Turn = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; response: AssistantResponse };
+type Turn = AssistantTurnView;
 
 /** The turns the API gets back: questions and AI answers (search-only answers carry no text). */
 export function historyOf(turns: readonly Turn[]): AssistantTurn[] {
@@ -51,13 +53,18 @@ function Sources({ title, articles, onNavigate }: { title?: string; articles: re
       <ul className="flex flex-col gap-1">
         {articles.map((article) => (
           <li key={article.slug}>
+            {/* An article of another locale (a question in Arabic on the French pages) opens there. */}
             <Link
               href={`/aide/${article.slug}`}
+              locale={article.locale}
+              hrefLang={article.locale}
               onClick={onNavigate}
               className={cn("flex items-start gap-2 rounded-sm py-1 text-sm font-medium text-link", quietLinkClassName)}
             >
               <BookOpen className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <span>{article.title}</span>
+              <span lang={article.locale} dir={article.locale ? "auto" : undefined}>
+                {article.title}
+              </span>
             </Link>
           </li>
         ))}
@@ -76,8 +83,9 @@ export default function AssistantPanel({ open, onOpenChange, returnFocus }: Assi
   const turnstile = useRef<TurnstileHandle>(null);
   const log = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const nextId = useRef(0);
-  const [turns, setTurns] = useState<Turn[]>([]);
+  // The tab's conversation so far (the panel only ever renders in the browser, after a click).
+  const [turns, setTurns] = useState<Turn[]>(loadTurns);
+  const nextId = useRef(turns.reduce((max, turn) => Math.max(max, turn.id + 1), 0));
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -86,11 +94,13 @@ export default function AssistantPanel({ open, onOpenChange, returnFocus }: Assi
   const [token, setToken] = useState<string | null>(null);
   const [challengeMissing, setChallengeMissing] = useState(false);
 
-  // Newest turn in view.
+  // Newest turn in view, a reopened panel included.
   useEffect(() => {
     const node = log.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [turns, pending]);
+  }, [turns, pending, open]);
+
+  useEffect(() => saveTurns(turns), [turns]);
 
   function message(value: unknown): string {
     if (isApiError(value, "rate_limited")) return t("errors.rate_limited", { wait: formatWait(locale, value.retryAfter, t("errors.later")) });

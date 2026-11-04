@@ -199,6 +199,10 @@ describe("shell paths", () => {
     for (const path of ["/aide", "/legal/cgu", "/connexion", "/inscription", "/deposer", "/messages/c1", "/anti-robot"]) {
       expect(showsAssistantBubble(path), path).toBe(false);
     }
+    // The inbox list has the bubble (audit zone 5 n°20), an open conversation does not; no 'Vendre'.
+    expect(showsAssistantBubble("/messages")).toBe(true);
+    expect(showsSellButton("/messages")).toBe(false);
+    expect(showsCategoryRow("/messages")).toBe(false);
     // The home page (lot 3) shows the twelve categories itself (map panel or arcade); 'Vendre' stays.
     expect(showsCategoryRow("/")).toBe(false);
     expect(showsSellButton("/")).toBe(true);

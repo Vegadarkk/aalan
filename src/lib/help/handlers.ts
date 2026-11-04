@@ -6,6 +6,7 @@ import { assistantRequestSchema, type AssistantResponse, type HelpHit } from "@/
 import { readJson } from "@/lib/http/json";
 import { escalateOnIp } from "@/lib/listings/escalation";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { questionLocale } from "./match";
 import { loadHelpArticles, searchHelp } from "./search";
 
 // POST /api/assistant (design phase-5 D25, AF §6 and §7): visitors and members, same origin. Limits
@@ -26,17 +27,22 @@ async function ask(request: Request): Promise<Response> {
   if (flow.identity.ip48) await enforceLimit("assistant.ip48", flow.identity.ip48);
   if (await escalateOnIp(request, "assistant.ip", flow.device, input.turnstileToken, "assistant")) flow.turnstilePassed = true;
 
-  const articles = await loadHelpArticles(input.locale);
-  const outcome = await askAssistant({ locale: input.locale, question: input.question, history: input.history, articles });
+  // A question in Arabic on the French pages is answered from the Arabic articles (audit zone 5
+  // n°18): the same single call, the Arabic prompt's cache; the links lead to the Arabic pages.
+  const locale = questionLocale(input.question, input.locale);
+  const elsewhere = locale === input.locale ? {} : { locale };
+  const articles = await loadHelpArticles(locale);
+  const outcome = await askAssistant({ locale, question: input.question, history: input.history, articles });
   if (outcome.mode === "ai") {
     const bySlug = new Map(articles.map((article) => [article.slug, article]));
     const cited = outcome.cited.flatMap((slug): HelpHit[] => {
       const article = bySlug.get(slug);
-      return article ? [{ slug, title: article.title, summary: article.summary }] : [];
+      return article ? [{ slug, title: article.title, summary: article.summary, ...elsewhere }] : [];
     });
     return respond<AssistantResponse>(flow, { mode: "ai", answer: outcome.answer, articles: cited });
   }
-  return respond<AssistantResponse>(flow, { mode: "search", articles: await searchHelp(input.locale, input.question, SEARCH_LIMIT, articles) });
+  const found = await searchHelp(locale, input.question, SEARCH_LIMIT, articles);
+  return respond<AssistantResponse>(flow, { mode: "search", articles: found.map((hit) => ({ ...hit, ...elsewhere })) });
 }
 
 /** POST /api/assistant (device and Turnstile pass cookies on every answer, errors included). */

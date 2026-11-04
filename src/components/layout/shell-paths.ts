@@ -18,8 +18,14 @@ const BOTTOM_BAR_PATHS = ["/annonce", "/pro"];
  */
 const QUIET_PATHS = ["/legal", "/aide", "/demarches", "/tarifs", "/professionnels", "/parametres", "/verifications", "/porte-monnaie", "/recours"];
 
-/** Where the assistant bubble steps aside: /aide has its own launcher; forms, conversations and the legal texts. */
+/** Where the assistant bubble steps aside: /aide has its own launcher; forms, open conversations and the legal texts. */
 const NO_ASSISTANT_PATHS = ["/aide", "/legal", ...FOCUSED_PATHS];
+
+/**
+ * The inbox list, a focused flow where a newcomer most often gets stuck (audit zone 5 n°20): the
+ * bubble shows there, never over an open conversation and its composer (/messages/<id>).
+ */
+const ASSISTANT_EXCEPTIONS = ["/messages"];
 
 /** The search page (lot 2): its own filters and category shortcuts sit beside the results. */
 const SEARCH_PATHS = ["/recherche"];
@@ -36,5 +42,5 @@ export function showsSellButton(pathname: string): boolean {
 }
 
 export function showsAssistantBubble(pathname: string): boolean {
-  return !under(pathname, NO_ASSISTANT_PATHS);
+  return ASSISTANT_EXCEPTIONS.includes(pathname) || !under(pathname, NO_ASSISTANT_PATHS);
 }

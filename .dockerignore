@@ -9,6 +9,8 @@ playwright-report
 test-results
 tests
 docs
+# The back office renders the tax guide from its source (Guide démarches > Guide fiscal).
+!docs/tax-runbook.md
 workers
 # Imports the uptime Worker's library (excluded above): an ops script, not part of the image.
 scripts/incidents.ts

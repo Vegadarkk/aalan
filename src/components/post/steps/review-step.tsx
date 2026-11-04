@@ -24,8 +24,8 @@ import { allIssues, stepOfPath } from "@/lib/listings/client/validation";
 import { cn } from "@/lib/utils";
 import { ChipRadioGroup } from "../controls/chips";
 import { SwitchField } from "../controls/switch";
-import { takeBlockers } from "../blockers-handoff";
-import { groupIssuesByStep, useSaveErrorMessage, useStepLabel, useValidationMessage } from "../field-messages";
+import { isPassageIssue, textAtPath, usePassageFinder } from "../blocker-passages";
+import { groupIssuesByStep, useBlockerMessage, useSaveErrorMessage, useStepLabel, useValidationMessage } from "../field-messages";
 import { useCategoryLabels, useCriteriaLabels } from "../labels";
 import { useIssueOptions } from "../use-issue-options";
 import { STEP_FORM_ID } from "../wizard-shell";
@@ -52,6 +52,8 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
   const locale = useLocale() as Locale;
   const stepLabel = useStepLabel();
   const message = useValidationMessage();
+  const blockerMessage = useBlockerMessage();
+  const tStep = useTranslations("Listing.stepBlockers");
   const saveMessage = useSaveErrorMessage();
   const acceptId = useId();
   const adultsId = useId();
@@ -91,12 +93,6 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
   const attestationMissing = (attestation !== null && !attested) || (realEstate && !declared);
 
   useEffect(() => onBusy(publishing), [publishing, onBusy]);
-
-  // Blockers of a renewal refused from "Mes annonces" (422): listed like those of a refused save.
-  useEffect(() => {
-    const handed = takeBlockers(listingId);
-    if (handed.length > 0) setBlockers(handed);
-  }, [listingId, setBlockers]);
 
   async function publish() {
     if (running.current) return;
@@ -163,6 +159,7 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
 
   const sensitiveOptions = SENSITIVE_DECLARATION_KINDS.map((kind) => ({ value: kind, label: t(`review.sensitiveKinds.${kind}`) }));
 
+  const finder = usePassageFinder(blockers.some(isPassageIssue));
   const serverBlockers = useMemo(() => groupIssuesByStep(blockers.map((issue) => ({ ...issue, step: stepOfPath(issue.path) }))), [blockers]);
   const missing = useMemo(() => groupIssuesByStep(issues), [issues]);
 
@@ -182,7 +179,22 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
 
       {serverBlockers.length > 0 ? (
         <ErrorBanner title={t("review.blockersTitle")}>
-          <IssueList groups={serverBlockers} onEdit={onEdit} stepLabel={stepLabel} message={(issue) => (issue.message && !t.has(`validation.${issue.code}` as never) ? issue.message : message(issue.code))} fixLabel={(step) => t("review.fixStep", { step: stepLabel(step) })} />
+          <IssueList
+            groups={serverBlockers}
+            onEdit={onEdit}
+            stepLabel={stepLabel}
+            message={blockerMessage}
+            detail={(issue) =>
+              finder && isPassageIssue(issue)
+                ? finder(issue.code, textAtPath(listing, issue.path)).map((passage) => (
+                    <span key={passage} className="block">
+                      {tStep.rich("passage", { passage, mark: (chunks) => <mark dir="auto" className="rounded-sm bg-danger/15 px-1 font-medium text-danger">{chunks}</mark> })}
+                    </span>
+                  ))
+                : null
+            }
+            fixLabel={(step) => t("review.fixStep", { step: stepLabel(step) })}
+          />
         </ErrorBanner>
       ) : null}
       {incomplete && (attempted || missing.length > 0) ? (
@@ -443,12 +455,15 @@ function IssueList<T extends FieldIssue & { step: WizardStep }>({
   onEdit,
   stepLabel,
   message,
+  detail,
   fixLabel,
 }: {
   groups: { step: WizardStep; issues: T[] }[];
   onEdit: (step: WizardStep) => void;
   stepLabel: (step: WizardStep) => string;
   message: (issue: T) => string;
+  /** More about an issue under its message (the passage at fault). */
+  detail?: (issue: T) => ReactNode;
   fixLabel: (step: WizardStep) => string;
 }) {
   return (
@@ -460,7 +475,10 @@ function IssueList<T extends FieldIssue & { step: WizardStep }>({
           </button>
           <ul className="list-disc ps-5 text-sm">
             {group.issues.map((issue) => (
-              <li key={`${issue.path}-${issue.code}`}>{message(issue)}</li>
+              <li key={`${issue.path}-${issue.code}`}>
+                {message(issue)}
+                {detail?.(issue)}
+              </li>
             ))}
           </ul>
         </li>

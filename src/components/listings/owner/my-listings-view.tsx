@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { EmptyState } from "@/components/feedback/empty-state";
-import { stashBlockers } from "@/components/post/blockers-handoff";
+import { stashBlockers } from "@/lib/listings/client/blocker-storage";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isRtl, type Locale } from "@/config/site";
@@ -210,6 +210,8 @@ export function MyListingsView() {
       setBusyId(id);
       try {
         const { listing } = await listingAction(id, action);
+        // A renewal that went through settles the blockers an earlier refusal left for the wizard.
+        if (action === "renew") stashBlockers(id, []);
         // A renewal the pre-moderation holds is not renewed yet: it waits for a moderator.
         toast.success(t(`toasts.${action === "renew" && listing.status === "pending_review" ? "renewHeld" : TOAST_KEY[action]}`));
         // The row changes now; a listing that left the tab (sold) leaves the list.

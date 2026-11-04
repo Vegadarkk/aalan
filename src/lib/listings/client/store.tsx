@@ -6,6 +6,7 @@ import type { FieldIssue, ListingPatch, ListingStatus, OwnerListing, OwnerPhoto,
 import type { ListingPhoto, UploadRejectReason } from "@/lib/contracts/media";
 import { deleteUpload, getUpload, patchListing, patchListingOnUnload, pollUpload } from "./api";
 import { Autosave, type AutosaveState } from "./autosave";
+import { readBlockers, stashBlockers } from "./blocker-storage";
 import { photoUrl } from "./photo-url";
 import { LEAVE_REASON, uploadListingPhoto, uploadErrorCode } from "./upload";
 import { sanitizePatch, withoutRejectedFields } from "./validation";
@@ -421,7 +422,8 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
     saveState: "idle" as AutosaveState,
     saveError: undefined,
     photos: photoItemsFromListing(listing, mediaBaseUrl),
-    blockers: [],
+    // A refusal kept for this tab (reload, renewal refused in "Mes annonces"): still to fix.
+    blockers: readBlockers(listing.id),
     publishResult: null,
     held: [],
   }));
@@ -467,6 +469,11 @@ export function WizardProvider({ listing, maxPhotos, mediaBaseUrl, children, onU
   useEffect(() => {
     heldRef.current = state.held;
   }, [state.held]);
+
+  // The blockers outlive a reload of the tab until they are settled (zone 3 P2-9).
+  useEffect(() => {
+    stashBlockers(listingId, state.blockers);
+  }, [listingId, state.blockers]);
 
   useEffect(() => {
     autosave.setManual(saveMode === "manual");

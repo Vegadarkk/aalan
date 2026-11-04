@@ -46,6 +46,13 @@ export function useValidationMessage(): (code: string, params?: Params) => strin
   );
 }
 
+/** Message of a server blocker: the server's own sentence for a code the wizard has no words for. */
+export function useBlockerMessage(): (issue: FieldIssue) => string {
+  const t = useTranslations("Listing.validation");
+  const message = useValidationMessage();
+  return useCallback((issue) => (issue.message && !t.has(issue.code as Parameters<typeof t.has>[0]) ? issue.message : message(issue.code)), [t, message]);
+}
+
 /** The message of a react-hook-form error: a server message as is, else the mapped code. */
 export function useFieldErrorMessage(): (code: string, error?: FieldError, params?: Params) => string | undefined {
   const message = useValidationMessage();

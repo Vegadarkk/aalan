@@ -359,6 +359,72 @@ test.describe("posting wizard", () => {
     expect(listingPhotos[0]!.w).toBeLessThan(original.get("width") as number);
   });
 
+  test("a refused publication: « Corriger » shows the reason and the passage on the step, the list survives a reload (zone 3 P2-9)", { tag: "@mobile" }, async ({ page, request }) => {
+    const id = runId();
+    await signUpAndIn(page, request, `e2e-post-fix-${id}@test.joutiya.ma`);
+    await verifyPhone(page, request);
+
+    await page.goto("/fr/deposer");
+    await page.getByRole("radio", { name: "Véhicules" }).click();
+    await page.getByRole("radio", { name: "Vélos" }).click();
+    await expect(page).toHaveURL(/\/criteres$/);
+    const listingId = new URL(page.url()).pathname.split("/")[3]!;
+    await page.getByRole("radiogroup", { name: /État/ }).getByRole("radio", { name: "Très bon état" }).click();
+    await page.getByRole("radiogroup", { name: /Type de vélo/ }).getByRole("radio", { name: "Ville" }).click();
+    await next(page);
+    await page.getByRole("textbox", { name: /Titre de l'annonce/ }).fill(`Vélo pliant ${id}`);
+    await next(page);
+    // A phone number in the text: the server's screen refuses the publication.
+    const description = page.getByRole("textbox", { name: /^Description/ });
+    await description.fill(`Vélo pliant ${id}, très peu servi. Appelez le 06 12 34 56 78 pour l'essayer.`);
+    await next(page);
+    await page.locator('input[type="file"][multiple]').setInputFiles([{ name: "velo.jpg", mimeType: "image/jpeg", buffer: await photoWithExif() }]);
+    await expect(page.getByText("Couverture", { exact: true })).toBeVisible({ timeout: 60_000 });
+    await next(page);
+    await page.getByRole("textbox", { name: /^Prix/ }).fill("900");
+    await next(page);
+    await page.getByRole("combobox", { name: /Ville/ }).fill("Casab");
+    await page.getByRole("option", { name: "Casablanca", exact: true }).click();
+    await next(page);
+    await next(page);
+
+    await expect(page).toHaveURL(/\/apercu$/);
+    await page.getByRole("checkbox", { name: /conditions générales d'utilisation/ }).check();
+    const refused = page.waitForResponse((response) => response.url().endsWith(`/api/listings/${listingId}/publish`) && response.request().method() === "POST");
+    await page.getByRole("button", { name: "Publier l'annonce" }).click();
+    expect((await refused).status()).toBe(422);
+    const reasons = page.getByRole("alert").filter({ hasText: "Retirez le numéro de téléphone" });
+    await expect(reasons).toBeVisible();
+    await expect(reasons.locator("mark")).toHaveText("06 12 34 56 78");
+
+    // A reload keeps the list until the point is fixed.
+    await page.reload();
+    await expect(page.getByRole("alert").filter({ hasText: "Retirez le numéro de téléphone" })).toBeVisible({ timeout: 15_000 });
+
+    // « Corriger » lands on the step with the reason on top and the passage selected in the field.
+    await page.getByRole("button", { name: /Corriger.*Description/ }).click();
+    await expect(page).toHaveURL(/\/description$/);
+    const banner = page.getByTestId("step-blockers");
+    await expect(banner).toContainText("Retirez le numéro de téléphone");
+    await expect(banner.locator("mark")).toHaveText("06 12 34 56 78");
+    await expect.poll(() => description.evaluate((field: HTMLTextAreaElement) => field.value.slice(field.selectionStart, field.selectionEnd))).toBe("06 12 34 56 78");
+    // Edited: the reason stays in view, marked as to be checked again.
+    await description.fill(`Vélo pliant ${id}, très peu servi. Écrivez-moi par la messagerie pour l'essayer.`);
+    await expect(banner).toContainText("Modifié : ce point sera vérifié à nouveau à la publication.");
+    await expect(banner.locator("mark")).toHaveCount(0);
+    await next(page);
+
+    // Back on the review step after a reload: the fixed point is no longer listed, and it publishes.
+    await page.goto(`/fr/deposer/${listingId}/apercu`);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: `Vélo pliant ${id}` })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Retirez le numéro de téléphone")).toHaveCount(0);
+    await page.getByRole("checkbox", { name: /conditions générales d'utilisation/ }).check();
+    const published = page.waitForResponse((response) => response.url().endsWith(`/api/listings/${listingId}/publish`) && response.request().method() === "POST");
+    await page.getByRole("button", { name: "Publier l'annonce" }).click();
+    expect((await published).ok()).toBe(true);
+  });
+
   test("an unknown step is a 404", async ({ page, request }) => {
     const id = runId();
     await signUpAndIn(page, request, `e2e-post-404-${id}@test.joutiya.ma`);

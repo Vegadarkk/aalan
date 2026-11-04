@@ -1135,6 +1135,13 @@
       "notDigits": "Chiffres uniquement.",
       "tooBig": "{max} maximum.",
       "tooBigPlain": "Nombre trop grand."
+    },
+    "stepBlockers": {
+      "title": "À corriger avant de publier",
+      "lead": "La vérification de l'annonce a bloqué la publication pour cette raison. Corrigez ici, puis publiez à nouveau depuis l'aperçu.",
+      "passage": "Passage concerné : <mark>{passage}</mark>",
+      "edited": "Modifié : ce point sera vérifié à nouveau à la publication.",
+      "editedTitle": "Points modifiés"
     }
   },
   "Categories": {

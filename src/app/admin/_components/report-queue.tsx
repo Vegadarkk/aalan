@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageOff, MessageSquare, Star, Store, UserRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,12 +59,15 @@ interface ReportQueueProps {
   cards?: Record<string, TargetCard>;
 }
 
-/** First photo of the target, or a quiet tile naming its kind. */
+const KIND_ICON: Record<string, LucideIcon> = { Annonce: ImageOff, Compte: UserRound, Message: MessageSquare, Boutique: Store, Avis: Star };
+
+/** First photo of the target, or a quiet tile with the icon of its kind. */
 function Thumb({ card }: { card: TargetCard }) {
+  const Icon = KIND_ICON[card.kind] ?? ImageOff;
   return (
-    <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-muted text-xs text-foreground-muted">
+    <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-muted text-foreground-muted">
       {/* eslint-disable-next-line @next/next/no-img-element -- media variants are served as is (images.unoptimized, design §8) */}
-      {card.thumb ? <img src={card.thumb.src} alt="" width={56} height={56} loading="lazy" decoding="async" className="size-full object-cover" /> : <span aria-hidden="true">{card.kind}</span>}
+      {card.thumb ? <img src={card.thumb.src} alt="" width={56} height={56} loading="lazy" decoding="async" className="size-full object-cover" /> : <Icon aria-hidden="true" className="size-5" />}
     </div>
   );
 }

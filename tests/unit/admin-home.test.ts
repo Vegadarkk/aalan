@@ -8,9 +8,10 @@ import { activityKind, activityShown } from "@/lib/decisions/activity";
 
 describe("quota wording", () => {
   it("rounds amounts in French instead of raw decimals", () => {
-    expect(formatBytes(201_326_592)).toBe("201,33 Mo");
+    expect(formatBytes(201_326_592)).toBe("201 Mo");
+    expect(formatBytes(12_345_678)).toBe("12,35 Mo");
     expect(formatBytes(1_234_567_890)).toBe("1,23 Go");
-    expect(formatQuotaAmount("bytes", 201_326_592, 10_000_000_000)).toBe("201,33 Mo sur 10 Go");
+    expect(formatQuotaAmount("bytes", 201_326_592, 10_000_000_000)).toBe("201 Mo sur 10 Go");
     expect(formatQuotaAmount("usd_micros", 120_000, 5_000_000)).toBe("0,12 USD sur 5 USD");
     expect(formatQuotaAmount("operations", 1234, 50_000).replace(/\s/g, " ")).toBe("1 234 sur 50 000");
   });

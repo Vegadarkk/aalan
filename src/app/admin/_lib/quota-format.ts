@@ -11,6 +11,7 @@ const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFracti
 /** Bytes in the largest unit that keeps the value readable (decimal units, as the providers bill). */
 export function formatBytes(bytes: number): string {
   if (bytes >= 1e9) return `${decimal.format(Math.round(bytes / 1e7) / 100)} Go`;
+  if (bytes >= 1e8) return `${integer.format(bytes / 1e6)} Mo`;
   if (bytes >= 1e6) return `${decimal.format(Math.round(bytes / 1e4) / 100)} Mo`;
   if (bytes >= 1e3) return `${integer.format(bytes / 1e3)} Ko`;
   return `${integer.format(bytes)} o`;

@@ -107,7 +107,7 @@ function changeSentence(change: Exclude<ScreeningChange, { kind: "none" }>): str
       : "Le vendeur a modifié le texte, le prix ou les photos depuis la mise en attente ; le contrôle relancé donne le même résultat.";
   }
   const reasons = [...(change.added.length > 0 ? [`nouveau signal : ${flagList(change.added)}`] : []), ...(change.removed.length > 0 ? [`signal levé : ${flagList(change.removed)}`] : [])];
-  return `Contenu inchangé. Contrôle relancé : score mis à jour (${reasons.length > 0 ? reasons.join(" ; ") : "contexte du vendeur ou contrôle des photos mis à jour"}).`;
+  return `Contenu inchangé. Contrôle relancé : score mis à jour (${reasons.length > 0 ? reasons.join(" ; ") : "mêmes signaux, poids recalculés sur le contexte du vendeur"}).`;
 }
 
 export default async function ModerationReviewPage({ params }: { params: Promise<{ id: string }> }) {

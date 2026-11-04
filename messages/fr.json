@@ -3053,7 +3053,7 @@
       "rooms": "{count, plural, one {# pièce} other {# pièces}}",
       "bedrooms": "{count} ch.",
       "year": "{text}",
-      "mileage": "{count} km",
+      "mileage": "{count, number} km",
       "fuel": {
         "diesel": "Diesel",
         "essence": "Essence",

@@ -3043,7 +3043,7 @@
       "rooms": "{count} غرف",
       "bedrooms": "{count} غرف نوم",
       "year": "{text}",
-      "mileage": "{count} كلم",
+      "mileage": "{count, number} كلم",
       "fuel": {
         "diesel": "ديزل",
         "essence": "بنزين",

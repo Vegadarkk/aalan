@@ -3043,7 +3043,7 @@
       "rooms": "{count, plural, one {# texxamt} other {# n texxamin}}",
       "bedrooms": "{count} ch.",
       "year": "{text}",
-      "mileage": "{count} km",
+      "mileage": "{count, number} km",
       "fuel": {
         "diesel": "Gazwal",
         "essence": "Lisans",

@@ -49,6 +49,8 @@ const schema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   RELEASE: optional,
   CSP_REPORT_ONLY: flag,
+  /** Production: "true" lets search engines index the Tarifit pages (after its native review); read by the proxy. */
+  RIF_INDEXABLE: flag,
   /** Staging only: requests carrying it in x-joutiya-loadtest skip the app's rate limits (load test, phase 6 D17). */
   LOADTEST_BYPASS_SECRET: optional,
   QUEUE_REDIS_URL: optional,

@@ -169,6 +169,18 @@ describe("proxy", () => {
     expect(directive(bare, "img-src")).toBe("img-src 'self' data: blob:");
   });
 
+  it("keeps Tarifit pages out of the production index until RIF_INDEXABLE", async () => {
+    expect((await proxy(request("/fr"))).headers.get("x-robots-tag")).toBeNull();
+    expect((await proxy(request("/ar/c/vehicules"))).headers.get("x-robots-tag")).toBeNull();
+    for (const path of ["/rif", "/rif/c/vehicules", "/rif/connexion"]) {
+      expect((await proxy(request(path))).headers.get("x-robots-tag")).toBe("noindex, follow");
+    }
+    vi.stubEnv("RIF_INDEXABLE", "true");
+    expect((await proxy(request("/rif/c/vehicules"))).headers.get("x-robots-tag")).toBeNull();
+    vi.stubEnv("APP_ENV", "staging");
+    expect((await proxy(request("/rif"))).headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
   it("keeps staging out of search engines", async () => {
     vi.stubEnv("APP_ENV", "staging");
     expect((await proxy(request("/fr"))).headers.get("x-robots-tag")).toBe("noindex, nofollow");

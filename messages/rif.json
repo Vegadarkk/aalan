@@ -396,7 +396,9 @@
       "turnstileTitle": "Tasenqedt nniḍen",
       "turnstileBody": "Aṭas n tikkal war teddi ca tukcimt. Sentem belli war telliḍ d robot, uca ɛawed kcem.",
       "verifyTitle": "Sentem adres n e-mail nnec",
-      "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu."
+      "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu.",
+      "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
     },
     "signUp": {
       "title": "Snulfu amiḍan",
@@ -718,7 +720,8 @@
       "real_estate_attestation": "Ḥima ad tessufɣeḍ annonce n ixxamen d wakal, sentem belli isallen nnes ṣeḥḥan d belli d kecc kan i ɣer ttellan.",
       "rental_attestation": "Ḥima ad tessufɣeḍ akra, sentem ayen tenniḍ x agence nnec (rrexṣa, immatriculation, assurance).",
       "rental_agrement_missing": "Ḥima ad tessufɣeḍ akra, ari zzat uṭṭun n rrexṣa (agrément) n agence nnec deg umkan Pro (Agence inu n ukra).",
-      "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro)."
+      "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro).",
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
     },
     "wizard": {
       "title": "Ssuffeɣ annonce",
@@ -769,7 +772,8 @@
       "holidayProTitle": "Uṭṭun n tsirect n usensi aturisti ixs-it",
       "holidayProBody": "Agence ad d-tini uṭṭun n tsirect n lexdma n kul axxam (lqanun 80-14 n usensi aturisti). Ad d-iban x lɛannonce, am wami t-id-yenna umessufeɣ.",
       "holidayIndividualTitle": "Lekra i turist : lqanun 80-14 ittwaḥkem",
-      "holidayIndividualBody": "Ɣer wanaw n uxxam, tzemmer ad tili tsirect n lexdma ixs-itt. Ma ɣarwem tasirect, aret uṭṭun nnes : ad d-iban x lɛannonce. War uṭṭun, lɛannonce ad tini « war t-id-yenni ca »."
+      "holidayIndividualBody": "Ɣer wanaw n uxxam, tzemmer ad tili tsirect n lexdma ixs-itt. Ma ɣarwem tasirect, aret uṭṭun nnes : ad d-iban x lɛannonce. War uṭṭun, lɛannonce ad tini « war t-id-yenni ca ».",
+      "choosePlan": "Choisir une offre"
     },
     "start": {
       "title": "Ssuffeɣ annonce",
@@ -792,7 +796,12 @@
       "untitled": "Brouillon sans titre",
       "edited": "modifié {when}",
       "allDrafts": "Voir mes {count} brouillons",
-      "checking": "Recherche de vos brouillons…"
+      "checking": "Recherche de vos brouillons…",
+      "noPlanTitle": "Choisissez d'abord une offre",
+      "noPlanBody": "Votre boutique est vérifiée, mais sans offre active elle ne peut pas publier d'annonce. Choisissez une offre, puis revenez déposer votre annonce : rien ne sera perdu.",
+      "noPlanClosed": "Votre boutique est vérifiée, mais elle n'a pas d'offre active. Les abonnements ouvriront prochainement : vous pourrez alors en choisir une et publier.",
+      "choosePlan": "Choisir une offre",
+      "proSpace": "Espace Pro"
     },
     "steps": {
       "categorie": "Taggayt",
@@ -4134,7 +4143,8 @@
       "stockImport": "Awi-d stock inu",
       "fleet": "Planning n tkeṛṛusin",
       "sellerPayment": "Adfaɛ ɣer umzenzu",
-      "rentalAgency": "Tajensit inu n ukra"
+      "rentalAgency": "Tajensit inu n ukra",
+      "choosePlan": "Choisir une offre"
     },
     "errors": {
       "pro_signup_closed": "Isuturen n umiḍan Pro ttwaqqnen i tura.",
@@ -5317,7 +5327,16 @@
         "done": "Pass nnec yexdem ar {date}."
       },
       "agencyHint": "D ayen yelhan ḥima ad terẓmeḍ agence n wakra i yiwet n tallit: xtar secteur « Location saisonnière » deg Amkan Pro nnec."
-    }
+    },
+    "notPro": {
+      "title": "Réservé aux boutiques vérifiées",
+      "body": "Les offres Essentiel et Business s'adressent aux professionnels dont la boutique a été vérifiée. Créez votre boutique depuis l'espace Pro : la demande prend quelques minutes.",
+      "action": "Créer ma boutique"
+    },
+    "planUnpriced": "Pas encore disponible au paiement.",
+    "pick": "Choisir cette offre",
+    "chosen": "Offre choisie",
+    "launchOfferExtras": "Pendant l'offre de lancement : sans les crédits mensuels ni les « À la Une » inclus."
   },
   "Invoices": {
     "metaTitle": "Tifaktuṛin inu",

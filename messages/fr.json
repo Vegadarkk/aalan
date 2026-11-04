@@ -406,7 +406,9 @@
       "turnstileTitle": "Encore une vérification",
       "turnstileBody": "Plusieurs tentatives ont échoué. Confirmez que vous n'êtes pas un robot, puis reconnectez-vous.",
       "verifyTitle": "Confirmez votre adresse e-mail",
-      "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi."
+      "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi.",
+      "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
     },
     "signUp": {
       "title": "Créer un compte",
@@ -728,7 +730,8 @@
       "real_estate_attestation": "Pour publier une annonce immobilière, attestez que ses informations sont exactes et sous votre seule responsabilité.",
       "rental_attestation": "Pour publier une location, confirmez la déclaration de votre agence (agrément, immatriculation, assurance).",
       "rental_agrement_missing": "Pour publier une location, renseignez d'abord le numéro d'agrément de votre agence dans l'espace Pro (Mon agence de location).",
-      "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro)."
+      "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro).",
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
     },
     "wizard": {
       "title": "Déposer une annonce",
@@ -779,7 +782,8 @@
       "holidayProTitle": "N° d'autorisation d'hébergement touristique obligatoire",
       "holidayProBody": "Une agence indique le numéro d'autorisation d'exploitation de chaque logement (loi n° 80-14 sur l'hébergement touristique). Il est affiché sur l'annonce, déclaré par l'annonceur.",
       "holidayIndividualTitle": "Louer à des touristes : la loi 80-14 s'applique",
-      "holidayIndividualBody": "Selon le type de logement, une autorisation d'exploitation peut être exigée. Si vous en avez une, indiquez son numéro : il est affiché sur l'annonce. Sans numéro, l'annonce indique « non communiquée »."
+      "holidayIndividualBody": "Selon le type de logement, une autorisation d'exploitation peut être exigée. Si vous en avez une, indiquez son numéro : il est affiché sur l'annonce. Sans numéro, l'annonce indique « non communiquée ».",
+      "choosePlan": "Choisir une offre"
     },
     "start": {
       "title": "Déposer une annonce",
@@ -802,7 +806,12 @@
       "untitled": "Brouillon sans titre",
       "edited": "modifié {when}",
       "allDrafts": "Voir mes {count} brouillons",
-      "checking": "Recherche de vos brouillons…"
+      "checking": "Recherche de vos brouillons…",
+      "noPlanTitle": "Choisissez d'abord une offre",
+      "noPlanBody": "Votre boutique est vérifiée, mais sans offre active elle ne peut pas publier d'annonce. Choisissez une offre, puis revenez déposer votre annonce : rien ne sera perdu.",
+      "noPlanClosed": "Votre boutique est vérifiée, mais elle n'a pas d'offre active. Les abonnements ouvriront prochainement : vous pourrez alors en choisir une et publier.",
+      "choosePlan": "Choisir une offre",
+      "proSpace": "Espace Pro"
     },
     "steps": {
       "categorie": "Catégorie",
@@ -4120,7 +4129,7 @@
         "business": "Business",
         "premium": "Premium"
       },
-      "launchOffer": "Offerte jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant tout paiement.",
+      "launchOffer": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant tout paiement.",
       "launchOfferEnds": "Offerte jusqu'au {date}.",
       "noPlan": "Sans offre, vous ne pouvez pas publier de nouvelle annonce en tant que professionnel.",
       "salesClosed": "Les abonnements ouvriront prochainement.",
@@ -4144,7 +4153,8 @@
       "stockImport": "Importer mon stock",
       "fleet": "Planning de flotte",
       "sellerPayment": "Paiement chez le vendeur",
-      "rentalAgency": "Mon agence de location"
+      "rentalAgency": "Mon agence de location",
+      "choosePlan": "Choisir une offre"
     },
     "errors": {
       "pro_signup_closed": "Les demandes de compte Pro sont fermées pour le moment.",
@@ -5196,7 +5206,7 @@
       "title": "Votre offre",
       "none": "Aucune offre",
       "launchOffer": "Essentiel offert",
-      "launchOfferBody": "Offerte jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant la fin.",
+      "launchOfferBody": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant la fin.",
       "launchOfferEnds": "Offerte jusqu'au {date}. Abonnez-vous avant cette date pour garder vos annonces en ligne.",
       "monthly": "Paiement mensuel",
       "yearly": "Paiement annuel",
@@ -5327,7 +5337,16 @@
         "done": "Votre pass est actif jusqu'au {date}."
       },
       "agencyHint": "Idéal pour ouvrir une agence de location saisonnière le temps d'une saison : choisissez le secteur « Location saisonnière » dans votre espace Pro."
-    }
+    },
+    "notPro": {
+      "title": "Réservé aux boutiques vérifiées",
+      "body": "Les offres Essentiel et Business s'adressent aux professionnels dont la boutique a été vérifiée. Créez votre boutique depuis l'espace Pro : la demande prend quelques minutes.",
+      "action": "Créer ma boutique"
+    },
+    "planUnpriced": "Pas encore disponible au paiement.",
+    "pick": "Choisir cette offre",
+    "chosen": "Offre choisie",
+    "launchOfferExtras": "Pendant l'offre de lancement : sans les crédits mensuels ni les « À la Une » inclus."
   },
   "Invoices": {
     "metaTitle": "Mes factures",

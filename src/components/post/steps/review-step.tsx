@@ -8,6 +8,7 @@ import { InlineError } from "@/components/feedback/inline-error";
 import { FormMessage } from "@/components/auth/form-message";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/auth/turnstile-widget";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RENTAL_SUBCATEGORY, criterionById, subcategoryById } from "@/config/categories";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import { SITE_NAME, type Locale } from "@/config/site";
@@ -174,7 +175,17 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
 
   return (
     <form id={STEP_FORM_ID} onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-6">
-      <FormMessage error={serverError} scope="listing" />
+      <FormMessage
+        error={serverError}
+        scope="listing"
+        action={
+          isApiError(serverError, "no_plan") ? (
+            <Button asChild variant="structure" size="sm" className="max-sm:h-11">
+              <Link href="/pro/abonnement">{t("wizard.choosePlan")}</Link>
+            </Button>
+          ) : undefined
+        }
+      />
       {!editable ? <ErrorBanner tone="info" title={t("review.publishedListing")} /> : null}
 
       {serverBlockers.length > 0 ? (

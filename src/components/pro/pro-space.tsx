@@ -355,10 +355,17 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
                 <span>{shop.launchOffer.endsAt ? t("launchOfferEnds", { date: date(shop.launchOffer.endsAt) }) : t("launchOffer", { days: shop.launchOffer.noticeDays })}</span>
               </p>
             ) : null}
-            <Link href="/pro/abonnement" className={cn("mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
-              {t("subscription")}
-              <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
-            </Link>
+            {/* Without a plan, a real call to action while subscriptions are open (zone 6 audit 6-02). */}
+            {plan === "none" && me.salesOpen && !suspended ? (
+              <Button asChild variant="structure" className="mt-auto w-fit">
+                <Link href="/pro/abonnement">{t("choosePlan")}</Link>
+              </Button>
+            ) : (
+              <Link href="/pro/abonnement" className={cn("mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+                {t("subscription")}
+                <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
+              </Link>
+            )}
           </section>
           <Quotas shop={shop} />
         </div>

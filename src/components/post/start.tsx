@@ -16,6 +16,7 @@ import { isApiError, useSession } from "@/lib/auth/client";
 import { MAX_DRAFTS, type OwnerListingSummary } from "@/lib/contracts/listings";
 import { usePublicConfig } from "@/lib/config/client";
 import { createListing, listMine } from "@/lib/listings/client/api";
+import { loadProMe } from "@/lib/pro/client";
 import { daysUntil, formatRelativeDays } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
 import { wizardPath } from "@/lib/listings/client/routes";
@@ -29,7 +30,7 @@ import { useCategoryLabels } from "./labels";
 // `?don=1` presets "Je donne" (journey review 2026-10-29: the gift was asked at the price step only),
 // which the draft carries from its creation when the subcategory allows donations.
 
-type State = { kind: "checking" } | { kind: "drafts" } | { kind: "pick"; failed?: unknown } | { kind: "creating" } | { kind: "resuming" } | { kind: "draftLimit" };
+type State = { kind: "checking" } | { kind: "drafts" } | { kind: "pick"; failed?: unknown } | { kind: "creating" } | { kind: "resuming" } | { kind: "draftLimit" } | { kind: "noPlan" };
 
 /** Drafts shown on the choice screen; the rest are one link away in « Mes annonces ». */
 const DRAFTS_SHOWN = 3;
@@ -48,6 +49,24 @@ export function WizardStart() {
   const started = useRef(false);
   const creating = useRef(false);
   const full = drafts.length >= MAX_DRAFTS;
+  // A verified shop without a plan (zone 6 audit 6-02): told here, before the nine steps, not by
+  // the refusal at "Publier". Whether subscriptions are open decides the way out.
+  const [noPlan, setNoPlan] = useState<{ salesOpen: boolean } | null>(null);
+  const isPro = session?.role === "pro";
+  const proChecked = useRef(false);
+
+  useEffect(() => {
+    if (!isPro || proChecked.current) return;
+    proChecked.current = true;
+    void (async () => {
+      try {
+        const me = await loadProMe();
+        if (me.shop && me.shop.quotas.activeListings === 0) setNoPlan({ salesOpen: me.salesOpen });
+      } catch {
+        // The server refuses the draft anyway (409 no_plan): the start screen then says it.
+      }
+    })();
+  }, [isPro]);
 
   useEffect(() => {
     if (started.current) return;
@@ -85,11 +104,16 @@ export function WizardStart() {
       } catch (error) {
         creating.current = false;
         if (isApiError(error, "draft_limit")) setState({ kind: "draftLimit" });
-        else setState({ kind: "pick", failed: error });
+        else if (isApiError(error, "no_plan")) {
+          setNoPlan((known) => known ?? { salesOpen: true });
+          setState({ kind: "noPlan" });
+        } else setState({ kind: "pick", failed: error });
       }
     },
     [giving, router],
   );
+
+  if (noPlan) return <NoPlan salesOpen={noPlan.salesOpen} />;
 
   if (state.kind === "checking" || state.kind === "resuming" || state.kind === "creating") {
     return (
@@ -140,6 +164,29 @@ export function WizardStart() {
       ) : null}
       <SwitchField label={t("giveLabel")} hint={t("giveHint")} checked={giving} onCheckedChange={setGiving} name="don" className="rounded-md border border-border bg-surface px-4 py-3" />
       <CategoryPicker categoryId={categoryId} subcategoryId={null} isPro={session?.role === "pro"} onCategory={setCategoryId} onSubcategory={(subcategory) => void onSubcategory(subcategory)} />
+    </div>
+  );
+}
+
+/** A shop without a plan: the real cause and the way to the offers, instead of the category grid. */
+function NoPlan({ salesOpen }: { salesOpen: boolean }) {
+  const t = useTranslations("Listing.start");
+  return (
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-3xl font-semibold text-balance">{t("title")}</h1>
+      </header>
+      <ErrorBanner
+        tone="info"
+        title={t("noPlanTitle")}
+        action={
+          <Button asChild variant="structure" size="sm" className="max-sm:h-11">
+            <Link href={salesOpen ? "/pro/abonnement" : "/pro"}>{salesOpen ? t("choosePlan") : t("proSpace")}</Link>
+          </Button>
+        }
+      >
+        {salesOpen ? t("noPlanBody") : t("noPlanClosed")}
+      </ErrorBanner>
     </div>
   );
 }

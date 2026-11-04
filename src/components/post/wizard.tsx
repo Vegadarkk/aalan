@@ -214,8 +214,8 @@ function WizardScreens({ nonce }: { nonce?: string }) {
   if (screen === null || needsRedirect) return null;
 
   if (screen === WIZARD_DONE) {
-    if (publishResult) return <DoneScreen status={publishResult.status} slugId={publishResult.slugId ?? listing.slugId} url={publishResult.url} listingId={listingId} />;
-    return <DoneScreen status={listing.status} slugId={listing.slugId} listingId={listingId} />;
+    if (publishResult) return <DoneScreen status={publishResult.status} slugId={publishResult.slugId ?? listing.slugId} url={publishResult.url} listingId={listingId} title={listing.title} />;
+    return <DoneScreen status={listing.status} slugId={listing.slugId} listingId={listingId} title={listing.title} />;
   }
 
   const step = screen;

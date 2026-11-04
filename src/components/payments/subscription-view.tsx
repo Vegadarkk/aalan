@@ -122,6 +122,22 @@ export function SubscriptionView() {
       </div>
     );
   }
+  if (state.kind === "failed" && isApiError(state.error, "not_found")) {
+    // An account without a shop (zone 6 audit 6-19): what the page is for, not a service failure.
+    return (
+      <ErrorBanner
+        tone="info"
+        title={t("notPro.title")}
+        action={
+          <Button asChild variant="structure" size="sm">
+            <Link href="/pro">{t("notPro.action")}</Link>
+          </Button>
+        }
+      >
+        {t("notPro.body")}
+      </ErrorBanner>
+    );
+  }
   if (state.kind === "failed") {
     return (
       <ErrorBanner
@@ -142,7 +158,11 @@ export function SubscriptionView() {
   // A Stripe payment still due after the grace: the plan is withdrawn while Stripe keeps the subscription open.
   const unpaid = live && data.lifecycle === "downgraded";
   const suspended = data.lifecycle === "suspended";
-  const canSubscribe = data.salesOpen && data.available && !live && SUBSCRIBABLE.has(data.lifecycle);
+  // An offer without its Stripe prices cannot be chosen (zone 6 audit 6-01: the form showed and
+  // answered "Choisissez une offre" whatever was clicked): none priced, no form at all.
+  const priced = data.plans.some((plan) => plan.available);
+  const payable = data.available && priced;
+  const canSubscribe = data.salesOpen && payable && !live && SUBSCRIBABLE.has(data.lifecycle);
   const selected = canSubscribe ? data.plans.find((plan) => plan.id === choice && plan.available) : undefined;
   const problems = attempted ? { choice: !selected, terms: !terms } : { choice: false, terms: false };
   // The plan the shop has now: a running subscription's, or Essentiel during the launch offer.
@@ -219,7 +239,7 @@ export function SubscriptionView() {
         </ErrorBanner>
       ) : null}
       {!data.salesOpen && !live ? <ErrorBanner tone="info" title={t(data.planSource === "launch_offer" ? "closed" : "closedSoon")} /> : null}
-      {data.salesOpen && !data.available ? <ErrorBanner tone="warning" title={t("unavailable")} /> : null}
+      {data.salesOpen && !payable && !live ? <ErrorBanner tone="warning" title={t("unavailable")} /> : null}
 
       <section aria-labelledby="plan-current" className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -257,17 +277,18 @@ export function SubscriptionView() {
             <p className="text-2xl font-semibold">{t("current.none")}</p>
           )}
         </div>
-        {data.subscription && data.available && !suspended ? (
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          {data.subscription && data.available && !suspended ? (
             <Button type="button" variant={live ? "structure" : "outline"} loading={pending === "portal"} disabled={pending === "checkout"} onClick={() => void manage()}>
               {t("current.manage")}
             </Button>
-            <Link href="/pro/factures" className={cn("inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
-              <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
-              {t("current.invoices")}
-            </Link>
-          </div>
-        ) : null}
+          ) : null}
+          {/* Always reachable (zone 6 audit 6-20): a pass or a first payment brings the first invoice. */}
+          <Link href="/pro/factures" className={cn("inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+            <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
+            {t("current.invoices")}
+          </Link>
+        </div>
       </section>
       {live && !suspended ? <p className="-mt-5 text-sm text-foreground-muted text-pretty">{t("current.manageHint")}</p> : null}
 
@@ -308,7 +329,17 @@ export function SubscriptionView() {
           <legend className="sr-only">{t("offers")}</legend>
           <div className="grid gap-4 sm:grid-cols-2">
             {data.plans.map((plan) => (
-              <PlanDoor key={plan.id} plan={plan} interval={interval} current={plan.id === current} selectable={canSubscribe && plan.available} selected={plan.id === selected?.id} onSelect={() => setChoice(plan.id)} />
+              <PlanDoor
+                key={plan.id}
+                plan={plan}
+                interval={interval}
+                current={plan.id === current}
+                selectable={canSubscribe && plan.available}
+                unpriced={canSubscribe && !plan.available}
+                launchOffer={plan.id === current && data.planSource === "launch_offer"}
+                selected={plan.id === selected?.id}
+                onSelect={() => setChoice(plan.id)}
+              />
             ))}
           </div>
           {problems.choice ? <InlineError>{t("choose")}</InlineError> : null}
@@ -365,7 +396,27 @@ export function SubscriptionView() {
  * One offer, drawn as a door (the arch of the logo): Business in the frame's green, Essentiel in
  * cream. Choosing one lays the gold threshold under it.
  */
-function PlanDoor({ plan, interval, current, selectable, selected, onSelect }: { plan: PlanOffer; interval: PlanInterval; current: boolean; selectable: boolean; selected: boolean; onSelect: () => void }) {
+function PlanDoor({
+  plan,
+  interval,
+  current,
+  selectable,
+  unpriced,
+  launchOffer,
+  selected,
+  onSelect,
+}: {
+  plan: PlanOffer;
+  interval: PlanInterval;
+  current: boolean;
+  selectable: boolean;
+  /** Sales open but this offer has no price yet: said on the door, never a dead click. */
+  unpriced: boolean;
+  /** The door of the launch offer's plan: its monthly credits and « À la Une » are not given (6-12). */
+  launchOffer: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const t = useNumbersTranslations("Subscription");
   const business = plan.id === "business";
   const Root = selectable ? "label" : "div";
@@ -380,7 +431,21 @@ function PlanDoor({ plan, interval, current, selectable, selected, onSelect }: {
         selected && "border-featured shadow-[inset_0_-6px_0_var(--featured),0_0_0_1px_var(--featured)]",
       )}
     >
-      {selectable ? <input type="radio" name="plan" value={plan.id} checked={selected} onChange={onSelect} className="sr-only" /> : null}
+      {selectable ? (
+        <>
+          <input type="radio" name="plan" value={plan.id} checked={selected} onChange={onSelect} className="peer sr-only" />
+          {/* A visible radio: the doors read as a choice, the green one is not "already chosen" (6-01). */}
+          <span
+            aria-hidden="true"
+            className={cn(
+              "absolute start-4 top-4 flex size-5 items-center justify-center rounded-full border-2 transition-colors duration-150",
+              selected ? "border-featured bg-featured" : business ? "border-structure-foreground/70" : "border-border-strong",
+            )}
+          >
+            {selected ? <Check className="size-3 text-featured-foreground" strokeWidth={3} /> : null}
+          </span>
+        </>
+      ) : null}
       {current ? (
         <span className={cn("absolute inset-x-0 top-3 mx-auto w-fit rounded-sm px-2 py-0.5 text-xs font-medium", business ? "bg-featured text-featured-foreground" : "bg-structure text-structure-foreground")}>{t("yours")}</span>
       ) : null}
@@ -403,6 +468,15 @@ function PlanDoor({ plan, interval, current, selectable, selected, onSelect }: {
         </Feature>
         <Feature business={business}>{t("features.storefront")}</Feature>
       </ul>
+      {launchOffer && (plan.credits > 0 || plan.featured > 0) ? (
+        <p className={cn("text-xs text-pretty", business ? "text-structure-foreground/75" : "text-foreground-muted")}>{t("launchOfferExtras")}</p>
+      ) : null}
+      {unpriced ? <p className={cn("mt-auto text-sm font-medium", business ? "text-structure-foreground/80" : "text-foreground-muted")}>{t("planUnpriced")}</p> : null}
+      {selectable ? (
+        <span aria-hidden="true" className={cn("mt-auto text-center text-sm font-medium", selected ? "" : business ? "text-structure-foreground/80" : "text-foreground-muted")}>
+          {selected ? t("chosen") : t("pick")}
+        </span>
+      ) : null}
     </Root>
   );
 }

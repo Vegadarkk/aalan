@@ -203,6 +203,8 @@ describe("back-office KYBC decision", () => {
     const listingId = await publishedListing(owner);
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
     const proId = applied.body.proId;
+    // The application is acknowledged by mail (audit L4-16).
+    expect(lastMail(sendMail, "proApplicationReceived", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos" });
 
     const queue = await admin<ProQueueResponse>(getQueue, "GET", "/api/admin/pros", moderator);
     expect(queue.status).toBe(200);

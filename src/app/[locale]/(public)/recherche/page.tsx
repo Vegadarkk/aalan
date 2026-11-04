@@ -25,6 +25,7 @@ import { RefineChips } from "@/components/search/refine-chips";
 import { ResultsGrid } from "@/components/search/results-grid";
 import { SearchChallenge } from "@/components/search/search-challenge";
 import { SearchEmpty } from "@/components/search/search-empty";
+import { moroccoToday } from "@/lib/listings/rental-availability";
 import { SearchError } from "@/components/search/search-error";
 import { PendingBar, PendingRegion, SearchNavigationProvider } from "@/components/search/search-navigation";
 import { SortSelect } from "@/components/search/sort-select";
@@ -169,7 +170,7 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
           <MapFailedNotice />
           <ExamplesHiddenNotice className="search-examples" />
 
-          {hits.length === 0 ? <SearchEmpty params={params} locale={locale} outOfRange={response.total > 0} className="search-empty" /> : null}
+          {hits.length === 0 ? <SearchEmpty params={params} locale={locale} outOfRange={response.total > 0} today={moroccoToday(new Date())} className="search-empty" /> : null}
 
           {/* Map view and its no-script list: the rows (no basemap configured: the grid only). */}
           {map ? (
@@ -177,8 +178,9 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
               <RowsArea className="search-rows">
                 <PendingRegion className="flex flex-col gap-3">
                   {hits.length === 0 && featuredRows.length > 0 ? <FeaturedHeading id="featured-rows-title" empty className="px-2 pt-1" /> : null}
-                  {featuredRows.length > 0 ? <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={2} label={own("featuredRows")} /> : null}
-                  {organicRows.length > 0 ? <ResultRows listings={organicRows} cards={cards} renderAction={rowFavorite} priorityCount={4} label={t("results")} /> : null}
+                  {/* Lazy: the server renders the list view (B14), where these rows are hidden and must not load. */}
+                  {featuredRows.length > 0 ? <ResultRows listings={featuredRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={own("featuredRows")} /> : null}
+                  {organicRows.length > 0 ? <ResultRows listings={organicRows} cards={cards} renderAction={rowFavorite} priorityCount={0} label={t("results")} /> : null}
                 </PendingRegion>
               </RowsArea>
               <Pagination params={params} page={response.page} totalPages={response.totalPages} total={response.total} compact className="search-map-pagination" />
@@ -201,7 +203,7 @@ function Results({ response, locale, title, count, promos, map, publisher, trans
                           cards={organic}
                           locale={locale}
                           renderAction={favoriteAction}
-                          priorityCount={map ? 0 : featured.length > 0 ? 2 : 4}
+                          priorityCount={featured.length > 0 ? 2 : 4}
                           className="xl:grid-cols-3"
                           inserts={{
                             after: infeedPositions(organic.length),

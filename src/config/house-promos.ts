@@ -9,7 +9,8 @@ export const HOUSE_PROMOS = [
   { id: "alert", href: "/recherche" },
   { id: "safety", href: "/legal/confiance-et-securite" },
   { id: "pro", href: "/pro", when: (flags: FlagsConfig) => flags.proSignupEnabled },
-  { id: "boost", href: "/mes-annonces", when: (flags: FlagsConfig) => flags.salesEnabled },
+  // The options explained (zone 6 audit 6-23): "Mes annonces" sent a visitor to sign in, then to an empty list.
+  { id: "boost", href: "/tarifs", when: (flags: FlagsConfig) => flags.salesEnabled },
 ] as const satisfies readonly { id: string; href: string; when?: (flags: FlagsConfig) => boolean }[];
 export type HousePromo = (typeof HOUSE_PROMOS)[number];
 export type HousePromoId = HousePromo["id"];

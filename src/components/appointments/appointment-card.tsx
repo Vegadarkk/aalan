@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { CalendarCheck, CalendarClock, CalendarPlus, CalendarX, Car, Handshake, House, MapPin, Package, ShieldCheck } from "lucide-react";
+import { CalendarCheck, CalendarClock, CalendarPlus, CalendarX, Car, Handshake, House, KeyRound, MapPin, Package, ShieldCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Dialog } from "radix-ui";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ import { dayTile, formatSlotDay, formatSlotRange, placeText } from "./format";
 // date as a small door, the place, add to my calendar (.ics), reschedule or cancel with a reason.
 // Ended appointments live on in the thread's system messages only.
 
-export const KIND_ICONS: Record<AppointmentKind, typeof Handshake> = { meeting: Handshake, visit: House, test_drive: Car, pickup: Package };
+export const KIND_ICONS: Record<AppointmentKind, typeof Handshake> = { meeting: Handshake, visit: House, test_drive: Car, pickup: Package, check_in: KeyRound };
 
 /** The date of a slot as a door-shaped tile (the brand's arch). */
 export function DateDoor({ slot, locale, className }: { slot: Slot; locale: Locale; className?: string }) {

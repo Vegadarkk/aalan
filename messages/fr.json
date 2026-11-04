@@ -406,7 +406,9 @@
       "turnstileTitle": "Encore une vérification",
       "turnstileBody": "Plusieurs tentatives ont échoué. Confirmez que vous n'êtes pas un robot, puis reconnectez-vous.",
       "verifyTitle": "Confirmez votre adresse e-mail",
-      "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi."
+      "verifyBody": "Votre compte existe, mais l'adresse {email} n'a pas encore été confirmée. Ouvrez le lien reçu par e-mail, ou demandez un nouvel envoi.",
+      "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
     },
     "signUp": {
       "title": "Créer un compte",
@@ -697,7 +699,8 @@
       "real_estate_attestation": "Pour publier une annonce immobilière, attestez que ses informations sont exactes et sous votre seule responsabilité.",
       "rental_attestation": "Pour publier une location, confirmez la déclaration de votre agence (agrément, immatriculation, assurance).",
       "rental_agrement_missing": "Pour publier une location, renseignez d'abord le numéro d'agrément de votre agence dans l'espace Pro (Mon agence de location).",
-      "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro)."
+      "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro).",
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
     },
     "wizard": {
       "title": "Déposer une annonce",
@@ -744,7 +747,12 @@
       "rentalTitle": "Conditions de location",
       "rentalHint": "Assurance, caution, conducteur, remise du véhicule : des conditions claires évitent les mauvaises surprises et ressortent dans la recherche.",
       "jobAbroadTitle": "Emploi à l'étranger : un modérateur vérifie l'offre avant sa mise en ligne.",
-      "jobAbroadBody": "Le contrat de travail doit porter le visa du ministère chargé du Travail avant le départ, et les services de l'ANAPEC sont gratuits. L'offre ne doit demander aucun paiement au candidat : ni frais de dossier, ni caution, ni visa."
+      "jobAbroadBody": "Le contrat de travail doit porter le visa du ministère chargé du Travail avant le départ, et les services de l'ANAPEC sont gratuits. L'offre ne doit demander aucun paiement au candidat : ni frais de dossier, ni caution, ni visa.",
+      "holidayProTitle": "N° d'autorisation d'hébergement touristique obligatoire",
+      "holidayProBody": "Une agence indique le numéro d'autorisation d'exploitation de chaque logement (loi n° 80-14 sur l'hébergement touristique). Il est affiché sur l'annonce, déclaré par l'annonceur.",
+      "holidayIndividualTitle": "Louer à des touristes : la loi 80-14 s'applique",
+      "holidayIndividualBody": "Selon le type de logement, une autorisation d'exploitation peut être exigée. Si vous en avez une, indiquez son numéro : il est affiché sur l'annonce. Sans numéro, l'annonce indique « non communiquée ».",
+      "choosePlan": "Choisir une offre"
     },
     "start": {
       "title": "Déposer une annonce",
@@ -767,7 +775,12 @@
       "untitled": "Brouillon sans titre",
       "edited": "modifié {when}",
       "allDrafts": "Voir mes {count} brouillons",
-      "checking": "Recherche de vos brouillons…"
+      "checking": "Recherche de vos brouillons…",
+      "noPlanTitle": "Choisissez d'abord une offre",
+      "noPlanBody": "Votre boutique est vérifiée, mais sans offre active elle ne peut pas publier d'annonce. Choisissez une offre, puis revenez déposer votre annonce : rien ne sera perdu.",
+      "noPlanClosed": "Votre boutique est vérifiée, mais elle n'a pas d'offre active. Les abonnements ouvriront prochainement : vous pourrez alors en choisir une et publier.",
+      "choosePlan": "Choisir une offre",
+      "proSpace": "Espace Pro"
     },
     "steps": {
       "categorie": "Catégorie",
@@ -820,6 +833,11 @@
       "charactersMin": "Encore {count, plural, one {# caractère} other {# caractères}} au minimum",
       "condition": "État",
       "price": "Prix",
+      "pricePer": {
+        "day": "Prix par jour",
+        "night": "Prix par nuit",
+        "month": "Loyer par mois"
+      },
       "priceHint": "En dirhams, sans centimes.",
       "pricePlaceholder": "1 500",
       "currency": "DH",
@@ -1016,6 +1034,7 @@
       "criterion_integer": "Entrez un nombre entier.",
       "criterion_text_max": "Ce champ ne peut pas dépasser {max} caractères.",
       "criterion_format_onssa": "Format attendu : lettres, province, numéro et année séparés par des points, par exemple M.07.113.20.",
+      "criterion_format_authorization": "Indiquez le numéro tel qu'il figure sur l'autorisation : lettres, chiffres et séparateurs (. / - _), avec au moins un chiffre.",
       "condition_required": "Indiquez l'état.",
       "title_min": "Le titre doit faire au moins {min} caractères.",
       "title_max": "Le titre ne peut pas dépasser {max} caractères.",
@@ -2838,7 +2857,8 @@
       "editOf": "Modifier « {title} »",
       "resumeOf": "Remettre en ligne « {title} »",
       "renewOf": "Renouveler pour 60 jours « {title} »",
-      "promote": "Mettre en avant"
+      "promote": "Mettre en avant",
+      "promoteOf": "Mettre en avant « {title} »"
     },
     "confirm": {
       "deleteTitle": "Supprimer cette annonce ?",
@@ -3186,16 +3206,22 @@
         "rentalDatesMissing": "Choisissez les dates de prise en charge et de retour.",
         "rentalSafety": "La location se conclut par le contrat écrit de l'agence : ne versez ni acompte ni caution sur le site ou avant d'avoir vu le véhicule.",
         "rentalSend": "Envoyer la demande",
+        "rentalPlaceholder": "Bonjour, ce véhicule est-il disponible à ces dates ?",
         "home": {
           "rentalTitle": "Demande de séjour à {name}",
           "rentalTitleFallback": "Demande de séjour",
           "rentalDates": "Dates du séjour",
           "rentalPickup": "Précisions (facultatif)",
-          "rentalPickupPlaceholder": "Ex. : 2 adultes et 1 enfant, arrivée vers 18 h",
+          "rentalPickupPlaceholder": "Ex. : arrivée vers 18 h, un lit bébé si possible",
           "rentalDraft": "Bonjour, je souhaite séjourner à « {title} » du {from} au {to} ({days, plural, one {# nuit} other {# nuits}}). Est-ce disponible ?",
           "rentalDraftPickup": "Bonjour, je souhaite séjourner à « {title} » du {from} au {to} ({days, plural, one {# nuit} other {# nuits}}) : {pickup}. Est-ce disponible ?",
           "rentalDatesMissing": "Choisissez les dates d'arrivée et de départ.",
-          "rentalSafety": "Le séjour se conclut directement avec l'annonceur. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement."
+          "rentalSafety": "Le séjour se conclut directement avec l'annonceur. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement.",
+          "rentalPlaceholder": "Bonjour, le logement est-il libre à ces dates ?",
+          "rentalGuests": "Voyageurs",
+          "rentalGuestsPick": "Choisir",
+          "rentalGuestsCount": "{count, plural, one {# voyageur} other {# voyageurs}}",
+          "rentalDraftGuests": "Nous serons {count, plural, one {# voyageur} other {# voyageurs}}."
         },
         "aboutShop": "Votre message arrive dans la messagerie de la boutique, sans lien avec une annonce précise.",
         "placeholderShop": "Bonjour, j'ai une question sur vos produits ou vos services."
@@ -3214,7 +3240,8 @@
         "signInRental": "Connectez-vous pour envoyer une demande de séjour. Vous reviendrez ensuite sur cette annonce."
       },
       "variantText": "Bonjour, « {title} » en {variant} est-il toujours disponible ?",
-      "ownShop": "C'est votre boutique. Les visiteurs voient ici les boutons pour vous contacter."
+      "ownShop": "C'est votre boutique. Les visiteurs voient ici les boutons pour vous contacter.",
+      "promote": "Mettre en avant"
     },
     "safety": {
       "title": "Conseils de sécurité",
@@ -3229,7 +3256,12 @@
         "noFees": "Ne payez jamais pour postuler : ni frais de dossier, ni formation obligatoire, ni caution, ni visa.",
         "checkEmployer": "Vérifiez l'employeur : nom de la société, adresse, registre de commerce, et rencontrez-le dans ses locaux.",
         "abroad": "Pour un emploi à l'étranger, le contrat doit porter le visa du ministère chargé du Travail ; les services de l'ANAPEC sont gratuits.",
-        "noDocuments": "Ne transmettez jamais la copie de votre carte d'identité ou de votre passeport avant un contrat signé."
+        "noDocuments": "Ne transmettez jamais la copie de votre carte d'identité ou de votre passeport avant un contrat signé.",
+        "noDepositCar": "Ne versez ni acompte ni caution avant d'avoir vu le véhicule et signé le contrat de l'agence.",
+        "checkAgency": "Vérifiez l'agence : son numéro d'agrément et ses adresses figurent sur sa vitrine.",
+        "noDepositStay": "Ne versez rien pour « bloquer » des dates avant une confirmation écrite de l'annonceur ; méfiez-vous d'un prix très bas pour la saison.",
+        "checkHost": "Vérifiez l'annonceur et le logement : numéro d'autorisation d'une agence, adresse exacte, photos récentes.",
+        "noLinks": "Restez dans la messagerie : un lien de paiement ou un échange déplacé vers un autre service est le signe d'une arnaque."
       },
       "report": "Un doute sur cette annonce ? <report>Signalez-la</report> ou <contact>écrivez-nous</contact>.",
       "host": "Aalan héberge les annonces de ses utilisateurs : elle n'est ni vendeur ni acheteur, et n'est partie ni aux transactions ni aux litiges entre eux.",
@@ -3323,6 +3355,7 @@
       "permit": "Permis de construire",
       "authorization": "Autorisation d'hébergement",
       "declared": "N° {number}, déclaré par l'annonceur",
+      "authorizationMissing": "Non communiquée par l'annonceur",
       "declaredNote": "Informations déclarées par l'annonceur, sous sa seule responsabilité. {brand} ne les vérifie pas. Demandez les justificatifs (titre foncier, mandat, autorisation) avant de vous engager."
     },
     "example": {
@@ -3363,7 +3396,18 @@
         "licence": "Ayez votre permis valide sur vous (permis international si l'agence le demande) et respectez l'âge et l'ancienneté de permis exigés.",
         "payment": "{brand} ne loue pas ce véhicule et ne reçoit aucun paiement : la location est un contrat entre vous et l'agence. Ne versez aucun acompte avant d'avoir vu l'agence et le véhicule."
       },
-      "source": "Conseils indicatifs : les conditions et le contrat de l'agence priment."
+      "source": "Conseils indicatifs : les conditions et le contrat de l'agence priment.",
+      "home": {
+        "title": "Louer un logement de vacances au Maroc",
+        "steps": {
+          "host": "Vérifiez l'annonceur : une agence affiche son numéro d'autorisation d'hébergement touristique (loi 80-14) ; un particulier doit pouvoir vous dire qui il est et où se trouve le logement.",
+          "confirmation": "Obtenez une confirmation écrite avant de partir : dates, prix total pour le séjour, nombre de voyageurs, caution éventuelle et conditions d'annulation.",
+          "arrival": "À l'arrivée, vérifiez que le logement correspond à l'annonce (photos, équipements, capacité) avant de remettre le solde ou la caution.",
+          "register": "L'hébergeur relève l'identité de chaque voyageur pour la déclaration aux autorités et peut demander la taxe de séjour de la commune : c'est normal. Ne laissez jamais votre passeport en garantie.",
+          "payment": "{brand} ne loue pas ce logement et ne reçoit aucun paiement : le séjour est un accord entre vous et l'annonceur. Ne versez rien par mandat ou par un lien reçu hors de la messagerie."
+        },
+        "source": "Conseils indicatifs : les conditions et la confirmation de l'annonceur priment."
+      }
     },
     "catalogue": {
       "title": "Choix et disponibilité",
@@ -3698,6 +3742,12 @@
       "title": "Aucune annonce ne correspond à votre recherche",
       "body": "Retirez un filtre ou élargissez le lieu pour voir plus d'annonces.",
       "bodyWords": "Vérifiez l'orthographe, essayez un mot plus général ou retirez un filtre.",
+      "datesBody": "Aucun véhicule correspondant n'est libre du {from} au {to} : il est peut-être déjà loué. Essayez des dates proches ou retirez un filtre.",
+      "datesBodyNights": "Aucun logement correspondant n'est libre du {from} au {to} : il est peut-être déjà réservé. Essayez des dates proches ou retirez un filtre.",
+      "nearbyDates": "Les mêmes dates, un peu plus tôt ou plus tard :",
+      "datesOption": "{from} – {to}",
+      "withoutDates": "Voir les véhicules sans dates",
+      "withoutDatesNights": "Voir les logements sans dates",
       "removeFilter": "Retirer un filtre :",
       "widenRegion": "Chercher dans toute la région {region}",
       "widenCountry": "Chercher dans tout le Maroc",
@@ -3886,7 +3936,7 @@
       "rangeFrom": "{label} : dès {min}",
       "rangeTo": "{label} : jusqu'à {max}",
       "options": "{label} : {values}",
-      "dates": "{from} – {to} · {days} j",
+      "dates": "{from} – {to} · {days, plural, one {# jour} other {# jours}}",
       "datesNights": "{from} – {to} · {days, plural, one {# nuit} other {# nuits}}",
       "includeSoldOut": "Épuisés inclus",
       "promo": "En promotion"
@@ -4083,7 +4133,7 @@
         "business": "Business",
         "premium": "Premium"
       },
-      "launchOffer": "Offerte jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant tout paiement.",
+      "launchOffer": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant tout paiement.",
       "launchOfferEnds": "Offerte jusqu'au {date}.",
       "noPlan": "Sans offre, vous ne pouvez pas publier de nouvelle annonce en tant que professionnel.",
       "salesClosed": "Les abonnements ouvriront prochainement.",
@@ -4107,7 +4157,11 @@
       "stockImport": "Importer mon stock",
       "fleet": "Planning de flotte",
       "sellerPayment": "Paiement chez le vendeur",
-      "rentalAgency": "Mon agence de location"
+      "rentalAgency": "Mon agence de location",
+      "homes": "Planning des logements",
+      "holidayAgency": "Mon agence de séjours",
+      "choosePlan": "Choisir une offre",
+      "invoices": "Mes factures"
     },
     "errors": {
       "pro_signup_closed": "Les demandes de compte Pro sont fermées pour le moment.",
@@ -4400,19 +4454,22 @@
       "meeting": "Rencontre",
       "visit": "Visite",
       "test_drive": "Essai",
-      "pickup": "Retrait"
+      "pickup": "Remise du véhicule",
+      "check_in": "Arrivée"
     },
     "kindPhrase": {
       "meeting": "un rendez-vous",
       "visit": "une visite",
       "test_drive": "un essai",
-      "pickup": "un retrait"
+      "pickup": "une remise du véhicule",
+      "check_in": "une arrivée"
     },
     "confirmedTitle": {
       "meeting": "Rendez-vous confirmé",
       "visit": "Visite confirmée",
       "test_drive": "Essai confirmé",
-      "pickup": "Retrait confirmé"
+      "pickup": "Remise confirmée",
+      "check_in": "Arrivée confirmée"
     },
     "duration": {
       "m15": "15 min",
@@ -4924,7 +4981,14 @@
     },
     "holiday": {
       "label": "Agence de location saisonnière",
-      "verifiedNote": "Les identifiants professionnels de cette agence (ICE, registre du commerce) ont été vérifiés. Le séjour se conclut directement entre vous et l'agence : le site n'est partie à aucune location et ne perçoit ni acompte, ni caution. Ne versez rien avant d'avoir un contrat ou une confirmation écrite de l'agence."
+      "verifiedNote": "Les identifiants professionnels de cette agence (ICE, registre du commerce) ont été vérifiés. Le séjour se conclut directement entre vous et l'agence : le site n'est partie à aucune location et ne perçoit ni acompte, ni caution. Ne versez rien avant d'avoir un contrat ou une confirmation écrite de l'agence.",
+      "agencyTitle": "L'agence",
+      "authorization": "Autorisation n°",
+      "authorizationDeclared": "Numéro d'autorisation d'hébergement touristique déclaré par l'agence, sous sa seule responsabilité.",
+      "times": "Arrivée et départ",
+      "timesValue": "Arrivée à partir de {checkIn}, départ avant {checkOut}",
+      "minNights": "Séjour minimum",
+      "minNightsValue": "{count, plural, one {# nuit} other {# nuits}}, sauf mention contraire sur l'annonce"
     },
     "fleet": {
       "fleetTitle": "La flotte",
@@ -5037,12 +5101,10 @@
     "frozen": "Votre porte-monnaie est bloqué après un remboursement. Il se débloque dès que votre solde redevient positif.",
     "walletLink": "Voir mon porte-monnaie",
     "consent": {
-      "terms": "J'accepte les CGV et je reconnais avoir pris connaissance de mon droit de rétractation de 14 jours.",
-      "immediate": "Je demande l'exécution immédiate de ma commande et je reconnais que je perdrai mon droit de rétractation une fois le service entièrement exécuté.",
       "termsLink": "Lire les CGV (nouvel onglet)",
-      "required": "Cochez les deux cases pour commander."
+      "single": "Je commande cette option selon les CGV : elle s'applique tout de suite et ne peut plus être annulée ni rétractée une fois appliquée.",
+      "requiredOne": "Cochez la case pour commander."
     },
-    "submit": "Commande avec obligation de paiement",
     "cancel": "Annuler",
     "close": "Fermer",
     "success": {
@@ -5059,8 +5121,21 @@
       "insufficient_credits": "Vos crédits ne suffisent pas pour cette option.",
       "price_changed": "Le prix de cette option vient de changer. Vérifiez-le, puis commandez à nouveau."
     },
-    "availableAt": "Disponible à partir de {time} : l'annonce est déjà en tête.",
-    "expiresFirst": "Votre annonce expire le {date}, avant la fin de cet À la Une : renouvelez-la pour en profiter jusqu'au bout."
+    "availableAt": "Disponible {when} (heure du Maroc) : l'annonce est déjà en tête.",
+    "expiresFirst": "Votre annonce expire le {date}, avant la fin de cet À la Une : renouvelez-la pour en profiter jusqu'au bout.",
+    "today": "aujourd'hui à {time}",
+    "onDay": "le {date} à {time}",
+    "shortfall": "Il vous manque {count, plural, one {# crédit} other {# crédits}}",
+    "shortfallBody": "Achetez un pack de crédits : vous pourrez revenir à cette annonce depuis votre porte-monnaie dès qu'ils sont arrivés.",
+    "buyCredits": "Acheter des crédits",
+    "confirmIdle": "Choisissez une option",
+    "confirmCredits": "Confirmer pour {count, plural, one {# crédit} other {# crédits}}",
+    "confirmIncluded": "Confirmer (inclus dans votre offre)",
+    "offer": {
+      "title": "Vendez plus vite",
+      "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
+      "action": "Mettre en avant"
+    }
   },
   "Wallet": {
     "metaTitle": "Porte-monnaie",
@@ -5070,7 +5145,7 @@
     "loading": "Chargement du porte-monnaie",
     "failed": "Le porte-monnaie n'a pas pu être chargé.",
     "retry": "Réessayer",
-    "unit": "1 crédit = 1 MAD TTC",
+    "unit": "1 crédit = 1 DH TTC",
     "balance": "Crédits achetés",
     "plan": "Crédits de votre offre",
     "planUntil": "Valables jusqu'au {date}, non cumulables",
@@ -5099,7 +5174,9 @@
     "available": "Crédits disponibles",
     "buy": "Acheter des crédits",
     "paid": "Paiement reçu. Vos crédits apparaissent ici dans quelques instants.",
-    "withdrawLink": "Se rétracter d'un achat de crédits (14 jours)"
+    "withdrawLink": "Se rétracter d'un achat de crédits (14 jours)",
+    "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
+    "promoteBackAction": "Mettre en avant"
   },
   "Packs": {
     "metaTitle": "Acheter des crédits",
@@ -5112,7 +5189,7 @@
     "failed": "Les packs n'ont pas pu être chargés.",
     "retry": "Réessayer",
     "closed": "L'achat de crédits n'est pas encore ouvert sur Aalan.",
-    "unavailable": "Le paiement n'est pas disponible pour le moment. Réessayez plus tard.",
+    "unavailable": "Le paiement est momentanément indisponible : réessayez dans quelques minutes. Les packs et leurs prix restent ceux-ci.",
     "legend": "Choisissez un pack",
     "credits": "{count, plural, one {<n>#</n> crédit} other {<n>#</n> crédits}}",
     "bonus": "dont {count, plural, one {# crédit offert} other {# crédits offerts}}",
@@ -5128,7 +5205,7 @@
     "notesTitle": "Avant de payer",
     "notes": {
       "provider": "Le paiement se fait par carte sur la page sécurisée de notre prestataire RevenueCat, avec Stripe. Cette page peut s'afficher en anglais.",
-      "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} MAD par an (Office des Changes).",
+      "moroccanCard": "Avec une carte marocaine, activez le paiement en ligne à l'international auprès de votre banque. L'achat compte dans votre dotation e-commerce de {cap, number} DH par an (Office des Changes).",
       "credits": "Les crédits ne sont ni transférables ni convertibles en argent. Les crédits non utilisés d'un pack sont remboursables pendant 14 jours après l'achat : rétractez-vous depuis votre porte-monnaie, ou écrivez à {email}."
     },
     "consent": {
@@ -5145,7 +5222,13 @@
       "price_changed": "Les packs ont changé : vérifiez votre choix.",
       "turnstile_failed": "La vérification anti-robot a échoué. Réessayez.",
       "unavailable": "Le paiement n'est pas disponible pour le moment. Réessayez plus tard."
-    }
+    },
+    "unit": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
+    "closedBody": "Les packs seront en vente à l'ouverture des ventes. Leurs prix sont déjà affichés sur la page Tarifs.",
+    "seePricing": "Voir les tarifs"
   },
   "Subscription": {
     "metaTitle": "Mon abonnement",
@@ -5159,7 +5242,7 @@
       "title": "Votre offre",
       "none": "Aucune offre",
       "launchOffer": "Essentiel offert",
-      "launchOfferBody": "Offerte jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant la fin.",
+      "launchOfferBody": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant la fin.",
       "launchOfferEnds": "Offerte jusqu'au {date}. Abonnez-vous avant cette date pour garder vos annonces en ligne.",
       "monthly": "Paiement mensuel",
       "yearly": "Paiement annuel",
@@ -5207,10 +5290,10 @@
       "yearlyHint": "2 mois offerts"
     },
     "price": {
-      "monthly": "<n>{amount, number}</n> MAD HT par mois",
-      "yearly": "<n>{amount, number}</n> MAD HT par an"
+      "monthly": "<n>{amount, number}</n> DH HT par mois",
+      "yearly": "<n>{amount, number}</n> DH HT par an"
     },
-    "perMonth": "Soit {amount, number, ::.00} MAD HT par mois",
+    "perMonth": "Soit {amount, number, ::.00} DH HT par mois",
     "features": {
       "listings": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
       "unlimited": "Annonces en ligne sans limite",
@@ -5219,7 +5302,7 @@
       "featured": "{count, plural, one {# « À la Une » de 7 jours chaque mois} other {# « À la Une » de 7 jours chaque mois}}",
       "noCredits": "Pas de crédits mensuels",
       "noFeatured": "Pas de « À la Une » inclus",
-      "storefront": "Vitrine de la boutique et badge Pro"
+      "storefront": "Vitrine de la boutique, badge Pro et statistiques"
     },
     "yours": "Votre offre",
     "notesTitle": "Avant de vous abonner",
@@ -5237,8 +5320,8 @@
     },
     "choose": "Choisissez une offre.",
     "submit": {
-      "monthly": "S'abonner : {amount, number} MAD HT par mois",
-      "yearly": "S'abonner : {amount, number} MAD HT par an"
+      "monthly": "S'abonner : {amount, number} DH HT par mois",
+      "yearly": "S'abonner : {amount, number} DH HT par an"
     },
     "submitIdle": "S'abonner",
     "errors": {
@@ -5255,7 +5338,7 @@
     "pass": {
       "title": "Pass Boutique",
       "lead": "Votre boutique en ligne pour {days} jours, en un seul paiement. Pas d'abonnement, pas de renouvellement : idéal pour écouler un stock ou vendre une saison.",
-      "price": "<n>{amount, number}</n> MAD HT pour {days} jours",
+      "price": "<n>{amount, number}</n> DH HT pour {days} jours",
       "features": {
         "listings": "{count, plural, one {# annonce en ligne} other {# annonces en ligne}}",
         "credits": "{count, plural, one {# crédit offert pendant le pass} other {# crédits offerts pendant le pass}}",
@@ -5276,21 +5359,31 @@
         "termsLink": "conditions générales de vente",
         "once": "du Pass Boutique : paiement unique, sans renouvellement ni remboursement au prorata."
       },
-      "submit": "Payer {amount, number} MAD HT",
-      "submitExtend": "Prolonger de {days} jours : {amount, number} MAD HT",
+      "submit": "Payer {amount, number} DH HT",
+      "submitExtend": "Prolonger de {days} jours : {amount, number} DH HT",
       "blocked": {
         "subscribed": "Votre boutique a déjà un abonnement : le Pass Boutique n'est pas nécessaire.",
         "launchOffer": "Votre offre Essentiel est encore offerte : le pass sera disponible à la fin de l'offre.",
         "maxAhead": "Votre pass court déjà loin : vous pourrez le prolonger plus tard.",
-        "unavailable": "Le Pass Boutique n'est pas disponible pour le moment.",
-        "otherPlan": "Votre pass en cours est d'une autre offre : ce pass sera disponible à sa fin."
+        "unavailable": "Le paiement du Pass Boutique n'est pas encore disponible. Réessayez dans quelques minutes ; si cela dure, écrivez-nous depuis l'aide.",
+        "otherPlan": "Votre pass en cours est d'une autre offre : ce pass sera disponible à sa fin.",
+        "salesClosed": "Le Pass Boutique sera en vente à l'ouverture des ventes."
       },
       "success": {
         "pending": "Votre pass s'active dans quelques instants.",
         "done": "Votre pass est actif jusqu'au {date}."
       },
       "agencyHint": "Idéal pour ouvrir une agence de location saisonnière le temps d'une saison : choisissez le secteur « Location saisonnière » dans votre espace Pro."
-    }
+    },
+    "notPro": {
+      "title": "Réservé aux boutiques vérifiées",
+      "body": "Les offres Essentiel et Business s'adressent aux professionnels dont la boutique a été vérifiée. Créez votre boutique depuis l'espace Pro : la demande prend quelques minutes.",
+      "action": "Créer ma boutique"
+    },
+    "planUnpriced": "Pas encore disponible au paiement.",
+    "pick": "Choisir cette offre",
+    "chosen": "Offre choisie",
+    "launchOfferExtras": "Pendant l'offre de lancement : sans les crédits mensuels ni les « À la Une » inclus."
   },
   "Invoices": {
     "metaTitle": "Mes factures",
@@ -5400,7 +5493,7 @@
       "boost": {
         "title": "Vendez plus vite",
         "body": "Mettez votre annonce À la Une : elle passe en tête des résultats et sur l'accueil.",
-        "cta": "Mettre À la Une"
+        "cta": "Voir les options"
       }
     }
   },
@@ -5651,11 +5744,11 @@
       "open": "Disponibilités",
       "openOf": "Disponibilités de « {title} »",
       "title": "Disponibilités de « {title} »",
-      "hint": "Touchez le premier puis le dernier jour d'une période pour la bloquer. Une période qui commence sur un jour bloqué le libère. Un jour bloqué veut dire qu'aucun véhicule de cette annonce n'est libre.",
+      "hint": "Choisissez le premier puis le dernier jour d'une période pour la bloquer. Une période qui commence sur un jour bloqué le libère. Un jour bloqué veut dire qu'aucun véhicule de cette annonce n'est libre.",
       "updatedOn": "Disponibilités à jour, confirmées le {date}",
       "stale": "À confirmer : dernière mise à jour le {date}. Les locataires voient « disponibilité à confirmer ».",
       "never": "Disponibilités jamais renseignées : les locataires voient « disponibilité à confirmer ».",
-      "anchor": "Touchez maintenant le dernier jour de la période.",
+      "anchor": "Choisissez maintenant le dernier jour de la période.",
       "summaryNone": "Aucune période bloquée.",
       "summary": "{count, plural, one {# période bloquée.} other {# périodes bloquées.}}",
       "tooMany": "Au plus {max} périodes : regroupez des jours proches.",
@@ -5666,7 +5759,7 @@
       "confirmed": "Disponibilités confirmées.",
       "conflict": "Le calendrier a changé entre-temps. Rouvrez-le pour voir la dernière version.",
       "home": {
-        "hint": "Touchez la première puis la dernière nuit d'une période pour la bloquer (le jour du départ reste libre). Une période qui commence sur une nuit bloquée la libère.",
+        "hint": "Choisissez la première puis la dernière nuit d'une période pour la bloquer (le jour du départ reste libre). Une période qui commence sur une nuit bloquée la libère.",
         "stale": "À confirmer : dernière mise à jour le {date}. Les voyageurs voient « disponibilité à confirmer ».",
         "never": "Disponibilités jamais renseignées : les voyageurs voient « disponibilité à confirmer »."
       }
@@ -5677,10 +5770,11 @@
       "stale": "Disponibilité à confirmer avec l'agence (dernière mise à jour le {date}).",
       "never": "Disponibilité à confirmer avec l'agence.",
       "note": "Indication de l'agence, sans engagement : la réservation se confirme avec elle.",
-      "pickHint": "Touchez le jour de départ puis celui de retour pour préparer votre demande de réservation.",
-      "pickEnd": "Touchez maintenant le jour de retour.",
+      "pickHint": "Choisissez le jour de départ puis celui de retour pour préparer votre demande de réservation.",
+      "pickEnd": "Choisissez maintenant le jour de retour.",
       "picked": "Du {from} au {to} ({count, plural, one {# jour} other {# jours}})",
       "pickedBlocked": "Cette période comprend des jours indiqués indisponibles : l'agence vous dira ce qu'elle peut proposer.",
+      "estimate": "≈ {total} pour {count, plural, one {# jour} other {# jours}}, à confirmer avec l'agence",
       "request": "Demander ces dates",
       "clear": "Effacer",
       "exampleNoRequest": "Annonce exemple : aucune demande ne peut être envoyée.",
@@ -5689,10 +5783,11 @@
         "stale": "Disponibilité à confirmer avec l'annonceur (dernière mise à jour le {date}).",
         "never": "Disponibilité à confirmer avec l'annonceur.",
         "note": "Indication de l'annonceur, sans engagement : le séjour se confirme avec lui. Une nuit indisponible est marquée sur le jour d'arrivée.",
-        "pickHint": "Touchez le jour d'arrivée puis celui de départ pour préparer votre demande de séjour.",
-        "pickEnd": "Touchez maintenant le jour de départ.",
+        "pickHint": "Choisissez le jour d'arrivée puis celui de départ pour préparer votre demande de séjour.",
+        "pickEnd": "Choisissez maintenant le jour de départ.",
         "picked": "Du {from} au {to} ({count, plural, one {# nuit} other {# nuits}})",
-        "pickedBlocked": "Ce séjour comprend des nuits indiquées indisponibles : l'annonceur vous dira ce qu'il peut proposer."
+        "pickedBlocked": "Ce séjour comprend des nuits indiquées indisponibles : l'annonceur vous dira ce qu'il peut proposer.",
+        "estimate": "≈ {total} pour {count, plural, one {# nuit} other {# nuits}}, à confirmer avec l'annonceur"
       }
     },
     "search": {
@@ -5703,8 +5798,8 @@
       "submit": "Voir les véhicules libres",
       "placeholder": "Choisir",
       "calendar": "Calendrier des dates de location",
-      "pickFrom": "Touchez le jour de départ",
-      "pickTo": "Touchez maintenant le jour de retour",
+      "pickFrom": "Choisissez le jour de départ",
+      "pickTo": "Choisissez maintenant le jour de retour",
       "clear": "Effacer les dates",
       "home": {
         "from": "Arrivée",
@@ -5713,8 +5808,8 @@
         "barTitle": "Vos dates de séjour",
         "submit": "Voir les logements libres",
         "calendar": "Calendrier des dates de séjour",
-        "pickFrom": "Touchez le jour d'arrivée",
-        "pickTo": "Touchez maintenant le jour de départ"
+        "pickFrom": "Choisissez le jour d'arrivée",
+        "pickTo": "Choisissez maintenant le jour de départ"
       }
     },
     "home": {
@@ -5735,7 +5830,7 @@
   "Fleet": {
     "title": "Planning de flotte",
     "back": "Espace Pro",
-    "lead": "Vos voitures de location sur les 60 prochains jours. Touchez un jour pour le bloquer ou le libérer, ou glissez à la souris pour une période entière. Un jour bloqué veut dire qu'aucun véhicule de l'annonce n'est libre ce jour-là.",
+    "lead": "Vos voitures de location sur les 60 prochains jours. Choisissez un jour pour le bloquer ou le libérer, ou glissez à la souris pour une période entière. Un jour bloqué veut dire qu'aucun véhicule de l'annonce n'est libre ce jour-là.",
     "loading": "Chargement du planning",
     "retry": "Réessayer",
     "emptyTitle": "Aucune voiture de location en ligne",
@@ -5762,7 +5857,31 @@
     "save": "Enregistrer",
     "saved": "Planning enregistré pour {count, plural, one {# véhicule} other {# véhicules}}.",
     "confirmed": "Disponibilités confirmées pour {count, plural, one {# véhicule} other {# véhicules}}.",
-    "partial": "{count, plural, one {# véhicule n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# véhicules n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}"
+    "partial": "{count, plural, one {# véhicule n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# véhicules n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}",
+    "home": {
+      "title": "Planning des logements",
+      "lead": "Vos logements de vacances sur les 60 prochains jours. Choisissez une nuit pour la bloquer ou la libérer, ou glissez à la souris pour un séjour entier. Une nuit bloquée veut dire que le logement n'est pas libre cette nuit-là.",
+      "emptyTitle": "Aucun logement de vacances en ligne",
+      "emptyBody": "Publiez vos logements dans « Location de vacances » : ils apparaîtront ici, prêts à être planifiés.",
+      "emptyAction": "Publier un logement",
+      "city": "Ville",
+      "search": "Rechercher un logement",
+      "vehicles": "{count, plural, one {# logement affiché,} other {# logements affichés,}}",
+      "truncated": "Vous avez plus de 200 logements : le planning montre les 200 premiers par titre. Filtrez par ville ou utilisez « Mes annonces » pour les autres.",
+      "noMatch": "Aucun logement ne correspond à ce filtre.",
+      "gridLabel": "Disponibilités des logements, nuit par nuit",
+      "vehicle": "Logement",
+      "pending": "{count, plural, one {# logement modifié, pas encore enregistré.} other {# logements modifiés, pas encore enregistrés.}}",
+      "tooMany": "Au plus {max} périodes par logement : regroupez des nuits proches.",
+      "saved": "Planning enregistré pour {count, plural, one {# logement} other {# logements}}.",
+      "confirmed": "Disponibilités confirmées pour {count, plural, one {# logement} other {# logements}}.",
+      "partial": "{count, plural, one {# logement n'a pas été enregistré : le planning est rechargé, refaites sa modification.} other {# logements n'ont pas été enregistrés : le planning est rechargé, refaites leurs modifications.}}",
+      "icsEvent": "{title} : réservé",
+      "icsName": "Planning des logements {site}"
+    },
+    "export": "Exporter l'agenda (.ics)",
+    "icsEvent": "{title} : indisponible",
+    "icsName": "Planning de flotte {site}"
   },
   "RentalAgency": {
     "title": "Mon agence de location",
@@ -5827,7 +5946,18 @@
       "step3Hint": "Bloquez les jours loués et confirmez vos disponibilités au moins tous les 14 jours.",
       "step3Action": "Mon planning",
       "doneLabel": "Étape {index} faite :",
-      "todoLabel": "Étape {index} à faire :"
+      "todoLabel": "Étape {index} à faire :",
+      "home": {
+        "title": "Mettre votre agence de séjours en ligne",
+        "lead": "Trois étapes pour une vitrine de logements prête à recevoir des demandes.",
+        "ready": "Les voyageurs voient vos logements libres à leurs dates. Confirmez votre planning au moins tous les 14 jours.",
+        "step1": "Autorisation et horaires",
+        "step1Hint": "Le numéro d'autorisation (loi 80-14), obligatoire pour publier, les heures d'arrivée et de départ, le séjour minimum.",
+        "step2": "Vos logements",
+        "step2Hint": "Une annonce par logement : l'autorisation et le séjour minimum sont déjà remplis.",
+        "step2Action": "Déposer un logement",
+        "step3Hint": "Bloquez les nuits réservées et confirmez vos disponibilités au moins tous les 14 jours."
+      }
     },
     "check": {
       "title": "Contrôle de l'agrément sur document",
@@ -5850,7 +5980,55 @@
         "active_content": "Ce PDF contient du contenu actif (script, formulaire) : exportez-le à nouveau en PDF simple.",
         "expired": "L'envoi n'a pas abouti à temps. Réessayez."
       }
+    },
+    "requests": {
+      "title": "Demandes de réservation",
+      "inbox": "Toute la messagerie",
+      "loading": "Chargement des demandes",
+      "loadFailed": "Les demandes n'ont pas pu être chargées : retrouvez-les dans la messagerie.",
+      "pending": "{count, plural, one {# demande en attente de réponse} other {# demandes en attente de réponse}}",
+      "noPending": "Aucune demande en attente",
+      "answer": "Répondre",
+      "upcoming": "Remises des {days} prochains jours",
+      "home": {
+        "upcoming": "Arrivées des {days} prochains jours"
+      },
+      "noUpcoming": "Rien de prévu pour l'instant.",
+      "open": "Voir",
+      "dates": "Du {from} au {to}"
     }
+  },
+  "HolidayAgency": {
+    "title": "Mon agence de séjours",
+    "back": "Retour à l'espace Pro",
+    "lead": "Ces informations s'affichent sur votre vitrine et remplissent d'avance chaque nouveau logement que vous déposez.",
+    "loading": "Chargement des réglages",
+    "loadFailed": "Les réglages n'ont pas pu être chargés.",
+    "retry": "Réessayer",
+    "notVerified": "Ces réglages sont réservés aux boutiques Pro vérifiées.",
+    "sectorTitle": "Votre secteur n'est pas « Location de vacances »",
+    "sectorBody": "Vous pouvez enregistrer ces réglages, mais votre vitrine ne les montrera qu'une fois ce secteur choisi.",
+    "sectorAction": "Changer de secteur",
+    "authorizationTitle": "Autorisation",
+    "authorizationLead": "Le numéro de l'autorisation d'exploiter votre établissement d'hébergement touristique (loi 80-14). Il est exigé sur chaque annonce de location de vacances d'une agence et s'affiche comme « déclaré par l'agence » : vous en restez seul responsable.",
+    "authorization": "Numéro d'autorisation",
+    "authorizationHint": "Tel qu'il figure sur votre autorisation. Repris d'office sur vos nouveaux logements, modifiable sur chacun.",
+    "authorizationPlaceholder": "Exemple : 12/2025",
+    "authorizationRequired": "Renseignez votre numéro d'autorisation.",
+    "authorizationInvalid": "De 3 à 40 caractères : lettres latines, chiffres, espaces et . / - _, avec au moins un chiffre.",
+    "stayTitle": "Séjours",
+    "stayLead": "Les heures affichées sur votre vitrine et le séjour minimum de vos nouveaux logements (chaque annonce peut avoir le sien).",
+    "checkIn": "Arrivée à partir de",
+    "checkInHint": "L'heure de remise des clés.",
+    "checkOut": "Départ avant",
+    "checkOutHint": "L'heure à laquelle le logement est libéré.",
+    "minNights": "Séjour minimum",
+    "minNightsHint": "Proposé sur chaque nouveau logement.",
+    "nights": "{count, plural, one {# nuit} other {# nuits}}",
+    "failed": "L'enregistrement a échoué.",
+    "save": "Enregistrer",
+    "saved": "Réglages enregistrés. Votre vitrine est mise à jour.",
+    "upToDate": "Réglages à jour."
   },
   "RentalRequest": {
     "card": {
@@ -5864,11 +6042,19 @@
       "withdrawnToast": "Demande retirée",
       "requestedTheirs": "{name} demande ce véhicule",
       "block": "Bloquer ces dates sur l'annonce",
-      "blockHint": "Cochez si plus aucun véhicule de ce modèle n'est libre sur la période : l'annonce sortira des recherches à ces dates.",
+      "blockHint": "Laissez coché si aucun autre véhicule de ce modèle n'est libre sur la période : l'annonce sortira des recherches à ces dates.",
       "accept": "Disponible",
       "acceptedToast": "Disponibilité confirmée",
       "blockFailed": "La disponibilité est confirmée, mais les dates n'ont pas pu être bloquées. Mettez votre planning à jour.",
       "planning": "Ouvrir mon planning",
+      "note": "Ajouter un mot (facultatif)",
+      "back": "Retour",
+      "confirmAccept": "Confirmer à {name} que le véhicule est disponible à ces dates ?",
+      "confirmDecline": "Répondre à {name} que le véhicule n'est pas disponible à ces dates ?",
+      "confirmAcceptButton": "Confirmer : disponible",
+      "confirmDeclineButton": "Confirmer : pas disponible",
+      "notePlaceholderAccept": "Ex. : le véhicule sera prêt à 9 h à l'agence de Guéliz.",
+      "notePlaceholderDecline": "Ex. : disponible plutôt du 2 au 4, ou un modèle équivalent aux mêmes dates.",
       "decline": "Pas disponible",
       "declinedToast": "Réponse envoyée : pas disponible",
       "acceptedMine": "Vous avez confirmé la disponibilité",
@@ -5882,12 +6068,21 @@
         "waiting": "En attente de la réponse de l'annonceur.",
         "requestedTheirs": "{name} demande un séjour",
         "block": "Bloquer ces nuits sur l'annonce",
-        "blockHint": "Cochez si le logement n'est plus libre ces nuits-là : l'annonce sortira des recherches à ces dates (le jour du départ reste libre).",
+        "blockHint": "Laissez coché si le logement n'est plus libre ces nuits-là : l'annonce sortira des recherches à ces dates (le jour du départ reste libre).",
         "blockFailed": "La disponibilité est confirmée, mais les nuits n'ont pas pu être bloquées. Mettez vos disponibilités à jour.",
         "planning": "Ouvrir mes annonces",
         "blockedNote": "Nuits bloquées sur l'annonce.",
-        "safety": "Le séjour se conclut directement avec l'annonceur, par un contrat ou une confirmation écrite. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement."
-      }
+        "safety": "Le séjour se conclut directement avec l'annonceur, par un contrat ou une confirmation écrite. {site} ne prend ni acompte ni caution : ne versez rien avant d'avoir vérifié l'annonceur et le logement.",
+        "pickupAppointment": "Proposer l'heure d'arrivée",
+        "guests": "{count, plural, one {# voyageur} other {# voyageurs}}",
+        "confirmAccept": "Confirmer à {name} que le logement est disponible pour ce séjour ?",
+        "confirmDecline": "Répondre à {name} que le logement n'est pas disponible pour ce séjour ?",
+        "notePlaceholderAccept": "Ex. : arrivée possible à partir de 15 h, les clés vous attendent sur place.",
+        "notePlaceholderDecline": "Ex. : libre plutôt du 20 au 24, ou un autre logement aux mêmes dates.",
+        "icsTitle": "Séjour : {title}, {name} ({site})"
+      },
+      "addToCalendar": "Ajouter à mon agenda",
+      "icsTitle": "Location : {title}, {name} ({site})"
     },
     "event": {
       "period": "du {from} au {to}",
@@ -5924,12 +6119,40 @@
         "pickup": "précisions : {place}"
       }
     },
+    "history": {
+      "title": "Demandes de cette conversation",
+      "ahead": "À venir",
+      "earlier": "{count, plural, one {# demande précédente} other {# demandes précédentes}}",
+      "status": {
+        "accepted": "Confirmée",
+        "declined": "Pas disponible",
+        "withdrawn": "Retirée",
+        "requested": "Remplacée",
+        "past": "Terminée"
+      }
+    },
+    "banner": {
+      "requested": "Votre demande du {from} au {to} est envoyée : l'agence vous répond dans la messagerie.",
+      "accepted": "L'agence a confirmé la disponibilité du {from} au {to}.",
+      "open": "Voir la conversation",
+      "home": {
+        "requested": "Votre demande de séjour du {from} au {to} est envoyée : l'annonceur vous répond dans la messagerie.",
+        "accepted": "L'annonceur a confirmé votre séjour du {from} au {to}."
+      }
+    },
     "preview": {
       "requested": "Demande de location",
       "changed": "Demande de location modifiée",
       "accepted": "Disponibilité confirmée",
       "declined": "Pas disponible aux dates demandées",
-      "withdrawn": "Demande de location retirée"
+      "withdrawn": "Demande de location retirée",
+      "home": {
+        "requested": "Demande de séjour",
+        "changed": "Demande de séjour modifiée",
+        "accepted": "Séjour confirmé",
+        "declined": "Pas disponible aux dates demandées",
+        "withdrawn": "Demande de séjour retirée"
+      }
     },
     "errors": {
       "rental_request_changed": "Cette demande a changé entre-temps : voici sa dernière version.",
@@ -6004,7 +6227,9 @@
       "review": "Notre équipe vérifie vos identifiants et vous appelle, en général sous deux jours ouvrés. Votre vitrine s'ouvre ensuite."
     },
     "legal": "Les engagements légaux de chaque activité sont rappelés à la création de la vitrine. Vos démarches administratives : <link>le guide des professionnels et coopératives</link>.",
-    "directory": "Voir l'annuaire des boutiques"
+    "directory": "Voir l'annuaire des boutiques",
+    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
   },
   "Directory": {
     "metaTitle": "{heading} · Annuaire des professionnels",
@@ -6090,7 +6315,7 @@
       },
       "options": {
         "title": "Options de visibilité",
-        "note": "Prix standard, puis véhicules et immobilier",
+        "note": "Le premier prix vaut pour toutes les catégories, le second pour Véhicules et Immobilier.",
         "bump": "Remonter en tête : {standard, number} ou {premium, number} crédits",
         "featured7": "À la Une 7 jours : {standard, number} ou {premium, number} crédits",
         "featured30": "À la Une 30 jours : {standard, number} ou {premium, number} crédits"
@@ -6115,18 +6340,21 @@
       "premium": "Premium",
       "recommended": "Recommandé",
       "onQuote": "Sur devis",
-      "credits": "{count, number} crédits de visibilité inclus",
+      "credits": "{count, number} crédits offerts chaque mois",
       "listings": "{count, plural, one {# annonce active} other {# annonces actives}}",
-      "featured": "{count, plural, one {# annonce À la Une incluse} other {# annonces À la Une incluses}}",
+      "featured": "{count, plural, one {# « À la Une » de 7 jours chaque mois} other {# « À la Une » de 7 jours chaque mois}}",
       "activeListings": "annonces actives",
-      "storefront": "Boutique en ligne, page vérifiée et statistiques",
+      "storefront": "Vitrine de la boutique, badge Pro et statistiques",
       "premiumSupport": "Accompagnement dédié et import du stock",
       "payAtSeller": "Paiement chez le vendeur : Aalan ne prend aucune commission sur vos ventes.",
       "cta": "Créer ma boutique",
       "more": "Découvrir l'offre Pro",
       "unlimitedListings": "Annonces actives en illimité",
       "stockImport": "Import du stock par fichier",
-      "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due."
+      "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
+      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+      "passCredits": "{count, number} crédits offerts pendant le pass",
+      "askQuote": "Demander un devis"
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture.",
     "compare": {

@@ -48,6 +48,7 @@ export const MODERATION_FLAGS = [
   "work_abroad",
   "offsite_payment",
   "phone_in_words",
+  "sensitive_declared",
 ] as const;
 export type ModerationFlag = (typeof MODERATION_FLAGS)[number];
 
@@ -186,6 +187,16 @@ export type RentalAvailabilityInput = z.infer<typeof rentalAvailabilityInputSche
 
 /** Vehicles of a fleet planning (rental pack §3) and the most one save may change. */
 export const FLEET_MAX = 200;
+
+/**
+ * What a planning shows: a car rental agency's cars (/pro/flotte) or a holiday rental agency's
+ * homes (/pro/logements, audit L4-02), `?kind=` of GET /api/pro/fleet.
+ */
+export const FLEET_KINDS = ["cars", "homes"] as const;
+export type FleetKind = (typeof FLEET_KINDS)[number];
+
+/** The kind of a `?kind=` value: cars unless it names the homes. */
+export const fleetKindOf = (value: string | null | undefined): FleetKind => (value === "homes" ? "homes" : "cars");
 
 /**
  * PUT /api/pro/fleet: the fleet planning's changes, each like a calendar save (its own `since`

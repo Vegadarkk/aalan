@@ -10,6 +10,7 @@ import {
   conditionApplies,
   countFilters,
   describeFilters,
+  nearbyDates,
   districtLabel,
   filterableCriteria,
   paginationItems,
@@ -26,6 +27,7 @@ import {
   type TitleKey,
 } from "@/components/search/filter-model";
 import type { Locale } from "@/config/site";
+import { dayNumber } from "@/lib/listings/rental-availability";
 import { parseSearchParams, searchPath, type SearchParams } from "@/lib/search/params";
 
 // Pure model of the search filters (lot L3b): chips, removal, sorts, pages, refinements, titles.
@@ -266,5 +268,19 @@ describe("small helpers", () => {
   it("builds the next-intl href of a search", () => {
     const params: SearchParams = { q: "velo", city: "rabat", page: 2 };
     expect(searchLinkHref(params)).toEqual({ pathname: "/recherche", query: { q: "velo", ville: "rabat", page: "2" } });
+  });
+});
+
+describe("nearby dates of a dated rental search with no result (audit L4-10)", () => {
+  const today = dayNumber("2026-11-04");
+  it("offers the same length a little earlier or later, never in the past", () => {
+    const params: SearchParams = { subcategory: "location-voitures", dates: { from: "2026-11-08", to: "2026-11-11" } };
+    expect(nearbyDates(params, today).map((option) => [option.from, option.to])).toEqual([
+      ["2026-11-06", "2026-11-09"],
+      ["2026-11-10", "2026-11-13"],
+      ["2026-11-15", "2026-11-18"],
+    ]);
+    expect(nearbyDates(params, today)[0]?.params.dates).toEqual({ from: "2026-11-06", to: "2026-11-09" });
+    expect(nearbyDates({ subcategory: "voitures" }, today)).toEqual([]);
   });
 });

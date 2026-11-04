@@ -266,8 +266,15 @@ describe("starting view", () => {
     expect(initialView({ ...home, hasMap: true, webgl2: true, stored: "map" })).toBe("map");
     expect(initialView({ ...home, hasMap: false, webgl2: true, stored: "map" })).toBe("list");
     expect(defaultView("home", true)).toBe("list");
-    expect(defaultView("search", true)).toBe("map");
+    // The server renders the list (B14): a phone keeps it, a computer turns to the map once hydrated.
+    expect(defaultView("search", true)).toBe("list");
     expect(defaultView("search", false)).toBe("list");
+  });
+
+  it("is the list on a phone or a small tablet, the map at a tap (owner, 2026-11-03, B14)", () => {
+    expect(initialView({ ...search, hasMap: true, webgl2: true, phone: true })).toBe("list");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, phone: false })).toBe("map");
+    expect(initialView({ ...search, hasMap: true, webgl2: true, phone: true, stored: "map" })).toBe("map");
   });
 
   it("is the list on Save-Data or a 2G link, unless the visitor chose", () => {

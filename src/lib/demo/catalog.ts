@@ -15,10 +15,12 @@ export interface DemoSeller {
   city: string;
   bio?: string;
   locale?: "fr" | "ar" | "rif";
-  /** Pro shop sector: an agency or a car rental agency gets its specialised storefront. */
-  sector?: "real_estate" | "car_rental";
+  /** Pro shop sector: an agency, a car rental or a holiday rental agency gets its specialised storefront. */
+  sector?: "real_estate" | "car_rental" | "holiday_rental";
   /** An agency's fee schedule, shown on its storefront. */
   feeSchedule?: string;
+  /** A holiday rental agency's settings (audit L4-02), shown on its storefront. */
+  holiday?: { authorization: string; checkIn: string; checkOut: string; minNights: number };
 }
 
 export interface DemoEntry {
@@ -38,7 +40,7 @@ export interface DemoEntry {
   attributes: Record<string, string | number | boolean | string[]>;
   /** Pexels photo ids, display order. */
   photos: string[];
-  /** Car rentals: blocked periods as [first, last] days after the seed day (rental pack §3). */
+  /** Rentals (cars, holiday homes): blocked periods as [first, last] days after the seed day (rental pack §3). */
   rentalBlocked?: [number, number][];
   /** Pro catalogue (catalogue §2-3): combinations with their stock and price, or the declared stock. */
   variants?: ListingVariants;
@@ -152,6 +154,16 @@ export const DEMO_SELLERS: readonly DemoSeller[] = [
     type: "pro",
     city: "marrakech",
     bio: "Maison d'hôtes de douze chambres dans la médina de Marrakech, avec son restaurant et son hammam.",
+  },
+  // A holiday rental agency (audit zone 4, 2026-11-04): appended, the earlier sellers keep their ids.
+  {
+    key: "atlas-sejours",
+    name: "Atlas Séjours",
+    type: "pro",
+    city: "agadir",
+    bio: "Agence de location saisonnière : villas, appartements, riads et bivouacs à Agadir, Marrakech, Saïdia, Ouarzazate et Erfoud. Autorisation d'hébergement touristique sur chaque annonce, arrivée à partir de 15 h.",
+    sector: "holiday_rental",
+    holiday: { authorization: "EXEMPLE-HT-2026", checkIn: "15:00", checkOut: "11:00", minNights: 2 },
   },
 ];
 
@@ -610,14 +622,15 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     title: "Riad 5 chambres dans la médina d'Essaouira",
     description: "Riad entièrement privatisé pour 10 personnes, terrasse sur les toits, petit-déjeuner inclus. À deux pas du port et des remparts.",
     price: 1500,
-    attributes: { "property-type": "villa-riad", guests: 10, bedrooms: 5, bathrooms: 5, amenities: ["terrasse", "chauffage"], "min-nights": 2, "agency-reference": "DS-S-0031" },
+    attributes: { "property-type": "villa-riad", guests: 10, bedrooms: 5, bathrooms: 5, amenities: ["terrasse", "chauffage"], "min-nights": 2, "tourism-authorization": "EXEMPLE-0031", "agency-reference": "DS-S-0031" },
     photos: ["15531322"],
   },
   {
     key: "vac-dakhla",
     sub: "location-vacances",
     seller: "leila",
-    city: "dakhla",
+    // Taghazout, as its title says (audit L4-15); the key stays, it names the seeded document.
+    city: "taghazout",
     days: 12,
     title: "Bungalow en bois bleu et jaune à Taghazout",
     description:
@@ -2825,5 +2838,133 @@ export const DEMO_ENTRIES: readonly DemoEntry[] = [
     condition: "good",
     attributes: {},
     photos: ["4822295"],
+  },
+
+  // ---- More rentals (audit zone 4, 2026-11-04): appended, the earlier listings keep their ids.
+  {
+    key: "rent-duster",
+    sub: "location-voitures",
+    seller: "ocean-rent",
+    city: "agadir",
+    days: 3,
+    title: "Dacia Duster diesel à louer à Agadir, idéal pour le Sud",
+    description:
+      "Dacia Duster récent, diesel, climatisé, 5 places et grand coffre : parfait pour Taghazout, Tafraout ou la route de Tiznit. Kilométrage illimité, assurance tous risques avec franchise. Remise à l'agence ou à l'aéroport Agadir Al Massira. Tarif dégressif dès 7 jours.",
+    price: 350,
+    attributes: { "rental-class": "suv-4x4", "car-brand": "dacia", model: "Duster", year: 2023, gearbox: "manuelle", fuel: "diesel", seats: 5, "min-rental-days": 3, "mileage-policy": "illimite", "rental-insurance": "tous-risques-franchise", "insurance-excess": 6000, "rental-deposit": 6000, "driver-min-age": 23, "licence-years": 2, "vehicle-handover": ["agence", "aeroport"], "rental-extras": ["siege-bebe", "conducteur-additionnel"], "rate-7-days": 300, "rate-30-days": 250, "fleet-units": 4 },
+    photos: ["19923014", "19922956"],
+    rentalBlocked: [[2, 5], [12, 18], [33, 36]],
+  },
+  {
+    key: "rent-carnival",
+    sub: "location-voitures",
+    seller: "ocean-rent",
+    city: "marrakech",
+    days: 5,
+    title: "Monospace 7 places Kia Carnival automatique, Marrakech",
+    description:
+      "Kia Carnival automatique, 7 places en cuir, climatisation arrière, grand coffre : pour les familles et les petits groupes. Livraison à l'aéroport Marrakech Menara ou à votre hôtel. Rehausseur et siège bébé sur demande. Location minimum 3 jours.",
+    price: 900,
+    attributes: { "rental-class": "monospace", "car-brand": "kia", model: "Carnival", year: 2024, gearbox: "automatique", fuel: "diesel", seats: 7, "min-rental-days": 3, "mileage-policy": "limite", "km-per-day": 300, "rental-insurance": "tous-risques-sans-franchise", "rental-deposit": 10000, "driver-min-age": 25, "licence-years": 3, "vehicle-handover": ["aeroport", "livraison"], "rental-extras": ["siege-bebe", "rehausseur", "wifi"], "rate-7-days": 800, "fleet-units": 2 },
+    photos: ["20071941"],
+    rentalBlocked: [[1, 4], [20, 27]],
+  },
+  {
+    key: "rent-kangoo",
+    sub: "location-voitures",
+    seller: "ocean-rent",
+    city: "agadir",
+    days: 9,
+    title: "Fourgonnette utilitaire à louer à la journée, Agadir",
+    description:
+      "Petit utilitaire tôlé de type Kangoo, 3 m³ de chargement, idéal pour un déménagement ou des livraisons. Location à la journée, kilométrage limité à 200 km par jour. Remise à l'agence, caution par carte ou espèces.",
+    price: 280,
+    attributes: { "rental-class": "utilitaire", "car-brand": "renault", model: "Kangoo", year: 2021, gearbox: "manuelle", fuel: "diesel", seats: 2, "min-rental-days": 1, "mileage-policy": "limite", "km-per-day": 200, "rental-insurance": "rc", "rental-deposit": 4000, "driver-min-age": 21, "licence-years": 2, "vehicle-handover": ["agence"], "rate-7-days": 250, "fleet-units": 2 },
+    photos: ["12474180"],
+    rentalBlocked: [[0, 1], [7, 8]],
+  },
+  {
+    key: "rent-cabriolet",
+    sub: "location-voitures",
+    seller: "ocean-rent",
+    city: "marrakech",
+    days: 11,
+    title: "Mercedes Classe C cabriolet à louer à Marrakech",
+    description:
+      "Mercedes Classe C cabriolet noire, boîte automatique, pour un mariage, un week-end ou la route de l'Ourika. Conducteur de 25 ans et plus, 3 ans de permis. Assurance tous risques sans franchise, livraison à votre adresse à Marrakech.",
+    price: 1800,
+    attributes: { "rental-class": "cabriolet", "car-brand": "mercedes-benz", model: "Classe C Cabriolet", year: 2022, gearbox: "automatique", fuel: "essence", seats: 4, "min-rental-days": 1, "mileage-policy": "limite", "km-per-day": 250, "rental-insurance": "tous-risques-sans-franchise", "rental-deposit": 20000, "driver-min-age": 25, "licence-years": 3, "vehicle-handover": ["agence", "livraison"], "fleet-units": 1 },
+    photos: ["4003126"],
+    rentalBlocked: [[4, 6], [10, 12], [25, 26]],
+  },
+  {
+    key: "vac-agadir-villa",
+    sub: "location-vacances",
+    seller: "atlas-sejours",
+    city: "agadir",
+    days: 2,
+    title: "Villa avec piscine privée chauffée et vue mer, Agadir",
+    description:
+      "Villa de 4 chambres pour 8 personnes, piscine privée chauffée, terrasse en bois, cuisine d'été et salon ouvert sur la mer. À 10 minutes de la plage et du centre d'Agadir. Ménage et linge compris. Arrivée à partir de 15 h, départ avant 11 h. Minimum 3 nuits.",
+    price: 2500,
+    attributes: { "property-type": "villa-riad", guests: 8, surface: 280, bedrooms: 4, bathrooms: 3, amenities: ["piscine", "climatisation", "cuisine-equipee", "terrasse", "jardin", "parking"], "min-nights": 3, "tourism-authorization": "EXEMPLE-HT-0101", "agency-reference": "AS-V-0101" },
+    photos: ["26859048", "6775268"],
+    rentalBlocked: [[5, 9], [21, 28]],
+  },
+  {
+    key: "vac-saidia-terrasse",
+    sub: "location-vacances",
+    seller: "atlas-sejours",
+    city: "saidia",
+    days: 4,
+    title: "Appartement avec grande terrasse face à la mer, Saïdia",
+    description:
+      "Appartement 2 chambres pour 5 personnes, grande terrasse avec transats face à la Méditerranée, piscine de la résidence et plage à 100 mètres. Climatisation, parking. Minimum 2 nuits, 4 nuits en juillet et en août.",
+    price: 700,
+    attributes: { "property-type": "appartement", guests: 5, surface: 85, bedrooms: 2, bathrooms: 1, amenities: ["climatisation", "terrasse", "piscine", "parking"], "min-nights": 2, "tourism-authorization": "EXEMPLE-HT-0102", "agency-reference": "AS-A-0102" },
+    photos: ["1662549"],
+    rentalBlocked: [[3, 4], [14, 17]],
+  },
+  {
+    key: "vac-marrakech-riad",
+    sub: "location-vacances",
+    seller: "atlas-sejours",
+    city: "marrakech",
+    days: 6,
+    title: "Riad privatisé avec bassin et patio, médina de Marrakech",
+    description:
+      "Riad de 5 chambres entièrement privatisé pour 10 personnes : patio en zellige avec bassin chauffé, salons marocains, terrasse sur les toits. Petit-déjeuner servi chaque matin. À 8 minutes à pied de Jemaa el-Fna. Minimum 2 nuits.",
+    price: 3200,
+    attributes: { "property-type": "villa-riad", guests: 10, bedrooms: 5, bathrooms: 5, amenities: ["piscine", "climatisation", "terrasse", "chauffage"], "min-nights": 2, "tourism-authorization": "EXEMPLE-HT-0103", "agency-reference": "AS-R-0103" },
+    photos: ["7391720"],
+    rentalBlocked: [[1, 3], [9, 11], [30, 35]],
+  },
+  {
+    key: "vac-ouarzazate-kasbah",
+    sub: "location-vacances",
+    seller: "atlas-sejours",
+    city: "ouarzazate",
+    days: 10,
+    title: "Maison en pisé dans une kasbah près d'Ouarzazate",
+    description:
+      "Maison traditionnelle en pisé de 3 chambres dans un village au pied de l'Atlas, à 20 minutes d'Ouarzazate. Pour 6 personnes, terrasse sur la vallée, cuisine équipée, chauffage l'hiver. Idéale pour visiter Aït Ben Haddou et la vallée du Drâa.",
+    price: 650,
+    attributes: { "property-type": "maison", guests: 6, bedrooms: 3, bathrooms: 2, amenities: ["terrasse", "cuisine-equipee", "chauffage", "parking"], "min-nights": 2, "tourism-authorization": "EXEMPLE-HT-0104", "agency-reference": "AS-M-0104" },
+    photos: ["2347774"],
+    rentalBlocked: [[8, 10]],
+  },
+  {
+    key: "vac-erfoud-bivouac",
+    sub: "location-vacances",
+    seller: "atlas-sejours",
+    city: "erfoud",
+    days: 7,
+    title: "Tente privée dans un bivouac au pied des dunes de l'Erg Chebbi",
+    description:
+      "Tente berbère privée pour 4 personnes avec salle d'eau, dans un bivouac au pied des dunes de l'Erg Chebbi. Dîner et petit-déjeuner compris, soirée autour du feu. Transfert depuis Erfoud possible. Minimum 1 nuit.",
+    price: 1100,
+    attributes: { "property-type": "autre", guests: 4, bedrooms: 1, bathrooms: 1, amenities: ["parking"], "min-nights": 1, "tourism-authorization": "EXEMPLE-HT-0105", "agency-reference": "AS-B-0105" },
+    photos: ["1001437", "11387348"],
+    rentalBlocked: [[2, 2], [6, 7], [16, 19]],
   },
 ];

@@ -101,6 +101,23 @@ export const rentalAgencySchema = z
   .strict();
 export type RentalAgency = z.infer<typeof rentalAgencySchema>;
 
+/**
+ * A holiday rental agency's settings (audit L4-02): its tourist accommodation authorisation (law
+ * 80-14, the format of the listing criterion, written on every new listing), the arrival and
+ * departure times and the shortest stay its new listings start with. Shown on its storefront.
+ */
+export const HOLIDAY_AUTHORIZATION_PATTERN = CRITERION_FORMATS.authorization;
+export const HOLIDAY_MIN_NIGHTS_MAX = 30;
+export const holidayAgencySchema = z
+  .object({
+    authorization: z.string().trim().toUpperCase().regex(HOLIDAY_AUTHORIZATION_PATTERN),
+    checkIn: clock,
+    checkOut: clock,
+    minNights: z.number().int().min(1).max(HOLIDAY_MIN_NIGHTS_MAX),
+  })
+  .strict();
+export type HolidayAgency = z.infer<typeof holidayAgencySchema>;
+
 const uid = z.string().min(1).max(128);
 const ts = z.date();
 
@@ -271,6 +288,8 @@ export const proProfileSchema = z
     rental: rentalAgencySchema.optional(),
     /** Check of the licence decision (POST /api/pro/me/rental/check, then the agent queue or a moderator). */
     rentalCheck: rentalCheckSchema.optional(),
+    /** Holiday rental agency settings, set by the owner (PUT /api/pro/me/holiday, audit L4-02). */
+    holiday: holidayAgencySchema.optional(),
     lifecycle: z.enum(PRO_STATES),
     /** Copy of subscriptions/pro_{proId}, or the launch offer's plan. */
     plan: z.enum(PRO_PLANS),

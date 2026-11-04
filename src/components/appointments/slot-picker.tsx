@@ -10,7 +10,7 @@ import { SITE_NAME, type Locale } from "@/config/site";
 import {
   APPOINTMENT_DURATIONS,
   APPOINTMENT_HORIZON_MS,
-  APPOINTMENT_KINDS,
+  GENERAL_APPOINTMENT_KINDS,
   APPOINTMENT_LEAD_MS,
   APPOINTMENT_PLACE_MAX,
   APPOINTMENT_SLOTS_MAX,
@@ -44,6 +44,11 @@ export interface SlotPickerProps {
   error?: string | null;
   onSubmit: (value: SlotPickerValue) => void;
   onCancel?: () => void;
+  /**
+   * The day the strip starts on when it still has open times ("YYYY-MM-DD"): a rental's pick-up
+   * or a stay's arrival day (audit L4-08), else the first day with an open time.
+   */
+  startDay?: string;
   /** Tests: the clock. */
   now?: number;
 }
@@ -51,6 +56,8 @@ export interface SlotPickerProps {
 /** Start times of the grid, in minutes after midnight: 08:00 to 21:30 every 30 minutes. */
 export const GRID_MINUTES: readonly number[] = Array.from({ length: 28 }, (_, index) => 8 * 60 + index * 30);
 const STRIP_DAYS = 14;
+/** Days of the strip before a given start day. */
+const STRIP_LEAD_DAYS = 2;
 
 /** A grid time is off: too soon or too far, or it overlaps a picked slot (its own start excepted). */
 export function timeOff(start: number, minutes: AppointmentDuration, picked: readonly Slot[], now: number): boolean {
@@ -64,17 +71,22 @@ export function firstOpenDay(days: readonly string[], now: number): string {
   return days.find((day) => GRID_MINUTES.some((minutes) => moroccoTime(day, minutes) >= now + APPOINTMENT_LEAD_MS)) ?? days[0] ?? moroccoClock(now).day;
 }
 
-export function SlotPicker({ defaultKind = "meeting", kinds = APPOINTMENT_KINDS, submitting, error, onSubmit, onCancel, now: fixedNow }: SlotPickerProps) {
+export function SlotPicker({ defaultKind = "meeting", kinds = GENERAL_APPOINTMENT_KINDS, submitting, error, onSubmit, onCancel, startDay, now: fixedNow }: SlotPickerProps) {
   const t = useTranslations("Appointments.picker");
   const kindLabel = useTranslations("Appointments.kind");
   const durationLabel = useTranslations("Appointments.duration");
   const locale = useLocale() as Locale;
   const id = useId();
   const [now] = useState(() => fixedNow ?? Date.now());
-  const days = useMemo(() => nextDays(now, STRIP_DAYS), [now]);
   const lastDay = useMemo(() => moroccoClock(now + APPOINTMENT_HORIZON_MS).day, [now]);
+  const opensOn = (item: string) => GRID_MINUTES.some((value) => moroccoTime(item, value) >= now + APPOINTMENT_LEAD_MS);
+  const start = startDay && /^\d{4}-\d{2}-\d{2}$/.test(startDay) && startDay <= lastDay && opensOn(startDay) ? startDay : null;
+  // The strip shows the start day with the two days before it, today at the earliest.
+  const stripFrom = start ? Math.max(now, moroccoTime(start, 12 * 60) - STRIP_LEAD_DAYS * 86_400_000) : now;
+  const days = useMemo(() => nextDays(stripFrom, STRIP_DAYS), [stripFrom]);
+  const firstDay = useMemo(() => moroccoClock(now).day, [now]);
   const [kind, setKind] = useState<AppointmentKind>(kinds.includes(defaultKind) ? defaultKind : (kinds[0] ?? "meeting"));
-  const [day, setDay] = useState(() => firstOpenDay(days, now));
+  const [day, setDay] = useState(() => start ?? firstOpenDay(days, now));
   const [minutes, setMinutes] = useState<AppointmentDuration>(defaultKind === "visit" || defaultKind === "test_drive" ? 30 : 15);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [place, setPlace] = useState("");
@@ -175,7 +187,7 @@ export function SlotPicker({ defaultKind = "meeting", kinds = APPOINTMENT_KINDS,
           <span className="shrink-0">{t("otherDay")}</span>
           <input
             type="date"
-            min={days[0]}
+            min={firstDay}
             max={lastDay}
             value={day}
             onChange={(event) => {

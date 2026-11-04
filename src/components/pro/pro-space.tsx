@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, BadgeCheck, CircleCheck, CircleDashed, Gift, Hourglass, PhoneCall, ShieldCheck, Store } from "lucide-react";
+import { ArrowRight, BadgeCheck, CircleCheck, CircleDashed, Gift, Hourglass, PhoneCall, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { StatusPanel } from "@/components/auth/status-panel";
@@ -21,6 +21,7 @@ import { publishesAsPro, type ProState } from "@/lib/pro/lifecycle";
 import { loadProMe } from "@/lib/pro/client";
 import { paymentEligible } from "@/lib/pro/seller-payment-rules";
 import { cn } from "@/lib/utils";
+import { RentalRequestsPanel } from "@/components/rental/rental-requests-panel";
 import { RentalSetup } from "@/components/rental/rental-setup";
 import { AgencySettings } from "./agency-settings";
 import { ShopEmblem } from "./shop-emblem";
@@ -320,6 +321,16 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
               </Button>
             </>
           ) : null}
+          {canPublish && shop.sector === "holiday_rental" ? (
+            <>
+              <Button asChild variant="outline">
+                <Link href="/pro/logements">{t("homes")}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/pro/sejours">{t("holidayAgency")}</Link>
+              </Button>
+            </>
+          ) : null}
           <Button asChild variant="outline">
             <Link href="/mes-annonces">{t("myListings")}</Link>
           </Button>
@@ -355,9 +366,21 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
                 <span>{shop.launchOffer.endsAt ? t("launchOfferEnds", { date: date(shop.launchOffer.endsAt) }) : t("launchOffer", { days: shop.launchOffer.noticeDays })}</span>
               </p>
             ) : null}
-            <Link href="/pro/abonnement" className={cn("mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
-              {t("subscription")}
-              <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
+            {/* Without a plan, a real call to action while subscriptions are open (zone 6 audit 6-02). */}
+            {plan === "none" && me.salesOpen && !suspended ? (
+              <Button asChild variant="structure" className="mt-auto w-fit">
+                <Link href="/pro/abonnement">{t("choosePlan")}</Link>
+              </Button>
+            ) : (
+              <Link href="/pro/abonnement" className={cn("mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+                {t("subscription")}
+                <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
+              </Link>
+            )}
+            {/* The invoices were reachable only by their address (zone 6 audit 6-20). */}
+            <Link href="/pro/factures" className={cn("inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
+              <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
+              {t("invoices")}
             </Link>
           </section>
           <Quotas shop={shop} />
@@ -368,6 +391,9 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish ? <ShopStats /> : null}
 
       {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
+      {canPublish && shop.sector === "holiday_rental" ? <RentalSetup shop={shop} kind="homes" /> : null}
+      {/* The booking requests waiting for an answer and the rentals coming up (audit L4-06). */}
+      {canPublish && (shop.sector === "car_rental" || shop.sector === "holiday_rental") ? <RentalRequestsPanel stays={shop.sector === "holiday_rental"} /> : null}
 
       {/* The storefront's card first: what a buyer sees besides the listings (UX audit lot 1). */}
       {canPublish ? <ShopCardSettings shop={shop} onLogo={setLogo} /> : null}
@@ -375,7 +401,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish && shop.storefront && !suspended ? <ShopShare storefront={shop.storefront} /> : null}
       {suspended ? null : <AgencySettings shop={shop} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
-      {canPublish && shop.sector !== "car_rental" ? <SectionsSettings shop={shop} /> : null}
+      {canPublish && shop.sector !== "car_rental" && shop.sector !== "holiday_rental" ? <SectionsSettings shop={shop} /> : null}
 
     </div>
   );

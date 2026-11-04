@@ -5,6 +5,7 @@ import {
   LISTING_API,
   type CreateListingInput,
   type CreateListingResponse,
+  type FleetKind,
   type FleetResponse,
   type FleetSaveInput,
   type FleetSaveResponse,
@@ -96,9 +97,9 @@ export function endPromo(id: string): Promise<OwnerRowResponse> {
   return apiDelete<OwnerRowResponse>(LISTING_API.promo(id));
 }
 
-/** A car rental agency's fleet planning. */
-export function loadFleet(): Promise<FleetResponse> {
-  return apiGet<FleetResponse>(LISTING_API.fleet);
+/** A car rental agency's fleet planning, or a holiday rental agency's homes (audit L4-02). */
+export function loadFleet(kind: FleetKind = "cars"): Promise<FleetResponse> {
+  return apiGet<FleetResponse>(kind === "homes" ? `${LISTING_API.fleet}?kind=homes` : LISTING_API.fleet);
 }
 
 export function saveFleet(input: FleetSaveInput): Promise<FleetSaveResponse> {

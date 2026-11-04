@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_AI } from "@/config/ai";
 import { screenListing } from "@/lib/moderation/screen";
+import { HUMAN_REVIEW_FLAGS } from "@/lib/moderation/risk";
 import type { ScreenInput } from "@/lib/moderation/types";
 
 const ctx = { ai: DEFAULT_AI };
@@ -263,12 +264,21 @@ describe("screenListing: soft flags and state", () => {
     expect(screenListing(cleanListing({ duplicates: { sameText: 1, samePhoto: 1 } }), ctx).state).toBe("needs_review");
   });
 
-  it("counts previous rejections in the score without a flag, and notes the declaration", () => {
+  it("counts previous rejections in the score without a flag", () => {
     const seller = { ...cleanListing().seller, previousRejections: 2 };
-    const result = screenListing(cleanListing({ seller, sensitiveDeclaration: { kind: "self" } }), ctx);
+    const result = screenListing(cleanListing({ seller }), ctx);
     expect(result).toMatchObject({ state: "auto_ok", score: 20, flags: [] });
-    expect(result.evidence).toEqual(["2 previous rejection(s)", "declaration self"]);
+    expect(result.evidence).toEqual(["2 previous rejection(s)"]);
     expect(screenListing(cleanListing({ seller, duplicates: { sameText: 2, samePhoto: 0 } }), ctx).score).toBe(50);
+  });
+
+  it("holds a listing declared sensitive for a moderator, whatever the score (zone 3 P1-1)", () => {
+    for (const kind of ["self", "explicit_consent"] as const) {
+      const result = screenListing(cleanListing({ sensitiveDeclaration: { kind } }), ctx);
+      expect(result).toMatchObject({ state: "needs_review", score: 0, flags: ["sensitive_declared"] });
+      expect(result.evidence).toEqual([`declaration ${kind}`]);
+    }
+    expect(HUMAN_REVIEW_FLAGS.has("sensitive_declared")).toBe(true);
   });
 
   it("works on Arabic text", () => {

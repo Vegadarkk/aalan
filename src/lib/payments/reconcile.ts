@@ -154,15 +154,21 @@ async function checkStripeSubscriptions(run: ReconcileRun, now: Date, deps: Reco
   }
 }
 
+const FINISHED = new Set(["processed", "ignored"]);
+
 /** The recorded event that replays `purchase` (a credit or a refund), or null when one exists already. */
 async function packEvent(purchase: RevenueCatPurchase & { storePurchaseIdentifier: string }, type: "NON_RENEWING_PURCHASE" | "CANCELLATION", appUserId: string, now: Date, deps: ReconcileDeps): Promise<BillingEventDoc | null> {
-  // An event of this purchase already recorded is the queue's or the sweep's, or was alerted.
+  const eventId = `reconcile_${purchase.id.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100)}_${type === "CANCELLATION" ? "refund" : "purchase"}`;
+  // An event of this purchase already recorded is the queue's or the sweep's, or was alerted. A
+  // refund recorded and finished while the order is still paid did not refund it (one taken for a
+  // subscription's before #302): this replay applies it, once.
   const known = await listBillingEventsByTransactionId(purchase.storePurchaseIdentifier);
-  if (known.some((event) => event.type === type)) return null;
+  if (known.some((event) => event.eventId === eventId)) return null;
+  if (known.some((event) => event.type === type && (type === "NON_RENEWING_PURCHASE" || !FINISHED.has(event.status)))) return null;
   const productId = purchase.productId ? await (deps.storeIdentifier ?? productStoreIdentifier)(purchase.productId) : undefined;
   return {
     source: "revenuecat",
-    eventId: `reconcile_${purchase.id.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100)}_${type === "CANCELLATION" ? "refund" : "purchase"}`,
+    eventId,
     type,
     environment: expectedEnvironment(),
     appUserId,

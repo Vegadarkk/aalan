@@ -396,7 +396,9 @@
       "turnstileTitle": "Tasenqedt nniḍen",
       "turnstileBody": "Aṭas n tikkal war teddi ca tukcimt. Sentem belli war telliḍ d robot, uca ɛawed kcem.",
       "verifyTitle": "Sentem adres n e-mail nnec",
-      "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu."
+      "verifyBody": "Amiḍan nnec yella, maca adres {email} i ɛad war tettwasentem. Rzem asaɣ i dak-d yawḍen s e-mail, niɣ ssuter asaɣ amaynu.",
+      "sessionEnded": "Votre session a pris fin : reconnectez-vous pour continuer.",
+      "sessionEndedPro": "Votre session a pris fin, par exemple parce que votre boutique vient d'être validée : reconnectez-vous pour ouvrir votre espace Pro."
     },
     "signUp": {
       "title": "Snulfu amiḍan",
@@ -687,7 +689,8 @@
       "real_estate_attestation": "Ḥima ad tessufɣeḍ annonce n ixxamen d wakal, sentem belli isallen nnes ṣeḥḥan d belli d kecc kan i ɣer ttellan.",
       "rental_attestation": "Ḥima ad tessufɣeḍ akra, sentem ayen tenniḍ x agence nnec (rrexṣa, immatriculation, assurance).",
       "rental_agrement_missing": "Ḥima ad tessufɣeḍ akra, ari zzat uṭṭun n rrexṣa (agrément) n agence nnec deg umkan Pro (Agence inu n ukra).",
-      "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro)."
+      "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro).",
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
     },
     "wizard": {
       "title": "Ssuffeɣ annonce",
@@ -734,7 +737,12 @@
       "rentalTitle": "Ticraḍ n ukra",
       "rentalHint": "Assurance, caution, ccifuṛ, asefk n ṭumubil : ticraḍ ibanen ttemnaɛent tiɣawsiwin n diri d ttbanent deg tarzzut.",
       "jobAbroadTitle": "Axeddim berra n tmurt : amsefrez ad isenqed annonce zzat ma ad tban.",
-      "jobAbroadBody": "Lɛaqd n uxeddim ixs ad ɣar-s visa n lwizara n uxeddim zzat ma ad yeddu umdan, d ixeddimen n ANAPEC bla idrimen. Annonce war txs ca ad tessuter idrimen i win yessutren axeddim : war idrimen n dossier, war caution, war visa."
+      "jobAbroadBody": "Lɛaqd n uxeddim ixs ad ɣar-s visa n lwizara n uxeddim zzat ma ad yeddu umdan, d ixeddimen n ANAPEC bla idrimen. Annonce war txs ca ad tessuter idrimen i win yessutren axeddim : war idrimen n dossier, war caution, war visa.",
+      "holidayProTitle": "Uṭṭun n tsirect n usensi aturisti ixs-it",
+      "holidayProBody": "Agence ad d-tini uṭṭun n tsirect n lexdma n kul axxam (lqanun 80-14 n usensi aturisti). Ad d-iban x lɛannonce, am wami t-id-yenna umessufeɣ.",
+      "holidayIndividualTitle": "Lekra i turist : lqanun 80-14 ittwaḥkem",
+      "holidayIndividualBody": "Ɣer wanaw n uxxam, tzemmer ad tili tsirect n lexdma ixs-itt. Ma ɣarwem tasirect, aret uṭṭun nnes : ad d-iban x lɛannonce. War uṭṭun, lɛannonce ad tini « war t-id-yenni ca ».",
+      "choosePlan": "Choisir une offre"
     },
     "start": {
       "title": "Ssuffeɣ annonce",
@@ -757,7 +765,12 @@
       "untitled": "Brouillon sans titre",
       "edited": "modifié {when}",
       "allDrafts": "Voir mes {count} brouillons",
-      "checking": "Recherche de vos brouillons…"
+      "checking": "Recherche de vos brouillons…",
+      "noPlanTitle": "Choisissez d'abord une offre",
+      "noPlanBody": "Votre boutique est vérifiée, mais sans offre active elle ne peut pas publier d'annonce. Choisissez une offre, puis revenez déposer votre annonce : rien ne sera perdu.",
+      "noPlanClosed": "Votre boutique est vérifiée, mais elle n'a pas d'offre active. Les abonnements ouvriront prochainement : vous pourrez alors en choisir une et publier.",
+      "choosePlan": "Choisir une offre",
+      "proSpace": "Espace Pro"
     },
     "steps": {
       "categorie": "Taggayt",
@@ -810,6 +823,11 @@
       "charactersMin": "Mazal {count, plural, one {# n usekkil} other {# n yisekkilen}} ɣas",
       "condition": "Lḥala",
       "price": "Ssuma",
+      "pricePer": {
+        "day": "Ssuma i wass",
+        "night": "Ssuma i yiḍ",
+        "month": "Akra i wayyur"
+      },
       "priceHint": "S dirhams, bla ṣṣantim.",
       "pricePlaceholder": "1 500",
       "currency": "DH",
@@ -1006,6 +1024,7 @@
       "criterion_integer": "Ari uṭṭun bla virgule.",
       "criterion_text_max": "Aya war yezmir ca ad yɛeddi {max} n yisekkilen.",
       "criterion_format_onssa": "Ayen i nraǧu : isekkilen, lɛamala (province), uṭṭun d aseggas, s tenqiḍin jar-asen, am M.07.113.20.",
+      "criterion_format_authorization": "Aret uṭṭun am wami illa x tsirect : isekkilen, uṭṭunen d (. / - _), s yiwen n uṭṭun ula d drus.",
       "condition_required": "Ini-d lḥala.",
       "title_min": "Azwel ixs ad yili ɣas {min} n yisekkilen.",
       "title_max": "Azwel war yezmir ca ad yɛeddi {max} n yisekkilen.",
@@ -2828,7 +2847,8 @@
       "editOf": "Beddel « {title} »",
       "resumeOf": "Err « {title} » ad tban",
       "renewOf": "Snulfu « {title} » i 60 n wussan",
-      "promote": "Err-itt ɣer zdat"
+      "promote": "Err-itt ɣer zdat",
+      "promoteOf": "Mettre en avant « {title} »"
     },
     "confirm": {
       "deleteTitle": "Ad tekkseḍ annonce-a?",
@@ -3176,16 +3196,22 @@
         "rentalDatesMissing": "Xtar ass n tuṭṭfa d wass n tuɣalin.",
         "rentalSafety": "Akra yettwakemmal s contrat yettwarun n agence: war tefkeḍ ca wala tasbeqt wala caution deg usit niɣ zzat ma ad teẓreḍ ṭumubil.",
         "rentalSend": "Azen asuter",
+        "rentalPlaceholder": "Azul, ṭumubil-a tella deg wussan-a?",
         "home": {
           "rentalTitle": "Asuter n uqqimi i {name}",
           "rentalTitleFallback": "Asuter n uqqimi",
           "rentalDates": "Wussan n uqqimi",
           "rentalPickup": "Tilɣa nniḍen (ma texsed)",
-          "rentalPickupPlaceholder": "Amedya: 2 n imeqqranen d yiwen n weḥnjir, ad naweḍ x 18 h",
+          "rentalPickupPlaceholder": "Amedya: ad naweḍ x 18 h, yiwen n wusu n weḥnjir mala yella",
           "rentalDraft": "Azul, xseɣ ad qqimeɣ deg « {title} » zi {from} ar {to} ({days, plural, one {# n yiḍ} other {# n iḍan}}). Mala yella?",
           "rentalDraftPickup": "Azul, xseɣ ad qqimeɣ deg « {title} » zi {from} ar {to} ({days, plural, one {# n yiḍ} other {# n iḍan}}): {pickup}. Mala yella?",
           "rentalDatesMissing": "Xtar ass n tuɣda d wass n tuffɣa.",
-          "rentalSafety": "Aqqimi yettwakemmal nican d umessufeɣ n annonce. {site} war tettaɣ wala tasbeqt wala caution: war tefkeḍ walu zzat ma ad tesneqdeḍ amessufeɣ d uxxam."
+          "rentalSafety": "Aqqimi yettwakemmal nican d umessufeɣ n annonce. {site} war tettaɣ wala tasbeqt wala caution: war tefkeḍ walu zzat ma ad tesneqdeḍ amessufeɣ d uxxam.",
+          "rentalPlaceholder": "Azul, axxam yexwa deg wussan-a?",
+          "rentalGuests": "Imsafaren",
+          "rentalGuestsPick": "Xtar",
+          "rentalGuestsCount": "{count, plural, one {# n umsafar} other {# n imsafaren}}",
+          "rentalDraftGuests": "Ad nili {count, plural, one {# n umsafar} other {# n imsafaren}}."
         },
         "aboutShop": "Tabrat nnec ad taweḍ ɣer tḥanut, war ma tettwaqqen ɣer ca n annonce.",
         "placeholderShop": "Azul, ɣari asteqsi x tɣawsiwin niɣ x lxedmat nnwem."
@@ -3204,7 +3230,8 @@
         "signInRental": "Kcem ḥima ad tazneḍ asuter n uqqimi. Uca ad d-tuɣaleḍ ɣer annonce-a."
       },
       "variantText": "Azul, « {title} » s {variant} ɛad yella?",
-      "ownShop": "Ta d taḥanut nnec. Imerza ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen."
+      "ownShop": "Ta d taḥanut nnec. Imerza ẓerren dagi tiqeffalin ḥima ad ak-d ssiwlen.",
+      "promote": "Err-itt ɣer zdat"
     },
     "safety": {
       "title": "Inaɣen n taɣellist",
@@ -3219,7 +3246,12 @@
         "noFees": "Werǧin txelleṣeḍ ḥima ad tessutreḍ axeddim: wala idrimen n dossier, wala tamezɣa tamencuṛt, wala caution, wala visa.",
         "checkEmployer": "Senqed bab n uxeddim: isem n tkebbanit, adres, registre de commerce, d mmager-it deg umkan nnes.",
         "abroad": "I uxeddim deg berra, contrat ixs ad yesɛa visa n lwizara n uxeddim; tinfa n ANAPEC bla idrimen.",
-        "noDocuments": "Werǧin tefkiḍ copie n tkarḍa nnec n timmuɣra niɣ n passeport zzat n contrat yettwasenyen."
+        "noDocuments": "Werǧin tefkiḍ copie n tkarḍa nnec n timmuɣra niɣ n passeport zzat n contrat yettwasenyen.",
+        "noDepositCar": "War tefkeḍ tasbeqt niɣ caution zzat ma ad teẓreḍ ṭumubil d tsenyeḍ contrat n agence.",
+        "checkAgency": "Ẓar agence: uṭṭun n agrément nnes d tansiwin nnes llant deg vitrine nnes.",
+        "noDepositStay": "War tefkeḍ walu ḥima « ad tḥebseḍ » ussan zzat asentem yettwarun n win yessuffɣen annonce; ḥḍa zeg ssuma ḍaɛfen bezzaf i lweqt-a.",
+        "checkHost": "Ẓar win yessuffɣen annonce d uxxam: uṭṭun n turagt n agence, adres s tidet, tiwlafin timaynutin.",
+        "noLinks": "Qqim deg tbratin: aseɣwen n uxelleṣ niɣ ameslay yettwasmuttin ɣer yiwen n umeẓlu nniḍen d tamatart n tḥila."
       },
       "report": "Tcukkeḍ x annonce-a? <report>Smekti fellas</report> niɣ <contact>ari-yaɣ-d</contact>.",
       "host": "Aalan teṭṭef annonces n imseqdacen nnes: war d amzenzu, war d amsaɣ, d war tettekki ca deg uzenzi niɣ deg umennuɣ jar-asen.",
@@ -3313,6 +3345,7 @@
       "permit": "Permis n lebni",
       "authorization": "Tasirect n usensi",
       "declared": "Uṭṭun {number}, i d-yenna umessufeɣ",
+      "authorizationMissing": "War t-id-yenni ca umessufeɣ",
       "declaredNote": "Tilɣa i d-yenna umessufeɣ, x tamsuli nnes kan. {brand} war tent-tessenqad ca. Ssuter tiwṛiqin (titre foncier, mandat, tasirect) zzat ma ad tqebleḍ."
     },
     "example": {
@@ -3353,7 +3386,18 @@
         "licence": "Ṭṭef permis nnec yeṣḥan (permis international mala tessuter-it agence) d ḍfer leɛmer d useggas n permis i tessuter.",
         "payment": "{brand} war tettekra ca ṭumubil-a d war tettaɣ ca idrimen: akra d contrat jar-ak d agence. War tefkeḍ ca tasbeqt zzat ma ad teẓreḍ agence d ṭumubil."
       },
-      "source": "Inaɣen i tmusni kan: tiwtilin d contrat n agence d nitni i yezwaren."
+      "source": "Inaɣen i tmusni kan: tiwtilin d contrat n agence d nitni i yezwaren.",
+      "home": {
+        "title": "Ad tekreḍ axxam n lɛuṭla deg Lmerrok",
+        "steps": {
+          "host": "Ẓar win yessuffɣen annonce: agence tessken uṭṭun n turagt n usensi n turism (loi 80-14); amdan iwḥed ixs ad dak-yini wi t-yella d mani yella uxxam.",
+          "confirmation": "Ṭṭef asentem yettwarun zzat ma ad truḥeḍ: ussan, ssuma marra n umuqqem, amḍan n imsafren, caution mala tella d tiwtilin n usbeṭṭel.",
+          "arrival": "Mala tewḍeḍ, ẓar ma axxam yemsasa d annonce (tiwlafin, ifecka, amḍan n medden) zzat ma ad tefkeḍ ayen d-yeqqimen niɣ caution.",
+          "register": "Win yessensan yettaru timmuɣra n yal amsafar i tmurant d imsulṭa, yezmer ad yessuter taxe de séjour n tɣiwant: d ayen yeṣḥan. Werǧin tejjiḍ passeport nnec d garantie.",
+          "payment": "{brand} war tettekra ca axxam-a d war tettaɣ ca idrimen: amuqqem d amsasa jar-ak d win yessuffɣen annonce. War tefkeḍ walu s mandat niɣ s yiwen n useɣwen i dak-d-yewḍen beṛṛa n tbratin."
+        },
+        "source": "Inaɣen i tmusni kan: tiwtilin d usentem n win yessuffɣen annonce d nitni i yezwaren."
+      }
     },
     "catalogue": {
       "title": "Axtiṛ d wayen yellan",
@@ -3688,6 +3732,12 @@
       "title": "Walu n annonce i yemsasan d terzzut nnec",
       "body": "Kkes afilṭer niɣ ssiweɛ adeg ḥima ad teẓreḍ uggar n annonces.",
       "bodyWords": "Senqed tira, ɛreḍ awal amatu niɣ kkes afilṭer.",
+      "datesBody": "Ula d yiwet n ṭumubil war texwi zeg {from} ar {to}: yezmer tettwakra dɣya. Ɛreḍ ussan iqerben niɣ kkes yiwen n ufilṭer.",
+      "datesBodyNights": "Ula d yiwen n uxxam war yexwi zeg {from} ar {to}: yezmer yettwaḥeṭṭ dɣya. Ɛreḍ ussan iqerben niɣ kkes yiwen n ufilṭer.",
+      "nearbyDates": "Ussan-nni, cwi zzat niɣ cwi deffir:",
+      "datesOption": "{from} – {to}",
+      "withoutDates": "Ẓer ṭumubilat bla ussan",
+      "withoutDatesNights": "Ẓer ixxamen bla ussan",
       "removeFilter": "Kkes afilṭer:",
       "widenRegion": "Arzu deg marra tamnaḍt n {region}",
       "widenCountry": "Arzu deg marra Lmerrok",
@@ -3876,7 +3926,7 @@
       "rangeFrom": "{label}: zi {min}",
       "rangeTo": "{label}: ar {max}",
       "options": "{label}: {values}",
-      "dates": "{from} – {to} · {days} n wussan",
+      "dates": "{from} – {to} · {days, plural, one {# n wass} other {# n wussan}}",
       "datesNights": "{from} – {to} · {days, plural, one {# n yiḍ} other {# n iḍan}}",
       "includeSoldOut": "S wid yekmelen",
       "promo": "S promotion"
@@ -4097,7 +4147,11 @@
       "stockImport": "Awi-d stock inu",
       "fleet": "Planning n tkeṛṛusin",
       "sellerPayment": "Adfaɛ ɣer umzenzu",
-      "rentalAgency": "Tajensit inu n ukra"
+      "rentalAgency": "Tajensit inu n ukra",
+      "homes": "Planning n ixxamen",
+      "holidayAgency": "Agence inu n lɛuṭla",
+      "choosePlan": "Choisir une offre",
+      "invoices": "Mes factures"
     },
     "errors": {
       "pro_signup_closed": "Isuturen n umiḍan Pro ttwaqqnen i tura.",
@@ -4390,19 +4444,22 @@
       "meeting": "Amyafa",
       "visit": "Aẓuṛ",
       "test_drive": "Tajeṛṛabt",
-      "pickup": "Awway n tɣawsa"
+      "pickup": "Asefk n ṭumubil",
+      "check_in": "Tudfa"
     },
     "kindPhrase": {
       "meeting": "amyafa",
       "visit": "aẓuṛ",
       "test_drive": "tajeṛṛabt",
-      "pickup": "awway n tɣawsa"
+      "pickup": "asefk n ṭumubil",
+      "check_in": "tudfa"
     },
     "confirmedTitle": {
       "meeting": "Amyafa yettwasentem",
       "visit": "Aẓuṛ yettwasentem",
       "test_drive": "Tajeṛṛabt tettwasentem",
-      "pickup": "Awway yettwasentem"
+      "pickup": "Asefk yettwasentem",
+      "check_in": "Tudfa tettwasentem"
     },
     "duration": {
       "m15": "15 min",
@@ -4914,7 +4971,14 @@
     },
     "holiday": {
       "label": "Agence n ukra n leɛṭla",
-      "verifiedNote": "Isefka n Pro n agence a (ICE, registre du commerce) ttwasneqden. Aqqimi yettili jar-ak d agence kan : site war yettekki ca deg ukra, war yettaɣ ca aḥric n idrimen, war caution. War tefkeḍ walu zzat ma ad tesɛiḍ lɛeqd niɣ asentem yettwarun zi agence."
+      "verifiedNote": "Isefka n Pro n agence a (ICE, registre du commerce) ttwasneqden. Aqqimi yettili jar-ak d agence kan : site war yettekki ca deg ukra, war yettaɣ ca aḥric n idrimen, war caution. War tefkeḍ walu zzat ma ad tesɛiḍ lɛeqd niɣ asentem yettwarun zi agence.",
+      "agencyTitle": "Agence",
+      "authorization": "Turagt uṭṭun",
+      "authorizationDeclared": "Uṭṭun n turagt n usensi n turism yenna-t agence, x lmesṭulya nnes waḥdes.",
+      "times": "Asewweḍ d tuffɣa",
+      "timesValue": "Asewweḍ zeg {checkIn}, tuffɣa qbel {checkOut}",
+      "minNights": "Amuqqem amecṭuḥ",
+      "minNightsValue": "{count, plural, one {# n yiḍ} other {# n iḍan}}, ma war tenna annonce ca nniḍen"
     },
     "fleet": {
       "fleetTitle": "Ṭumubilat",
@@ -5027,12 +5091,10 @@
     "frozen": "Tasakkut nnec n idrimen tettwaḥbes deffir n urrar n idrimen. Ad tettwaserreḥ xmi ayen yeqqimen deg-s yuɣal ugar n 0.",
     "walletLink": "Ẓar tasakkut nnec n idrimen",
     "consent": {
-      "terms": "Qebleɣ CGV d ssneɣ azref inu n tuɣalin (rétractation) n 14 n wussan.",
-      "immediate": "Sutreɣ ad texdem commande inu nican, d ssneɣ belli azref inu n tuɣalin ad iruḥ xmi service yettwaxdem marra.",
       "termsLink": "Ɣer CGV (onglet amaynu)",
-      "required": "Sentem snat n tɣawsiwin ḥima ad tegged commande."
+      "single": "Je commande cette option selon les CGV : elle s'applique tout de suite et ne peut plus être annulée ni rétractée une fois appliquée.",
+      "requiredOne": "Cochez la case pour commander."
     },
-    "submit": "Commande s lwajib n udfaɛ",
     "cancel": "Ssbeṭṭel",
     "close": "Qqen",
     "success": {
@@ -5049,8 +5111,21 @@
       "insufficient_credits": "Crédits nnec war kfan i option a.",
       "price_changed": "Ssuma n option a tettwabeddel tura. Sneqd-itt, uca ɛawed commande."
     },
-    "availableAt": "Tella zi {time} : annonce tella zik deg uqerru.",
-    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra."
+    "availableAt": "Tella zi {when} : annonce tella zik deg uqerru.",
+    "expiresFirst": "Annonce nnec ad tekmel deg {date}, zzat n tagra n À la Une a : snulfu-tt ḥima ad tefreḥeḍ yis ar tagra.",
+    "today": "aujourd'hui à {time}",
+    "onDay": "le {date} à {time}",
+    "shortfall": "Il vous manque {count, plural, one {# crédit} other {# crédits}}",
+    "shortfallBody": "Achetez un pack de crédits : vous pourrez revenir à cette annonce depuis votre porte-monnaie dès qu'ils sont arrivés.",
+    "buyCredits": "Acheter des crédits",
+    "confirmIdle": "Choisissez une option",
+    "confirmCredits": "Confirmer pour {count, plural, one {# crédit} other {# crédits}}",
+    "confirmIncluded": "Confirmer (inclus dans votre offre)",
+    "offer": {
+      "title": "Vendez plus vite",
+      "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
+      "action": "Mettre en avant"
+    }
   },
   "Wallet": {
     "metaTitle": "Tasakkut n idrimen",
@@ -5060,7 +5135,7 @@
     "loading": "Ad tettwaɛemmar tasakkut n idrimen",
     "failed": "Tasakkut n idrimen war tettwaɛemmar ca.",
     "retry": "Ɛawed",
-    "unit": "1 n crédit = 1 MAD TTC",
+    "unit": "1 n crédit = 1 DH TTC",
     "balance": "Crédits i taɣeḍ",
     "plan": "Crédits n abonnement nnec",
     "planUntil": "Ṣeḥḥan ar {date}, war ttemyernan",
@@ -5089,7 +5164,9 @@
     "available": "Crédits i tesɛiḍ",
     "buy": "Aɣ crédits",
     "paid": "Adfaɛ yewḍed. Crédits nnec ad d-banen da deg kra n tesdidin.",
-    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)"
+    "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)",
+    "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
+    "promoteBackAction": "Mettre en avant"
   },
   "Packs": {
     "metaTitle": "Aɣ crédits",
@@ -5135,7 +5212,13 @@
       "price_changed": "Packs ttwabeddlen : sneqd ayen texṭareḍ.",
       "turnstile_failed": "Tasenqedt anti-robot war teṣḥa ca. Ɛawed.",
       "unavailable": "Adfaɛ war yella ca tura. Ɛawed deffir n kra n wakud."
-    }
+    },
+    "unit": {
+      "MAD": "DH",
+      "EUR": "€"
+    },
+    "closedBody": "Les packs seront en vente à l'ouverture des ventes. Leurs prix sont déjà affichés sur la page Tarifs.",
+    "seePricing": "Voir les tarifs"
   },
   "Subscription": {
     "metaTitle": "Abonnement inu",
@@ -5197,10 +5280,10 @@
       "yearlyHint": "2 n wayyuren bla idrimen"
     },
     "price": {
-      "monthly": "<n>{amount, number}</n> MAD HT i yal ayyur",
-      "yearly": "<n>{amount, number}</n> MAD HT i yal aseggas"
+      "monthly": "<n>{amount, number}</n> DH HT i yal ayyur",
+      "yearly": "<n>{amount, number}</n> DH HT i yal aseggas"
     },
-    "perMonth": "Ad yili {amount, number, ::.00} MAD HT i yal ayyur",
+    "perMonth": "Ad yili {amount, number, ::.00} DH HT i yal ayyur",
     "features": {
       "listings": "{count, plural, one {# annonce deg internet} other {# annonces deg internet}}",
       "unlimited": "Annonces deg internet bla lḥedd",
@@ -5227,8 +5310,8 @@
     },
     "choose": "Xtar offre.",
     "submit": {
-      "monthly": "Awi abonnement: {amount, number} MAD HT i yal ayyur",
-      "yearly": "Awi abonnement: {amount, number} MAD HT i yal aseggas"
+      "monthly": "Awi abonnement: {amount, number} DH HT i yal ayyur",
+      "yearly": "Awi abonnement: {amount, number} DH HT i yal aseggas"
     },
     "submitIdle": "Awi abonnement",
     "errors": {
@@ -5245,7 +5328,7 @@
     "pass": {
       "title": "Pass Boutique",
       "lead": "Taḥanut nnec deg internet i {days} n wussan, s yiwen n udfaɛ. War d abonnement, war d asnulfu: d ayen yelhan ḥima ad tzenzeḍ stock niɣ ad tzenzeḍ deg yiwet n tallit.",
-      "price": "<n>{amount, number}</n> MAD HT i {days} n wussan",
+      "price": "<n>{amount, number}</n> DH HT i {days} n wussan",
       "features": {
         "listings": "{count, plural, one {# annonce deg internet} other {# annonces deg internet}}",
         "credits": "{count, plural, one {# crédit bla idrimen deg pass} other {# crédits bla idrimen deg pass}}",
@@ -5266,21 +5349,31 @@
         "termsLink": "ccuruṭ n uzenzi",
         "once": "n Pass Boutique: yiwen n udfaɛ, bla asnulfu d bla arar n idrimen s umḍan n wussan."
       },
-      "submit": "Xelleṣ {amount, number} MAD HT",
-      "submitExtend": "Rnu {days} n wussan: {amount, number} MAD HT",
+      "submit": "Xelleṣ {amount, number} DH HT",
+      "submitExtend": "Rnu {days} n wussan: {amount, number} DH HT",
       "blocked": {
         "subscribed": "Taḥanut nnec ɣar-s abonnement: Pass Boutique war ixs ca.",
         "launchOffer": "Offre Essentiel nnec ɛad tella bla idrimen: pass ad yili deg tagra n offre.",
         "maxAhead": "Pass nnec yeggur ar lebɛid: ad tzemmreḍ ad as-tarneḍ wussan deffir.",
         "unavailable": "Pass Boutique war yella ca tura.",
-        "otherPlan": "Pass nnec i yeggurun d win n offre nniḍen: pass-a ad yili deg tagra nnes."
+        "otherPlan": "Pass nnec i yeggurun d win n offre nniḍen: pass-a ad yili deg tagra nnes.",
+        "salesClosed": "Le Pass Boutique sera en vente à l'ouverture des ventes."
       },
       "success": {
         "pending": "Pass nnec ad yexdem deg kra n tesdidin.",
         "done": "Pass nnec yexdem ar {date}."
       },
       "agencyHint": "D ayen yelhan ḥima ad terẓmeḍ agence n wakra i yiwet n tallit: xtar secteur « Location saisonnière » deg Amkan Pro nnec."
-    }
+    },
+    "notPro": {
+      "title": "Réservé aux boutiques vérifiées",
+      "body": "Les offres Essentiel et Business s'adressent aux professionnels dont la boutique a été vérifiée. Créez votre boutique depuis l'espace Pro : la demande prend quelques minutes.",
+      "action": "Créer ma boutique"
+    },
+    "planUnpriced": "Pas encore disponible au paiement.",
+    "pick": "Choisir cette offre",
+    "chosen": "Offre choisie",
+    "launchOfferExtras": "Pendant l'offre de lancement : sans les crédits mensuels ni les « À la Une » inclus."
   },
   "Invoices": {
     "metaTitle": "Tifaktuṛin inu",
@@ -5667,10 +5760,11 @@
       "stale": "Ad yettwasentem ma yella d agence (abeddel aneggaru deg {date}).",
       "never": "Ad yettwasentem ma yella d agence.",
       "note": "D ayen inna agence, bla aɛahed: tḥeǧǧiṭ tettwasentam d nettat.",
-      "pickHint": "Wet x wass n tuffɣa uca x wass n tuɣalin ḥima ad tsewjdeḍ asuter n tḥeǧǧiṭ.",
-      "pickEnd": "Wet tura x wass n tuɣalin.",
+      "pickHint": "Xtar ass n tuffɣa uca ass n tuɣalin ḥima ad tsewjdeḍ asuter n tḥeǧǧiṭ.",
+      "pickEnd": "Xtar tura ass n tuɣalin.",
       "picked": "Zi {from} ar {to} ({count, plural, one {# n wass} other {# n wussan}})",
       "pickedBlocked": "Lmudda-a ɣar-s ussan war yellin: agence ad dak-tini min tezmer ad dak-tefk.",
+      "estimate": "≈ {total} i {count, plural, one {# n wass} other {# n wussan}}, ad yettwasentem d agence",
       "request": "Ssuter ussan-a",
       "clear": "Kkes",
       "exampleNoRequest": "Annonce n umedya: war tzemmreḍ ad tazneḍ ca n usuter.",
@@ -5679,10 +5773,11 @@
         "stale": "Ad yettwasentem ma yella d bab n annonce (abeddel aneggaru deg {date}).",
         "never": "Ad yettwasentem ma yella d bab n annonce.",
         "note": "D ayen inna bab n annonce, bla aɛahed: aqimi yettwasentam d netta. Iḍ war yellin yettwacrac x wass n tudfa.",
-        "pickHint": "Wet x wass n tudfa uca x wass n tuffɣa ḥima ad tsewjdeḍ asuter n uqimi.",
-        "pickEnd": "Wet tura x wass n tuffɣa.",
+        "pickHint": "Xtar ass n tudfa uca ass n tuffɣa ḥima ad tsewjdeḍ asuter n uqimi.",
+        "pickEnd": "Xtar tura ass n tuffɣa.",
         "picked": "Zi {from} ar {to} ({count, plural, one {# n yiḍ} other {# n iḍan}})",
-        "pickedBlocked": "Aqimi-a ɣar-s iḍan war yellin: bab n annonce ad dak-yini min yezmer ad dak-yefk."
+        "pickedBlocked": "Aqimi-a ɣar-s iḍan war yellin: bab n annonce ad dak-yini min yezmer ad dak-yefk.",
+        "estimate": "≈ {total} i {count, plural, one {# n yiḍ} other {# n iḍan}}, ad yettwasentem d umessufeɣ"
       }
     },
     "search": {
@@ -5752,7 +5847,31 @@
     "save": "Ḥrez",
     "saved": "Planning yettwaḥraz i {count, plural, one {# n ṭumubil} other {# n ṭumubilat}}.",
     "confirmed": "Ussan ixwan ttwasentmen i {count, plural, one {# n ṭumubil} other {# n ṭumubilat}}.",
-    "partial": "{count, plural, one {# n ṭumubil war tettwaḥraz ca: planning yuɣal yettwaɛemmar, ɛawed abeddel nnes.} other {# n ṭumubilat war ttwaḥrazent ca: planning yuɣal yettwaɛemmar, ɛawed ibeddlen nsent.}}"
+    "partial": "{count, plural, one {# n ṭumubil war tettwaḥraz ca: planning yuɣal yettwaɛemmar, ɛawed abeddel nnes.} other {# n ṭumubilat war ttwaḥrazent ca: planning yuɣal yettwaɛemmar, ɛawed ibeddlen nsent.}}",
+    "home": {
+      "title": "Planning n ixxamen",
+      "lead": "Ixxamen nnec n lɛuṭla deg 60 n wussan i d-iteddun. Fren yiwen n yiḍ ḥima ad t-tḥebseḍ niɣ ad t-tserreḥeḍ, niɣ jerr s souris i yiwen n umuqqem marra. Iḍ yettwaḥebsen yexs ad yini belli axxam war yexwi deg yiḍ-nni.",
+      "emptyTitle": "Ula d yiwen n uxxam n lɛuṭla war yella deg internet",
+      "emptyBody": "Ssuffeɣ ixxamen nnec deg « Location de vacances »: ad d-banen da, wjden i planning.",
+      "emptyAction": "Ssuffeɣ axxam",
+      "city": "Tamdint",
+      "search": "Arezzu x uxxam",
+      "vehicles": "{count, plural, one {# n uxxam d-iban,} other {# n ixxamen d-banen,}}",
+      "truncated": "Ɣark ugar n 200 n ixxamen: planning yessken 200 imezwura s uzwel. Sxdem afilṭer n tamdint niɣ sxdem « Annonces inu » i wiyyaḍ.",
+      "noMatch": "Ula d yiwen n uxxam war yemsasa d afilṭer-a.",
+      "gridLabel": "Ussan ixwan n ixxamen, iḍ s yiḍ",
+      "vehicle": "Axxam",
+      "pending": "{count, plural, one {# n uxxam yettwabeddel, war yettwaḥraz ca ar tura.} other {# n ixxamen ttwabeddlen, war ttwaḥrazen ca ar tura.}}",
+      "tooMany": "Ar {max} n lmuddat i yal axxam: smun iḍan iqerben.",
+      "saved": "Planning yettwaḥraz i {count, plural, one {# n uxxam} other {# n ixxamen}}.",
+      "confirmed": "Ussan ixwan ttwasentmen i {count, plural, one {# n uxxam} other {# n ixxamen}}.",
+      "partial": "{count, plural, one {# n uxxam war yettwaḥraz ca: planning yuɣal yettwaɛemmar, ɛawed abeddel nnes.} other {# n ixxamen war ttwaḥrazen ca: planning yuɣal yettwaɛemmar, ɛawed ibeddlen nsen.}}",
+      "icsEvent": "{title}: yettwaḥjez",
+      "icsName": "Planning n ixxamen {site}"
+    },
+    "export": "Ssufeɣ agenda (.ics)",
+    "icsEvent": "{title}: war yelli",
+    "icsName": "Planning n ṭumubilat {site}"
   },
   "RentalAgency": {
     "title": "Agence inu n ukra",
@@ -5817,7 +5936,18 @@
       "step3Hint": "Ḥbes ussan yettwakran d sentem ussan ixwan nnec ɣas yal 14 n wussan.",
       "step3Action": "Planning inu",
       "doneLabel": "Taseddart {index} texdem:",
-      "todoLabel": "Taseddart {index} ad tettwaxdem:"
+      "todoLabel": "Taseddart {index} ad tettwaxdem:",
+      "home": {
+        "title": "Ssuffeɣ agence nnec n lɛuṭla deg internet",
+        "lead": "Kraḍ n tikkal i yiwet n vitrine n ixxamen wjden ad d-ṭṭfen tuttriwin.",
+        "ready": "Imsafren ttwalin ixxamen nnec ixwan deg wussan nsen. Sentem planning nnec yiwet n tikkelt i yal 14 n wussan.",
+        "step1": "Turagt d isragen",
+        "step1Hint": "Uṭṭun n turagt (loi 80-14), ixess i usuffeɣ, isragen n usewweḍ d tuffɣa, amuqqem amecṭuḥ.",
+        "step2": "Ixxamen nnec",
+        "step2Hint": "Yiwet n annonce i yal axxam: turagt d umuqqem amecṭuḥ ttwačuren dɣya.",
+        "step2Action": "Ssuffeɣ axxam",
+        "step3Hint": "Ḥbes iḍan yettwaḥeṭṭen, sentem ussan ixwan yiwet n tikkelt i yal 14 n wussan."
+      }
     },
     "check": {
       "title": "Tasenqedt n agrément s tweṛiqt",
@@ -5840,7 +5970,55 @@
         "active_content": "PDF-a ɣar-s ayen yettmussun (script, formulaire): ssuffeɣ-it daɣen s PDF ishel.",
         "expired": "Asekki war yewweḍ ca deg lweqt. Ɛawed."
       }
+    },
+    "requests": {
+      "title": "Tuttriwin n uḥeṭṭu",
+      "inbox": "Marra tibratin",
+      "loading": "Tuttriwin ad ttwaɛemmarent…",
+      "loadFailed": "Tuttriwin war ttwaɛemmarent ca: af-itent deg tbratin.",
+      "pending": "{count, plural, one {# n tuttra tettraju tiririt} other {# n tuttriwin ttrajunt tiririt}}",
+      "noPending": "Ula d yiwet n tuttra war tettraju",
+      "answer": "Err",
+      "upcoming": "Tuckiwin n {days} n wussan i d-iteddun",
+      "home": {
+        "upcoming": "Isewwaḍen n {days} n wussan i d-iteddun"
+      },
+      "noUpcoming": "Walu ar tura.",
+      "open": "Ẓer",
+      "dates": "Zeg {from} ar {to}"
     }
+  },
+  "HolidayAgency": {
+    "title": "Agence inu n lɛuṭla",
+    "back": "Uɣal ɣer Amkan Pro",
+    "lead": "Isallen-a ttbanen deg vitrine nnec, ttčuren zik yal axxam amaynu ara tessuffɣeḍ.",
+    "loading": "Iɣewwaṛen ad ttwaɛemmaren…",
+    "loadFailed": "Iɣewwaṛen war ttwaɛemmaren ca.",
+    "retry": "Ɛawed",
+    "notVerified": "Iɣewwaṛen-a i tḥuna Pro yettwasentmen kan.",
+    "sectorTitle": "Amezruy nnec mači d « Location de vacances »",
+    "sectorBody": "Tzemreḍ ad tḥerzeḍ iɣewwaṛen-a, maca vitrine nnec war ten-tessken ca alami tefreneḍ amezruy-a.",
+    "sectorAction": "Beddel amezruy",
+    "authorizationTitle": "Turagt",
+    "authorizationLead": "Uṭṭun n turagt n usexdem n usensi n turism nnec (loi 80-14). Ixess deg yal annonce n lɛuṭla n yiwet n agence, yettban am « yenna-t agence »: kec waḥdek d amesṭul.",
+    "authorization": "Uṭṭun n turagt",
+    "authorizationHint": "Am mamec yella deg turagt nnec. Yettwaɛawed deg ixxamen nnec imaynuten, tzemreḍ ad t-tbeddleḍ deg yal yiwen.",
+    "authorizationPlaceholder": "Amedya: 12/2025",
+    "authorizationRequired": "Aru uṭṭun n turagt nnec.",
+    "authorizationInvalid": "Zeg 3 ar 40 n isekkilen: isekkilen ilatiniyen, uṭṭunen, tallunin d . / - _, s yiwen n uṭṭun xminimum.",
+    "stayTitle": "Imuqqam",
+    "stayLead": "Isragen ittbanen deg vitrine nnec d umuqqem amecṭuḥ n ixxamen nnec imaynuten (yal annonce tzemmar ad tesɛu wenni nnes).",
+    "checkIn": "Asewweḍ zeg",
+    "checkInHint": "Tasragt n tuck n tsura.",
+    "checkOut": "Tuffɣa qbel",
+    "checkOutHint": "Tasragt i deg ittwaserreḥ uxxam.",
+    "minNights": "Amuqqem amecṭuḥ",
+    "minNightsHint": "Yettwasumer deg yal axxam amaynu.",
+    "nights": "{count, plural, one {# n yiḍ} other {# n iḍan}}",
+    "failed": "Aḥraz yexser.",
+    "save": "Ḥrez",
+    "saved": "Iɣewwaṛen ttwaḥerzen. Vitrine nnec tettwasbedd.",
+    "upToDate": "Iɣewwaṛen ttwasbedden."
   },
   "RentalRequest": {
     "card": {
@@ -5854,11 +6032,19 @@
       "withdrawnToast": "Asuter yettwakkes",
       "requestedTheirs": "{name} yessuter ṭumubil-a",
       "block": "Ḥbes ussan-a deg annonce",
-      "blockHint": "Crec mala ula d yiwet n ṭumubil n modèle-a war texwi deg lmudda-a: annonce ad teffeɣ zi tarzzut deg wussan-a.",
+      "blockHint": "Ejj-it yettwacrec mala war tqqim ula d yiwet n ṭumubil nniḍen n modèle-a texwa deg lmudda-a: annonce ad teffeɣ zi tarzzut deg wussan-a.",
       "accept": "Tella",
       "acceptedToast": "Yettwasentem belli tella",
       "blockFailed": "Yettwasentem belli tella, maca ussan war zemmren ca ad ttwaḥebsen. Ssbedd planning nnec.",
       "planning": "Rzem planning inu",
+      "note": "Rnu awal (mala texseḍ)",
+      "back": "Uɣal",
+      "confirmAccept": "Ad tsentmeḍ i {name} belli ṭumubil tella deg wussan-a?",
+      "confirmDecline": "Ad tarreḍ i {name} belli ṭumubil war telli deg wussan-a?",
+      "confirmAcceptButton": "Sentem: tella",
+      "confirmDeclineButton": "Sentem: war telli",
+      "notePlaceholderAccept": "Amedya: ṭumubil ad tili twejjed x 9 h deg agence n Guéliz.",
+      "notePlaceholderDecline": "Amedya: texwa zi 2 ar 4, niɣ yiwen n modèle am netta deg wussan-a.",
       "decline": "War telli",
       "declinedToast": "Tiririt tettwazen: war telli",
       "acceptedMine": "Tsentmeḍ belli tella",
@@ -5872,12 +6058,21 @@
         "waiting": "Ntettraju tiririt n bab n annonce.",
         "requestedTheirs": "{name} yessuter aqimi",
         "block": "Ḥbes iḍan-a deg annonce",
-        "blockHint": "Crec mala axxam war yexwi ca deg iḍan-a: annonce ad teffeɣ zi tarzzut deg wussan-a (ass n tuffɣa yeqqim yella).",
+        "blockHint": "Ejj-it yettwacrec mala axxam war yeqqim d axwi deg iḍan-a: annonce ad teffeɣ zi tarzzut deg wussan-a (ass n tuffɣa yeqqim d axwi).",
         "blockFailed": "Yettwasentem belli yella, maca iḍan war zemmren ca ad ttwaḥebsen. Ssbedd ussan ixwan nnec.",
         "planning": "Rzem annonces inu",
         "blockedNote": "Iḍan ttwaḥebsen deg annonce.",
-        "safety": "Aqimi yettwasentam nican d bab n annonce, s contrat niɣ s usentem yettwarun. {site} war tettaɣ ca idrimen zzat niɣ caution: war tefkeḍ walu zzat ma ad tesneqdeḍ bab n annonce d uxxam."
-      }
+        "safety": "Aqimi yettwasentam nican d bab n annonce, s contrat niɣ s usentem yettwarun. {site} war tettaɣ ca idrimen zzat niɣ caution: war tefkeḍ walu zzat ma ad tesneqdeḍ bab n annonce d uxxam.",
+        "pickupAppointment": "Sumer tasaɛt n tudfa",
+        "guests": "{count, plural, one {# n umsafar} other {# n imsafaren}}",
+        "confirmAccept": "Ad tsentmeḍ i {name} belli axxam yella i uqqimi-a?",
+        "confirmDecline": "Ad tarreḍ i {name} belli axxam war yelli i uqqimi-a?",
+        "notePlaceholderAccept": "Amedya: tudfa tzemmer zi 15 h, tisura ttrajunt-awen din.",
+        "notePlaceholderDecline": "Amedya: yexwa zi 20 ar 24, niɣ axxam nniḍen deg wussan-a.",
+        "icsTitle": "Aqqim: {title}, {name} ({site})"
+      },
+      "addToCalendar": "Rnu ɣer agenda inu",
+      "icsTitle": "Akray: {title}, {name} ({site})"
     },
     "event": {
       "period": "zi {from} ar {to}",
@@ -5914,12 +6109,40 @@
         "pickup": "isallen: {place}"
       }
     },
+    "history": {
+      "title": "Isuturen n umeslay-a",
+      "ahead": "Ad d-asen",
+      "earlier": "{count, plural, one {# n usuter n zik} other {# n isuturen n zik}}",
+      "status": {
+        "accepted": "Yettwasentem",
+        "declined": "War yelli",
+        "withdrawn": "Yettwakkes",
+        "requested": "Yettwabeddel",
+        "past": "Yekmel"
+      }
+    },
+    "banner": {
+      "requested": "Asuter nnec zi {from} ar {to} yettwazen: agence ad ac-terr deg tbratin.",
+      "accepted": "Agence tsentem belli tella zi {from} ar {to}.",
+      "open": "Ẓeṛ ameslay",
+      "home": {
+        "requested": "Asuter n uqqimi nnec zi {from} ar {to} yettwazen: amessufeɣ ad ac-yerr deg tbratin.",
+        "accepted": "Amessufeɣ yesentem aqqimi nnec zi {from} ar {to}."
+      }
+    },
     "preview": {
       "requested": "Asuter n ukra",
       "changed": "Asuter n ukra yettwabeddel",
       "accepted": "Yettwasentem belli yella",
       "declined": "War yelli deg wussan yettwassutren",
-      "withdrawn": "Asuter n ukra yettwakkes"
+      "withdrawn": "Asuter n ukra yettwakkes",
+      "home": {
+        "requested": "Asuter n uqqimi",
+        "changed": "Asuter n uqqimi yettwabeddel",
+        "accepted": "Aqqimi yettwasentem",
+        "declined": "War yelli deg wussan yettwasutren",
+        "withdrawn": "Asuter n uqqimi yettwakkes"
+      }
     },
     "errors": {
       "rental_request_changed": "Asuter-a yettwabeddel deg lweqt-a: ha tanuskit nnes taneggarut.",
@@ -5994,7 +6217,9 @@
       "review": "Tarbaɛt nneɣ tessenqad isallen nnec d ad dak-tɛeyyeḍ, s umata deg sin n wussan n twuri. Uca vitrine nnec ad terzem."
     },
     "legal": "Tiwtilin n uzref n yal tawuri ad ttwasmektint xmi ɣa tesnulfuḍ vitrine. Tikkal n tedbelt nnec: <link>amnir n imhniyen d coopératives</link>.",
-    "directory": "Ẓar tabdart n tḥuna"
+    "directory": "Ẓar tabdart n tḥuna",
+    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
   },
   "Directory": {
     "metaTitle": "{heading} · Tabdart n imhniyen",
@@ -6116,7 +6341,10 @@
       "unlimitedListings": "Annonces xedment bla tilisa",
       "stockImport": "Asekcem n stock s ufaylu",
       "recommended": "Nenṣeḥ-ak yis",
-      "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs."
+      "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
+      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
+      "passCredits": "{count, number} crédits offerts pendant le pass",
+      "askQuote": "Demander un devis"
     },
     "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt.",
     "compare": {

@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from "@/lib/auth/client";
 import { MESSAGING_API } from "@/lib/contracts/endpoints";
-import type { ConversationResponse, ConversationsPage, ConversationStateRequest, MessagesPage, SendMessageResponse, StartConversationResponse, StartShopConversationRequest, UnreadResponse } from "@/lib/contracts/messaging";
+import type { ConversationResponse, ConversationsPage, ConversationView, ConversationStateRequest, MessagesPage, SendMessageResponse, StartConversationResponse, StartShopConversationRequest, UnreadResponse } from "@/lib/contracts/messaging";
 import type { StartConversationWithOffer } from "@/lib/contracts/offers";
 
 // Browser side of the messaging API (design phase-5 D2-D9): same-origin JSON calls with the CSRF
@@ -28,6 +28,15 @@ export function fetchInbox(options: { cursor?: string; archived?: boolean } = {}
 export async function findListingConversation(listingId: string): Promise<string | null> {
   const page = await fetchInbox();
   return page.conversations.find((row) => row.listingId === listingId && row.subject === "listing" && row.role === "buyer")?.cid ?? null;
+}
+
+/**
+ * My conversation as the renter of `listingId` among my most recent ones, with its booking requests
+ * (the listing page's « Votre demande est confirmée », audit L4-09), or null.
+ */
+export async function findRentalConversation(listingId: string): Promise<ConversationView | null> {
+  const page = await fetchInbox();
+  return page.conversations.find((row) => row.listingId === listingId && row.subject === "listing" && row.role === "buyer") ?? null;
 }
 
 /** My conversation with a shop from its storefront among my most recent ones, or null (as above). */

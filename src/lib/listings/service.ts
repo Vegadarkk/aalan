@@ -146,8 +146,13 @@ function step(compute: () => TransitionResult): TransitionResult {
   }
 }
 
-/** `activeListings` quota (published + pending_review): 409 `listing_limit` when another listing would exceed it. */
+/**
+ * `activeListings` quota (published + pending_review): 409 `listing_limit` when another listing
+ * would exceed it, 409 `no_plan` when the quota is 0 (a Pro without a plan: the real cause, not
+ * "maximum reached" for 0 listings, zone 6 audit 6-02).
+ */
 async function assertWithinQuota(uid: string, quotas: ListingQuotas): Promise<void> {
+  if (quotas.activeListings === 0) throw new HttpError(409, "no_plan");
   if (!withinQuota(quotas.activeListings, await countActive(uid))) throw new HttpError(409, "listing_limit");
 }
 
@@ -166,6 +171,8 @@ export async function createDraft(actor: Actor, input: CreateListingInput, now =
   const sellerContext = options.seller ?? (await sellerOf(actor.auth));
   const { user, seller } = sellerContext;
   const { uid, claims } = actor.auth.user;
+  // A Pro without a plan could never publish the draft: said before the nine steps (zone 6 audit 6-02).
+  if (seller.type === "pro" && sellerContext.quotas.activeListings === 0) throw new HttpError(409, "no_plan");
   const subcategory = input.subcategoryId ? subcategoryById(input.subcategoryId) : undefined;
   const id = newListingId();
   const blank: ListingDoc = listingSchema.parse({
@@ -406,7 +413,9 @@ export async function patchListing(actor: Actor, id: string, patch: ListingPatch
     // Kept as is: indexed again when published, its public page refreshed (paused and expired too).
     effects = { search: listing.status === "published" ? "upsert" : null, contentOp: { op: "listing.update", ip: actor.ip }, audit: null, revalidate: hasPublicPage(listing.status), mail: null };
     const variantsScreened = fields.variants !== undefined && !isDeepStrictEqual(screenedVariants(fields.variants), screenedVariants(listing.variants));
-    if (variantsScreened || SCREENED_FIELDS.some((field) => fields[field] !== undefined)) {
+    // A sensitive declaration added to a live listing holds it for a moderator (zone 3 audit P1-1).
+    const declared = Boolean(patch.sensitiveDeclaration && !listing.moderation.sensitiveDeclaration);
+    if (variantsScreened || declared || SCREENED_FIELDS.some((field) => fields[field] !== undefined)) {
       const result = await screenFor(next, seller, now);
       if (result.blockers.length > 0) throw invalidListing(result.blockers);
       if (result.state === "needs_review" && listing.status !== "pending_review") {

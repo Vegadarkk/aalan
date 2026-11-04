@@ -126,7 +126,9 @@ describe("demo listings", () => {
       expect(doc).toMatchObject({ example: true, kybc: { status: "none" } });
       expect(doc).not.toHaveProperty("certified");
     }
-    expect(shops.map((shop) => shop.doc.sector).filter(Boolean).sort()).toEqual(["car_rental", "real_estate"]);
+    expect(shops.map((shop) => shop.doc.sector).filter(Boolean).sort()).toEqual(["car_rental", "holiday_rental", "real_estate"]);
+    // The holiday rental agency shows its settings, valid like the owner's form makes them.
+    expect(shops.find((shop) => shop.doc.sector === "holiday_rental")?.doc.holiday).toMatchObject({ checkIn: "15:00", checkOut: "11:00", minNights: 2 });
     const proIds = new Set(shops.map((shop) => shop.proId));
     for (const listing of demoListings(NOW)) expect(listing.sellerType === "pro" ? proIds.has(listing.proId ?? "") : listing.proId === undefined, listing.id).toBe(true);
   });

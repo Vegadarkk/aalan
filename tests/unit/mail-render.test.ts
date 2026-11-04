@@ -71,6 +71,7 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
     ],
     unsubscribeToken: "djEudWlkLio.c2lnbmF0dXJlLW9mLWZvcnR5LXRocmVlLWNoYXJhY3RlcnMtYWE", // gitleaks:allow (fake fixture)
   },
+  proApplicationReceived: { displayName: "Nadia", shopName: "Atlas Vélos" },
   proApproved: { displayName: "Nadia", shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30 },
   launchOfferNotice: { displayName: "Nadia", shopName: "Atlas Vélos", plan: "essentiel", kind: "ending", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 0 },
   passNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "ended", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 2 },

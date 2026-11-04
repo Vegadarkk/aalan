@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BadgeCheck, Check, Clock, Coins, Gift, Minus, Rocket, Sparkles, Store, User } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, pageLocale } from "@/i18n/params";
-import { getPricing } from "@/lib/config/runtime";
+import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { getFlags, getPricing } from "@/lib/config/runtime";
+import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 import { importsStock } from "@/lib/contracts/stock-import";
 import { alternates } from "@/lib/i18n/metadata";
 import { PRICING_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
@@ -35,10 +37,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 const mad = (minor: number) => Math.round(minor / 100);
 
-function Card({ title, price, note, items, Icon, highlight }: { title: string; price: string; note?: string; items: string[]; Icon: typeof Store; highlight?: string }) {
+function Card({ title, price, note, items, Icon, highlight, action }: { title: string; price: string; note?: string; items: string[]; Icon: typeof Store; highlight?: string; action?: ReactNode }) {
   return (
     <article className={cn("relative flex flex-col gap-4 rounded-lg border bg-surface p-6", highlight ? "border-featured shadow-md" : "border-border")}>
-      {highlight ? <span className="absolute -top-3 start-6 rounded-full bg-featured px-3 py-0.5 text-xs font-semibold text-featured-foreground">{highlight}</span> : null}
+      {highlight ? <span className="absolute -top-3 start-6 whitespace-nowrap rounded-full bg-featured px-3 py-0.5 text-xs font-semibold text-featured-foreground shadow-sm">{highlight}</span> : null}
       <div className="flex items-center gap-3">
         <span className="flex size-10 items-center justify-center rounded-full bg-structure text-structure-foreground">
           <Icon className="size-5" aria-hidden="true" />
@@ -55,6 +57,7 @@ function Card({ title, price, note, items, Icon, highlight }: { title: string; p
           </li>
         ))}
       </ul>
+      {action ? <div className="mt-auto pt-2">{action}</div> : null}
     </article>
   );
 }
@@ -79,12 +82,17 @@ function Mark({ value, labels }: { value: Cell; labels: { yes: string; no: strin
 export default async function PricingPage({ params }: { params: Params }) {
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
-  const [t, n, pricing] = await Promise.all([
+  const [t, n, pricing, flags] = await Promise.all([
     getTranslations({ locale, namespace: "Pricing" }),
     getNumbersTranslations({ locale, namespace: "Pricing" }),
     getPricing(),
+    getFlags(),
   ]);
   const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;
+  // Texts of the closed sales only while they are closed (zone 6 audit 6-05): once open, the
+  // launch offer is told by its end date, and the « ventes ouvrent avec le lancement » note goes.
+  const salesOpen = flags.salesEnabled;
+  const offerEnd = offer?.endsAt ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(Date.parse(offer.endsAt)) }).format(new Date(offer.endsAt)) : null;
   const { essentiel, business } = pricing.plans;
   const pass = pricing.passes[0] ?? null;
   const listings = (value: number | null) => (value === null ? t("pros.unlimitedListings") : `${n("count", { count: value })} ${t("pros.activeListings")}`);
@@ -151,23 +159,27 @@ export default async function PricingPage({ params }: { params: Params }) {
               .map((pack) => (pack.bonus > 0 ? n("individuals.packs.packBonus", { amount: mad(pack.priceMinor), credits: pack.paid, bonus: pack.bonus }) : n("individuals.packs.pack", { amount: mad(pack.priceMinor), credits: pack.paid })))}
           />
         </div>
-        {/* Buying happens in the wallet, behind sign-in (owner, 2026-10-31). */}
-        <div className="flex flex-wrap gap-3">
-          <Link href={WALLET_PATH} prefetch={false} className={buttonVariants({ variant: "primary", size: "md" })}>
-            {t("individuals.packs.cta")}
-          </Link>
-        </div>
+        {/* Buying happens in the wallet, behind sign-in (owner, 2026-10-31); not offered while sales are
+            closed: it led to a page saying only that buying was not open (zone 6 audit 6-10). */}
+        {salesOpen ? (
+          <div className="flex flex-wrap gap-3">
+            <Link href={WALLET_PATH} prefetch={false} className={buttonVariants({ variant: "primary", size: "md" })}>
+              {t("individuals.packs.cta")}
+            </Link>
+          </div>
+        ) : null}
       </section>
 
       <section className="flex flex-col gap-5" aria-labelledby="pricing-pros">
         <h2 id="pricing-pros" className="text-2xl font-semibold">{t("pros.title")}</h2>
-        {offer ? (
+        {offer && (offerEnd || !salesOpen) ? (
           <p className="flex items-start gap-2 rounded-lg bg-featured/15 px-4 py-3 text-sm">
             <Gift className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            {n("pros.launchOffer", { days: offer.noticeDays })}
+            {offerEnd ? t("pros.launchOfferUntil", { date: offerEnd }) : n("pros.launchOffer", { days: offer.noticeDays })}
           </p>
         ) : null}
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {/* Rows 2 rem apart: the « Recommandé » badge rides 0.75 rem above its card (zone 6 audit 6-25). */}
+        <div className="grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-4">
           <Card
             Icon={Store}
             title={t("pros.essentiel")}
@@ -182,7 +194,7 @@ export default async function PricingPage({ params }: { params: Params }) {
               title={t("pros.pass.title")}
               price={n("perDays", { amount: mad(pass.priceMinor), days: pass.days })}
               note={t("exclVat")}
-              items={[t("pros.pass.noCommitment"), n("pros.credits", { count: pass.credits }), n("pros.listings", { count: pricing.pro[pass.plan].activeListings ?? 0 })]}
+              items={[t("pros.pass.noCommitment"), n("pros.passCredits", { count: pass.credits }), n("pros.listings", { count: pricing.pro[pass.plan].activeListings ?? 0 })]}
             />
           ) : null}
           <Card
@@ -193,7 +205,18 @@ export default async function PricingPage({ params }: { params: Params }) {
             note={n("perYear", { amount: mad(business.priceMinor.yearly) })}
             items={[listings(pricing.pro.business.activeListings), n("pros.credits", { count: business.credits }), n("pros.featured", { count: business.featured }), t("pros.stockImport"), t("pros.storefront")]}
           />
-          <Card Icon={BadgeCheck} title={t("pros.premium")} price={t("pros.onQuote")} items={[listings(null), t("pros.premiumSupport"), t("pros.storefront")]} />
+          {/* « Sur devis » with the way to ask for one (zone 6 audit 6-11). */}
+          <Card
+            Icon={BadgeCheck}
+            title={t("pros.premium")}
+            price={t("pros.onQuote")}
+            items={[listings(null), t("pros.premiumSupport"), t("pros.storefront")]}
+            action={
+              <Link href="/aide/contact" prefetch={false} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                {t("pros.askQuote")}
+              </Link>
+            }
+          />
         </div>
         {/* The VAT treatment of the Pro offers (owner, 3 Nov 2026): the HT price is the price paid. */}
         <p className="text-sm text-foreground-muted text-pretty" data-testid="pricing-vat">
@@ -247,7 +270,7 @@ export default async function PricingPage({ params }: { params: Params }) {
           </Link>
         </div>
       </section>
-      <p className="text-sm text-foreground-muted">{t("footnote")}</p>
+      {salesOpen ? null : <p className="text-sm text-foreground-muted">{t("footnote")}</p>}
     </Container>
   );
 }

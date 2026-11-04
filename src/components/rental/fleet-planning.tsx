@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { CalendarCheck, ImageOff, Search } from "lucide-react";
+import { CalendarCheck, CalendarArrowDown, ImageOff, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
@@ -10,16 +10,18 @@ import { Button } from "@/components/ui/button";
 import { inputClassName } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cityBySlug, cityName } from "@/config/regions";
-import { isRtl, type Locale } from "@/config/site";
+import { SITE_NAME, isRtl, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { useNumbersTranslations } from "@/i18n/numbers";
+import { downloadIcs } from "@/lib/appointments/ics";
 import { usePublicConfig } from "@/lib/config/client";
-import type { FleetSaveInput, OwnerListingSummary, RentalAvailability } from "@/lib/contracts/listings";
+import type { FleetKind, FleetSaveInput, OwnerListingSummary, RentalAvailability } from "@/lib/contracts/listings";
 import { isolate } from "@/lib/i18n/bidi";
 import { loadFleet, saveFleet } from "@/lib/listings/client/api";
 import { intlLocale } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
-import { RENTAL_PERIODS_MAX, blockedSet, isFresh, moroccoToday, periodsOf } from "@/lib/listings/rental-availability";
+import { RENTAL_PERIODS_MAX, blockedSet, dayString, isFresh, moroccoToday, periodsOf } from "@/lib/listings/rental-availability";
+import { rentalIcs } from "@/lib/rental-requests/ics";
 import { cn } from "@/lib/utils";
 
 // Fleet planning of a car rental agency (rental pack §3, /pro/flotte): its rentals on offer as rows,
@@ -27,6 +29,9 @@ import { cn } from "@/lib/utils";
 // (or Enter) toggles a day, a mouse drag paints a period; the changes of the session are saved at
 // once, each vehicle like its own calendar (days past the 60 shown are kept). "Tout est à jour"
 // confirms every vehicle shown without changing it. Arrow keys move between days (roving focus).
+// A holiday rental agency's homes take the same grid (`kind` homes, /pro/logements, audit L4-02): a
+// blocked day is a night taken, the departure day stays free. « Exporter l'agenda » downloads the
+// saved blocked periods of the rows shown, from today on, as a .ics file (audit zone 4).
 
 /** Days shown from today. */
 export const FLEET_DAYS = 60;
@@ -43,8 +48,12 @@ function blockedFrom(rental: RentalAvailability, today: number): Set<number> {
   return new Set([...blockedSet(rental.unavailable)].filter((day) => day >= today));
 }
 
-export function FleetPlanning({ now }: { now?: number }) {
-  const t = useNumbersTranslations("Fleet");
+/** Texts that differ for a holiday agency's homes (Fleet.home.*). */
+const HOME_KEYS = new Set(["icsEvent", "icsName", "emptyTitle", "emptyBody", "emptyAction", "city", "search", "vehicles", "truncated", "noMatch", "gridLabel", "vehicle", "pending", "tooMany", "saved", "confirmed", "partial"]);
+
+export function FleetPlanning({ now, kind = "cars" }: { now?: number; kind?: FleetKind }) {
+  const fleetText = useNumbersTranslations("Fleet");
+  const t = ((key: string, values?: Record<string, string | number>) => fleetText((kind === "homes" && HOME_KEYS.has(key) ? `home.${key}` : key) as Parameters<typeof fleetText>[0], values as never)) as typeof fleetText;
   const tc = useTranslations("Rental.calendar");
   const locale = useLocale() as Locale;
   const rtl = isRtl(locale);
@@ -66,17 +75,17 @@ export function FleetPlanning({ now }: { now?: number }) {
 
   const refresh = useCallback(async () => {
     try {
-      const fleet = await loadFleet();
+      const fleet = await loadFleet(kind);
       setLoad({ kind: "ready", vehicles: fleet.vehicles.filter((vehicle): vehicle is Vehicle => vehicle.rental !== undefined), truncated: fleet.truncated });
       setEdits(new Map());
     } catch (error) {
       setLoad({ kind: "failed", error });
     }
-  }, []);
+  }, [kind]);
 
   useEffect(() => {
     let live = true;
-    void loadFleet().then(
+    void loadFleet(kind).then(
       (fleet) => live && setLoad({ kind: "ready", vehicles: fleet.vehicles.filter((vehicle): vehicle is Vehicle => vehicle.rental !== undefined), truncated: fleet.truncated }),
       (error: unknown) => live && setLoad({ kind: "failed", error }),
     );
@@ -90,7 +99,7 @@ export function FleetPlanning({ now }: { now?: number }) {
       window.removeEventListener("pointerup", stop);
       window.removeEventListener("pointercancel", stop);
     };
-  }, []);
+  }, [kind]);
 
   const vehicles = useMemo(() => (load.kind === "ready" ? load.vehicles : []), [load]);
   const saved = useMemo(() => new Map(vehicles.map((vehicle) => [vehicle.id, blockedFrom(vehicle.rental, today)])), [vehicles, today]);
@@ -100,6 +109,14 @@ export function FleetPlanning({ now }: { now?: number }) {
     return vehicles.filter((vehicle) => (!city || vehicle.citySlug === city) && (!words || vehicle.title.toLocaleLowerCase(intlLocale(locale)).includes(words)));
   }, [vehicles, city, query, locale]);
   const dirty = [...edits.entries()].filter(([id, set]) => !sameSet(set, saved.get(id) ?? new Set()));
+  const upcoming = shown.flatMap((vehicle) => vehicle.rental.unavailable.filter((period) => period.to >= dayString(today)).map((period) => ({ vehicle, period })));
+
+  /** The saved blocked periods of the rows shown, as all-day events of the agency's calendar. */
+  function exportCalendar() {
+    const events = upcoming.map(({ vehicle, period }) => ({ uid: `blocked-${vehicle.id}-${period.from}`, from: period.from, to: period.to, title: t("icsEvent", { title: vehicle.title }) }));
+    downloadIcs(rentalIcs(events, { name: t("icsName", { site: SITE_NAME }) }), `${SITE_NAME.toLowerCase()}-${kind === "homes" ? "logements" : "flotte"}`);
+  }
+
   const stale = shown.filter((vehicle) => !isFresh(vehicle.rental.updatedAt ? Date.parse(vehicle.rental.updatedAt) : null, clock)).length;
   const tooMany = dirty.some(([, set]) => periodsOf(set).length > RENTAL_PERIODS_MAX);
 
@@ -262,10 +279,16 @@ export function FleetPlanning({ now }: { now?: number }) {
             </span>
           </label>
         </div>
-        <Button type="button" variant="outline" loading={saving === "confirm"} disabled={saving !== null || dirty.length > 0 || shown.length === 0} onClick={confirmAll} data-testid="fleet-confirm">
-          <CalendarCheck aria-hidden="true" />
-          {t("confirm")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" disabled={dirty.length > 0 || upcoming.length === 0} onClick={exportCalendar} data-testid="fleet-export">
+            <CalendarArrowDown aria-hidden="true" />
+            {t("export")}
+          </Button>
+          <Button type="button" variant="outline" loading={saving === "confirm"} disabled={saving !== null || dirty.length > 0 || shown.length === 0} onClick={confirmAll} data-testid="fleet-confirm">
+            <CalendarCheck aria-hidden="true" />
+            {t("confirm")}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm">
@@ -293,12 +316,12 @@ export function FleetPlanning({ now }: { now?: number }) {
           <table ref={grid} role="grid" aria-label={t("gridLabel")} aria-rowcount={shown.length + 2} className="border-separate border-spacing-0 text-sm select-none" onKeyDown={onKeyDown}>
             <thead>
               <tr>
-                <th rowSpan={2} scope="col" className="sticky start-0 z-20 w-40 min-w-40 border-e border-b border-border bg-surface px-3 text-start text-xs font-medium text-foreground-muted sm:w-64 sm:min-w-64">
+                <th rowSpan={2} scope="col" className="sticky start-0 z-20 w-28 min-w-28 border-e border-b border-border bg-surface px-2 text-start text-xs font-medium text-foreground-muted sm:w-64 sm:min-w-64 sm:px-3">
                   {t("vehicle")}
                 </th>
                 {months.map((month) => (
                   <th key={month.start} colSpan={month.span} scope="colgroup" className="h-8 border-b border-border px-2 text-start text-xs font-semibold capitalize">
-                    <span className="sticky start-44 sm:start-68">{monthFormat.format(new Date(month.start * DAY_MS))}</span>
+                    <span className="sticky start-30 sm:start-68">{monthFormat.format(new Date(month.start * DAY_MS))}</span>
                   </th>
                 ))}
               </tr>
@@ -325,7 +348,7 @@ export function FleetPlanning({ now }: { now?: number }) {
                 const thumb = vehicle.thumb ? photoUrl(mediaBaseUrl, vehicle.id, vehicle.thumb.id, "s") : null;
                 return (
                   <tr key={vehicle.id} data-testid="fleet-row" data-vehicle={vehicle.id}>
-                    <th scope="row" className={cn("sticky start-0 z-10 border-e border-b border-border bg-surface px-3 py-2 text-start font-normal", edited && "bg-surface-brand")}>
+                    <th scope="row" className={cn("sticky start-0 z-10 border-e border-b border-border bg-surface px-2 py-2 text-start font-normal sm:px-3", edited && "bg-surface-brand")}>
                       <span className="flex items-center gap-2.5">
                         <span className="relative hidden size-10 shrink-0 overflow-hidden rounded-md bg-surface-brand sm:block">
                           {thumb ? (
@@ -336,7 +359,7 @@ export function FleetPlanning({ now }: { now?: number }) {
                           )}
                         </span>
                         <span className="flex min-w-0 flex-col">
-                          <span className="line-clamp-2 text-sm font-medium" title={vehicle.title}>
+                          <span className="line-clamp-2 text-xs font-medium sm:text-sm" title={vehicle.title}>
                             {vehicle.title}
                           </span>
                           <span className="flex items-center gap-1.5 text-xs text-foreground-muted">

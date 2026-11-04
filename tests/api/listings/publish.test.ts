@@ -163,6 +163,25 @@ describe("POST /api/listings/{id}/publish", () => {
     expect(pending.body.listings.map((listing) => listing.id)).toEqual([id]);
   });
 
+  it("holds a listing declared sensitive for a moderator, never public before the decision (zone 3 audit P1-1)", async () => {
+    const owner = await member();
+    const id = await readyDraft(owner, { sensitiveDeclaration: { kind: "explicit_consent" } });
+    const result = await api<PublishBody>(publish, "POST", `/api/listings/${id}/publish`, { member: owner, body: ACCEPT });
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ status: "pending_review", flags: ["sensitive_declared"] });
+    const stored = (await getListing(id))!;
+    expect(stored).toMatchObject({ status: "pending_review", adsEligible: false, moderation: expect.objectContaining({ state: "needs_review", flags: ["sensitive_declared"] }) });
+    expect(await getSearchOutbox(id)).toBeNull();
+
+    // Declared on a live listing: the save holds it again.
+    const seller = await member();
+    const live = await readyDraft(seller);
+    expect((await api<PublishBody>(publish, "POST", `/api/listings/${live}/publish`, { member: seller, body: ACCEPT })).body.status).toBe("published");
+    const saved = await api<ListingBody>(patch, "PATCH", `/api/listings/${live}`, { member: seller, body: { sensitiveDeclaration: { kind: "self" } } });
+    expect(saved.status).toBe(200);
+    expect(await getListing(live)).toMatchObject({ status: "pending_review", moderation: expect.objectContaining({ state: "needs_review", flags: ["sensitive_declared"] }) });
+  });
+
   it("publishes an adults-only listing (decorative koumiyas) only with the attestation, always held for a moderator", async () => {
     const owner = await member();
     const koumiya = {

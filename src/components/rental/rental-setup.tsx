@@ -5,6 +5,7 @@ import { CircleCheck, CircleDashed } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import type { FleetKind } from "@/lib/contracts/listings";
 import type { ProSelfView } from "@/lib/contracts/pro";
 import { loadFleet } from "@/lib/listings/client/api";
 import { isFresh } from "@/lib/listings/rental-availability";
@@ -13,16 +14,23 @@ import { cn } from "@/lib/utils";
 // Start-up checklist of a car rental agency in its Pro area (rental pack §5): settings with the
 // licence reference, a first vehicle on offer (or the fleet imported), then an up-to-date
 // planning. Reads the fleet once (GET /api/pro/fleet); a failed read leaves steps 2 and 3 open.
+// A holiday rental agency gets the same three steps for its homes (audit L4-02): its settings with
+// the tourist accommodation authorisation, a first home, the homes planning.
 
 type Fleet = { vehicles: number; fresh: boolean } | null;
 
-export function RentalSetup({ shop }: { shop: Pick<ProSelfView, "rental"> }) {
-  const t = useTranslations("RentalAgency.setup");
+/** Texts that differ for a holiday agency (RentalAgency.setup.home.*). */
+const HOME_KEYS = new Set(["title", "lead", "ready", "step1", "step1Hint", "step2", "step2Hint", "step2Action", "step3Hint"]);
+
+export function RentalSetup({ shop, kind = "cars" }: { shop: Pick<ProSelfView, "rental" | "holiday">; kind?: FleetKind }) {
+  const setup = useTranslations("RentalAgency.setup");
+  const homes = kind === "homes";
+  const t = ((key: string, values?: Record<string, string | number>) => setup((homes && HOME_KEYS.has(key) ? `home.${key}` : key) as Parameters<typeof setup>[0], values as never)) as typeof setup;
   const [fleet, setFleet] = useState<Fleet>(null);
 
   useEffect(() => {
     let live = true;
-    loadFleet()
+    loadFleet(kind)
       .then((response) => {
         const now = Date.now();
         if (live)
@@ -35,13 +43,13 @@ export function RentalSetup({ shop }: { shop: Pick<ProSelfView, "rental"> }) {
     return () => {
       live = false;
     };
-  }, []);
+  }, [kind]);
 
-  const steps = [Boolean(shop.rental?.agrementRef), (fleet?.vehicles ?? 0) > 0, fleet?.fresh === true];
+  const steps = [homes ? Boolean(shop.holiday?.authorization) : Boolean(shop.rental?.agrementRef), (fleet?.vehicles ?? 0) > 0, fleet?.fresh === true];
   const done = steps.filter(Boolean).length;
 
   return (
-    <section aria-labelledby="rental-setup" data-testid="rental-setup" className="flex flex-col gap-5 rounded-lg border border-border bg-surface-brand p-5 sm:p-6">
+    <section aria-labelledby="rental-setup" data-testid="rental-setup" data-kind={kind} className="flex flex-col gap-5 rounded-lg border border-border bg-surface-brand p-5 sm:p-6">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex flex-col gap-1">
           <h2 id="rental-setup" className="text-lg font-semibold">
@@ -56,20 +64,22 @@ export function RentalSetup({ shop }: { shop: Pick<ProSelfView, "rental"> }) {
       <ol className="grid gap-3 md:grid-cols-3">
         <Step done={steps[0]!} index={1} title={t("step1")} hint={t("step1Hint")}>
           <Button asChild size="sm" variant={steps[0] ? "outline" : "primary"}>
-            <Link href="/pro/location">{t("step1Action")}</Link>
+            <Link href={homes ? "/pro/sejours" : "/pro/location"}>{t("step1Action")}</Link>
           </Button>
         </Step>
         <Step done={steps[1]!} index={2} title={t("step2")} hint={t("step2Hint")}>
           <Button asChild size="sm" variant={steps[0] && !steps[1] ? "primary" : "outline"}>
             <Link href="/deposer">{t("step2Action")}</Link>
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/pro/stock">{t("step2Import")}</Link>
-          </Button>
+          {homes ? null : (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/pro/stock">{t("step2Import")}</Link>
+            </Button>
+          )}
         </Step>
         <Step done={steps[2]!} index={3} title={t("step3")} hint={t("step3Hint")}>
           <Button asChild size="sm" variant={steps[1] && !steps[2] ? "primary" : "outline"}>
-            <Link href="/pro/flotte">{t("step3Action")}</Link>
+            <Link href={homes ? "/pro/logements" : "/pro/flotte"}>{t("step3Action")}</Link>
           </Button>
         </Step>
       </ol>

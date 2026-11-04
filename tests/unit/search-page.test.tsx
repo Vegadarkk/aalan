@@ -163,7 +163,7 @@ describe("search page states", () => {
     expect(html).not.toContain(fr.SearchPage.empty.title);
   });
 
-  it("starts on the map rows when a basemap is configured, the grid and its ads waiting for the list view", async () => {
+  it("renders the list view with the map rows beside it when a basemap is configured (B14: phones start on the list)", async () => {
     process.env.MAP_PMTILES_URL = "https://media.joutiya.test/maps/morocco.pmtiles";
     resetServerEnv();
     try {
@@ -171,15 +171,17 @@ describe("search page states", () => {
         response(params, { hits: [card("aaaa2345"), card("bbbb2345")], featured: [card("dddd2345", { featured: true })], total: 3, totalPages: 1 }),
       );
       const html = await renderPage({ q: "draisienne" });
-      expect(html).toContain('data-search-view="map"');
+      expect(html).toContain('data-search-view="list"');
       expect(html.match(/data-testid="result-rows"/g)).toHaveLength(2);
       // À la Une first, with its own label (§8), each listing once, linked to its page.
       expect(html.indexOf('data-listing-id="dddd2345"')).toBeLessThan(html.indexOf('data-listing-id="aaaa2345"'));
       expect(html).toContain(`aria-label="${fr.SearchMap.featuredRows}"`);
-      expect(html.match(/data-listing-id="aaaa2345"/g)).toHaveLength(1);
       expect(html).toContain('href="/fr/annonce/velo-aaaa2345"');
-      expect(html).not.toContain('data-testid="results-grid"');
-      expect(html).not.toContain("data-ad-slot");
+      // The grid is the server's view; the rows wait hidden for the map, their photos lazy.
+      expect(html).toContain('data-testid="results-grid"');
+      const rows = html.slice(html.indexOf('data-testid="result-rows"'), html.indexOf('data-testid="listing-card"'));
+      expect(rows).toContain('loading="lazy"');
+      expect(rows).not.toMatch(/fetchPriority="high"|loading="eager"/);
       expect(html).toContain('data-testid="panel-legal"');
     } finally {
       delete process.env.MAP_PMTILES_URL;
@@ -195,8 +197,8 @@ describe("search page states", () => {
         response(params, { hits: [card("aaaa2345", { example: true }), card("bbbb2345")], total: 2, totalPages: 1 }),
       );
       const html = await renderPage({ q: "draisienne" });
-      expect(html).toContain('data-search-view="map"');
-      expect(html.match(/data-testid="example-chip"/g)).toHaveLength(1);
+      const rows = html.slice(0, html.indexOf('data-testid="listing-card"'));
+      expect(rows.match(/data-testid="example-chip"/g)).toHaveLength(1);
       const exampleRow = html.slice(html.indexOf('data-listing-id="aaaa2345"'), html.indexOf('data-listing-id="bbbb2345"'));
       expect(text(exampleRow)).toContain(fr.SearchMap.row.example);
     } finally {

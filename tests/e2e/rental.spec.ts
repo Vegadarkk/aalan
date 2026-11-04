@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { getFirestore } from "firebase-admin/firestore";
 import sharp from "sharp";
@@ -191,7 +192,7 @@ test.describe("Car rental", () => {
       await page.getByRole("button", { name: /^Disponibilités de « / }).click();
       const dialog = page.getByTestId("availability-dialog");
       await dialog.locator(`button[data-day="${day(3)}"]`).click();
-      await expect(dialog.getByText("Touchez maintenant le dernier jour de la période.")).toBeVisible();
+      await expect(dialog.getByText("Choisissez maintenant le dernier jour de la période.")).toBeVisible();
       await dialog.locator(`button[data-day="${day(5)}"]`).click();
       await expect(dialog.getByText("1 période bloquée.")).toBeVisible();
       await expect(dialog.locator(`button[data-day="${day(4)}"]`)).toHaveAttribute("aria-pressed", "true");
@@ -236,6 +237,12 @@ test.describe("Car rental", () => {
       await expect(page.getByTestId("fleet-savebar")).toBeHidden();
       await page.getByTestId("fleet-confirm").click();
       await expect(page.getByText("Disponibilités confirmées pour 1 véhicule.")).toBeVisible();
+      // The saved blocked days as a .ics file of the agency's calendar.
+      const [fleetIcs] = await Promise.all([page.waitForEvent("download"), page.getByTestId("fleet-export").click()]);
+      expect(fleetIcs.suggestedFilename()).toBe("aalan-flotte.ics");
+      const fleetEvents = await readFile((await fleetIcs.path())!, "utf8");
+      expect(fleetEvents).toContain(`DTSTART;VALUE=DATE:${day(10).replaceAll("-", "")}`);
+      expect(fleetEvents).toContain("X-WR-CALNAME:Planning de flotte Aalan");
       await page.reload();
       await expect(page.getByTestId("fleet-row").filter({ hasText: title }).locator(`button[data-day="${day(10)}"]`)).toHaveAttribute("data-state", "blocked");
       await page.setViewportSize({ width: 390, height: 844 });
@@ -295,18 +302,51 @@ test.describe("Car rental", () => {
       const requestCard = page.getByTestId("rental-request-card");
       await expect(requestCard).toHaveAttribute("data-status", "requested-theirs", { timeout: 15_000 });
       await expect(requestCard).toContainText("3 jours");
-      await expect(requestCard.getByTestId("rental-request-block")).toBeChecked();
       await page.screenshot({ path: "test-results/rental-request-agency.png" });
+      // The answer takes a second step, with an optional word sent as a message (audit L4-07).
       await requestCard.getByTestId("rental-request-accept").click();
+      const confirm = requestCard.getByTestId("rental-request-confirm");
+      await expect(confirm).toHaveAttribute("data-answer", "accept");
+      await expect(confirm.getByTestId("rental-request-block")).toBeChecked();
+      await confirm.getByTestId("rental-request-note").fill("Le véhicule sera prêt à 9 h.");
+      await confirm.getByTestId("rental-request-confirm-send").click();
       await expect(requestCard).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
       await expect(requestCard).toContainText("Dates bloquées sur l'annonce.");
-      await expect(requestCard.getByTestId("rental-request-pickup")).toBeVisible();
+      await expect(page.getByTestId("thread")).toContainText("Le véhicule sera prêt à 9 h.", { timeout: 15_000 });
+      // The rental goes to the agency's calendar as an all-day event (.ics).
+      const [rentalIcs] = await Promise.all([page.waitForEvent("download"), requestCard.getByTestId("rental-request-ics").click()]);
+      expect(rentalIcs.suggestedFilename()).toBe("aalan-location.ics");
+      const rentalEvent = await readFile((await rentalIcs.path())!, "utf8");
+      expect(rentalEvent).toContain(`DTSTART;VALUE=DATE:${day(6).replaceAll("-", "")}`);
+      // The hand-over opens on the pick-up day (audit L4-08).
+      await requestCard.getByTestId("rental-request-pickup").click();
+      const handover = page.getByTestId("appointment-dialog");
+      await expect(handover.getByRole("heading", { name: "Proposer la remise du véhicule" })).toBeVisible();
+      await expect(handover.locator('[data-testid="slot-day"][aria-checked="true"]')).toHaveCount(1);
+      await expect(handover.locator('input[type="date"]')).toHaveValue(day(6));
+      await handover.getByRole("button", { name: "Fermer" }).click();
       await renter.reload();
       await expect(renter.getByTestId("rental-request-card")).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
       await renter.setViewportSize({ width: 390, height: 844 });
       await renter.screenshot({ path: "test-results/rental-request-accepted-mobile.png" });
+      await renter.setViewportSize({ width: 1280, height: 900 });
       await page.goto(`/fr/annonce/${answer.slugId}`);
       await expect(page.getByTestId("rental-availability").locator(`[data-day="${day(7)}"]`)).toHaveAttribute("data-state", "blocked");
+
+      // The listing says the request is confirmed (audit L4-09); a second request keeps the first
+      // one in sight in the conversation (audit L4-04).
+      await renter.goto(`/fr/annonce/${answer.slugId}`);
+      await expect(renter.locator('[data-testid="rental-request-banner"]:visible')).toHaveAttribute("data-status", "accepted", { timeout: 15_000 });
+      await renter.getByTestId("rental-request-button").click();
+      const second = renter.getByTestId("message-dialog");
+      await pickRentalDays(second, "Départ", day(12), day(13));
+      await expect(second.locator("[data-turnstile]")).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
+      await second.getByRole("button", { name: "Envoyer la demande" }).click();
+      await expect(renter).toHaveURL(/\/fr\/messages\/[A-Za-z0-9_-]{22}$/, { timeout: 20_000 });
+      await expect(renter.getByTestId("rental-request-card")).toHaveAttribute("data-status", "requested-mine", { timeout: 15_000 });
+      const history = renter.getByTestId("rental-history");
+      await expect(history.locator('[data-testid="rental-history-item"][data-status="accepted"]')).toHaveCount(1);
+      await renter.screenshot({ path: "test-results/rental-request-history.png" });
       await renterContext.close();
     }
   });

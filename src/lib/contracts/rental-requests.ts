@@ -2,7 +2,7 @@ import { z } from "@/lib/zod";
 import { startConversationSchema, stripFormatCharacters } from "@/lib/contracts/messaging";
 import { DAY_PATTERN } from "@/lib/listings/rental-availability";
 import type { RentalUnit } from "@/config/categories";
-import { RENTAL_PICKUP_MAX, type RentalRequestEvent, type RentalRequestStatus } from "@/lib/rental-requests/rules";
+import { RENTAL_GUESTS_MAX, RENTAL_PICKUP_MAX, type RentalRequestEvent, type RentalRequestStatus } from "@/lib/rental-requests/rules";
 
 // Booking requests of a car rental in a conversation (rental pack §6): the renter asks for a
 // period (pick-up and return days, Morocco's calendar) and a pick-up place; the agency answers
@@ -10,7 +10,8 @@ import { RENTAL_PICKUP_MAX, type RentalRequestEvent, type RentalRequestStatus } 
 // withdraw an unanswered request or send another one. A holiday home's stay (seasonal rental
 // conception §3) takes the same steps by nights: arrival and departure days, a free note instead
 // of the pick-up place, the host (an individual or an agency) answers. One current request per conversation,
-// carried by the conversation document; every step is a system message of the thread. Nothing is
+// carried by the conversation document, and the earlier ones kept beside it with their answer
+// (audit L4-04); every step is a system message of the thread. Nothing is
 // booked or paid through the site: the rental is concluded by the agency's written contract.
 
 export * from "@/lib/rental-requests/rules";
@@ -29,7 +30,15 @@ const pickupSchema = z.preprocess(
 );
 
 /** The renter's request, with the first message or from the thread. */
-export const rentalRequestInputSchema = z.object({ from: z.string().regex(DAY_PATTERN), to: z.string().regex(DAY_PATTERN), pickup: pickupSchema.optional() }).strict();
+export const rentalRequestInputSchema = z
+  .object({
+    from: z.string().regex(DAY_PATTERN),
+    to: z.string().regex(DAY_PATTERN),
+    pickup: pickupSchema.optional(),
+    /** A stay's travellers (audit L4-11); ignored for a car rental. */
+    guests: z.number().int().min(1).max(RENTAL_GUESTS_MAX).optional(),
+  })
+  .strict();
 export type RentalRequestInput = z.infer<typeof rentalRequestInputSchema>;
 
 /** POST /api/conversations with a car rental's booking request (the listing page's "Demander une réservation"). */
@@ -58,6 +67,8 @@ export interface RentalRequestView {
   unit: RentalUnit;
   /** Links masked (URL_MARKER). A stay's note (travellers, arrival time). */
   pickup: string | null;
+  /** A stay's travellers; null or absent when not given (or a car rental). */
+  guests?: number | null;
   /** Accepted with the days blocked on the listing. */
   blocked: boolean;
   updatedAt: number;
@@ -72,11 +83,14 @@ export interface RentalRequestEventView {
   to: string;
   unit: RentalUnit;
   pickup: string | null;
+  guests?: number | null;
 }
 
 /** POST /api/conversations/{cid}/rental-request -> 201. */
 export interface RentalRequestResponse {
   rentalRequest: RentalRequestView;
+  /** The earlier requests of the conversation, newest first (audit L4-04). */
+  rentalHistory: RentalRequestView[];
   messageId: string;
   /** accept with `block`: false when the days could not be written (too many periods); null otherwise. */
   blocked: boolean | null;

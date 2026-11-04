@@ -9,6 +9,7 @@ import { CANONICAL_ORIGIN } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import type { ListingStatus } from "@/lib/contracts/listings";
 import { usePublicConfig } from "@/lib/config/client";
+import { PromoteOffer } from "@/components/payments/promote-offer";
 
 // `/deposer/{id}/termine`: published (link + share), pending review (explanation, mail sent) or
 // rejected, and the way to the next listing. The panel is the whole page: its title is the h1.
@@ -19,12 +20,14 @@ interface DoneScreenProps {
   /** Localized path of the public page when published. */
   url?: string;
   listingId: string;
+  /** The listing's title, for « Mettre en avant » (zone 6 audit 6-04). */
+  title?: string;
 }
 
 const noSubscription = () => () => {};
 const shareSheetExists = () => typeof navigator.share === "function";
 
-export function DoneScreen({ status, slugId, url, listingId }: DoneScreenProps) {
+export function DoneScreen({ status, slugId, url, listingId, title = "" }: DoneScreenProps) {
   const t = useTranslations("Listing.done");
   const locale = useLocale();
   const config = usePublicConfig();
@@ -64,39 +67,43 @@ export function DoneScreen({ status, slugId, url, listingId }: DoneScreenProps) 
 
   if (status === "published") {
     return (
-      <StatusPanel
-        icon={CircleCheck}
-        title={t("publishedTitle")}
-        headingLevel="h1"
-        celebrate
-        actions={
-          <>
-            {path ? (
-              <Button asChild>
-                <a href={path}>{t("viewListing")}</a>
-              </Button>
-            ) : null}
-            {absolute ? (
-              <Button type="button" variant="outline" onClick={() => void share()}>
-                {copied ? <Check aria-hidden="true" /> : canShare ? <Share2 aria-hidden="true" /> : <Link2 aria-hidden="true" />}
-                {copied ? t("linkCopied") : canShare ? t("share") : t("copyLink")}
-              </Button>
-            ) : null}
-            {another}
-            {mine}
-          </>
-        }
-        extra={
-          absolute ? (
-            <p dir="ltr" className="flex items-center justify-center gap-2 text-center text-sm text-foreground-muted [overflow-wrap:anywhere]">
-              <Link2 className="size-4 shrink-0" aria-hidden="true" />
-              {absolute}
-            </p>
-          ) : null
-        }
-      >
-        {t("publishedBody")}
-      </StatusPanel>
+      <div className="flex flex-col gap-8">
+        <StatusPanel
+          icon={CircleCheck}
+          title={t("publishedTitle")}
+          headingLevel="h1"
+          celebrate
+          actions={
+            <>
+              {path ? (
+                <Button asChild>
+                  <a href={path}>{t("viewListing")}</a>
+                </Button>
+              ) : null}
+              {absolute ? (
+                <Button type="button" variant="outline" onClick={() => void share()}>
+                  {copied ? <Check aria-hidden="true" /> : canShare ? <Share2 aria-hidden="true" /> : <Link2 aria-hidden="true" />}
+                  {copied ? t("linkCopied") : canShare ? t("share") : t("copyLink")}
+                </Button>
+              ) : null}
+              {another}
+              {mine}
+            </>
+          }
+          extra={
+            absolute ? (
+              <p dir="ltr" className="flex items-center justify-center gap-2 text-center text-sm text-foreground-muted [overflow-wrap:anywhere]">
+                <Link2 className="size-4 shrink-0" aria-hidden="true" />
+                {absolute}
+              </p>
+            ) : null
+          }
+        >
+          {t("publishedBody")}
+        </StatusPanel>
+        {/* Where classifieds offer their options: right after the listing went online (6-04). */}
+        <PromoteOffer listingId={listingId} title={title} className="mx-auto w-full max-w-xl" />
+      </div>
     );
   }
 

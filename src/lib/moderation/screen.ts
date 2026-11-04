@@ -221,7 +221,11 @@ export function screenListing(input: ScreenInput, ctx: ScreenContext): ScreenRes
     note(`${input.seller.listingsLast24h} listings in 24h`);
   }
   if (input.seller.previousRejections > 0) note(`${input.seller.previousRejections} previous rejection(s)`);
-  if (input.sensitiveDeclaration) note(`declaration ${input.sensitiveDeclaration.kind}`);
+  // A declared sensitive listing is promised a moderator's reading before it goes public (review step).
+  if (input.sensitiveDeclaration) {
+    flags.add("sensitive_declared");
+    note(`declaration ${input.sensitiveDeclaration.kind}`);
+  }
 
   const sorted = sortFlags(flags);
   const { score } = riskScore(sorted, { previousRejections: input.seller.previousRejections }, risk);

@@ -59,7 +59,7 @@ export function PriceInput({ value, onChange, negotiable, onNegotiable, isDonati
 
   return (
     <div className="flex flex-col gap-5" onBlur={onBlur}>
-      <Field label={t(salary ? "salary" : "price")} hint={disabled ? undefined : t(salary ? "salaryHint" : "priceHint")} error={notice ?? error} required={!priceOptional && !isDonation}>
+      <Field label={salary ? t("salary") : priceUnit ? t(`pricePer.${priceUnit}`) : t("price")} hint={disabled ? undefined : t(salary ? "salaryHint" : "priceHint")} error={notice ?? error} required={!priceOptional && !isDonation}>
         <AmountBox
           inputRef={input}
           suffix={

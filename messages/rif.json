@@ -854,6 +854,11 @@
       "charactersMin": "Mazal {count, plural, one {# n usekkil} other {# n yisekkilen}} ɣas",
       "condition": "Lḥala",
       "price": "Ssuma",
+      "pricePer": {
+        "day": "Ssuma i wass",
+        "night": "Ssuma i yiḍ",
+        "month": "Akra i wayyur"
+      },
       "priceHint": "S dirhams, bla ṣṣantim.",
       "pricePlaceholder": "1 500",
       "currency": "DH",

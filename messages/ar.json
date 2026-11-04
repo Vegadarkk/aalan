@@ -854,6 +854,11 @@
       "charactersMin": "{count, plural, zero {# أحرف} one {حرف واحد} two {حرفان} few {# أحرف} many {# حرفًا} other {# حرف}} على الأقل بعد",
       "condition": "الحالة",
       "price": "السعر",
+      "pricePer": {
+        "day": "السعر لليوم",
+        "night": "السعر لليلة",
+        "month": "الكراء الشهري"
+      },
       "priceHint": "بالدرهم، بدون سنتيمات.",
       "pricePlaceholder": "1 500",
       "currency": "درهم",

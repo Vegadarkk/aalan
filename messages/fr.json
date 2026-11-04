@@ -864,6 +864,11 @@
       "charactersMin": "Encore {count, plural, one {# caractère} other {# caractères}} au minimum",
       "condition": "État",
       "price": "Prix",
+      "pricePer": {
+        "day": "Prix par jour",
+        "night": "Prix par nuit",
+        "month": "Loyer par mois"
+      },
       "priceHint": "En dirhams, sans centimes.",
       "pricePlaceholder": "1 500",
       "currency": "DH",

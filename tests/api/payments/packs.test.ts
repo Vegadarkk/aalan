@@ -340,6 +340,23 @@ describe("billing reconciliation", () => {
     expect(await getOrder(transactionId)).toMatchObject({ status: "refunded" });
   });
 
+  it("applies a refund recorded as finished while its order stayed paid, once", async () => {
+    const buyer = await member();
+    const appUserId = await checkoutOf(buyer);
+    const transactionId = `txn_${randomUUID()}`;
+    store.purchases = [owned(transactionId)];
+    expect((await deliver(rcEvent("NON_RENEWING_PURCHASE", appUserId, transactionId))).status).toBe(200);
+    // A refund taken for a subscription's before #302: processed, the order still paid.
+    await createBillingEvent({ source: "revenuecat", eventId: randomUUID(), type: "CANCELLATION", environment: "SANDBOX", appUserId, productId: "aalan_credits_100_mad", transactionId, store: "RC_BILLING", kind: "subscription", status: "processed", outcome: "no_shop", attempts: 1, receivedAt: new Date(Date.now() - HOUR_MS) });
+    store.purchases = [listed(transactionId, "refunded")];
+
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 1, failed: 0 });
+    expect(await getWallet(buyer.uid)).toMatchObject({ balance: 0 });
+    expect(await getOrder(transactionId)).toMatchObject({ status: "refunded" });
+    expect(await reconcileBilling(new Date(), deps(appUserId))).toMatchObject({ packs: 0, failed: 0 });
+    expect((await getWallet(buyer.uid))?.balance).toBe(0);
+  });
+
   it("processes again an event the queue left failed, and alerts what it cannot solve", async () => {
     const buyer = await member();
     const appUserId = await checkoutOf(buyer);

@@ -1,4 +1,4 @@
-import { CATEGORIES, categoryById, criterionById, datedRental, searchCriteria, subcategoryById, type Condition, type CriterionUnit } from "@/config/categories";
+import { CATEGORIES, CONDITIONS, categoryById, criterionById, datedRental, searchCriteria, subcategoryById, type Condition, type CriterionUnit } from "@/config/categories";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { formatPrice, groupDigits, intlLocale } from "@/lib/listings/client/format";
@@ -425,4 +425,44 @@ export function cardBadge(card: Pick<SearchCard, "featured" | "bumped">): CardBa
   if (card.featured) return "featured";
   if (card.bumped) return "bumped";
   return undefined;
+}
+
+/** « Neuf » and « Occasion » of the quick condition switch (audit §7): new with tags, or anything worn. */
+export const QUICK_CONDITIONS: { new: readonly Condition[]; used: readonly Condition[] } = {
+  new: ["new_tagged"],
+  used: CONDITIONS.filter((condition) => condition !== "new_tagged"),
+};
+
+export type QuickCondition = "all" | keyof typeof QUICK_CONDITIONS;
+
+export interface QuickConditionChoice {
+  value: QuickCondition;
+  params: SearchParams;
+}
+
+/** Whether the scope of the search holds listings with a condition (a category: one of its subcategories). */
+export function quickConditionApplies(params: Pick<SearchParams, "category" | "subcategory">): boolean {
+  if (params.subcategory) return Boolean(subcategoryById(params.subcategory)?.condition);
+  if (!params.category) return true;
+  return (categoryById(params.category)?.subcategories ?? []).some((sub) => Boolean(sub.condition));
+}
+
+/** The switch's selected value: null when the filters sheet picked another set of conditions. */
+export function quickConditionOf(params: Pick<SearchParams, "conditions">): QuickCondition | null {
+  const chosen = params.conditions ?? [];
+  if (chosen.length === 0) return "all";
+  for (const value of ["new", "used"] as const) {
+    const set = QUICK_CONDITIONS[value];
+    if (chosen.length === set.length && set.every((condition) => chosen.includes(condition))) return value;
+  }
+  return null;
+}
+
+/** The three searches of the switch (first page, other filters kept); none when the scope has no condition. */
+export function quickConditions(params: SearchParams): QuickConditionChoice[] {
+  if (!quickConditionApplies(params)) return [];
+  return (["all", "new", "used"] as const).map((value) => ({
+    value,
+    params: canonicalSearchParams({ ...params, page: undefined, conditions: value === "all" ? undefined : [...QUICK_CONDITIONS[value]] }),
+  }));
 }

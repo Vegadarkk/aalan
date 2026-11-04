@@ -1,14 +1,15 @@
 import "server-only";
 import { openImage } from "./sharp-setup";
 
+export { hammingDistance, isImageHash } from "./near-duplicate";
+
 // 64-bit difference hash (dHash) for near-duplicate photos (design §1 `photos[].hash`, risk score
 // `dup_photo`): greyscale 9x8, one bit per horizontally adjacent pair. Stable under recompression
-// and resizing, not under rotation or mirroring. Stored as 16 hex chars; compare with
-// hammingDistance (<= 10 of 64 is a near duplicate to calibrate on the corpus).
+// and resizing, not under rotation or mirroring. Stored as 16 hex chars; compared with
+// isNearDuplicate (./near-duplicate.ts: Hamming distance, threshold and its calibration).
 
 export const DHASH_WIDTH = 9;
 export const DHASH_HEIGHT = 8;
-const HEX64 = /^[0-9a-f]{16}$/;
 
 /** The hash of a 9x8 greyscale raster (row-major, one byte per pixel); exported for tests. */
 export function dhashFromGrey(pixels: Uint8Array, width = DHASH_WIDTH, height = DHASH_HEIGHT): string {
@@ -36,20 +37,4 @@ export async function dhash(image: Buffer): Promise<string> {
     .toBuffer({ resolveWithObject: true });
   if (info.channels !== 1) throw new Error(`dhash: expected 1 channel, got ${info.channels}`);
   return dhashFromGrey(data);
-}
-
-export function isImageHash(value: string): boolean {
-  return HEX64.test(value);
-}
-
-/** Number of differing bits between two 16-hex-char hashes (0..64). */
-export function hammingDistance(a: string, b: string): number {
-  if (!HEX64.test(a) || !HEX64.test(b)) throw new RangeError("hammingDistance: expected two 16-char hex hashes");
-  let x = BigInt(`0x${a}`) ^ BigInt(`0x${b}`);
-  let count = 0;
-  while (x) {
-    count += Number(x & 1n);
-    x >>= 1n;
-  }
-  return count;
 }

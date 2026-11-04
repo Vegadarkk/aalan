@@ -16,6 +16,7 @@ import { categoryValue, FiltersSheet, withCategory, withLocation } from "@/compo
 import { LocationField } from "@/components/search/location-field";
 import { Pagination } from "@/components/search/pagination";
 import { RefineChips } from "@/components/search/refine-chips";
+import { ConditionSwitch } from "@/components/search/condition-switch";
 import { ResultsGrid } from "@/components/search/results-grid";
 import { carriedInputs, SearchBar, submittedParams } from "@/components/search/search-bar";
 import { SearchChallenge } from "@/components/search/search-challenge";
@@ -172,6 +173,17 @@ describe("RefineChips", () => {
     expect(html).toContain(groupDigits("1200"));
     expect(render(<RefineChips params={url("sous-categorie=velos")} facets={facets} />)).toBe("");
     expect(render(<RefineChips params={{}} facets={{ categories: { mode: 3 }, subcategories: {} }} />)).toBe("");
+  });
+});
+
+describe("ConditionSwitch", () => {
+  it("links Tout, Neuf and Occasion, marking the current one", () => {
+    const html = render(<ConditionSwitch params={url("q=velo&etat=new_tagged")} />);
+    expect(html).toContain(`aria-label="${escape(fr.SearchFilters.quickCondition.label)}"`);
+    expect(html).toContain('href="/fr/recherche?q=velo"');
+    expect(html).toContain('href="/fr/recherche?q=velo&amp;etat=like_new%2Cvery_good%2Cgood%2Cfor_parts"');
+    expect(html).toMatch(new RegExp(`aria-current="true"[^>]*>${fr.SearchFilters.quickCondition.new}<`));
+    expect(render(<ConditionSwitch params={url("categorie=immobilier")} />)).toBe("");
   });
 });
 

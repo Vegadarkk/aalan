@@ -143,6 +143,7 @@ export const FLAG_LABELS: Record<ModerationFlag, string> = {
   price_outlier: "Prix inhabituel",
   dup_text: "Texte en double",
   dup_photo: "Photo en double",
+  dup_photo_other: "Photo d'un autre compte",
   new_account: "Compte récent",
   volume: "Volume élevé",
   restricted_category: "Catégorie réservée aux majeurs",

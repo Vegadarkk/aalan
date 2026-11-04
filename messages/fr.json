@@ -4005,7 +4005,13 @@
     "includeSoldOutHint": "Les boutiques laissent en ligne les articles dont le stock est à 0.",
     "promo": "En promotion",
     "modelPickBrand": "Choisissez d'abord une marque.",
-    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche."
+    "modelNone": "Pas de liste de modèles pour cette marque : tapez le modèle dans la recherche.",
+    "quickCondition": {
+      "label": "État de l'article",
+      "all": "Tout",
+      "new": "Neuf",
+      "used": "Occasion"
+    }
   },
   "Pro": {
     "metaTitle": "Espace Pro",
@@ -4421,7 +4427,11 @@
       "selectBody": "Vos échanges avec les vendeurs et les acheteurs s'affichent ici.",
       "offline": "Mise à jour en direct interrompue : les nouveaux messages s'afficheront dès le retour de la connexion.",
       "busy": "Vous avez déjà {count} onglets d'Aalan ouverts : fermez-en un pour reprendre le direct de la messagerie.",
-      "refreshLive": "Actualiser"
+      "refreshLive": "Actualiser",
+      "filteredUnreadTitle": "Tout est lu",
+      "filteredTitle": "Aucune conversation pour ce filtre",
+      "filteredBody": "Les conversations chargées ne correspondent pas à ce filtre.",
+      "showAll": "Voir toutes les conversations"
     },
     "row": {
       "you": "Vous :",
@@ -4509,6 +4519,14 @@
       "not_found": "Cette conversation n'est plus disponible.",
       "listing_unavailable": "Cette annonce n'est plus disponible : vous ne pouvez plus écrire à son vendeur.",
       "invalid_body": "Ce message ne peut pas être envoyé tel quel. Vérifiez-le, puis réessayez."
+    },
+    "filters": {
+      "label": "Filtrer les conversations",
+      "unread": "Non lues",
+      "listing": "Annonce des conversations",
+      "allListings": "Toutes les annonces",
+      "listingOption": "{title} ({count})",
+      "untitled": "Annonce sans titre"
     }
   },
   "Appointments": {

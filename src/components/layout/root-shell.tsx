@@ -65,7 +65,10 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
             <main id="main" tabIndex={-1} className="flex min-h-[calc(100dvh-14rem)] flex-1 flex-col md:min-h-[calc(100dvh-15rem)] search-map:min-h-0">
               {children}
             </main>
-            <Footer publisher={companyName} />
+            {/* Under the private root layout every footer link leads to the other root layout, a full
+                page load that never reads a prefetch: none there (about 470 KB of RSC on the sign-up
+                page once the footer showed, audit zone 8 perf 5). */}
+            <Footer publisher={companyName} prefetch={config === undefined} />
           </Providers>
         </NextIntlClientProvider>
       </body>

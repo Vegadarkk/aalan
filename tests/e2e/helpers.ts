@@ -60,12 +60,23 @@ export async function ownClientIp(page: Page): Promise<void> {
   );
 }
 
+/**
+ * The sign-up (or sign-in) form once hydrated, after a first visitor action: Google and, on the
+ * sign-up page, Turnstile load on it (src/components/auth/use-first-interaction.ts). Hydration
+ * first: a consent ticked earlier is unticked when the form registers its fields, and a pointer
+ * moved before the listeners exist goes unseen.
+ */
+export async function actOnAuthForm(page: Page): Promise<void> {
+  await expect(page.locator('form button[type="submit"]:enabled').first()).toBeVisible({ timeout: 20_000 });
+  await page.mouse.move(8, 8);
+  await page.mouse.move(16, 16);
+}
+
 /** Signs up a fresh individual through the French form and confirms the e-mail: the page is signed in. */
 export async function signUpAndIn(page: Page, request: APIRequestContext, email: string, displayName = "Amina Test"): Promise<void> {
   await ownClientIp(page);
   await page.goto("/fr/inscription");
-  // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-  await expect(page.locator("[data-turnstile]").first()).toHaveAttribute("data-turnstile", "ready", { timeout: 20_000 });
+  await actOnAuthForm(page);
   await page.getByLabel("Nom affiché").fill(displayName);
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);

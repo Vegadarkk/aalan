@@ -4,7 +4,7 @@ import { getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import sharp from "sharp";
-import { ownClientIp } from "./helpers";
+import { actOnAuthForm, ownClientIp } from "./helpers";
 
 // Pro path of phase 7 lot 1 against the production build and the Firebase emulators (npm run
 // test:e2e). A fresh member is refused until the number is verified (the WhatsApp check is
@@ -76,8 +76,7 @@ async function waitForMail(request: APIRequestContext, to: string, template: str
 async function signUpAndIn(page: Page, request: APIRequestContext, email: string): Promise<void> {
   await ownClientIp(page);
   await page.goto("/fr/inscription");
-  // Hydrated first (the widget turns ready client side): a consent ticked earlier is unticked when the form registers its fields.
-  await waitForTurnstile(page);
+  await actOnAuthForm(page);
   await page.getByLabel("Nom affiché").fill("Salma Test");
   await page.getByLabel("Adresse e-mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill(PASSWORD);

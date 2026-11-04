@@ -35,6 +35,9 @@ describe("LegalPage", () => {
     expect(out).toContain('<nav aria-labelledby="legal-toc"');
     expect(out).toMatch(/<a href="#role"[^>]*>/);
     expect(out).toMatch(/<h2 id="role"/);
+    // One list for phones (folded) and wide screens (fold-open-lg): the entries are not repeated.
+    expect(out.match(/<a href="#role"/g)).toHaveLength(1);
+    expect(out).toMatch(/<details class="[^"]*fold-open-lg/);
   });
 
   it("dates the Arabic text in Arabic and notes that French prevails", async () => {

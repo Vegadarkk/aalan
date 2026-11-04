@@ -8,6 +8,7 @@ import { usePublicConfig } from "@/lib/config/client";
 import type { TurnstileAction } from "@/lib/contracts/auth";
 import { cn } from "@/lib/utils";
 import { loadScript } from "./load-script";
+import { useFirstInteraction } from "./use-first-interaction";
 
 // Cloudflare Turnstile, explicit rendering (https://developers.cloudflare.com/turnstile/).
 // Without a site key (development) the widget renders nothing and hands the form a placeholder
@@ -61,11 +62,18 @@ interface TurnstileWidgetProps {
   onToken: (token: string | null) => void;
   /** Validation message of the form (token missing at submit). */
   error?: ReactNode;
+  /**
+   * Load the script on the visitor's first action on the page (a focus, a key, a pointer, a
+   * scroll) rather than on arrival: the sign-up page, where it weighed 240 KiB before anything
+   * was typed (audit zone 8, perf 5). The token is solved while the form is filled; the server
+   * check is unchanged, and a submission without a token is refused as before.
+   */
+  defer?: boolean;
   className?: string;
 }
 
 export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(function TurnstileWidget(
-  { action, cData, nonce, onToken, error, className },
+  { action, cData, nonce, onToken, error, defer = false, className },
   ref,
 ) {
   const config = usePublicConfig();
@@ -80,6 +88,8 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>
   const [failed, setFailed] = useState(false);
   // Exposed as data-turnstile for the end-to-end tests, which wait for a token before submitting.
   const [ready, setReady] = useState(false);
+  const acted = useFirstInteraction();
+  const wanted = !defer || acted;
 
   useEffect(() => {
     latest.current = onToken;
@@ -91,6 +101,7 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>
       latest.current(DEV_TURNSTILE_TOKEN);
       return;
     }
+    if (!wanted) return;
     let cancelled = false;
     loadScript(TURNSTILE_SRC, nonce).then(
       () => {
@@ -132,7 +143,7 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>
         widgetId.current = undefined;
       }
     };
-  }, [siteKey, action, cData, nonce, locale, resolvedTheme]);
+  }, [siteKey, wanted, action, cData, nonce, locale, resolvedTheme]);
 
   useImperativeHandle(
     ref,

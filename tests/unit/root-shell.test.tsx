@@ -13,7 +13,9 @@ vi.mock("@/lib/fonts", () => ({ readex: { variable: "font-readex" }, tarifitFall
 vi.mock("@/components/layout/providers", () => ({ Providers: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/components/layout/site-header", () => ({ SiteHeader: () => <header /> }));
 vi.mock("@/components/legal/cgu-notice", () => ({ CguNotice: () => null }));
-vi.mock("@/components/legal/footer", () => ({ Footer: ({ publisher }: { publisher: string }) => <footer data-publisher={publisher} /> }));
+vi.mock("@/components/legal/footer", () => ({
+  Footer: ({ publisher, prefetch }: { publisher: string; prefetch?: boolean }) => <footer data-publisher={publisher} data-prefetch={String(prefetch)} />,
+}));
 vi.mock("next-intl", async (importOriginal) => ({
   ...(await importOriginal<typeof NextIntl>()),
   NextIntlClientProvider: ({ children }: { children: ReactNode }) => children,
@@ -29,7 +31,13 @@ describe("RootShell", () => {
   it("renders the footer with the live config/legal trade name", async () => {
     const html = renderToStaticMarkup(await RootShell({ locale: "fr", children: <p>page</p> }));
     expect(getLegalConfig).toHaveBeenCalled();
-    expect(html).toContain('<footer data-publisher="Société Test">');
+    expect(html).toContain('<footer data-publisher="Société Test" data-prefetch="true">');
     expect(html).toContain("<p>page</p>");
+  });
+
+  it("turns the footer's prefetch off under the private root layout (its links lead to the other root layout)", async () => {
+    const config = {} as NonNullable<Parameters<typeof RootShell>[0]["config"]>;
+    const html = renderToStaticMarkup(await RootShell({ locale: "fr", nonce: "n", config, children: <p>page</p> }));
+    expect(html).toContain('data-prefetch="false"');
   });
 });

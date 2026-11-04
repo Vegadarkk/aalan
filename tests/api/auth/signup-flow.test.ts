@@ -185,9 +185,11 @@ describe("sign-up, verification, session, profile, logout", () => {
 
   it("answers a closed account's e-mail like a new one and tells its owner the account is closed, not to sign in (Z1-11)", async () => {
     const email = uniqueEmail();
-    const mail = await signUp(new Jar(), email);
+    // Same device for the link: another device would need the password first (audit A-1).
+    const jar = new Jar();
+    const mail = await signUp(jar, email);
     const uid = (await findUidByEmail(email))!;
-    await verify(new Jar(), mail);
+    await verify(jar, mail);
     // What closeAccount leaves behind (tests/api/account/close.test.ts): dates, status, Auth disabled.
     const closedAt = new Date("2026-11-03T10:00:00.000Z");
     const purgeAt = new Date("2027-11-03T10:00:00.000Z");
@@ -289,7 +291,7 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect((await auth().getUser(staff.uid)).customClaims).toMatchObject({ role: "moderator" });
   });
 
-  it("opens a session from the verification link on the device that signed up only; elsewhere the account is activated without a session", async () => {
+  it("opens a session from the verification link on the device that signed up; elsewhere the code waits for the account password", async () => {
     // Same device (the cookie the sign-up answer set, kept by the jar): activated and signed in.
     const jar = new Jar();
     const email = uniqueEmail("dev");
@@ -302,25 +304,36 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect(account?.signupDeviceHash).not.toContain(jar.get("__Host-did")!.split(".")[0]);
 
     // Another browser (a victim whose address someone else registered, or simply another device):
-    // the link activates the account but opens no session; the password still signs in.
+    // the code is read, not applied, until the account password is given (audit A-1).
     const signupJar = new Jar();
     const otherEmail = uniqueEmail("elsewhere");
-    const mail = await signUp(signupJar, otherEmail);
+    const oobCode = oobCodeOf(await actionUrlOf(await signUp(signupJar, otherEmail)));
     const elsewhere = new Jar();
-    const activated = await call<{ status: string; session: null }>(action, ACTION, { jar: elsewhere, body: { mode: "verifyEmail", oobCode: oobCodeOf(await actionUrlOf(mail)) } });
-    expect(activated.status).toBe(200);
-    expect(activated.body).toEqual({ status: "verified", session: null });
+    const asked = await call<{ status: string; email: string }>(action, ACTION, { jar: elsewhere, body: { mode: "verifyEmail", oobCode } });
+    expect(asked.status).toBe(200);
+    expect(asked.body).toEqual({ status: "password_required", email: otherEmail });
     expect(elsewhere.get("__Host-session")).toBeUndefined();
-    expect(activated.header("x-csrf-token")).toBeNull();
     const uid = (await findUidByEmail(otherEmail))!;
+    expect((await auth().getUser(uid)).emailVerified).toBe(false);
+    expect((await auth().getUser(uid)).customClaims?.role).toBeUndefined();
+    // Still pending: the password signs nobody in yet.
+    expect((await call<{ status: string }>(login, "/api/auth/login", { jar: new Jar(), body: { email: otherEmail, password: PASSWORD } })).body).toEqual({ status: "verification_required" });
+
+    const wrong = await call<ErrorBody>(action, ACTION, { jar: elsewhere, body: { mode: "verifyEmail", oobCode, password: `${PASSWORD}-nope` } });
+    expect(wrong.status).toBe(401);
+    expect(wrong.body.error.code).toBe("invalid_credentials");
+    expect((await auth().getUser(uid)).emailVerified).toBe(false);
+
+    const confirmed = await call<SignedInBody>(action, ACTION, { jar: elsewhere, body: { mode: "verifyEmail", oobCode, password: PASSWORD } });
+    expect(confirmed.status).toBe(200);
+    expect(confirmed.body.status).toBe("verified");
+    expect(confirmed.body.session).toMatchObject({ uid, role: "individual", emailVerified: true });
+    expect(elsewhere.get("__Host-session")).toBeDefined();
+    expect(confirmed.header("x-csrf-token")).toBe(elsewhere.get("__Host-csrf"));
     expect(await getUserRecord(uid)).toMatchObject({ activation: "done", badges: { emailVerified: true } });
-    expect((await auth().getUser(uid)).customClaims).toMatchObject({ role: "individual" });
-    expect((await auth().getUser(uid)).emailVerified).toBe(true);
-    // No "login" entry: nobody signed in.
-    expect(await loggedEvents(uid)).toEqual(["signup"]);
-    const signedIn = await call<SignedInBody>(login, "/api/auth/login", { jar: elsewhere, body: { email: otherEmail, password: PASSWORD } });
-    expect(signedIn.status).toBe(200);
-    expect(signedIn.body.session.uid).toBe(uid);
+    expect(await loggedEvents(uid)).toEqual(["signup", "login"]);
+    // Consumed: the same link cannot confirm twice.
+    expect((await call<ErrorBody>(action, ACTION, { jar: new Jar(), body: { mode: "verifyEmail", oobCode, password: PASSWORD } })).body.error.code).toBe("invalid_code");
   });
 
   it("lifts a mail suppression once the address proves it receives mail (verification link)", async () => {

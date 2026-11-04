@@ -364,6 +364,37 @@ describe("subscription sync", () => {
     expect((await ledgerRef(accountId, `grant_sub_rc_1_business_${renewed.periodStart.getTime()}`).get()).exists).toBe(true);
   });
 
+  it("grants nothing during a pass trial, and lets only the pass's own plan take over before a payment", async () => {
+    const owner = await member();
+    const passEndsAt = new Date(Date.now() + 20 * DAY_MS);
+    const proId = await shop(owner, { lifecycle: "active", plan: "essentiel", planSource: "pass", quotas: DEFAULT_PRICING.pro.essentiel, passEndsAt });
+    const accountId = `pro_${proId}`;
+    // A Business checkout during an Essentiel pass is billed at once: the pass did not pay for it.
+    const appUserId = await appUserOf(owner, proId);
+    const opened = stripe.calls.find((call) => call.path === "/v1/checkout/sessions")!;
+    expect(opened.params.subscription_data).not.toHaveProperty("trial_end");
+
+    // A Business trial all the same (an older page, the portal): no switch, no grant.
+    const trialStart = new Date(Date.now() - DAY_MS);
+    store.subscriptions = [rcSubscription({ status: "trialing", periodStart: trialStart, periodEnd: passEndsAt })];
+    await rcDeliver("INITIAL_PURCHASE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "essentiel", planSource: "pass", quotas: DEFAULT_PRICING.pro.essentiel });
+    expect(await getWallet(accountId)).toBeNull();
+
+    // The pass's own plan on trial takes over the pass (already paid until its end), still without a grant.
+    store.subscriptions = [rcSubscription({ status: "trialing", periodStart: trialStart, periodEnd: passEndsAt, entitlements: ["essentiel"] })];
+    await rcDeliver("PRODUCT_CHANGE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "essentiel", planSource: "subscription" });
+    expect(await getWallet(accountId)).toBeNull();
+
+    // The first paid period brings the plan's grant.
+    const now = new Date();
+    store.subscriptions = [rcSubscription({ periodStart: now, periodEnd: new Date(now.getTime() + 30 * DAY_MS), entitlements: ["essentiel"] })];
+    await rcDeliver("RENEWAL", appUserId);
+    expect(await getWallet(accountId)).toMatchObject({ planCredits: DEFAULT_PRICING.plans.essentiel.credits });
+    expect((await ledgerRef(accountId, `grant_sub_rc_1_essentiel_${now.getTime()}`).get()).exists).toBe(true);
+  });
+
   it("puts the shop in grace on a failed payment, downgrades it at expiry and pauses then resumes its listings", async () => {
     const owner = await member();
     const listingId = await published(owner);

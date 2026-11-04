@@ -41,7 +41,7 @@ const REGISTRY = JSON.parse(readFileSync(new URL("../infra/targets.json", import
 /** SITE_URL of each environment, from environments.<env>.hosts.site of infra/targets.json. */
 export const SITES: Record<SetupEnv, string> = { staging: `https://${REGISTRY.environments.staging.hosts.site}`, prod: `https://${REGISTRY.environments.prod.hosts.site}` };
 /** The events src/lib/payments/stripe-events.ts handles (STRIPE_EVENT_TYPES; a unit test keeps them equal). */
-export const WEBHOOK_EVENTS = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted", "invoice.paid", "invoice.payment_failed"];
+export const WEBHOOK_EVENTS = ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted", "invoice.paid", "invoice.payment_failed", "charge.refunded", "charge.dispute.created"];
 export const PORTAL_TAG = "pro-plans";
 const PLANS: readonly PaidPlanId[] = ["essentiel", "business"];
 const INTERVALS: readonly PlanInterval[] = ["monthly", "yearly"];

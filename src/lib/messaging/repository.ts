@@ -10,6 +10,7 @@ import {
   type ConversationDoc,
   type MessageDoc,
   type MessageEvidenceDoc,
+  type UserDoc,
 } from "@/lib/db/schemas";
 import { datesToTimestamps, timestampsToDates } from "@/lib/db/repositories/timestamps";
 import { db } from "@/lib/firebase/admin";
@@ -19,9 +20,10 @@ import { maskLinks, messagePreview } from "./risk";
 
 // conversations/{cid}, their messages and evidence, userBlocks/{uid} (design D4-D7, D18). The
 // server is the only writer (rules deny every client write); every read and write is counted
-// against the Spark quotas. A message costs one transaction: the conversation read and the block
-// lists of both participants, then the message, the conversation update and, for a masked text,
-// its evidence. Dates: Timestamp in Firestore, Date in memory.
+// against the Spark quotas. A message costs one transaction: the conversation read, the block
+// lists of both participants and the recipient's account status, then the message, the
+// conversation update and, for a masked text, its evidence. Dates: Timestamp in Firestore, Date
+// in memory.
 
 export interface ConversationRecord extends ConversationDoc {
   cid: string;
@@ -44,7 +46,8 @@ export const FREEZE_HOLD_PREFIXES = ["authority:", "dispute:", "freeze:"] as con
 const ALREADY_EXISTS = 6;
 
 export class ConversationAccessError extends Error {
-  constructor(readonly reason: "missing" | "blocked" | "frozen" | "closed") {
+  /** "unreachable": the recipient's account is suspended, banned or closed (audit C-6). */
+  constructor(readonly reason: "missing" | "blocked" | "frozen" | "closed" | "unreachable") {
     super(`conversation ${reason}`);
     this.name = "ConversationAccessError";
   }
@@ -77,6 +80,9 @@ export const conversationRef = (cid: string) => conversations().doc(cid);
 export const messagesRef = (cid: string) => conversationRef(cid).collection(COLLECTIONS.messages);
 export const evidenceRef = (cid: string, mid: string) => conversationRef(cid).collection(COLLECTIONS.evidence).doc(mid);
 export const userBlocksRef = (uid: string) => db().collection(COLLECTIONS.userBlocks).doc(uid);
+const userRef = (uid: string) => db().collection(COLLECTIONS.users).doc(uid);
+/** Account states that receive no message (SELLER_UNREACHABLE of src/lib/listings/public.ts, kept here to avoid its import graph). */
+export const UNREACHABLE_STATUSES: readonly UserDoc["status"][] = ["banned", "suspended", "closed"];
 
 function codeOf(error: unknown): unknown {
   return typeof error === "object" && error !== null ? (error as { code?: unknown }).code : undefined;
@@ -232,7 +238,8 @@ export interface AppendResult {
  * Appends a message (D4, D7) in one transaction: the sender must be a participant (else
  * "missing"), nobody blocked the other ("blocked": the `blockedBy` mirror, then the userBlocks
  * lists of both accounts, which decide, audit D1a-10), the conversation is not frozen ("frozen"),
- * no participant closed the account ("closed", L7).
+ * no participant closed the account ("closed", L7), the recipient's account is not suspended,
+ * banned or closed ("unreachable": the users/{uid} status, read in the same transaction).
  * The recipient's unread count + 1; archive and delete-for-me are lifted for both participants.
  * `extend` adds conversation fields to the same transaction (appointments, booking requests), after these checks.
  */
@@ -244,11 +251,15 @@ export async function appendMessage(cid: string, given: NewMessageInput, extend?
     if (!conversation || !isParticipant(conversation, input.senderUid)) throw new ConversationAccessError("missing");
     if (conversation.blockedBy.length > 0) throw new ConversationAccessError("blocked");
     const recipientUid = counterpartOf(conversation, input.senderUid);
-    const blocks = blocksOf(await tx.getAll(userBlocksRef(input.senderUid), userBlocksRef(recipientUid)));
+    const [senderBlocks, recipientBlocks, recipient] = await tx.getAll(userBlocksRef(input.senderUid), userBlocksRef(recipientUid), userRef(recipientUid));
+    const blocks = blocksOf([senderBlocks!, recipientBlocks!]);
     if (isPairBlocked(blocks, input.senderUid, recipientUid)) throw new ConversationAccessError("blocked");
     if (conversation.status === "frozen") throw new ConversationAccessError("frozen");
     // A participant closed the account (L7): the other one keeps reading, nobody writes.
     if ((conversation.accountClosed ?? []).length > 0) throw new ConversationAccessError("closed");
+    // Nothing is delivered to a suspended, banned or closed account (audit C-6), as no conversation starts with one.
+    const recipientStatus: unknown = recipient!.get("status");
+    if (!recipient!.exists || (UNREACHABLE_STATUSES as readonly unknown[]).includes(recipientStatus)) throw new ConversationAccessError("unreachable");
     const extension = extend?.(conversation);
     const extra = extension?.fields ?? {};
     if (extension?.message) input = { ...input, ...extension.message };
@@ -288,7 +299,7 @@ export async function appendMessage(cid: string, given: NewMessageInput, extend?
     );
     return { conversation, recipientUid, writes: evidence ? 3 : 2 };
   });
-  void consume("firestore.reads", 3);
+  void consume("firestore.reads", 4);
   void consume("firestore.writes", result.writes);
   return { messageId: messageRef.id, conversation: result.conversation, recipientUid: result.recipientUid };
 }

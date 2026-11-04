@@ -7,10 +7,11 @@ import { PLATFORM_RULES } from "./shared";
 // `{task}.v{PROMPT_GENERATION}.{8 hex of sha256(systemPrompt)}`: the hash follows every change of
 // PLATFORM_RULES or of a task text (a report-reason label included), so a stored proposal is tied
 // to the exact prompt that produced it (audit D1b-11); the generation is bumped by hand when the
-// meaning of a task changes (v2: user fields in tags + untrusted-content rule, audit D1b-03). The
-// user content (masked) goes in the user turn.
+// meaning of a task changes (v2: user fields in tags + untrusted-content rule, audit D1b-03; v3:
+// text visible in images is user content under the same rule, security review D-4). The user
+// content (masked) goes in the user turn.
 
-export const PROMPT_GENERATION = 2;
+export const PROMPT_GENERATION = 3;
 
 const LISTING_SCREEN = `Task: screen one classified listing (title, description, category, price, city and up to three photos labelled "Image 1:", "Image 2:", ...).
 

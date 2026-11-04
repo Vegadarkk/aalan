@@ -112,6 +112,13 @@ export const actionSchema = z
     /** changeEmail: the confirmation link of a new address (Z1-10, src/lib/account/email-change.ts). */
     mode: z.enum(["verifyEmail", "resetPassword", "changeEmail"]),
     oobCode: z.string().min(10).max(512),
+    /**
+     * verifyEmail from another device than the sign-up's: the account password (the previous answer
+     * says `password_required`), checked with the login protections before the code is applied.
+     */
+    password: z.string().min(1).max(PASSWORD_MAX).optional(),
+    /** With `password`, once the previous answer says `turnstile_required` (same rules as the login). */
+    turnstileToken: turnstileTokenSchema.optional(),
   })
   .strict();
 export type ActionInput = z.infer<typeof actionSchema>;
@@ -160,7 +167,13 @@ export type SignupResponse = { status: "verification_sent" };
 export type LoginResponse = { status: "signed_in"; session: SessionSummary } | { status: "turnstile_required" } | { status: "verification_required" };
 export type GoogleResponse = { status: "signed_in"; session: SessionSummary } | { status: "needs_consent"; email: string; displayName: string | null };
 export type ResetRequestResponse = { status: "sent" };
-export type ActionResponse = { status: "verified"; session: SessionSummary | null } | { status: "reset_ok"; email: string } | { status: "email_changed"; email: string };
+export type ActionResponse =
+  | { status: "verified"; session: SessionSummary | null }
+  | { status: "reset_ok"; email: string }
+  | { status: "email_changed"; email: string }
+  /** A verification link opened on another device: the code is kept until the account password is given. */
+  | { status: "password_required"; email: string }
+  | { status: "turnstile_required" };
 export type PhoneStartResponse = { status: "pending"; code: string; waLink: string; number: string; expiresAt: string };
 export type PhoneStatusResponse = { status: "none" | "pending" | "verified" | "expired"; phone: string | null };
 export type VerifyResendResponse = { status: "verification_sent" };

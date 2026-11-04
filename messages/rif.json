@@ -474,7 +474,14 @@
       "resetDoneTitle": "Awal n uɛeddi yettwabeddel",
       "resetDoneBody": "Dǧa tzemmreḍ ad tkecmeḍ s awal n uɛeddi amaynu.",
       "resetExpiredBody": "Isuɣan n ubeddel n awal n uɛeddi ṣeḥḥan yiwet n tsaɛt. Ssuter yiwen amaynu.",
-      "requestNew": "Ssuter asaɣ amaynu"
+      "requestNew": "Ssuter asaɣ amaynu",
+      "passwordTitle": "Sentem adres nnec",
+      "passwordLead": "Ḥima ad tsentmeḍ adres nnec deg lmakina-a, ari awal n uɛeddi i texetreḍ asmi tejjiḍ amiḍan.",
+      "passwordAccount": "Amiḍan: {email}",
+      "passwordSubmit": "Sentem uca kcem",
+      "passwordWrong": "Awal n uɛeddi war iṣeḥḥa ca.",
+      "passwordUnknown": "War tessineḍ ca awal n uɛeddi-a niɣ tettuḍ-t?",
+      "passwordChoose": "Xtar yiwen amaynu"
     },
     "settings": {
       "title": "Iɣewwaren inu",
@@ -709,6 +716,7 @@
       "upload_not_ready": "Yiwet n twlaft mazal tettwaxdam. Ṛaǧu kra n tesdidin, uca ɛawed.",
       "phone_required": "Senqed uṭṭun n tilifun nnec ḥima ad tsekneḍ abrid-a n umsawal.",
       "listing_unavailable": "Annonce-a war telli ca.",
+      "listing_under_review": "Annonce-a deg usenqed : war tezmireḍ ca ad tt-tbeddleḍ tura. Ad tizmireḍ ad tt-tbeddleḍ mlmi ikemmel usenqed.",
       "reveal_not_allowed": "Uṭṭun war yezmir ca ad yban tura. Senqed adres n e-mail nnec niɣ ɛawed deffir.",
       "search_unavailable": "Tarzzut war telli ca i kra n lweqt. Ɛawed deg kra n tesdidin.",
       "favorite_limit": "Tewḍeḍ lḥedd n favoris (300). Kkes kra zzaysen ḥima ad tarnuḍ wiyyaḍ.",
@@ -5396,7 +5404,7 @@
         "once": "Yiwen n udfaɛ kan s takarḍa deg tasna s taɣellist n Stripe. Ssuma HT d netta ay tettxelleṣeḍ: Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
         "credits": "Crédits bla idrimen xeddmen deg pass. Mala trniḍ wussan, ad ttwarnan crédits nnes x wid i d-yeqqimen; war ttɛeddayen ca deffir n tagra n pass.",
         "end": "Deg tagra n pass, annonces nnec yeɛeddan amḍan bla idrimen ad ttwaḥebsent, war ttwakksent ca. Ad dak-d nini 7 n wussan d 1 n wass zzat.",
-        "subscribe": "Tzemmreḍ ula ad tawiḍ abonnement deg pass: mala t-tiwiḍ ɣas 2 n wussan zzat n tagra nnes, abonnement war yettwaxelleṣ ca ɣir deg tagra n pass; mala t-tiwiḍ deffir, ad yettwaxelleṣ nican."
+        "subscribe": "Tzemmreḍ ula ad tawiḍ abonnement deg pass: s offre n pass nnec, mala t-tiwiḍ ɣas 2 n wussan zzat n tagra nnes, abonnement war yettwaxelleṣ ca ɣir deg tagra n pass. Offre nniḍen, niɣ abonnement i t-tiwiḍ deffir, ad yettwaxelleṣ nican."
       },
       "consent": {
         "terms": "Qebleɣ",

@@ -10,6 +10,7 @@ import { HttpError, forbidden } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
+import { publishRevoked } from "@/lib/messaging";
 import { enforceLimit, resetLimit } from "@/lib/rate-limit/limiter";
 import { accountByEmail, displayNameFor, userByEmail, withCodeErrors } from "./accounts";
 import { activateMember } from "./activation";
@@ -61,6 +62,8 @@ async function resetConfirm(request: Request): Promise<Response> {
   await withCodeErrors(() => confirmPasswordReset(input.oobCode, input.password));
   if (record) {
     await revokeSessions(record.uid);
+    // Open live-messaging streams checked the session once, at open: they close now (audit A-4).
+    await publishRevoked(record.uid);
     // Firebase marks the e-mail verified on a reset: a pending account becomes a member.
     await activateMember(record.uid, readClaims(record.customClaims ?? {}));
     // The account has a usable password again (a Google sign-in may have dropped it, src/lib/auth/google.ts).
@@ -90,6 +93,8 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   assertPasswordPolicy(input.password, { email, displayName: profile?.displayName });
   await auth().updateUser(uid, { password: input.password });
   await revokeSessions(uid);
+  // Every open stream closes, this device's too: its client reopens one with the new session (A-4).
+  await publishRevoked(uid);
   const minted = await createSessionForUid(uid);
   await sendPasswordChangedMail({ email, displayName: displayNameFor(profile, null, email), locale: profile?.locale ?? "fr" });
   await logConnection({ uid, event: "password_change", ip: device.identity.ip });

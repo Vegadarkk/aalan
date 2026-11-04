@@ -58,6 +58,8 @@ export type ErrorCode =
   | "phone_unverified"
   /** Listing not published any more (paused, sold, expired, removed). */
   | "listing_unavailable"
+  /** A save changing the screened content of a listing under a legal hold or an open report (409). */
+  | "listing_under_review"
   /** Phone reveal refused: account too young, e-mail unverified or quota reached. */
   | "reveal_not_allowed"
   /** Publish in an adults-only subcategory without the seller's attestation (422). */

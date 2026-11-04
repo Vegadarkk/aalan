@@ -31,7 +31,7 @@ function withTimeout<T>(promise: Promise<T>): Promise<T> {
 async function workerAlive(): Promise<CheckState> {
   if (!isValkeyConfigured("queue")) return "skipped";
   try {
-    return (await valkey("queue").exists(WORKER_HEARTBEAT_KEY)) === 1 ? "ok" : "fail";
+    return (await withTimeout(valkey("queue").exists(WORKER_HEARTBEAT_KEY))) === 1 ? "ok" : "fail";
   } catch {
     return "fail";
   }
@@ -76,4 +76,29 @@ export async function healthReport(): Promise<HealthReport> {
     info: { meilisearch: search, searchLagSeconds: lag },
     release: process.env.RELEASE ?? "dev",
   };
+}
+
+/**
+ * In-process cache of the report (security review D-6): /api/health is public, so a caller
+ * hammering it costs at most one round of Valkey and Meilisearch calls per process every
+ * CACHE_MS. Concurrent callers share the computation in flight.
+ */
+export const HEALTH_CACHE_MS = 5_000;
+let cached: { at: number; report: Promise<HealthReport> } | undefined;
+
+export function cachedHealthReport(now = Date.now()): Promise<HealthReport> {
+  if (cached && now - cached.at < HEALTH_CACHE_MS) return cached.report;
+  const report = healthReport();
+  const entry = { at: now, report };
+  cached = entry;
+  // healthReport never rejects (each check catches); a rejection is not kept anyway.
+  report.catch(() => {
+    if (cached === entry) cached = undefined;
+  });
+  return report;
+}
+
+/** Tests only: forget the cached report. */
+export function resetHealthCache(): void {
+  cached = undefined;
 }

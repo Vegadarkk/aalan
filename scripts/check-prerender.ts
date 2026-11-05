@@ -1,7 +1,8 @@
 // Checks what `next build` prerendered (.next/prerender-manifest.json), run right after it by
 // `npm run build` (CI, Docker image):
 //   node scripts/check-prerender.ts
-// - Pages rendered on their first visit only (the home): no path built ahead, and an on-demand ISR
+// - Pages rendered on their first visit only (the home, and the countdown page standing for it
+//   before the opening, which reads OPENS_AT): no path built ahead, and an on-demand ISR
 //   route (fallback null: rendered on the first request, then cached). The image is built without
 //   a search engine, so a build-time home has no listing sections, and after each deploy the purged
 //   edge would cache it. A parent's generateStaticParams (the (public) layout) would prerender them
@@ -20,7 +21,7 @@ export interface PrerenderManifest {
 }
 
 /** Rendered on the first visit, never at build. */
-export const FIRST_VISIT_ROUTES: readonly string[] = ["/[locale]"];
+export const FIRST_VISIT_ROUTES: readonly string[] = ["/[locale]", "/[locale]/ouverture"];
 
 /** Built ahead, in every locale. */
 export const BUILT_AHEAD_ROUTES: readonly string[] = ["/[locale]/aide", "/[locale]/aide/[slug]", "/[locale]/demarches", "/[locale]/demarches/[rubric]", "/[locale]/legal/[page]"];

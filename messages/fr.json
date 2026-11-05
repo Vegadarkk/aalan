@@ -115,6 +115,20 @@
     "signIn": "Se connecter",
     "discover": "Découvrir sans compte"
   },
+  "Launch": {
+    "metaTitle": "Ouverture le {date}",
+    "metaDescription": "Aalan, les petites annonces du Maroc, ouvre ses portes le {date}. Suivez-nous pour ne rien manquer.",
+    "opensOn": "Ouverture le {date}",
+    "moroccoTime": "heure du Maroc",
+    "countdownLabel": "Temps restant avant l'ouverture",
+    "days": "Jours",
+    "hours": "Heures",
+    "minutes": "Minutes",
+    "seconds": "Secondes",
+    "opening": "La porte s'ouvre…",
+    "follow": "Suivez-nous pour ne rien manquer",
+    "legal": "Informations légales"
+  },
   "Search": {
     "bar": {
       "label": "Rechercher des annonces",

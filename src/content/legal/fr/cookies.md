@@ -22,6 +22,7 @@ Ces cookies servent uniquement au fonctionnement du site, à sa sécurité ou à
 | `__Host-csrf` | Protéger vos actions contre les requêtes frauduleuses venues d'autres sites | Même durée que la session |
 | `__Host-did` | Identifiant aléatoire et signé de votre appareil, pour limiter les abus (recherches, inscriptions, affichages de numéros) | 400 jours (environ 13 mois) |
 | `__Host-tsv` | Laissez-passer signé, lié à votre appareil (`__Host-did`), déposé après une vérification anti-robot réussie (Cloudflare Turnstile) : il évite de vous la redemander et relève, un temps, la limite de recherches | 30 minutes |
+| `__Host-preview` | Avant l'ouverture du site uniquement : laissez-passer signé de l'équipe d'Aalan pour vérifier le site avant son ouverture au public ; jamais déposé chez un visiteur | 30 jours |
 | `NEXT_LOCALE` | Mémoriser la langue que vous avez choisie | 1 an |
 | `jt_consent` | Mémoriser vos choix en matière de cookies (section 6). Il n'est déposé que si {brand} utilise des traceurs soumis à votre accord et que vous faites un choix | 6 mois |
 | `theme` (stockage local) | Mémoriser l'apparence choisie, claire ou sombre | Jusqu'à ce que vous changiez de réglage ou effaciez les données du site |

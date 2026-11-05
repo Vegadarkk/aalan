@@ -105,6 +105,20 @@
     "signIn": "Kcem",
     "discover": "Ẓar bla amiḍan"
   },
+  "Launch": {
+    "metaTitle": "Arzam deg {date}",
+    "metaDescription": "Aalan, annonces n Lmeɣrib, ad yerzem tiwwura nnes deg {date}. Ḍfar-aɣ ḥima ur k-yezri walu.",
+    "opensOn": "Arzam deg {date}",
+    "moroccoTime": "tasaɛt n Lmeɣrib",
+    "countdownLabel": "Lweqt i d-yeqqimen ar arzam",
+    "days": "Ussan",
+    "hours": "Tisaɛtin",
+    "minutes": "Tisdidin",
+    "seconds": "Tisegnatin",
+    "opening": "Tawwurt qa tetterzem…",
+    "follow": "Ḍfar-aɣ ḥima ur k-yezri walu",
+    "legal": "Isallen n lqanun"
+  },
   "Search": {
     "bar": {
       "label": "Rzu x annonces",

@@ -321,6 +321,10 @@ export const proProfileSchema = z
     suspendedFrom: z.enum(PRO_STATES).optional(),
     /** State held when an admin withdrew the validation, restored by the next KYBC validation. */
     revalidationFrom: z.enum(PRO_STATES).optional(),
+    /** End of this shop's launch offer: its validation + `config/pricing.launchOffer.months`. */
+    launchOfferEndsAt: ts.optional(),
+    /** First notice of the end of the offer: the shop keeps it at least `noticeDays` from then. */
+    launchOfferNoticeFrom: ts.optional(),
     launchOfferNoticeSentAt: ts.optional(),
     /** End of the Pass Boutique (`planSource: "pass"`); kept after the end as the last pass bought. */
     passEndsAt: ts.optional(),

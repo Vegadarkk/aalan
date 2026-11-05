@@ -210,7 +210,10 @@ function Intro({ launchOffer }: { launchOffer: ProMeResponse["launchOffer"] }) {
         {launchOffer ? (
           <li className="flex items-start gap-3">
             <Gift className="mt-0.5 size-5 shrink-0 text-gold-300" aria-hidden="true" />
-            <span className="text-pretty">{t("offer", { days: launchOffer.noticeDays })}</span>
+            <span className="text-pretty">
+              {t("offer", { months: launchOffer.months, days: launchOffer.noticeDays })}
+              {launchOffer.seatsLeft === null ? null : <strong className="font-semibold"> {t("offerSeats", { left: launchOffer.seatsLeft })}</strong>}
+            </span>
           </li>
         ) : null}
         <li className="flex items-start gap-3">

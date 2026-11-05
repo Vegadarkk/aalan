@@ -224,11 +224,11 @@ export interface SubscriptionResponse {
   /** End of the running Pass Boutique (planSource "pass"), else null. */
   passEndsAt: string | null;
   graceUntil: string | null;
-  /** End of the launch offer, when set by an admin. */
+  /** End of this shop's launch offer (its own months, or the offer's `endsAt`), else null. */
   launchOfferEndsAt: string | null;
   /** Days of notice before the launch offer ends (`config/pricing.launchOffer.noticeDays`). */
   launchOfferNoticeDays: number;
-  /** The shop is on the launch offer and it is still open (a pass cannot be bought then). */
+  /** The shop is on the launch offer (a pass cannot be bought then). */
   launchOfferOpen: boolean;
   subscription: SubscriptionView | null;
   plans: PlanOffer[];

@@ -1,5 +1,5 @@
 import "server-only";
-import type { LaunchOffer, PricingConfig } from "@/config/pricing";
+import { launchOfferEndFor, type PricingConfig } from "@/config/pricing";
 import { audit } from "@/lib/audit";
 import { getFlags, getPricing } from "@/lib/config/runtime";
 import { getProProfile, listLaunchOfferProfiles, markLaunchOfferNotice, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
@@ -12,14 +12,19 @@ import { pauseListingsOverQuota } from "@/lib/pro/quota";
 import { headroom } from "@/lib/quota";
 import { profileAfter } from "./subscriptions";
 
-// End of the launch offer (phase 7 design D3), run by the nightly pro-plans job once the admin has
-// set `config/pricing.launchOffer.endsAt` with the sales open: each verified shop still on the
-// offer gets a notice at J-noticeDays, J-7 and J-1 (one mail per step, `launchOfferNoticeSentAt`),
-// then at `endsAt` the transition `launch_offer_ended` (downgraded, plan none), an audit entry,
-// its listings over the free quota paused, and a last mail. A shop that subscribed meanwhile is
-// on planSource "subscription" and is left alone. Each run sends at most what Resend's quotas leave
-// under LAUNCH_OFFER_RESEND_SHARE (non-security mail is dropped at 90 %): the shops past that wait
-// for the next night, their notice still due and their offer kept until their last mail can go.
+// End of the launch offer (phase 7 design D3; per shop since the owner's decision of 2026-11-05),
+// run by the nightly pro-plans job once sales are open (a shop must be able to subscribe before it
+// loses the offer). Each shop still on the offer ends at its own `launchOfferEndsAt` (validation +
+// `months`), or earlier at `config/pricing.launchOffer.endsAt`, but never sooner than `noticeDays`
+// after its first notice (`launchOfferNoticeFrom`): a shop whose end comes before it was ever told
+// (sales opened late, `endsAt` set close) gets its first notice at once and keeps the offer
+// `noticeDays` more. Notices at J-noticeDays, J-7 and J-1 (one mail per step,
+// `launchOfferNoticeSentAt`). At the end: the transition `launch_offer_ended` (downgraded, plan
+// none), an audit entry, its listings over the free quota paused, and a last mail. A shop that
+// subscribed meanwhile is on planSource "subscription" and is left alone. Each run sends at most what
+// Resend's quotas leave under LAUNCH_OFFER_RESEND_SHARE (non-security mail is dropped at 90 %): the
+// shops past that wait for the next night, their notice still due and their offer kept until their
+// last mail can go.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Steps after the first notice (`noticeDays`), in days before the end. */
@@ -35,15 +40,14 @@ export async function mailBudget(): Promise<number> {
   return Math.min(LAUNCH_OFFER_MAX_MAILS, daily ?? LAUNCH_OFFER_MAX_MAILS, monthly ?? LAUNCH_OFFER_MAX_MAILS);
 }
 
-/** The notice step due now (days before the end), or null: none yet, past the end, or already sent. */
-export function noticeDue(offer: LaunchOffer, sentAt: Date | undefined, now: Date): number | null {
-  if (!offer.endsAt) return null;
-  const endsAt = Date.parse(offer.endsAt);
-  if (now.getTime() >= endsAt) return null;
-  const steps = [...new Set([offer.noticeDays, ...LATER_NOTICES])].filter((days) => days > 0 && days <= offer.noticeDays).sort((a, b) => a - b);
-  const due = steps.find((days) => now.getTime() >= endsAt - days * DAY_MS);
+/** The notice step due now (days before `endsAt`), or null: none yet, past the end, or already sent. */
+export function noticeDue(endsAt: Date, noticeDays: number, sentAt: Date | undefined, now: Date): number | null {
+  const end = endsAt.getTime();
+  if (now.getTime() >= end) return null;
+  const steps = [...new Set([noticeDays, ...LATER_NOTICES])].filter((days) => days > 0 && days <= noticeDays).sort((a, b) => a - b);
+  const due = steps.find((days) => now.getTime() >= end - days * DAY_MS);
   if (due === undefined) return null;
-  return sentAt && sentAt.getTime() >= endsAt - due * DAY_MS ? null : due;
+  return sentAt && sentAt.getTime() >= end - due * DAY_MS ? null : due;
 }
 
 export interface LaunchOfferRun {
@@ -57,15 +61,9 @@ export interface LaunchOfferRun {
 export async function runLaunchOfferEnd(now = new Date()): Promise<LaunchOfferRun> {
   const run: LaunchOfferRun = { noticed: 0, ended: 0, failed: 0 };
   const [pricing, flags] = await Promise.all([getPricing(), getFlags()]);
+  // A shop must be able to subscribe before it loses the offer: nothing moves while sales are closed.
+  if (!flags.salesEnabled) return run;
   const offer = pricing.launchOffer;
-  const endsAt = offer.endsAt;
-  if (!endsAt) return run;
-  // A shop must be able to subscribe before it loses the offer.
-  if (!flags.salesEnabled) {
-    logger.warn({ endsAt }, "launch offer end date set while sales are closed: nothing done");
-    return run;
-  }
-  const ended = now.getTime() >= Date.parse(endsAt);
   const freeListings = pricing.pro.none.activeListings;
   let budget = await mailBudget();
   let after: string | null = null;
@@ -73,8 +71,14 @@ export async function runLaunchOfferEnd(now = new Date()): Promise<LaunchOfferRu
     const { profiles, next } = await listLaunchOfferProfiles(after, PAGE);
     for (const profile of profiles) {
       if (profile.lifecycle !== "verified") continue;
+      // Never told: the first notice starts the `noticeDays` the shop keeps the offer at least.
+      const noticeFrom = profile.launchOfferNoticeFrom ?? (profile.launchOfferNoticeSentAt === undefined ? now : profile.launchOfferNoticeSentAt);
+      const endsAt = launchOfferEndFor(offer, profile.launchOfferEndsAt, noticeFrom);
+      // No end of its own (granted before 2026-11-05) and no `endsAt`: nothing until an admin sets one.
+      if (!endsAt) continue;
+      const ended = now.getTime() >= endsAt.getTime();
       // Null past the end: the shop is downgraded instead.
-      const due = noticeDue(offer, profile.launchOfferNoticeSentAt, now);
+      const due = noticeDue(endsAt, offer.noticeDays, profile.launchOfferNoticeSentAt, now);
       if (!ended && due === null) continue;
       if (budget <= 0) {
         run.deferred = true;
@@ -82,11 +86,11 @@ export async function runLaunchOfferEnd(now = new Date()): Promise<LaunchOfferRu
       }
       budget -= 1;
       try {
-        if (due === null) {
-          if (await endLaunchOffer(profile.proId, endsAt, pricing, now)) run.ended += 1;
+        if (ended) {
+          if (await endLaunchOffer(profile.proId, endsAt.toISOString(), pricing, now)) run.ended += 1;
         } else {
-          await notify(profile, { kind: "ending", endsAt, freeListings, paused: 0 }, `ending-${due}-${Date.parse(endsAt)}`);
-          await markLaunchOfferNotice(profile.proId, now);
+          await notify(profile, { kind: "ending", endsAt: endsAt.toISOString(), freeListings, paused: 0 }, `ending-${due}-${endsAt.getTime()}`);
+          await markLaunchOfferNotice(profile.proId, now, profile.launchOfferNoticeFrom === undefined && profile.launchOfferNoticeSentAt === undefined);
           run.noticed += 1;
         }
       } catch (error) {

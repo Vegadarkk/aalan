@@ -26,7 +26,8 @@ import { GET as getMe } from "@/app/api/pro/me/route";
 import type { CreateListingResponse } from "@/lib/contracts/listings";
 import type { ProDecisionResponse, ProMeResponse, ProPhoneCheckResponse, ProQueueResponse, ProReview } from "@/lib/contracts/pro";
 import { getListing } from "@/lib/db/repositories/listings";
-import { getProProfile } from "@/lib/db/repositories/pro-profiles";
+import { DEFAULT_PRICING } from "@/config/pricing";
+import { getProProfile, launchOfferSeatsGranted, launchOfferSeatsRef } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { COLLECTIONS } from "@/lib/db/schemas";
@@ -162,7 +163,7 @@ describe("GET /api/pro/me", () => {
     const owner = await member();
     const result = await me(owner);
     expect(result.status).toBe(200);
-    expect(result.body).toEqual({ signupOpen: true, salesOpen: false, phoneVerification: "call", launchOffer: { noticeDays: 30 }, eligibility: { emailVerified: true, phoneVerified: false, accountActive: true }, shop: null });
+    expect(result.body).toEqual({ signupOpen: true, salesOpen: false, phoneVerification: "call", launchOffer: { noticeDays: 30, months: 6, seatsLeft: expect.any(Number) }, eligibility: { emailVerified: true, phoneVerified: false, accountActive: true }, shop: null });
   });
 
   it("follows the application from pending to verified, with the storefront and the launch offer", async () => {
@@ -198,6 +199,25 @@ describe("GET /api/pro/me", () => {
 });
 
 describe("back-office KYBC decision", () => {
+  it("validates without the launch offer once its seats are taken (owner, 2026-11-05)", async () => {
+    const granted = await launchOfferSeatsGranted();
+    await launchOfferSeatsRef().set({ granted: DEFAULT_PRICING.launchOffer.seats });
+    try {
+      const owner = await member({ phone: freshPhone() });
+      const applied = await applyAs(owner, application([await kybPiece(owner)]));
+      expect((await me(owner)).body.launchOffer).toBeNull();
+      const submittedAt = (await getProProfile(applied.body.proId))!.kybc.submittedAt!.toISOString();
+      const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${applied.body.proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
+      expect(decided.status).toBe(200);
+      expect(await getProProfile(applied.body.proId)).toMatchObject({ lifecycle: "verified", plan: "none", planSource: "none" });
+      expect((await getProProfile(applied.body.proId))?.launchOfferEndsAt).toBeUndefined();
+      expect(await launchOfferSeatsGranted()).toBe(DEFAULT_PRICING.launchOffer.seats);
+      expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ launchOffer: false });
+    } finally {
+      await launchOfferSeatsRef().set({ granted });
+    }
+  });
+
   it("verifies: Pro claims, account type, launch offer quotas, listings retagged, mail", async () => {
     const owner = await member({ phone: freshPhone() });
     const listingId = await publishedListing(owner);
@@ -215,17 +235,23 @@ describe("back-office KYBC decision", () => {
     expect(review.body.review.effectsPending).toBe(false);
     const submittedAt = review.body.review.kybc.submittedAt!;
 
+    const seatsBefore = await launchOfferSeatsGranted();
     const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
     expect(decided.status).toBe(200);
     expect(decided.body).toMatchObject({ proId, lifecycle: "verified", effectsPending: false });
     expect(decided.body.retagged).toBeGreaterThanOrEqual(1);
+    // One seat of the launch offer, 6 months from this validation (owner, 2026-11-05).
+    expect(await launchOfferSeatsGranted()).toBe(seatsBefore + 1);
+    const offerEnd = (await getProProfile(proId))?.launchOfferEndsAt;
+    expect(offerEnd!.getTime() - Date.now()).toBeGreaterThan(180 * 86_400_000);
+    expect(offerEnd!.getTime() - Date.now()).toBeLessThan(185 * 86_400_000);
 
     expect(await getProProfile(proId)).toMatchObject({ lifecycle: "verified", plan: "essentiel", planSource: "launch_offer", kybc: { status: "verified" } });
     expect((await getProProfile(proId))?.effectsPendingSince).toBeUndefined();
     expect((await getUserRecord(owner.uid))?.type).toBe("pro");
     expect(await getClaims(owner.uid)).toMatchObject({ role: "pro", proId, proRole: "owner" });
     expect(await getListing(listingId)).toMatchObject({ sellerType: "pro", proId });
-    expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30 });
+    expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30, offerEndsAt: offerEnd!.toISOString() });
     expect(await auditActions(proId)).toContain("pro.verify");
 
     // Verified, claims in place, nothing pending: a second verify is a decided application.

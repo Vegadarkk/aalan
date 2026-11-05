@@ -4,11 +4,10 @@ import { Building2, CalendarDays, CarFront, CircleCheck, FileSpreadsheet, Gift, 
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
-import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { localeParams, pageLocale } from "@/i18n/params";
 import { getFlags, getPricing } from "@/lib/config/runtime";
-import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
+import { launchOfferState } from "@/lib/pro/launch-offer-state";
 import { alternates } from "@/lib/i18n/metadata";
 import { DIRECTORY_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
@@ -62,10 +61,10 @@ export default async function ProLandingPage({ params }: { params: Params }) {
     getPricing(),
     getFlags(),
   ]);
-  const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;
+  // The first `seats` validated shops (owner, 2026-11-05), told while some are left.
+  const offer = await launchOfferState(pricing.launchOffer);
   // Closed-sales wording only while they are closed (zone 6 audit 6-05).
   const salesOpen = flags.salesEnabled;
-  const offerEnd = offer?.endsAt ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(Date.parse(offer.endsAt)) }).format(new Date(offer.endsAt)) : null;
   const pass = pricing.passes[0] ?? null;
   const essentiel = pricing.pro.essentiel.activeListings;
   return (
@@ -128,10 +127,13 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           </ul>
         </div>
         <div className="flex flex-col gap-4 self-start rounded-lg bg-surface-brand p-5">
-          {offer && (offerEnd || !salesOpen) ? (
+          {offer ? (
             <p className="flex items-start gap-3 text-sm text-pretty">
               <Gift className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
-              <span>{offerEnd ? t("offerUntil", { date: offerEnd }) : count("offer", { days: offer.noticeDays })}</span>
+              <span>
+                {count("offer", { seats: offer.seats, months: offer.months, days: offer.noticeDays })}
+                {offer.seatsLeft === null ? null : <strong className="font-semibold"> {count("offerSeats", { left: offer.seatsLeft })}</strong>}
+              </span>
             </p>
           ) : null}
           {pass ? (

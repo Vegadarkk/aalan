@@ -426,8 +426,12 @@ export interface ProMeResponse {
   salesOpen: boolean;
   /** How an unverified number gets verified: by WhatsApp before applying, or by a moderator's call during the review ("call": the form asks the number). */
   phoneVerification: "whatsapp" | "call";
-  /** The launch offer a shop verified now receives (design D3), or null when none is open. */
-  launchOffer: { noticeDays: number } | null;
+  /**
+   * The launch offer a shop validated now receives (owner, 2026-11-05): Essentiel free for `months`
+   * from its validation, `seatsLeft` of the first validations (null: counter not read); null when
+   * none is open, no seat is left, or the shop is already validated.
+   */
+  launchOffer: { noticeDays: number; months: number; seatsLeft: number | null } | null;
   eligibility: { emailVerified: boolean; phoneVerified: boolean; accountActive: boolean };
   shop: ProSelfView | null;
 }
@@ -453,7 +457,7 @@ export interface ProSelfView {
   submittedAt: string | null;
   quotas: { activeListings: number | null; listingsPerDay: number | null; photosPerListing: number };
   activeListings: number;
-  /** Launch offer in force for this shop (design D3); `endsAt` ISO or null while no end is announced. */
+  /** Launch offer in force for this shop (design D3); `endsAt` ISO (its own end) or null while none is set. */
   launchOffer: { endsAt: string | null; noticeDays: number } | null;
   /** Public storefront path segment `{slug}-{proId}`, when the storefront is shown. */
   storefront: string | null;

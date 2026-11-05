@@ -23,10 +23,11 @@ export const listingQuotasSchema = z
 export type ListingQuotas = z.infer<typeof listingQuotasSchema>;
 
 /**
- * Launch offer (owner decision Q13, 2026-10-16): while sales are closed, verified Pros get the
- * quotas and storefront of `plan` for free, without its monthly credits. An admin sets `endsAt`
- * (ISO date) when `salesEnabled` flips, at least `noticeDays` later; Pros without a subscription
- * are downgraded then.
+ * Launch offer (owner decisions Q13, 2026-10-16, and 2026-11-05): the first `seats` verified Pros
+ * get the quotas and storefront of `plan` for free, without its monthly credits, for `months` from
+ * their own validation (`proProfiles.launchOfferEndsAt`). `endsAt` (ISO date, optional) closes the
+ * offer for everyone at once. A shop is never downgraded while sales are closed, and gets at least
+ * `noticeDays` of notice once they are open (src/lib/payments/launch-offer.ts).
  */
 export const launchOfferSchema = z
   .object({
@@ -34,6 +35,10 @@ export const launchOfferSchema = z
     plan: z.enum(["essentiel", "business"]),
     noticeDays: z.number().int().min(0).max(90),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
+    /** Validations that can get the offer, counted in `system/launchOfferSeats`. */
+    seats: z.number().int().min(1).max(100_000).default(100),
+    /** Months offered from each shop's validation. */
+    months: z.number().int().min(1).max(36).default(6),
   })
   .strict();
 export type LaunchOffer = z.infer<typeof launchOfferSchema>;
@@ -177,7 +182,7 @@ export const DEFAULT_PRICING: PricingConfig = {
     premium: { activeListings: null, photosPerListing: 20, listingsPerDay: null },
   },
   graceDays: 7,
-  launchOffer: { active: true, plan: "essentiel", noticeDays: 30, endsAt: null },
+  launchOffer: { active: true, plan: "essentiel", noticeDays: 30, endsAt: null, seats: 100, months: 6 },
   options: { bump: { standard: 10, premiumCat: 20 }, featured7: { standard: 29, premiumCat: 59 }, featured30: { standard: 79, premiumCat: 149 } },
   packs: [
     // 30 / 100 / 200 / 500 MAD, bonus 0 / 10 / 15 / 20 % (owner, 2026-10-31; was 50 / 100 / 250).
@@ -215,6 +220,44 @@ export function listingQuotas(seller: Seller, config: PricingConfig = DEFAULT_PR
 /** True while the launch offer applies at `now` (active and `endsAt` unset or in the future). */
 export function launchOfferOpen(offer: LaunchOffer, now: Date): boolean {
   return offer.active && (offer.endsAt === null || Date.parse(offer.endsAt) > now.getTime());
+}
+
+/** Seats left, from the validations already counted. */
+export function launchOfferSeatsLeft(offer: LaunchOffer, granted: number): number {
+  return Math.max(0, offer.seats - granted);
+}
+
+/** `months` calendar months after `from` (UTC), the day clamped to the month's last: 31 Aug + 6 = 28/29 Feb. */
+export function addMonths(from: Date, months: number): Date {
+  const target = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + months, 1, from.getUTCHours(), from.getUTCMinutes(), from.getUTCSeconds(), from.getUTCMilliseconds()));
+  const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(from.getUTCDate(), last));
+  return target;
+}
+
+/** End of the offer granted at `grantedAt`: `months` later. */
+export function launchOfferGrantEnd(offer: LaunchOffer, grantedAt: Date): Date {
+  return addMonths(grantedAt, offer.months);
+}
+
+/** A shop's end of offer from its profile (see `launchOfferEndFor`). */
+export function shopLaunchOfferEnd(
+  offer: LaunchOffer,
+  shop: { launchOfferEndsAt?: Date; launchOfferNoticeFrom?: Date; launchOfferNoticeSentAt?: Date },
+): Date | null {
+  return launchOfferEndFor(offer, shop.launchOfferEndsAt, shop.launchOfferNoticeFrom ?? shop.launchOfferNoticeSentAt);
+}
+
+/**
+ * A shop's end of offer: the earlier of its own end and the offer's `endsAt`, never sooner than
+ * `noticeDays` after its first notice (`noticeFrom`); `null` when neither end is set.
+ */
+export function launchOfferEndFor(offer: LaunchOffer, shopEnd: Date | undefined, noticeFrom?: Date): Date | null {
+  const global = offer.endsAt === null ? null : new Date(offer.endsAt);
+  const end = !shopEnd ? global : global && global.getTime() < shopEnd.getTime() ? global : shopEnd;
+  if (!end || !noticeFrom) return end;
+  const floor = noticeFrom.getTime() + offer.noticeDays * 24 * 60 * 60 * 1000;
+  return floor > end.getTime() ? new Date(floor) : end;
 }
 
 /** Price in credits of `option` for a listing of `categoryId` (the server's config, never the client's). */

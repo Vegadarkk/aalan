@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { checkAdsTxt, checkConfig, checkHeaders, checkHealth, checkIndexing, checkLegal, checkObservatory, checkRecords, checkRifIndexing, checkRobotsTxt, drillRecorded, headLinks, MANUAL_ITEMS, parseLaunchCli, type LegalState } from "../../scripts/launch-check.ts";
+import { checkAdsTxt, checkConfig, checkSecurityTxt, checkHeaders, checkHealth, checkIndexing, checkLegal, checkObservatory, checkRecords, checkRifIndexing, checkRobotsTxt, drillRecorded, headLinks, MANUAL_ITEMS, parseLaunchCli, type LegalState } from "../../scripts/launch-check.ts";
 
 // scripts/launch-check.ts (D21): what each public answer must say before the site opens.
 
@@ -72,6 +72,15 @@ describe("search engine checks", () => {
     expect(checkAdsTxt(200, "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n", "off")).toMatchObject({ ok: false });
     expect(checkAdsTxt(200, "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n", "live")).toMatchObject({ ok: true });
     expect(checkAdsTxt(404, "", "test")).toMatchObject({ ok: false });
+  });
+
+  it("security.txt has a contact, a future expiry and this site's canonical URL", () => {
+    const now = new Date("2026-11-05T00:00:00Z");
+    const good = `Contact: mailto:abuse@aalan.ma?subject=S%C3%A9curit%C3%A9\nExpires: 2027-05-04T00:00:00Z\nPreferred-Languages: fr, ar, en\nCanonical: ${SITE}/.well-known/security.txt\n`;
+    expect(checkSecurityTxt(200, good, SITE, now)).toMatchObject({ ok: true });
+    expect(checkSecurityTxt(200, good.replace("2027-05-04", "2026-01-01"), SITE, now).detail).toBe("no future Expires");
+    expect(checkSecurityTxt(200, good, "https://other.example", now).ok).toBe(false);
+    expect(checkSecurityTxt(404, "", SITE, now)).toMatchObject({ ok: false });
   });
 
   it("reads the head links whatever the attribute order and case", () => {

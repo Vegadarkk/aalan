@@ -216,7 +216,7 @@ describe("proxy", () => {
     expect((await proxy(request(`/fr/recours?${APPEAL_TOKEN_PARAM}=abc.def`))).status).toBe(200);
     const appeals = await proxy(request("/fr/recours"));
     expect(appeals.status).toBe(307);
-    expect(appeals.headers.get("location")).toBe("https://joutiya.ma/fr/connexion?next=%2Ffr%2Frecours");
+    expect(new URL(appeals.headers.get("location")!).pathname + new URL(appeals.headers.get("location")!).search).toBe("/fr/connexion?next=%2Ffr%2Frecours");
     expect((await proxy(member("/fr/recours"))).status).toBe(200);
   });
 

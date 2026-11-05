@@ -142,12 +142,16 @@ describe("buildSitemapFile", () => {
   });
 
   it("lists home, the Pro page, the guide, every category page and the deeper landing pages with at least 3 listings", async () => {
+    // Car brand and model pages follow the same threshold, example listings excluded: Renault (3
+    // real) is listed, Clio (2 real + 1 example) is not.
     await engine.upsert([
       // vehicules/voitures: 3 in Casablanca, 1 in Rabat; vehicules/velos: 2 in Casablanca.
-      doc("a2345678", "voitures", "casablanca"),
-      doc("b2345678", "voitures", "casablanca"),
-      doc("c2345678", "voitures", "casablanca"),
-      doc("d2345678", "voitures", "rabat"),
+      // Brands: 3 Renault (2 Clio), 1 « Autre » (never a page).
+      { ...doc("a2345678", "voitures", "casablanca"), a_car_brand: "renault", a_car_model: "renault-clio" },
+      { ...doc("b2345678", "voitures", "casablanca"), a_car_brand: "renault", a_car_model: "renault-clio" },
+      { ...doc("c2345678", "voitures", "casablanca"), a_car_brand: "renault" },
+      { ...doc("d2345678", "voitures", "rabat"), a_car_brand: "autre" },
+      { ...doc("m2345678", "voitures", "rabat"), a_car_brand: "renault", a_car_model: "renault-clio", isExample: true },
       doc("e2345678", "velos", "casablanca"),
       doc("f2345678", "velos", "casablanca"),
       // immobilier: 2 listings only, plus 2 example listings that never count.
@@ -160,7 +164,7 @@ describe("buildSitemapFile", () => {
     const paths = [...xml.matchAll(/<loc>https:\/\/aalan\.ma\/fr([^<]*)<\/loc>/g)].map((match) => match[1]);
     // Every top-level category is listed whatever its count (owner, 4 Nov 2026): immobilier with 2
     // real listings, the empty ones too.
-    expect(paths.sort()).toEqual(["", ...CATEGORIES.map((category) => `/c/${category.id}`), "/c/vehicules/casablanca", "/c/vehicules/voitures", "/c/vehicules/voitures/casablanca", "/boutiques", "/boutiques/activite/boutiques", "/boutiques/activite/concessions-automobiles", "/boutiques/activite/agences-immobilieres", "/boutiques/activite/location-voitures", "/boutiques/activite/location-saisonniere", "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`), "/professionnels"].sort());
+    expect(paths.sort()).toEqual(["", ...CATEGORIES.map((category) => `/c/${category.id}`), "/c/vehicules/casablanca", "/c/vehicules/voitures", "/c/vehicules/voitures/casablanca", "/c/vehicules/voitures/renault", "/boutiques", "/boutiques/activite/boutiques", "/boutiques/activite/concessions-automobiles", "/boutiques/activite/agences-immobilieres", "/boutiques/activite/location-voitures", "/boutiques/activite/location-saisonniere", "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`), "/professionnels"].sort());
     expect(xml.match(/<url>/g)).toHaveLength(paths.length * 2);
   });
 });

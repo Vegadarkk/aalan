@@ -8,15 +8,17 @@ import { directoryPath } from "@/lib/pro/directory-view";
 import { PRO_SECTORS } from "@/lib/pro/profile-schema";
 import { searchEngine } from "@/lib/search/engine";
 import { buildFilter, NOT_EXAMPLE } from "@/lib/search/service";
-import { SEO_MIN_LISTINGS, seoPath, seoSearchParams, type SeoTarget } from "./seo";
+import { carModelById } from "@/config/car-models";
+import { CAR_SCOPE, isCarPageBrand, SEO_MIN_LISTINGS, seoPath, seoSearchParams, type SeoTarget } from "./seo";
 import { DIRECTORY_PATH, PRO_LANDING_PATH } from "./shortcuts";
-import { SITEMAP_SHARDS, SearchUnavailableError, type EngineQuery, type SearchDocument } from "./types";
+import { attributeField, SITEMAP_SHARDS, SearchUnavailableError, type EngineQuery, type SearchDocument } from "./types";
 
 // XML sitemaps (design D16), production only, served by src/app/sitemaps/[file]/route.ts (ISR, one
 // hour) and reached by verified bots only (Cloudflare WAF rule `sitemaps_verified_bots`):
 // - index.xml (also /sitemap.xml by rewrite): pages.xml + one listings-{k}.xml per non-empty shard;
 // - pages.xml: home, the public Pro page, the shop directory, the admin procedures guide and the
-//   landing pages: every /c/{category}, and the deeper ones with >= SEO_MIN_LISTINGS listings (facet counts);
+//   landing pages: every /c/{category}, and the deeper ones with >= SEO_MIN_LISTINGS listings (facet
+//   counts), car brand and model pages included;
 // - listings-{k}.xml: listings with `sitemapShard === k` (documents API, not capped by maxTotalHits),
 //   lastmod = listing updatedAt.
 // Every URL comes in fr and ar, each <url> carrying the whole hreflang cluster (+ x-default), from
@@ -72,10 +74,13 @@ export function sitemapIndex(files: readonly string[]): string {
 }
 
 /** Real listings only: example listings never make a landing page indexable (same rule as seoCounts). */
-function countQuery(target: SeoTarget, facet: string): EngineQuery {
+function countQuery(target: SeoTarget, facets: readonly string[]): EngineQuery {
   const scope = buildFilter(seoSearchParams(target), new Date());
-  return { q: "", filter: scope ? { and: [scope, NOT_EXAMPLE] } : NOT_EXAMPLE, page: 1, hitsPerPage: 1, facets: [facet], fields: ["id"] };
+  return { q: "", filter: scope ? { and: [scope, NOT_EXAMPLE] } : NOT_EXAMPLE, page: 1, hitsPerPage: 1, facets: [...facets], fields: ["id"] };
 }
+
+const BRAND_FIELD = attributeField("car-brand");
+const MODEL_FIELD = attributeField("car-model");
 
 /** Shards holding at least one document. */
 export async function listingShards(): Promise<number[]> {
@@ -92,11 +97,12 @@ export async function listingShards(): Promise<number[]> {
  * Landing pages worth indexing: every top-level category, then the deeper pages over the D15
  * thresholds, from every subcategory x city count from one facet
  * query per subcategory (one engine round trip); category x city totals are their sums, since a
- * listing has exactly one subcategory and one city.
+ * listing has exactly one subcategory and one city. The car brand and model pages come from one more
+ * query of that round trip (brand and model facets of the car subcategory).
  */
 export async function indexableLandingPaths(): Promise<string[]> {
   const subcategories = CATEGORIES.flatMap((category) => category.subcategories.map((sub) => ({ category: category.id, subcategory: sub.id })));
-  const results = await searchEngine().search(subcategories.map((target) => countQuery(target, "citySlug")));
+  const results = await searchEngine().search([...subcategories.map((target) => countQuery(target, ["citySlug"])), countQuery(CAR_SCOPE, [BRAND_FIELD, MODEL_FIELD])]);
   const paths: string[] = [];
   const categoryCities = new Map<string, Map<string, number>>();
   subcategories.forEach((target, index) => {
@@ -116,6 +122,14 @@ export async function indexableLandingPaths(): Promise<string[]> {
     for (const [city, count] of categoryCities.get(category.id) ?? []) {
       if (count >= SEO_MIN_LISTINGS) paths.push(seoPath({ category: category.id, city }));
     }
+  }
+  const cars = results[subcategories.length]?.facetDistribution ?? {};
+  for (const [brand, count] of Object.entries(cars[BRAND_FIELD] ?? {})) {
+    if (count >= SEO_MIN_LISTINGS && isCarPageBrand(brand)) paths.push(seoPath({ ...CAR_SCOPE, brand }));
+  }
+  for (const [id, count] of Object.entries(cars[MODEL_FIELD] ?? {})) {
+    const model = carModelById(id);
+    if (count >= SEO_MIN_LISTINGS && model && isCarPageBrand(model.brand)) paths.push(seoPath({ ...CAR_SCOPE, brand: model.brand, model: model.id }));
   }
   return paths.sort();
 }

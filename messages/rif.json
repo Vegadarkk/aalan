@@ -3688,7 +3688,9 @@
       "category": "{category} deg Lmeɣrib",
       "categoryCity": "{category} deg {city}",
       "subcategory": "{subcategory} deg Lmeɣrib",
-      "subcategoryCity": "{subcategory} deg {city}"
+      "subcategoryCity": "{subcategory} deg {city}",
+      "brand": "{subcategory} {brand} deg Lmeɣrib",
+      "model": "{brand} {model} deg Lmeɣrib"
     },
     "metaTitle": "{heading}: annonces",
     "metaDescription": "{heading}: {count, plural, one {# annonce i yettbanen} other {# n annonces i yettbanen}} deg Aalan. Sɣ d zzenz jar imdanen d professionnels, war ma d-yban uṭṭun nnec.",
@@ -3698,6 +3700,9 @@
     "seeAll": "Ẓer marra {count} n annonces",
     "subcategoriesLabel": "Tiggayin timeẓẓyanin",
     "allChip": "Marra",
+    "brandsTitle": "{scope} s yal lmarka",
+    "modelsLabel": "Imudilen",
+    "allModelsChip": "Marra imudilen",
     "recentTitle": "Annonces tineggura",
     "citiesTitle": "{scope} s yal tamdint",
     "nearbyTitle": "{scope} deg tmdinin i yeqqerben",

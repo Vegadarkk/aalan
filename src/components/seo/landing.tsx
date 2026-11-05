@@ -93,6 +93,18 @@ export interface LandingCityLink {
 
 /** Internal links to the same scope in other cities (nearest first around a city). */
 export function CityLinks({ links, locale, title, id }: { links: readonly LandingCityLink[]; locale: Locale; title: string; id: string }) {
+  return <LandingLinks id={id} title={title} links={links.map((link) => ({ id: link.city.slug, label: cityName(link.city, locale), count: link.count, href: link.href }))} />;
+}
+
+export interface LandingLink {
+  id: string;
+  label: string;
+  count: number;
+  href: string;
+}
+
+/** A titled grid of internal links with their counts (cities, car brands). */
+export function LandingLinks({ links, title, id }: { links: readonly LandingLink[]; title: string; id: string }) {
   return (
     <nav aria-labelledby={id} className="flex flex-col gap-4 border-t border-border pt-8">
       <h2 id={id} className="text-xl font-semibold">
@@ -100,9 +112,9 @@ export function CityLinks({ links, locale, title, id }: { links: readonly Landin
       </h2>
       <ul className="grid grid-cols-2 gap-x-6 sm:grid-cols-3 lg:grid-cols-4">
         {links.map((link) => (
-          <li key={link.city.slug} className="min-w-0 border-b border-border/70">
+          <li key={link.id} className="min-w-0 border-b border-border/70">
             <Link href={link.href} prefetch={false} className="group flex min-h-11 items-center justify-between gap-3 py-2 text-sm">
-              <span className={cn(quietLinkClassName, "truncate text-foreground group-hover:decoration-current")}>{cityName(link.city, locale)}</span>
+              <span className={cn(quietLinkClassName, "truncate text-foreground group-hover:decoration-current")}>{link.label}</span>
               <span className="shrink-0 tabular-nums text-foreground-muted">{formatCount(link.count)}</span>
             </Link>
           </li>

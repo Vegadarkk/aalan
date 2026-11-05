@@ -37,6 +37,8 @@ export const ACCOUNT_API = {
   export: "/api/account/export",
   /** GET -> StorefrontSettings; POST StorefrontInput -> StorefrontSettings (vitrine-avis §1). */
   storefront: "/api/account/storefront",
+  /** PUT (the image itself as the body) -> AvatarResponse; DELETE -> AvatarResponse (audit §7). */
+  avatar: "/api/account/avatar",
   /** GET -> NotificationSettings; POST NotificationSettingsInput -> NotificationSettings (audit B2). */
   notifications: "/api/account/notifications",
   /**

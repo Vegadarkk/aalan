@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { getAbuseRules } from "@/lib/config/runtime";
 import { storefrontSchema, type StorefrontSettings } from "@/lib/contracts/account";
 import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
+import { avatarUrl } from "./avatar-url";
 import { updateStorefront, type StorefrontPatch } from "@/lib/db/repositories/users";
 import { HttpError, notFound } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
@@ -19,7 +20,7 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 // bio follows the listing text rules and refuses sensitive data outright: no human queue for it.
 
 export function storefrontSettings(user: UserRecord): StorefrontSettings {
-  return { publicId: user.publicId, bio: user.storefront?.bio ?? "", bannerKey: user.storefront?.bannerKey ?? DEFAULT_BANNER, citySlug: user.citySlug ?? null };
+  return { publicId: user.publicId, avatar: avatarUrl(user.avatarKey, "l"), bio: user.storefront?.bio ?? "", bannerKey: user.storefront?.bannerKey ?? DEFAULT_BANNER, citySlug: user.citySlug ?? null };
 }
 
 /** The patch to store, or a 422 `invalid_text` naming the field and the issue; `terms`: config/abuse prohibited lists. */

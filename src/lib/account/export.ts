@@ -29,6 +29,7 @@ import { assertQuotas } from "@/lib/quota/gate";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { listSavedSearches } from "@/lib/saved-searches/repository";
 import { EXPORT_LIMITS, messageAllowances } from "./rules";
+import { avatarUrl } from "./avatar-url";
 
 // GET /api/account/export (phase 5 design D26, lot L7): the member's personal data as one JSON
 // file (RGPD art. 15 access, art. 20 portability; loi 09-08). Only what the account itself wrote
@@ -379,6 +380,7 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
           regionCode: user.regionCode ?? null,
           citySlug: user.citySlug ?? null,
           storefront: { bio: user.storefront?.bio ?? null, bannerKey: user.storefront?.bannerKey ?? null },
+          avatar: avatarUrl(user.avatarKey, "l"),
           locale: user.locale,
           status: user.status,
           badges: { ...user.badges },

@@ -192,6 +192,7 @@ const seller: PublicSeller = {
   memberSince: "2025-10",
   badges: { emailVerified: true, phoneVerified: true, proCertified: false },
   citySlug: "casablanca",
+  avatar: null,
   publishedCount: 2,
   bio: null,
   bannerKey: "zellige",
@@ -214,6 +215,15 @@ describe("SellerCard", () => {
     expect(html).not.toContain("ignored");
     // The name keeps its own direction inside the heading, apart from the Pro badge.
     expect(html).toMatch(/<a [^>]*dir="auto"[^>]*>Salma<\/a>/);
+  });
+
+  it("shows the member's profile photo in the arch when there is one, else the initial (audit §7)", () => {
+    const small = `${MEDIA}/avatars/abcdefghjk/a-lx1-s.webp`;
+    const withPhoto = render(<SellerCard seller={{ ...seller, avatar: { small, large: small.replace("-s.webp", "-l.webp") } }} fallbackName="" fallbackType="individual" locale="fr" />);
+    expect(withPhoto).toContain(`src="${small}"`);
+    expect(withPhoto).toContain('data-testid="seller-photo"');
+    const initial = render(<SellerCard seller={seller} fallbackName="" fallbackType="individual" locale="fr" />);
+    expect(initial).not.toContain("<img");
   });
 
   it("sends a Pro with a storefront to /boutique: name and 'Voir la boutique' with the count", () => {

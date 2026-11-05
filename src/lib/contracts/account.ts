@@ -157,6 +157,8 @@ export interface AccountExport {
     regionCode: string | null;
     citySlug: string | null;
     storefront: { bio: string | null; bannerKey: string | null };
+    /** URL of the profile photo, null while none. */
+    avatar: string | null;
     locale: Locale;
     status: string;
     badges: { emailVerified: boolean; phoneVerified: boolean; proCertified: boolean };
@@ -238,9 +240,20 @@ export const storefrontSchema = z
   .strict();
 export type StorefrontInput = z.infer<typeof storefrontSchema>;
 
+/** The profile photo's upper bound as sent (audit §7): re-encoded to a few dozen KB. */
+export const AVATAR_MAX_BYTES = 4 * 1024 * 1024;
+export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+/** PUT / DELETE /api/account/avatar: the large variant's URL, null once removed. */
+export type AvatarResponse = { avatar: string | null };
+
+/** DELETE /api/admin/users/{uid}/avatar: why the moderator removes the photo (statement of reasons). */
+export const adminAvatarRemoveSchema = z.object({ details: z.string().trim().min(10).max(1000) }).strict();
+
 /** What the storefront settings show and the profile page renders. */
 export interface StorefrontSettings {
   publicId: string;
+  /** URL of the profile photo (large variant), null while none (the initial stands in). */
+  avatar: string | null;
   bio: string;
   bannerKey: BannerKey;
   citySlug: string | null;

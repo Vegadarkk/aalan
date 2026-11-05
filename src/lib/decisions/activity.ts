@@ -26,6 +26,7 @@ const EXACT: Record<string, ActivityKind> = {
   "pro.social.hidden": { label: "Réseaux sociaux d'une boutique masqués" },
   "pro.social.restored": { label: "Réseaux sociaux d'une boutique rétablis" },
   "phone.revoked": { label: "Badge téléphone retiré" },
+  "user.avatar_removed": { label: "Photo de profil retirée" },
   "reporter.warn": { label: "Signalant averti pour abus" },
   "reporter.suspend": { label: "Signalements d'un membre suspendus" },
   "appeal.upheld": { label: "Recours rejeté, décision maintenue" },

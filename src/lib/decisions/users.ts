@@ -4,6 +4,7 @@ import { findUserByPublicId, getUserRecord } from "@/lib/db/repositories/profile
 import type { UserModerationView } from "./contracts";
 import { nextStep } from "./ladder";
 import { getPrivate, getSuspension } from "./repository";
+import { avatarUrl } from "@/lib/account/avatar-url";
 
 // Account view of the back office (design D14, D15, D24): status, strikes and the ladder's next
 // step, the running suspension, the phone badge, reporter accuracy (art. 23) and the latest
@@ -31,6 +32,7 @@ export async function userModerationView(uid: string, now = new Date()): Promise
     strikes: { level: strikes.level, lastAt: strikes.lastAt?.toISOString() ?? null, suspendedUntil: strikes.suspendedUntil?.toISOString() ?? null },
     nextStep: nextStep(strikes.level),
     suspension: suspension ? { until: suspension.until.toISOString(), decisionId: suspension.decisionId } : null,
+    avatar: avatarUrl(user.avatarKey, "l"),
     phone: { verified: user.badges.phoneVerified, verifiedAt: account?.phoneVerifiedAt?.toISOString() ?? null },
     reporter: {
       total: reporter?.total ?? 0,

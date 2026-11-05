@@ -106,7 +106,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
             <StorefrontBanner bannerKey={profile.bannerKey} id={profile.publicId} />
           </div>
           <div className="flex flex-col gap-5 px-1 sm:flex-row sm:items-start sm:gap-6 sm:px-6">
-            <SellerAvatar name={profile.displayName} size="xl" className="-mt-12 outline-4 outline-background sm:-mt-14" />
+            <SellerAvatar name={profile.displayName} src={profile.avatar?.large} size="xl" className="-mt-12 outline-4 outline-background sm:-mt-14" />
             <div className="flex min-w-0 flex-1 flex-col gap-2 sm:pt-4">
               <p className="text-sm text-foreground-muted">{profile.sellerType === "pro" ? t("roleBusiness") : t("roleIndividual")}</p>
               <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold text-balance break-words">

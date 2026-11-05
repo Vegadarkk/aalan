@@ -27,6 +27,7 @@ import { requestIdentity } from "@/lib/rate-limit/keys";
 import { notifySearchIndex } from "@/lib/search/queue";
 import { clearSessionCookies } from "@/lib/security/cookies";
 import { deleteAllFavorites, deleteAllSavedSearches, markAccountClosed, readBillingState, readClosureAccount } from "./repository";
+import { removeAvatarQuietly } from "./avatar";
 import { CLOSURE_LISTING_STATUSES, closureBlocker, closurePurgeAt, isRecentSignIn } from "./rules";
 
 // POST /api/account/close (phase 5 design D26, lot L7; AF §5 UserPrivate, §6 "La clôture passe par
@@ -163,6 +164,7 @@ export async function closeAccount(uid: string, options: { now?: Date; ip?: stri
   const mark = await markAccountClosed(uid, now);
   const listings = await removeListings(uid, account.publicId, now);
   if (account.proId) await revalidateStorefront(account.proId);
+  await removeAvatarQuietly(uid, now);
   const conversations = await closeAccountConversations(uid, now);
   const favorites = await deleteFavorites(uid);
   const savedSearches = await deleteAllSavedSearches(uid);

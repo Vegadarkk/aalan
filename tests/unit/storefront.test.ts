@@ -48,7 +48,7 @@ describe("storefront settings", () => {
 
   it("answers the default banner until one is chosen", () => {
     const base = { publicId: "abcdefghjk", citySlug: undefined } as unknown as Parameters<typeof storefrontSettings>[0];
-    expect(storefrontSettings(base)).toEqual({ publicId: "abcdefghjk", bio: "", bannerKey: "zellige", citySlug: null });
+    expect(storefrontSettings(base)).toEqual({ publicId: "abcdefghjk", avatar: null, bio: "", bannerKey: "zellige", citySlug: null });
   });
 });
 

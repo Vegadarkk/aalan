@@ -534,7 +534,24 @@
         "loading": "Vitrine ad tettwaɛemmar",
         "retry": "Ɛawed",
         "proBody": "Tasna nnec tazayezt d tafrent n tḥanut nnec: tabanirt, asenṭel, tansa d ikuden ttwasbedden deg tallunt Pro.",
-        "proEdit": "Beddel tafiche n tḥanut inu"
+        "proEdit": "Beddel tafiche n tḥanut inu",
+        "photo": {
+          "label": "Tawlaft n umaɣnu",
+          "hint": "JPEG, PNG niɣ WebP, 4 Mo ɣas. Ad d-tban deg umaɣnu nnec d rjar n yiberriḥen nnec. Mači d tamencat: war tawlaft, ad yeqqim usekkil amezwaru n yisem nnec.",
+          "choose": "Rnu tawlaft",
+          "replace": "Beddel tawlaft",
+          "remove": "Kkes",
+          "saved": "Tawlaft tettwaḥrez. Amaɣnu nnec yettwabeddel.",
+          "removed": "Tawlaft tettwakkes.",
+          "errors": {
+            "file_too_large": "Afaylu-a yugar 4 Mo, niɣ tawlaft meqqaṛ aṭas. Azen tawlaft tamectuḥt.",
+            "unsupported_media": "Afaylu-a mači d tawlaft JPEG, PNG niɣ WebP yettwaɣran.",
+            "image_refused": "Asenqed nneɣ awurman yugi tawlaft-a (CGU §7). War tettwasufeɣ ca. Mala d tuccḍa, aru-aneɣ.",
+            "storage_full": "Tuzna n twlafin tbedd i kra n tsaɛtin. Ɛreḍ tikkelt nniḍen ar zdeffer.",
+            "rate_limited": "Aṭas n ubeddel n twlaft ass-a. Ɛreḍ azekka.",
+            "failed": "Tawlaft war tettwaḥrez ca. Ɛreḍ tikkelt nniḍen."
+          }
+        }
       },
       "email": {
         "title": "Adres n e-mail",

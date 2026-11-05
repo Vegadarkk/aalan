@@ -171,6 +171,7 @@ describe("getSeller", () => {
       memberSince: "2025-10",
       badges: { emailVerified: true, phoneVerified: true, proCertified: false },
       citySlug: "casablanca",
+      avatar: null,
       publishedCount: 7,
       bio: null,
       bannerKey: "zellige",

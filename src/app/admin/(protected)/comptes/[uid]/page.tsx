@@ -14,6 +14,7 @@ import { SANCTION_LABEL, stepChoice } from "../../../_components/decide-state";
 import { Facts, linkClassName, Panel } from "../../../_components/panel";
 import { CopyReference } from "../../../_components/copy-reference";
 import { AuthorityNoticeBanner } from "../../../_components/authority-notice-banner";
+import { RemoveAvatarButton } from "../../../_components/remove-avatar-button";
 import { RevokePhoneButton } from "../../../_components/revoke-phone-button";
 import { listingDetails, listingThumb } from "../../../_lib/target-cards";
 
@@ -128,6 +129,18 @@ export default async function AccountPage({ params }: { params: Promise<{ uid: s
         <Panel title="Téléphone">
           <Facts rows={[["Numéro vérifié", user.phone.verified ? (user.phone.verifiedAt ? `Oui, depuis le ${formatDateTime(user.phone.verifiedAt)}` : "Oui") : "Non"]]} />
           {user.phone.verified ? <RevokePhoneButton uid={user.uid} name={user.displayName} /> : null}
+        </Panel>
+
+        <Panel title="Photo de profil">
+          {user.avatar ? (
+            <div className="flex flex-wrap items-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element -- an already sized 4:5 WebP on the media origin. */}
+              <img src={user.avatar} alt={`Photo de profil de ${user.displayName}`} width={64} height={80} className="h-20 w-16 rounded-md bg-surface-muted object-cover" />
+              <RemoveAvatarButton uid={user.uid} name={user.displayName} />
+            </div>
+          ) : (
+            <p className="text-sm text-foreground-muted">Aucune photo : l&apos;initiale du nom s&apos;affiche.</p>
+          )}
         </Panel>
 
         <Panel title="Comme signalant">

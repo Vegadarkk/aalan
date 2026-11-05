@@ -45,6 +45,13 @@ async function signFor(owner: Member, targetId: string, overrides: Record<string
   return call<SignUploadResponse & ErrorBody>(sign, "POST", "/api/uploads/sign", { member: owner, body: body(targetId, overrides) });
 }
 
+// Signs then removes the upload, so the photo quota never caps a rate-limit test.
+async function signAndFree(owner: Member, targetId: string, overrides: Record<string, unknown> = {}) {
+  const signed = await signFor(owner, targetId, overrides);
+  expect(signed.status).toBe(201);
+  expect((await call(removeUpload, "DELETE", `/api/uploads/${signed.body.uploadId}`, { member: owner })).status).toBe(204);
+}
+
 describe("POST /api/uploads/sign", () => {
   it("signs a 5-minute PUT to the quarantine bucket and records the signed upload", async () => {
     const owner = await member();
@@ -178,18 +185,18 @@ describe("POST /api/uploads/sign", () => {
 
   it("limits signatures to 30 an hour per account", async () => {
     const owner = await member();
-    const drafts = [await draft(owner), await draft(owner), await draft(owner), await draft(owner)];
-    for (let i = 0; i < 30; i += 1) expect((await signFor(owner, drafts[Math.floor(i / 10)]!)).status).toBe(201);
-    const limited = await signFor(owner, drafts[3]!);
+    const id = await draft(owner);
+    for (let i = 0; i < 30; i += 1) await signAndFree(owner, id);
+    const limited = await signFor(owner, id);
     expect([limited.status, limited.body.error.code]).toEqual([429, "rate_limited"]);
     expect(Number(limited.response.headers.get("retry-after"))).toBeGreaterThan(0);
   });
 
   it("limits the declared bytes to 200 MiB a day per account", async () => {
     const owner = await member();
-    const drafts = [await draft(owner), await draft(owner), await draft(owner)];
-    for (let i = 0; i < 20; i += 1) expect((await signFor(owner, drafts[Math.floor(i / 10)]!, { declaredSize: MAX_UPLOAD_BYTES })).status).toBe(201);
-    const limited = await signFor(owner, drafts[2]!, { declaredSize: 1 });
+    const id = await draft(owner);
+    for (let i = 0; i < 20; i += 1) await signAndFree(owner, id, { declaredSize: MAX_UPLOAD_BYTES });
+    const limited = await signFor(owner, id, { declaredSize: 1 });
     expect([limited.status, limited.body.error.code]).toEqual([429, "rate_limited"]);
   });
 

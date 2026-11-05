@@ -134,7 +134,7 @@ describe("media contracts", () => {
     expect(signUploadSchema.safeParse({ ...sign, purpose: "avatar" }).success).toBe(false);
     expect(signUploadSchema.safeParse({ ...sign, targetId: "ABCDEFGH" }).success).toBe(false);
     expect(signUploadSchema.safeParse({ ...sign, fileName: "x.jpg" }).success).toBe(false);
-    expect([MAX_UPLOAD_BYTES, MAX_PHOTOS_INDIVIDUAL, MAX_PHOTOS_PRO]).toEqual([10 * 1024 * 1024, 10, 20]);
+    expect([MAX_UPLOAD_BYTES, MAX_PHOTOS_INDIVIDUAL, MAX_PHOTOS_PRO]).toEqual([10 * 1024 * 1024, 5, 20]);
     expect(PHOTO_VARIANT_SPECS).toEqual({ l: { maxEdge: 1600, quality: 80 }, m: { maxEdge: 960, quality: 78 }, s: { maxEdge: 480, quality: 75 } });
   });
 

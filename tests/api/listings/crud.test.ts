@@ -154,7 +154,7 @@ describe("PATCH /api/listings/{id}", () => {
     const foreign = await seedReadyUpload(other, otherId);
     const elsewhere = await seedReadyUpload(owner, otherId);
 
-    const saved = await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: [second, processing, foreign, elsewhere, first, first] } });
+    const saved = await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: [second, processing, foreign, elsewhere, first] } });
     expect(saved.status).toBe(200);
     // Ready photos first (sent order), then the one still processing for the wizard.
     expect(saved.body.listing.photos).toEqual([
@@ -164,8 +164,8 @@ describe("PATCH /api/listings/{id}", () => {
     ]);
     const stored = await getListing(id);
     expect(stored?.photos.map((photo) => photo.id)).toEqual([second, first]);
-    // Dropping a photo detaches it.
-    const trimmed = await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: [first] } });
+    // Dropping a photo detaches it; a repeated id counts once.
+    const trimmed = await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: [first, first] } });
     expect(trimmed.body.listing.photos.filter((photo) => photo.status === "ready").map((photo) => photo.id)).toEqual([first]);
   });
 
@@ -234,7 +234,7 @@ describe("PATCH /api/listings/{id}", () => {
   it("refuses more photos than the quota (photo_limit)", async () => {
     const owner = await member();
     const id = await draft(owner);
-    const ids = await Promise.all(Array.from({ length: 11 }, () => seedReadyUpload(owner, id)));
+    const ids = await Promise.all(Array.from({ length: 6 }, () => seedReadyUpload(owner, id)));
     const tooMany = await api<ErrorBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: ids } });
     expect(tooMany.status).toBe(409);
     expect(tooMany.body.error.code).toBe("photo_limit");

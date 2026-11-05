@@ -8,7 +8,7 @@ import { PHOTO_VARIANTS } from "./photo-variants";
 // (worker, or inline without Valkey) produces the WebP variants and attaches the photo.
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-export const MAX_PHOTOS_INDIVIDUAL = 10;
+export const MAX_PHOTOS_INDIVIDUAL = 5;
 export const MAX_PHOTOS_PRO = 20;
 /**
  * Upload documents one listing may hold at once (attached, in flight, refused ones kept 7 days):

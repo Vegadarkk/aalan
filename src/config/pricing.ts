@@ -167,7 +167,7 @@ export const pricingConfigSchema = z
 export type PricingConfig = z.infer<typeof pricingConfigSchema>;
 
 export const DEFAULT_PRICING: PricingConfig = {
-  individual: { activeListings: 20, photosPerListing: 10, listingsPerDay: 5 },
+  individual: { activeListings: 20, photosPerListing: 5, listingsPerDay: 5 },
   pro: {
     // Verified Pro without a subscription and outside the launch offer (offer ended, or expired
     // subscription): publishes nothing new as a Pro.

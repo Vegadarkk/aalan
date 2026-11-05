@@ -215,7 +215,7 @@ describe("assessReadiness", () => {
     const eleven = Array.from({ length: 11 }, (_, i) => ({ ...photo, id: `photo${String(i).padStart(12, "0")}` }));
     expect(codes(ready({ photos: eleven })).get("photos")).toEqual(["photos_max"]);
     expect(codes(ready({ photos: eleven }), PRO).has("photos")).toBe(false);
-    expect(codes(ready({ photos: eleven.slice(0, 10) })).has("photos")).toBe(false);
+    expect(codes(ready({ photos: eleven.slice(0, 5) })).has("photos")).toBe(false);
   });
 
   it("ties showPhone and WhatsApp to a verified number", () => {

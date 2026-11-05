@@ -252,16 +252,16 @@ describe("races between the pipeline and the other routes", () => {
   it("lets only one of two photos completed together take the last free slot of a draft", async () => {
     const owner = await member();
     const listingId = await draft(owner);
-    for (let i = 0; i < 8; i += 1) await attachPhoto(listingId, await seedReadyUpload(owner, listingId));
+    for (let i = 0; i < 3; i += 1) await attachPhoto(listingId, await seedReadyUpload(owner, listingId));
     const a = await uploaded(owner, listingId);
     const b = await uploaded(owner, listingId);
-    // A 9th photo arrives through another path after both signatures (the sign check passed).
+    // A 4th photo arrives through another path after both signatures (the sign check passed).
     await attachPhoto(listingId, await seedReadyUpload(owner, listingId));
     const results = await Promise.all([completeAs(owner, a), completeAs(owner, b)]);
     expect(results.map((result) => result.body.status).sort()).toEqual(["ready", "rejected"]);
     expect(results.find((result) => result.body.status === "rejected")!.body).toEqual({ status: "rejected", rejectReason: "quota" });
     const listing = (await getListing(listingId))!;
-    expect(listing.photos).toHaveLength(10);
+    expect(listing.photos).toHaveLength(5);
     // The refused photo left nothing behind in the media bucket.
     const refused = results.find((result) => result.body.status === "rejected") === results[0] ? a : b;
     expect(store.keys("media").filter((key) => key.includes(refused))).toEqual([]);

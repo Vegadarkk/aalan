@@ -182,7 +182,7 @@ test.describe("posting wizard", () => {
     ]);
     await expect(page.getByTestId("photo-notices")).toContainText("« logo.svg » : format non pris en charge");
     await expect(page.getByText("Couverture", { exact: true })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText("1 / 10 photos")).toBeVisible();
+    await expect(page.getByText("1 / 5 photos")).toBeVisible();
     await page.getByRole("button", { name: "J'ai compris" }).click();
     await expect(page.getByTestId("photo-notices")).toHaveCount(0);
     await expect(page.getByRole("img", { name: "Photo 1" })).toBeVisible();
@@ -348,7 +348,7 @@ test.describe("posting wizard", () => {
 
     // The copy uploads next to the original, which goes once the copy is ready.
     await expect(page.getByTestId("photo-face")).toHaveCount(0, { timeout: 60_000 });
-    await expect(page.getByText("1 / 10 photos")).toBeVisible();
+    await expect(page.getByText("1 / 5 photos")).toBeVisible();
     await expect(page.getByRole("img", { name: "Photo 1" })).toBeVisible();
     await expect
       .poll(async () => ((await getFirestore(firebase()).collection("listings").doc(listingId).get()).get("photos") as { id: string }[]).map((photo) => photo.id), { timeout: 20_000 })
@@ -393,7 +393,7 @@ test.describe("posting wizard", () => {
     await expect.poll(async () => (await photosOf()).map((photo) => photo.id), { timeout: 60_000 }).toEqual([expect.not.stringMatching(original!.id)]);
     const [turned] = await photosOf();
     expect(turned!.h).toBeGreaterThan(turned!.w);
-    await expect(page.getByText("1 / 10 photos")).toBeVisible();
+    await expect(page.getByText("1 / 5 photos")).toBeVisible();
   });
 
   test("a refused publication: « Corriger » shows the reason and the passage on the step, the list survives a reload (zone 3 P2-9)", { tag: "@mobile" }, async ({ page, request }) => {

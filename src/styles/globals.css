@@ -507,6 +507,7 @@ html[data-welcome]:has(#main:target) .welcome {
 :lang(ar) .welcome-crest {
   line-height: 1.6;
   letter-spacing: 0;
+  --welcome-crest-rule-y: 0.16em;
 }
 /* Gold leaf, with a band of light that crosses it once in the reading direction (entrance below). */
 .welcome-crest-text {
@@ -523,6 +524,11 @@ html[data-welcome]:has(#main:target) .welcome {
   fill: var(--color-gold-400);
   stroke: var(--color-gold-400);
   stroke-width: 1;
+  /* Optical centring: flex centres the rules on the line box, whose middle sits 0.49 em above the
+     baseline in Aref Ruqaa (ascent 1.22 em, descent 0.25 em), level with the capitals' tops. Lowered
+     to the middle of the lettering: the x-height in Latin, the letter bodies in Arabic (measured). */
+  position: relative;
+  top: var(--welcome-crest-rule-y, 0.2em);
 }
 .welcome-crest-rule path:first-child {
   fill: none;

@@ -6,6 +6,7 @@ import { resetServerEnv } from "@/lib/env";
 import { INLINE_HASH_MARKER } from "@/lib/security/csp";
 import { PINNED_SCRIPT_HASHES } from "@/lib/security/inline-hashes";
 import * as proxyLimits from "@/lib/rate-limit/proxy-limits";
+import { APPEAL_TOKEN_PARAM } from "@/lib/decisions/contracts";
 
 // Page-view limits (D14): the decision itself is unit-tested in proxy-limits.test.ts; here the
 // spy only steers what the proxy does with it (the real check runs on the in-memory limiter).
@@ -210,9 +211,13 @@ describe("proxy", () => {
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://joutiya.ma/ar/connexion?next=%2Far%2Fmessages%2Fabc%3Fx%3D1");
     expect((await proxy(member("/ar/messages/abc"))).status).toBe(200);
-    // The sign-in and appeal pages render without a session.
+    // The sign-in page renders without a session, the appeal page only with a mail's signed link.
     expect((await proxy(request("/fr/connexion"))).status).toBe(200);
-    expect((await proxy(request("/fr/recours"))).status).toBe(200);
+    expect((await proxy(request(`/fr/recours?${APPEAL_TOKEN_PARAM}=abc.def`))).status).toBe(200);
+    const appeals = await proxy(request("/fr/recours"));
+    expect(appeals.status).toBe(307);
+    expect(appeals.headers.get("location")).toBe("https://joutiya.ma/fr/connexion?next=%2Ffr%2Frecours");
+    expect((await proxy(member("/fr/recours"))).status).toBe(200);
   });
 
   it("sends the home page and other query-less ISR pages with a query string to the clean path (audit D-5)", async () => {

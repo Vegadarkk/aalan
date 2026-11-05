@@ -544,7 +544,24 @@
         "loading": "Chargement de la vitrine",
         "retry": "Réessayer",
         "proBody": "Votre page publique est la vitrine de votre boutique : bannière, présentation, adresse et horaires se règlent dans l'espace Pro.",
-        "proEdit": "Modifier ma fiche boutique"
+        "proEdit": "Modifier ma fiche boutique",
+        "photo": {
+          "label": "Photo de profil",
+          "hint": "JPEG, PNG ou WebP, 4 Mo au plus. Elle s'affiche sur votre profil et à côté de vos annonces, recadrée en portrait. Facultative : sans photo, votre initiale reste.",
+          "choose": "Ajouter une photo",
+          "replace": "Changer de photo",
+          "remove": "Retirer",
+          "saved": "Photo enregistrée. Votre profil est mis à jour.",
+          "removed": "Photo retirée.",
+          "errors": {
+            "file_too_large": "Ce fichier dépasse 4 Mo, ou l'image est trop grande. Envoyez une version plus légère.",
+            "unsupported_media": "Ce fichier n'est pas une image JPEG, PNG ou WebP lisible.",
+            "image_refused": "Cette image a été refusée par notre contrôle automatique (CGU §7). Elle n'a pas été publiée. Si c'est une erreur, contactez-nous.",
+            "storage_full": "L'envoi d'images est suspendu pour quelques heures. Réessayez plus tard.",
+            "rate_limited": "Trop de changements de photo aujourd'hui. Réessayez demain.",
+            "failed": "La photo n'a pas pu être enregistrée. Réessayez."
+          }
+        }
       },
       "email": {
         "title": "Adresse e-mail",

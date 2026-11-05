@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { FormMessage } from "@/components/auth/form-message";
 import { Section } from "@/components/auth/settings-section";
 import { CityCombobox } from "@/components/post/city-combobox";
+import { AvatarField } from "./avatar-field";
 import { StorefrontBanner } from "@/components/profile/storefront-banner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils";
 // "Ma vitrine" in /parametres (vitrine-avis §1): house banner, "about" text screened as it is
 // typed (the API screens it again), the city shown on the profile. One save for the three.
 
-export function StorefrontSection() {
+export function StorefrontSection({ name }: { name: string }) {
   const t = useTranslations("Auth.settings.storefront");
   const [saved, setSaved] = useState<StorefrontSettings | null>(null);
   const [loadError, setLoadError] = useState<unknown>();
@@ -50,7 +51,10 @@ export function StorefrontSection() {
   return (
     <Section id="storefront" title={t("title")} body={t("body")}>
       {saved ? (
-        <StorefrontForm key={`${saved.bannerKey}-${saved.bio}-${saved.citySlug}`} saved={saved} onSaved={setSaved} />
+        <div className="flex flex-col gap-8">
+          <AvatarField name={name} avatar={saved.avatar} onChange={(avatar) => setSaved((current) => (current ? { ...current, avatar } : current))} />
+          <StorefrontForm key={`${saved.bannerKey}-${saved.bio}-${saved.citySlug}`} saved={saved} onSaved={setSaved} />
+        </div>
       ) : loadError ? (
         <FormMessage
           error={loadError}
@@ -63,6 +67,7 @@ export function StorefrontSection() {
       ) : (
         <div role="status" aria-busy="true" className="flex flex-col gap-4">
           <span className="sr-only">{t("loading")}</span>
+          <Skeleton className="h-20 w-16 rounded-arch" />
           <div className="grid grid-cols-3 gap-3">
             {BANNER_KEYS.map((key) => (
               <Skeleton key={key} className="h-16 w-full" />

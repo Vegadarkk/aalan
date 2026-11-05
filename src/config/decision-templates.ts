@@ -550,6 +550,24 @@ export const DECISION_TEMPLATES = [
     internal: true,
   },
   {
+    // The profile photo removed by a moderator from the account page (audit §7): the account and its
+    // listings stay; the member may send another photo. Applied by src/lib/account/avatar.ts.
+    id: "user.avatar.remove",
+    label: "Retrait de la photo de profil",
+    action: "remove",
+    targets: USER,
+    ground: { type: "terms", ref: CONDUCT },
+    facts: { fr: "la photo de votre profil ne respecte pas nos conditions générales d'utilisation", ar: "صورة ملفك الشخصي لا تحترم شروط الاستخدام العامة" },
+    explanation: {
+      fr: "la photo est retirée de votre profil ; votre compte et vos annonces ne changent pas, et vous pouvez envoyer une autre photo conforme",
+      ar: "سُحبت الصورة من ملفك الشخصي؛ لا يتغير حسابك ولا إعلاناتك، ويمكنك إرسال صورة أخرى مطابقة",
+    },
+    outcome: "founded",
+    defaultSanction: "none",
+    detailsRequired: true,
+    internal: true,
+  },
+  {
     id: "appeal.reversed",
     label: "Décision annulée après réexamen",
     action: "restore",

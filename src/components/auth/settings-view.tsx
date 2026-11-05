@@ -71,7 +71,7 @@ export function SettingsView() {
         <div className="flex flex-col divide-y divide-border">
           <ProfileSection key={`${session.uid}-${session.displayName}-${session.locale}-${locale}`} session={session} />
           {/* A Pro's public page is its shop's storefront, edited in the Pro area (UX audit of the Pro shops, B3). */}
-          {session.role === "pro" ? <ProStorefrontNotice /> : <StorefrontSection />}
+          {session.role === "pro" ? <ProStorefrontNotice /> : <StorefrontSection name={session.displayName ?? ""} />}
           <ExamplesSection />
           <EmailSection session={session} />
           <PasswordSection email={session.email} displayName={session.displayName} hasPassword={session.providers.includes("password")} />

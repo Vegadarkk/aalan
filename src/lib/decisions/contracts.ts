@@ -378,6 +378,8 @@ export interface UserModerationView {
   suspension: { until: string; decisionId: string } | null;
   /** Phone badge and when it was earned (never the number). */
   phone: { verified: boolean; verifiedAt: string | null };
+  /** Profile photo URL (large variant), null while none: a moderator can remove it (audit §7). */
+  avatar: string | null;
   reporter: { total: number; recent: boolean[]; foundedShare: number | null; manifestRecent: number; warnedAt: string | null; abusiveUntil: string | null };
   decisions: { id: string; action: string; templateId: string; target: { type: string; id: string }; createdAt: string; appeal: string | null }[];
 }

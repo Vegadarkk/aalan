@@ -30,15 +30,21 @@ export function initialOf(name: string): string {
   return letter.toLocaleUpperCase();
 }
 
-export function SellerAvatar({ name, size = "md", className }: { name: string; size?: "md" | "lg" | "xl"; className?: string }) {
+/** The member's arch: their profile photo when they sent one (audit §7), else the initial. */
+export function SellerAvatar({ name, src, size = "md", className }: { name: string; src?: string | null; size?: "md" | "lg" | "xl"; className?: string }) {
+  const box = size === "xl" ? "h-28 w-22 text-4xl" : size === "lg" ? "h-20 w-16 text-3xl" : "h-14 w-11 text-xl";
+  if (src) {
+    return (
+      <span aria-hidden="true" data-testid="seller-photo" className={cn("flex shrink-0 overflow-hidden rounded-arch bg-structure", box, className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- an already sized 4:5 WebP on the media origin. */}
+        <img src={src} alt="" width={size === "xl" ? 88 : size === "lg" ? 64 : 44} height={size === "xl" ? 112 : size === "lg" ? 80 : 56} decoding="async" className="size-full object-cover" />
+      </span>
+    );
+  }
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        "threshold flex shrink-0 items-center justify-center rounded-arch bg-structure pt-1 font-semibold text-structure-foreground",
-        size === "xl" ? "h-28 w-22 text-4xl" : size === "lg" ? "h-20 w-16 text-3xl" : "h-14 w-11 text-xl",
-        className,
-      )}
+      className={cn("threshold flex shrink-0 items-center justify-center rounded-arch bg-structure pt-1 font-semibold text-structure-foreground", box, className)}
     >
       {initialOf(name)}
     </span>
@@ -88,7 +94,7 @@ export function SellerCard({ seller, fallbackName, fallbackType, locale, childre
   return (
     <section data-testid="seller-card" aria-labelledby="seller-name" className={cn("flex flex-col gap-5 rounded-lg border border-border bg-surface p-5", className)}>
       <div className="flex items-start gap-4">
-        {shop ? <ShopEmblem name={shop.name} sector={shop.sector} /> : <SellerAvatar name={name} />}
+        {shop ? <ShopEmblem name={shop.name} sector={shop.sector} /> : <SellerAvatar name={name} src={seller?.avatar?.small} />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-xs text-foreground-muted">{type === "pro" ? t("roleBusiness") : t("roleIndividual")}</p>
           <h2 id="seller-name" className="flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight">

@@ -180,6 +180,12 @@ export async function updateStorefront(uid: string, patch: StorefrontPatch, now 
   void consume("firestore.writes", 1);
 }
 
+/** The profile photo's key (audit §7, src/lib/account/avatar.ts); null removes it. */
+export async function setAvatarKey(uid: string, avatarKey: string | null, now = new Date()): Promise<void> {
+  await userRef(uid).update({ avatarKey: avatarKey === null ? FieldValue.delete() : avatarKey, updatedAt: now });
+  void consume("firestore.writes", 1);
+}
+
 export interface NotificationPatch {
   marketing?: boolean;
   messagesEmail?: boolean;

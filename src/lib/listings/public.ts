@@ -2,6 +2,7 @@ import "server-only";
 import { datedRental, type Condition } from "@/config/categories";
 import { REVIEWS_PAGE } from "@/config/reviews";
 import { DEFAULT_BANNER, type BannerKey } from "@/config/storefront";
+import { avatarUrls } from "@/lib/account/avatar-url";
 import { cardPromo, isSoldOut, priceRange, type CardPromo, type ListingVariants, type PromoView, type ShopSection } from "@/lib/contracts/catalog";
 import type { ListingAttributes, ListingStatus, RentalAvailability } from "@/lib/contracts/listings";
 import type { PhotoVariant } from "@/lib/contracts/photo-variants";
@@ -307,6 +308,8 @@ export interface PublicSeller {
   badges: UserRecord["badges"];
   /** The city the member chose to show on the profile, if any. */
   citySlug: string | null;
+  /** Profile photo (audit §7): small for the seller card, large for /profil; null shows the initial. */
+  avatar: { small: string; large: string } | null;
   /** Listings online right now (count aggregation: one read per 1 000). */
   publishedCount: number;
   /** Storefront (vitrine-avis §1): the "about" text, if any, and the house banner. */
@@ -335,6 +338,7 @@ function toSeller(user: UserRecord, publishedCount: number): PublicSeller {
     memberSince: memberSince(user.createdAt),
     badges: user.badges,
     citySlug: user.citySlug ?? null,
+    avatar: avatarUrls(user.avatarKey),
     publishedCount,
     bio: user.storefront?.bio ?? null,
     bannerKey: user.storefront?.bannerKey ?? DEFAULT_BANNER,

@@ -37,6 +37,7 @@ const seller: PublicSeller = {
   memberSince: "2025-10",
   badges: { emailVerified: true, phoneVerified: true, proCertified: false },
   citySlug: "casablanca",
+  avatar: null,
   publishedCount: 2,
   bio: null,
   bannerKey: "zellige",

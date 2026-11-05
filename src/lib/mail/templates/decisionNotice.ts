@@ -29,6 +29,7 @@ const COPY: Record<MailLocale, Copy> = {
       switch (data.action) {
         case "remove":
           if (data.targetType === "review") return `Votre avis${about("fr", data.title)} a été masqué`;
+          if (data.targetType === "user") return "La photo de votre profil a été retirée";
           return data.targetType === "message" ? "Un de vos messages a été masqué" : `Votre annonce${quoted("fr", data.title)} a été retirée`;
         case "restrict_visibility":
           return `La visibilité de votre annonce${quoted("fr", data.title)} est restreinte`;
@@ -45,6 +46,7 @@ const COPY: Record<MailLocale, Copy> = {
       switch (data.action) {
         case "remove":
           if (data.targetType === "review") return `Mesure : votre avis${about("fr", data.title)} a été masqué. Il n'est plus visible et ne compte plus dans la note du vendeur.`;
+          if (data.targetType === "user") return "Mesure : la photo de votre profil a été retirée. Votre compte et vos annonces ne changent pas.";
           return data.targetType === "message"
             ? "Mesure : un de vos messages a été masqué. Votre interlocuteur ne peut plus le lire."
             : `Mesure : votre annonce${quoted("fr", data.title)} a été retirée. Elle n'est plus visible sur Aalan.`;
@@ -65,6 +67,7 @@ const COPY: Record<MailLocale, Copy> = {
       switch (data.action) {
         case "remove":
           if (data.targetType === "review") return `تم إخفاء تقييمك${about("ar", data.title)}`;
+          if (data.targetType === "user") return "تم سحب صورة ملفك الشخصي";
           return data.targetType === "message" ? "تم إخفاء إحدى رسائلك" : `تم سحب إعلانك${quoted("ar", data.title)}`;
         case "restrict_visibility":
           return `تم تقييد ظهور إعلانك${quoted("ar", data.title)}`;
@@ -81,6 +84,7 @@ const COPY: Record<MailLocale, Copy> = {
       switch (data.action) {
         case "remove":
           if (data.targetType === "review") return `الإجراء: تم إخفاء تقييمك${about("ar", data.title)}، ولم يعد ظاهرًا ولا يُحتسب في تقييم البائع.`;
+          if (data.targetType === "user") return "الإجراء: تم سحب صورة ملفك الشخصي. لا يتغير حسابك ولا إعلاناتك.";
           return data.targetType === "message" ? "الإجراء: تم إخفاء إحدى رسائلك، ولم يعد بإمكان محاورك قراءتها." : `الإجراء: تم سحب إعلانك${quoted("ar", data.title)}، ولم يعد ظاهرًا على أعلان.`;
         case "restrict_visibility":
           return `الإجراء: لم يعد إعلانك${quoted("ar", data.title)} يظهر في نتائج البحث ولا في صفحته العامة.`;

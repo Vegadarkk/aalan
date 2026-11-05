@@ -140,7 +140,8 @@ test.describe("accessibility (axe, WCAG 2.1 A and AA)", { tag: "@mobile" }, () =
 
       test("sign-up", async ({ page }) => {
         // Hydrated (the submit button turns enabled); Google and Turnstile wait for a first action.
-        await expectAccessible(page, `/${locale}/inscription`, (p) => p.locator('form button[type="submit"]:enabled'));
+        // The page's own form: the header's search form has a submit button too (strict mode).
+        await expectAccessible(page, `/${locale}/inscription`, (p) => p.locator('#main form button[type="submit"]:enabled'));
       });
 
       test("legal page", async ({ page }) => {

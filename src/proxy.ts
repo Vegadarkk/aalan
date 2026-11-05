@@ -6,7 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
-import { PRIVATE_SEGMENTS } from "@/config/site";
+import { DEFAULT_LOCALE, LOCALES, PRIVATE_SEGMENTS } from "@/config/site";
 import { DEVICE_COOKIE, SESSION_COOKIE, setDeviceCookie } from "@/lib/security/cookies";
 import { buildCsp, createNonce, INLINE_HASH_MARKER, type CspVariant } from "@/lib/security/csp";
 import { PINNED_SCRIPT_HASHES } from "@/lib/security/inline-hashes";
@@ -16,6 +16,8 @@ import { checkPageLimits, isMeteredPath, pathLocale, tooManyPagesHtml, TOO_MANY_
 import { challengeUrlPath } from "@/lib/security/challenge-path";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { robotsTag } from "@/lib/security/robots";
+import { closedDecision, isClosed, OPENING_SEGMENT, parseOpensAt } from "@/lib/launch/gate";
+import { hasPreviewPass, PREVIEW_COOKIE } from "@/lib/launch/preview";
 
 const handleI18nRouting = createMiddleware(routing);
 
@@ -102,12 +104,8 @@ function withRobots(response: NextResponse, host: "public" | "admin", pathname: 
   return response;
 }
 
-/**
- * Forwards the request to the app with extra request headers (the nonce and the CSP, read by
- * Next.js to stamp its scripts; the verified device id of a private page), keeping what the locale
- * routing decided: rewrite target, request header overrides, cookies and response headers.
- */
-function forwardWithNonce(routed: NextResponse, request: NextRequest, policy: string, nonce: string, deviceId?: string): NextResponse {
+/** The request headers as the locale routing left them (its request header overrides applied). */
+function routedRequestHeaders(routed: NextResponse, request: NextRequest): Headers {
   const headers = new Headers(request.headers);
   const overridden = routed.headers.get("x-middleware-override-headers");
   if (overridden) {
@@ -116,6 +114,71 @@ function forwardWithNonce(routed: NextResponse, request: NextRequest, policy: st
       if (value !== null) headers.set(name, value);
     }
   }
+  return headers;
+}
+
+/** Response headers of the locale routing (its cookies aside: shared pages carry none). */
+function copyRoutedHeaders(routed: NextResponse, response: NextResponse): NextResponse {
+  routed.headers.forEach((value, key) => {
+    if (!key.startsWith("x-middleware-") && key !== "set-cookie") response.headers.set(key, value);
+  });
+  return response;
+}
+
+/** Answers that never reach the edge cache: the gate's redirects and its 503. */
+const NO_STORE = "no-store";
+
+/**
+ * Pre-opening gate (src/lib/launch/gate.ts): null when the request goes on as usual. Closed (before
+ * OPENS_AT, no preview pass): /{locale} is rendered by the countdown page, the legal texts pass,
+ * any other page goes to /{locale} (307, never cached) and the public API answers 503. The
+ * countdown page itself is only reached by that rewrite: asked for directly, it is the home page.
+ */
+function launchGate(request: NextRequest, routed: NextResponse | null): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  const [, first = "", segment = ""] = pathname.split("/");
+  const home = (locale: string) => {
+    const response = NextResponse.redirect(new URL(`/${locale}`, request.url), 307);
+    response.headers.set("Cache-Control", NO_STORE);
+    return response;
+  };
+  if (segment === OPENING_SEGMENT && (LOCALES as readonly string[]).includes(first)) return home(first);
+  const opensAt = parseOpensAt(process.env.OPENS_AT);
+  if (!isClosed(opensAt) || hasPreviewPass(request.cookies.get(PREVIEW_COOKIE)?.value, process.env.PREVIEW_SECRET)) return null;
+  const decision = closedDecision(pathname, LOCALES, DEFAULT_LOCALE);
+  switch (decision.kind) {
+    case "pass":
+      return null;
+    case "redirect-home":
+      return home(decision.locale);
+    case "closed-api": {
+      const retry = Math.max(1, Math.ceil(((opensAt?.getTime() ?? Date.now()) - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "closed", message: "Le site ouvre bientôt.", opensAt: opensAt?.toISOString() },
+        { status: 503, headers: { "Cache-Control": NO_STORE, "Retry-After": String(Math.min(retry, 86_400)) } },
+      );
+    }
+    case "closed-home": {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${decision.locale}/${OPENING_SEGMENT}`;
+      const rewritten = NextResponse.rewrite(url, { request: { headers: routed ? routedRequestHeaders(routed, request) : new Headers(request.headers) } });
+      // A shared page like the home it stands for: hash CSP, no cookie, cached by the edge for its
+      // short ISR time (src/app/[locale]/(closed)/ouverture/page.tsx).
+      const response = withRobots(decorate(routed ? copyRoutedHeaders(routed, rewritten) : rewritten, "public", csp("public")), "public", pathname);
+      response.headers.set(INLINE_HASH_MARKER, "1");
+      response.headers.delete("set-cookie");
+      return response;
+    }
+  }
+}
+
+/**
+ * Forwards the request to the app with extra request headers (the nonce and the CSP, read by
+ * Next.js to stamp its scripts; the verified device id of a private page), keeping what the locale
+ * routing decided: rewrite target, request header overrides, cookies and response headers.
+ */
+function forwardWithNonce(routed: NextResponse, request: NextRequest, policy: string, nonce: string, deviceId?: string): NextResponse {
+  const headers = routedRequestHeaders(routed, request);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", policy);
   // Read by the (account) layout to send an anonymous visitor back here after sign-in.
@@ -126,12 +189,10 @@ function forwardWithNonce(routed: NextResponse, request: NextRequest, policy: st
   if (deviceId) headers.set(DEVICE_ID_HEADER, deviceId);
 
   const rewrite = routed.headers.get("x-middleware-rewrite");
-  const response = rewrite
-    ? NextResponse.rewrite(new URL(rewrite, request.url), { request: { headers } })
-    : NextResponse.next({ request: { headers } });
-  routed.headers.forEach((value, key) => {
-    if (!key.startsWith("x-middleware-") && key !== "set-cookie") response.headers.set(key, value);
-  });
+  const response = copyRoutedHeaders(
+    routed,
+    rewrite ? NextResponse.rewrite(new URL(rewrite, request.url), { request: { headers } }) : NextResponse.next({ request: { headers } }),
+  );
   for (const cookie of routed.cookies.getAll()) response.cookies.set(cookie);
   return response;
 }
@@ -220,7 +281,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   // The back office only exists on the admin host (§4).
   if (/^\/(api\/)?admin(\/|$)/.test(pathname)) return notFound();
-  if (pathname.startsWith("/api/")) return NextResponse.next();
+  if (pathname.startsWith("/api/")) return launchGate(request, null) ?? NextResponse.next();
 
   const routed = handleI18nRouting(request);
   if (routed.status >= 300 && routed.status < 400) return routed;
@@ -233,6 +294,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     clean.search = "";
     return NextResponse.redirect(clean, 308);
   }
+
+  // Before the opening, the countdown (src/lib/launch/gate.ts).
+  const gated = launchGate(request, routed);
+  if (gated) return gated;
 
   // Page-view limits (D14). RSC and prefetch requests count too: a scraper can send `RSC: 1`.
   if (isMeteredPath(pathname)) {

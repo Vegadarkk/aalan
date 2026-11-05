@@ -193,7 +193,7 @@ describe("legal pages", () => {
   it("lists every cookie the app sets, and the ad cookies only while ads can run (C2-08)", () => {
     for (const language of ["fr", "ar"] as const) {
       const off = render("cookies", language).text;
-      for (const name of ["__Host-session", "__Host-csrf", "__Host-did", "__Host-tsv", "jt_consent", "NEXT_LOCALE", "theme"]) expect(off, `${language} ${name}`).toContain(name);
+      for (const name of ["__Host-session", "__Host-csrf", "__Host-did", "__Host-tsv", "__Host-preview", "jt_consent", "NEXT_LOCALE", "theme"]) expect(off, `${language} ${name}`).toContain(name);
       const on = render("cookies", language, { ads: true }).text;
       expect(on.length, language).toBeGreaterThan(off.length);
       expect(render("cookies", language, { ads: true, adsCmpEea: true }).text.length, language).toBeGreaterThan(on.length);

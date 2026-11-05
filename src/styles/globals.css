@@ -798,6 +798,247 @@ html[data-welcome~="door"] .welcome-glints {
 }
 /* ── end welcome ── */
 
+/* ── launch ───────────────────────────────────────────────────────────────────────────────────
+ * The countdown page before the opening (src/components/launch, src/lib/launch/gate.ts): the
+ * welcome threshold's gate and ground, always shown (no html[data-welcome] state: the page is the
+ * whole document under its own root layout), the door a little lower to leave room for the time
+ * left, the date, the social links and the legal links. At zero the door's opening plays
+ * (launch-stage.tsx). The time left is the page's one strong element: large cream figures in
+ * Readex Pro, the units under them, the logo's star between them; no boxes.
+ */
+html:has(.launch) {
+  overflow: hidden;
+  background: var(--color-bab-950);
+}
+.welcome.launch {
+  --welcome-door-h: min(31svh, 58vw);
+  --welcome-night: color-mix(in oklab, var(--color-bab-800) 80%, var(--color-bab-950));
+  --welcome-ground:
+    radial-gradient(26% 30% at 50% 30%, color-mix(in oklab, var(--color-gold-400) 13%, transparent), transparent 72%),
+    radial-gradient(70% 58% at 50% 30%, color-mix(in oklab, var(--color-bab-700) 85%, transparent), transparent 78%),
+    var(--welcome-night);
+  display: flex;
+}
+@media (min-width: 40rem) {
+  .welcome.launch {
+    --welcome-door-h: min(33svh, 22rem);
+  }
+}
+.launch[data-state="opening"] {
+  overflow: hidden;
+}
+.launch[data-state="opening"] .welcome-copy {
+  pointer-events: none;
+}
+.launch[data-state="opening"] .welcome-glints {
+  display: none;
+}
+.launch-copy {
+  margin-top: clamp(1.25rem, 3.5svh, 2.25rem);
+  gap: clamp(1.25rem, 3svh, 2rem);
+}
+.launch-tagline {
+  font-size: clamp(1.375rem, 1rem + 1.6vw, 2.125rem);
+  color: var(--color-cream-200);
+}
+.launch-count {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  direction: ltr;
+}
+/* Arabic reads the units from the right like its text; the figures stay left to right. */
+[dir="rtl"] .launch-count {
+  flex-direction: row-reverse;
+}
+.launch-unit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: clamp(4.25rem, 19vw, 7.5rem);
+}
+.launch-digits {
+  display: block;
+  font-family: var(--font-readex), sans-serif;
+  font-size: clamp(2.5rem, 1.6rem + 4.6vw, 4.75rem);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--color-cream-100, var(--color-cream-200));
+  text-shadow: 0 0 0.6em color-mix(in oklab, var(--color-gold-400) 30%, transparent);
+}
+.launch-digit {
+  display: inline-block;
+}
+.launch-count:not([data-ready]) .launch-digit {
+  opacity: 0;
+}
+.launch-unit-label {
+  margin-top: 0.4rem;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  color: var(--color-gold-300);
+}
+/* The logo's star between two units, level with the figures' middle. */
+.launch-star {
+  position: absolute;
+  inset-inline-start: 0;
+  top: calc(clamp(2.5rem, 1.6rem + 4.6vw, 4.75rem) * 0.52);
+  width: 0.75rem;
+  height: 0.75rem;
+  translate: -50% -50%;
+  fill: var(--color-gold-400);
+  opacity: 0.85;
+}
+[dir="rtl"] .launch-star {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  translate: 50% -50%;
+}
+.launch-status:empty {
+  display: none;
+}
+.launch-status {
+  font-size: 1.125rem;
+  color: var(--color-gold-200, var(--color-gold-300));
+}
+.launch-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.1875rem);
+  color: var(--color-cream-200);
+  text-wrap: balance;
+}
+.launch-date::first-letter {
+  text-transform: uppercase;
+}
+.launch-date-zone {
+  font-size: 0.875rem;
+  color: color-mix(in oklab, var(--color-cream-200) 70%, transparent);
+}
+.launch-follow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.launch-follow-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-cream-200);
+}
+.launch-social {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.launch-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--color-gold-400) 60%, transparent);
+  color: var(--color-cream-200);
+  transition:
+    background-color 150ms var(--ease-door),
+    color 150ms var(--ease-door),
+    border-color 150ms var(--ease-door),
+    scale 150ms var(--ease-door);
+}
+.launch-social-link:hover {
+  border-color: var(--color-gold-400);
+  background: var(--color-gold-400);
+  color: var(--color-bab-950);
+}
+.launch-social-link:active {
+  scale: 0.96;
+}
+.launch-social-link:focus-visible,
+.launch-legal a:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 3px;
+}
+.launch-legal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: color-mix(in oklab, var(--color-cream-200) 62%, transparent);
+}
+.launch-legal ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+}
+.launch-legal a {
+  display: inline-block;
+  padding-block: 0.375rem;
+  border-radius: 2px;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--color-cream-200) 35%, transparent);
+  text-underline-offset: 0.25em;
+  transition: color 150ms var(--ease-door);
+}
+.launch-legal a:hover {
+  color: var(--color-cream-200);
+  text-decoration-color: currentColor;
+}
+/* The page's one entrance: the gate rises out of the night (the welcome screen's), then the
+   promise, the time left and the rest. Each change of a figure drops it into place. */
+@media (prefers-reduced-motion: no-preference) {
+  .launch .welcome-enter {
+    animation: welcome-enter 1000ms var(--ease-door) both;
+  }
+  .launch .welcome-crest {
+    animation-name: welcome-rise;
+    animation-duration: 700ms;
+  }
+  .launch .welcome-enter[data-enter="door"] {
+    --welcome-enter-y: 1.5rem;
+    animation-duration: 1400ms;
+  }
+  .launch .welcome-enter[data-enter="copy"] {
+    animation-delay: 700ms;
+  }
+  .launch .welcome-enter[data-enter="count"] {
+    animation-delay: 900ms;
+  }
+  .launch .welcome-enter[data-enter="date"],
+  .launch .welcome-enter[data-enter="follow"],
+  .launch .welcome-enter[data-enter="legal"] {
+    animation-delay: 1100ms;
+  }
+  .launch .welcome-crest-text {
+    animation: welcome-sheen 1800ms ease-in-out 900ms both;
+  }
+  [dir="rtl"] .launch .welcome-crest-text {
+    animation-direction: reverse;
+  }
+  .launch-count[data-ready] .launch-digit {
+    animation: launch-tick 420ms var(--ease-door) both;
+  }
+  .launch-count:not([data-ready]) .launch-digit {
+    transition: opacity 300ms ease-out;
+  }
+}
+@keyframes launch-tick {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35em);
+  }
+}
+/* ── end launch ── */
+
 /* ── Search page, map first (Carte vivante, lot 2) ──
  * One server-rendered panel, three layouts read from [data-search-root]:
  *  - list view (data-search-view="list"): the page flow, the card grid, the page footer;

@@ -1,4 +1,6 @@
 import "server-only";
+import { invalidOpensAt } from "@/lib/launch/gate";
+import { brandSocialLinks } from "@/lib/launch/social";
 import { z } from "@/lib/zod";
 
 // Server environment (§9). Values are read once and never logged. Staging and production
@@ -53,6 +55,16 @@ const schema = z.object({
   RIF_INDEXABLE: flag,
   /** Staging only: requests carrying it in x-aalan-loadtest skip the app's rate limits (load test, phase 6 D17). */
   LOADTEST_BYPASS_SECRET: optional,
+  /**
+   * Pre-opening gate (src/lib/launch/gate.ts, owner 5 Nov 2026): ISO 8601 date and time with its
+   * offset ("2026-11-20T10:00:00+01:00"). Until then the public site shows the countdown only. Unset
+   * or past: open. Read by the proxy on each request.
+   */
+  OPENS_AT: optional,
+  /** Preview pass through the closed site (src/lib/launch/preview.ts): 32 to 128 letters and digits. */
+  PREVIEW_SECRET: optional,
+  /** Aalan's own social accounts on the countdown page: "instagram=aalan.ma tiktok=@aalan.ma" (src/lib/launch/social.ts). */
+  BRAND_SOCIAL_LINKS: optional,
   QUEUE_REDIS_URL: optional,
   RATE_LIMIT_REDIS_URL: optional,
   TELEGRAM_BOT_TOKEN: optional,
@@ -253,6 +265,11 @@ export function parseEnv(source: Record<string, string | undefined>): ParsedEnv 
     parsed = schema.safeParse(Object.fromEntries(Object.entries(source).filter(([name]) => !invalid.has(name))));
   }
   const env = parsed.success ? parsed.data : schema.parse({});
+
+  // A mistyped opening date would silently open (or keep closed) the site: refused everywhere.
+  if (invalidOpensAt(env.OPENS_AT)) errors.push("OPENS_AT must be an ISO 8601 date and time with its offset, e.g. 2026-11-20T10:00:00+01:00");
+  if (env.PREVIEW_SECRET && !/^[A-Za-z0-9]{32,128}$/.test(env.PREVIEW_SECRET)) errors.push("PREVIEW_SECRET must be 32 to 128 letters and digits");
+  for (const problem of brandSocialLinks(env.BRAND_SOCIAL_LINKS).problems) errors.push(`BRAND_SOCIAL_LINKS: ${problem}`);
 
   const legacy = Object.keys(source).filter((name) => name.startsWith("NEXT_PUBLIC_") && source[name]);
   if (env.APP_ENV !== "dev") {

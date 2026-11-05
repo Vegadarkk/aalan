@@ -348,15 +348,15 @@ describe("relay", () => {
     expect(errorSpy).toHaveBeenCalledWith("email: resend: HTTP 429 daily_quota_exceeded");
   });
 
-  it("still accepts the former header pair of an app not yet redeployed, never a mixed pair", async () => {
+  it("refuses the former header pair and a mixed pair", async () => {
     const send = vi.fn(async (): Promise<RelayOutcome> => "sent");
     const deps = { secret: "s3cret", nowMs, maxBytes: 16_384, send };
     const timestamp = String(Math.floor(nowMs / 1000));
-    expect((await relay((await signedRequest("s3cret", body, timestamp, "X-Joutiya")).request, deps)).status).toBe(204); // legacy-name: allow
+    expect((await relay((await signedRequest("s3cret", body, timestamp, "X-Joutiya")).request, deps)).status).toBe(401); // legacy-name: allow
     const signature = await sign("s3cret", timestamp, body);
     const mixed = new Request("https://probe.example/alert", { method: "POST", headers: { "X-Aalan-Signature": signature, "X-Joutiya-Timestamp": timestamp }, body }); // legacy-name: allow
     expect((await relay(mixed, deps)).status).toBe(401);
-    expect(send).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("refuses bad signatures, stale requests, invalid alerts and oversized bodies without sending", async () => {

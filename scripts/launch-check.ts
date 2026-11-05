@@ -147,6 +147,18 @@ export function checkAdsTxt(status: number, body: string, ads: AdsMode): Check {
   return { name: "ads.txt", ok, detail: ok ? "Google publisher line" : `HTTP ${status}, no "google.com, pub-…, DIRECT, f08c47fec0942fa0" line` };
 }
 
+/** security.txt (RFC 9116, src/app/.well-known/security.txt/route.ts): a contact, an expiry in the future, the canonical URL of this site. */
+export function checkSecurityTxt(status: number, body: string, site: string, now = new Date()): Check {
+  const expires = /^Expires: (\S+)$/m.exec(body)?.[1];
+  const problems = [
+    status === 200 ? null : `HTTP ${status}`,
+    /^Contact: mailto:\S+@\S+$/m.test(body) ? null : "no mailto Contact",
+    expires && Date.parse(expires) > now.getTime() ? null : "no future Expires",
+    body.includes(`Canonical: ${site}/.well-known/security.txt`) ? null : `no Canonical: ${site}/.well-known/security.txt (SITE_URL?)`,
+  ].filter((problem) => problem !== null);
+  return { name: "security.txt", ok: problems.length === 0, detail: problems.length === 0 ? "contact, expiry, canonical" : problems.join("; ") };
+}
+
 /** `<link>` tags of a page head: rel, href and hreflang, attribute order and case free. */
 export function headLinks(html: string): { rel: string; href: string; hreflang: string | null }[] {
   const head = html.split(/<\/head>/i)[0] ?? "";
@@ -293,6 +305,10 @@ async function main(): Promise<void> {
     await attempt("ads.txt", async () => {
       const response = await fetch(`${args.site}/ads.txt`, { redirect: "manual", signal: AbortSignal.timeout(60_000) });
       return checkAdsTxt(response.status, await response.text(), args.ads);
+    }),
+    await attempt("security.txt", async () => {
+      const response = await fetch(`${args.site}/.well-known/security.txt`, { redirect: "manual", signal: AbortSignal.timeout(60_000) });
+      return checkSecurityTxt(response.status, await response.text(), args.site);
     }),
     await attempt("Indexing of /fr", async () => {
       const response = await fetch(`${args.site}/fr`, { redirect: "manual", signal: AbortSignal.timeout(60_000) });

@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { launchOfferOpen, passById, type PassConfig, type PricingConfig } from "@/config/pricing";
+import { passById, type PassConfig, type PricingConfig } from "@/config/pricing";
 import type { Locale } from "@/config/site";
 import { alert } from "@/lib/alert";
 import { audit } from "@/lib/audit";
@@ -52,7 +52,7 @@ export async function startPassCheckout(auth: AuthContext, input: CheckoutPassIn
   if (!pass.stripePrice) throw unavailable(`no Stripe price for pass ${pass.id}`);
   const { proId, accountId, profile } = await ownShop(auth);
   if (!PASS_BUYER_STATES.has(profile.lifecycle)) throw new HttpError(409, "pro_not_verified");
-  if (profile.planSource === "launch_offer" && launchOfferOpen(pricing.launchOffer, now)) throw new HttpError(409, "launch_offer_running");
+  if (profile.planSource === "launch_offer") throw new HttpError(409, "launch_offer_running");
   const [current, existing] = await Promise.all([getSubscription(accountId), getBillingAccount(accountId)]);
   if ((current && current.status !== "expired") || (profile.lifecycle === "active" && profile.planSource !== "pass")) throw new HttpError(409, "already_subscribed");
   // One plan per pass: a shop on the Essentiel pass does not buy the Business one over it.

@@ -4106,8 +4106,9 @@
     "intro": {
       "title": "Ouvrir une boutique Pro sur Aalan",
       "lead": "Pour les sociétés, coopératives, commerçants et auto-entrepreneurs : une boutique à votre nom, des annonces marquées Pro et des quotas adaptés à votre activité.",
-      "offer": "L'offre Essentiel est offerte aux boutiques validées jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant tout paiement.",
-      "how": "Nous vérifions vos identifiants (ICE, registre) et une pièce justificative avant d'ouvrir la boutique, en général sous deux jours ouvrés."
+      "offer": "Offre de lancement : la formule Essentiel est offerte {months} mois aux premières boutiques validées, à compter de leur validation. Vous serez prévenu {days} jours avant tout paiement.",
+      "how": "Nous vérifions vos identifiants (ICE, registre) et une pièce justificative avant d'ouvrir la boutique, en général sous deux jours ouvrés.",
+      "offerSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
     },
     "eligibility": {
       "title": "Avant de commencer",
@@ -4295,7 +4296,7 @@
         "business": "Business",
         "premium": "Premium"
       },
-      "launchOffer": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant tout paiement.",
+      "launchOffer": "Offerte, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant tout paiement.",
       "launchOfferEnds": "Offerte jusqu'au {date}.",
       "noPlan": "Sans offre, vous ne pouvez pas publier de nouvelle annonce en tant que professionnel.",
       "salesClosed": "Les abonnements ouvriront prochainement.",
@@ -5425,7 +5426,7 @@
       "title": "Votre offre",
       "none": "Aucune offre",
       "launchOffer": "Essentiel offert",
-      "launchOfferBody": "Offerte jusqu'à l'ouverture des ventes, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant la fin.",
+      "launchOfferBody": "Offerte, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant la fin.",
       "launchOfferEnds": "Offerte jusqu'au {date}. Abonnez-vous avant cette date pour garder vos annonces en ligne.",
       "monthly": "Paiement mensuel",
       "yearly": "Paiement annuel",
@@ -6407,7 +6408,7 @@
       "stock": "Les variantes de taille et de couleur, et l'import de votre stock par fichier avec les offres Business et Premium",
       "planning": "Pour les loueurs, le planning de flotte et les demandes par dates"
     },
-    "offer": "Offre de lancement : l'offre Essentiel est offerte aux boutiques validées jusqu'à l'ouverture des ventes. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement, dès l'ouverture des ventes.",
     "stepsTitle": "Comment ça se passe",
     "steps": {
@@ -6417,8 +6418,8 @@
     },
     "legal": "Les engagements légaux de chaque activité sont rappelés à la création de la vitrine. Vos démarches administratives : <link>le guide des professionnels et coopératives</link>.",
     "directory": "Voir l'annuaire des boutiques",
-    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
-    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement.",
+    "offerSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
   },
   "Directory": {
     "metaTitle": "{heading} · Annuaire des professionnels",
@@ -6519,7 +6520,7 @@
     },
     "pros": {
       "title": "Professionnels",
-      "launchOffer": "Offre de lancement : la formule Essentiel est offerte aux boutiques validées jusqu'à l'ouverture des ventes, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Sans abonnement ni reconduction"
@@ -6541,9 +6542,9 @@
       "unlimitedListings": "Annonces actives en illimité",
       "stockImport": "Import du stock par fichier",
       "vatNote": "Prix hors taxes : c'est le prix payé. Aalan ne facture pas de TVA, le Pro autoliquide la TVA marocaine si elle est due.",
-      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
       "passCredits": "{count, number} crédits offerts pendant le pass",
-      "askQuote": "Demander un devis"
+      "askQuote": "Demander un devis",
+      "launchOfferSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
     },
     "footnote": "Les ventes ouvrent avec le lancement du site. Les prix affichés sont ceux prévus à l'ouverture.",
     "compare": {

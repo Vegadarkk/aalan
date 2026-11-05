@@ -1,5 +1,5 @@
 import "server-only";
-import { FieldPath, FieldValue, Timestamp, type DocumentSnapshot, type Transaction } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, Timestamp, type DocumentReference, type DocumentSnapshot, type Transaction } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase/admin";
 import { consume } from "@/lib/quota";
 import { SANITARY_NUMBERS_MAX, proProfileSchema, type ProProfileDoc } from "@/lib/pro/profile-schema";
@@ -108,9 +108,25 @@ export function recordSanitaryNumberTx(tx: Transaction, profile: ProProfileRecor
 }
 
 /** Date of the last launch-offer notice mailed to the shop (the next one is due from it). */
-export async function markLaunchOfferNotice(proId: string, now: Date): Promise<void> {
-  await proProfileRef(proId).update({ launchOfferNoticeSentAt: Timestamp.fromDate(now) });
+export async function markLaunchOfferNotice(proId: string, now: Date, first = false): Promise<void> {
+  const at = Timestamp.fromDate(now);
+  await proProfileRef(proId).update({ launchOfferNoticeSentAt: at, ...(first ? { launchOfferNoticeFrom: at } : {}) });
   void consume("firestore.writes", 1);
+}
+
+/** `system/launchOfferSeats`: validations that took a seat of the launch offer (owner, 2026-11-05). */
+export const LAUNCH_OFFER_SEATS_DOC = "launchOfferSeats";
+
+export function launchOfferSeatsRef(): DocumentReference {
+  return db().collection(COLLECTIONS.system).doc(LAUNCH_OFFER_SEATS_DOC);
+}
+
+/** Seats already granted (0 before the first one), inside `tx` when given. */
+export async function launchOfferSeatsGranted(tx?: Transaction): Promise<number> {
+  const snapshot = tx ? await tx.get(launchOfferSeatsRef()) : await launchOfferSeatsRef().get();
+  void consume("firestore.reads", 1);
+  const granted = snapshot.get("granted");
+  return typeof granted === "number" && Number.isInteger(granted) && granted >= 0 ? granted : 0;
 }
 
 /**

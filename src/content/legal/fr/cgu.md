@@ -179,7 +179,7 @@ Le badge « Certifié », lorsqu'il est proposé, signale un professionnel dont 
 
 ### 4.5 Offre de lancement Pro {#roles-5}
 
-Les comptes Pro sont ouverts dès le lancement d'{brand}. Tant que les ventes ne sont pas ouvertes, l'offre de lancement est gratuite : un professionnel vérifié bénéficie des quotas de publication et de la boutique de l'offre Essentiel, sans crédits mensuels.
+Les comptes Pro sont ouverts dès le lancement d'{brand}. Les 100 premiers professionnels dont le compte est validé bénéficient gratuitement, pendant 6 mois à compter de cette validation, des quotas de publication et de la boutique de l'offre Essentiel, sans crédits mensuels. Cette offre ne prend jamais fin tant que les ventes ne sont pas ouvertes.
 
 Avant la fin ou toute modification de cette offre, {brand} vous prévient au moins 30 jours à l'avance, par e-mail et dans votre espace. Aucun paiement ne vous sera demandé sans votre accord exprès, donné selon les CGV alors publiées.
 
@@ -762,7 +762,7 @@ Une annonce remontée porte la mention « Remontée » ; une annonce À la Une p
 
 ### 16.2 Abonnements Pro {#services-payants-2}
 
-À l'ouverture des ventes, les professionnels pourront souscrire un abonnement Pro, ou acheter un Pass Boutique : 30 jours de l'offre Essentiel, en un seul paiement, sans renouvellement. Les deux sont régis par les CGV. Jusque-là, l'offre de lancement gratuite s'applique (§4.5).
+À l'ouverture des ventes, les professionnels pourront souscrire un abonnement Pro, ou acheter un Pass Boutique : 30 jours de l'offre Essentiel, en un seul paiement, sans renouvellement. Les deux sont régis par les CGV. Les 100 premiers professionnels validés bénéficient de l'offre de lancement gratuite (§4.5).
 
 ### 16.3 Publicité sur le site {#services-payants-3}
 

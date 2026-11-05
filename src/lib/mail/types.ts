@@ -187,9 +187,9 @@ export interface TemplateData {
    */
   /** `favorites`: favorite listings whose promotion started since the last run (catalogue §4). */
   savedSearchAlert: { displayName: string; searches: SavedSearchAlertSection[]; favorites?: FavoriteDropListing[]; unsubscribeToken: string };
-  /** `launchOffer`: Essentiel offered until sales open, `noticeDays` of notice before any payment. */
   proApplicationReceived: { displayName: string; shopName: string };
-  proApproved: { displayName: string; shopName: string; launchOffer: boolean; noticeDays: number };
+  /** `launchOffer`: a seat of the launch offer, Essentiel free until `offerEndsAt` (ISO), `noticeDays` of notice. */
+  proApproved: { displayName: string; shopName: string; launchOffer: boolean; noticeDays: number; offerEndsAt?: string };
   /** The moderator's reason; `contact` is where to object (legal configuration). */
   proRejected: { displayName: string; shopName: string; reason: string; contact: string; revalidation?: boolean };
   /** Validation withdrawn by an admin (P2-10): the statement as written; `contact` is where to object. */

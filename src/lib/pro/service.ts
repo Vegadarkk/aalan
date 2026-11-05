@@ -1,6 +1,6 @@
 import "server-only";
 import { randomInt } from "node:crypto";
-import { launchOfferOpen, listingQuotas } from "@/config/pricing";
+import { listingQuotas, shopLaunchOfferEnd, type LaunchOffer } from "@/config/pricing";
 import type { AuthContext } from "@/lib/auth/guards";
 import { getAbuseRules, getFlags, getPricing } from "@/lib/config/runtime";
 import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
@@ -10,6 +10,7 @@ import { DEFAULT_BANNER } from "@/config/storefront";
 import { db } from "@/lib/firebase/admin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { countActive, getListings } from "@/lib/db/repositories/listings";
+import { launchOfferState } from "@/lib/pro/launch-offer-state";
 import { getProProfile, proProfileFromSnapshot, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { COLLECTIONS, type UserDoc } from "@/lib/db/schemas";
 import { getUploads } from "@/lib/db/repositories/uploads";
@@ -190,15 +191,22 @@ export function revalidationSubmission(existing: ProProfileRecord, submitted: Pr
   };
 }
 
+/** The launch offer an applicant would get if validated now; only read for a shop not validated yet. */
+async function launchOfferForApplicant(offer: LaunchOffer, lifecycle: string | null): Promise<ProMeResponse["launchOffer"]> {
+  if (lifecycle !== null && lifecycle !== "pending_verification" && lifecycle !== "rejected") return null;
+  const state = await launchOfferState(offer);
+  return state ? { noticeDays: state.noticeDays, months: state.months, seatsLeft: state.seatsLeft } : null;
+}
+
 /** GET /api/pro/me: the account's shop or application, the switches and the eligibility checks. */
 export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
   const uid = auth.user.uid;
   const [flags, user, pricing] = await Promise.all([getFlags(), getUser(uid), getPricing()]);
   const eligibility = { emailVerified: user?.badges.emailVerified ?? false, phoneVerified: user?.badges.phoneVerified ?? false, accountActive: user?.status === "active" };
-  // The offer a shop verified today receives (as decideApplication grants it).
-  const launchOffer = !flags.salesEnabled && launchOfferOpen(pricing.launchOffer, new Date()) ? { noticeDays: pricing.launchOffer.noticeDays } : null;
-  const base = { signupOpen: flags.proSignupEnabled, salesOpen: flags.salesEnabled, phoneVerification: isPhoneVerificationConfigured() ? ("whatsapp" as const) : ("call" as const), launchOffer, eligibility };
   const profile = user?.proId ? await getProProfile(user.proId) : null;
+  // The offer a shop verified today receives (as decideApplication grants it), while seats are left.
+  const launchOffer = await launchOfferForApplicant(pricing.launchOffer, profile && profile.ownerUid === uid ? profile.lifecycle : null);
+  const base = { signupOpen: flags.proSignupEnabled, salesOpen: flags.salesEnabled, phoneVerification: isPhoneVerificationConfigured() ? ("whatsapp" as const) : ("call" as const), launchOffer, eligibility };
   if (!profile || profile.ownerUid !== uid) return { ...base, shop: null };
   const active = profile.lifecycle === "pending_verification" || profile.lifecycle === "rejected" || profile.lifecycle === "revalidation_required" ? 0 : await countActive(uid);
   return {
@@ -222,7 +230,7 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       submittedAt: profile.kybc.submittedAt?.toISOString() ?? null,
       quotas: profile.quotas,
       activeListings: active,
-      launchOffer: profile.planSource === "launch_offer" ? { endsAt: pricing.launchOffer.endsAt, noticeDays: pricing.launchOffer.noticeDays } : null,
+      launchOffer: profile.planSource === "launch_offer" ? { endsAt: shopLaunchOfferEnd(pricing.launchOffer, profile)?.toISOString() ?? null, noticeDays: pricing.launchOffer.noticeDays } : null,
       storefront: storefrontShown(profile.lifecycle, profile.plan) ? `${profile.slug}-${profile.proId}` : null,
       sector: profile.sector ?? "general",
       feeSchedule: profile.agency?.feeSchedule ?? "",

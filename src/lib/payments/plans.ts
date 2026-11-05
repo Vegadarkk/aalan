@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { publisherIdentity, vatMention, type LegalConfig } from "@/config/legal";
-import { launchOfferOpen, PAID_PLANS, type PaidPlanId, type PricingConfig } from "@/config/pricing";
+import { PAID_PLANS, shopLaunchOfferEnd, type PaidPlanId, type PricingConfig } from "@/config/pricing";
 import type { Locale } from "@/config/site";
 import type { AuthContext } from "@/lib/auth/guards";
 import { PASS_CONSENT_VERSION, PLAN_CONSENT_VERSION, type BillingRedirectResponse, type CheckoutPlanInput, type PassOffer, type PlanOffer, type SubscriptionResponse } from "@/lib/contracts/payments";
@@ -87,9 +87,10 @@ export async function subscriptionPage(auth: AuthContext, now = new Date()): Pro
     plan: profile.plan,
     planSource: profile.planSource,
     graceUntil: profile.graceUntil?.toISOString() ?? null,
-    launchOfferEndsAt: pricing.launchOffer.active ? pricing.launchOffer.endsAt : null,
+    launchOfferEndsAt: profile.planSource === "launch_offer" ? (shopLaunchOfferEnd(pricing.launchOffer, profile)?.toISOString() ?? null) : null,
     launchOfferNoticeDays: pricing.launchOffer.noticeDays,
-    launchOfferOpen: profile.planSource === "launch_offer" && launchOfferOpen(pricing.launchOffer, now),
+    // A seat stays the shop's until the nightly job ends it (src/lib/payments/launch-offer.ts).
+    launchOfferOpen: profile.planSource === "launch_offer",
     subscription: subscription
       ? { plan: subscription.plan, interval: subscription.interval, status: subscription.status, periodEnd: subscription.periodEnd?.toISOString() ?? null, willRenew: subscription.willRenew }
       : null,

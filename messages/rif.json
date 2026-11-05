@@ -4096,8 +4096,9 @@
     "intro": {
       "title": "Ad terẓmeḍ taḥanut Pro deg Aalan",
       "lead": "I tcirkat, i tɛawniyin (coopératives), i itejjaren d auto-entrepreneurs: taḥanut s yisem nnec, annonces s tecraḍ Pro d quotas i yemsasan d twuri nnec.",
-      "offer": "Offre Essentiel bla idrimen i tḥuna yettwasentmen ar ma ad ttwarẓment tzenziwin. Ad dak-d nini {days} n wussan zzat n kra n udfaɛ.",
-      "how": "Ad nesneqed isefka nnec (ICE, registre) d yiwet n tewṛiqt zzat ma ad nerẓem taḥanut, s umata deg sin n wussan n twuri."
+      "offer": "Offre de lancement : la formule Essentiel est offerte {months} mois aux premières boutiques validées, à compter de leur validation. Vous serez prévenu {days} jours avant tout paiement.",
+      "how": "Ad nesneqed isefka nnec (ICE, registre) d yiwet n tewṛiqt zzat ma ad nerẓem taḥanut, s umata deg sin n wussan n twuri.",
+      "offerSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
     },
     "eligibility": {
       "title": "Zzat ma ad tebdiḍ",
@@ -4285,7 +4286,7 @@
         "business": "Business",
         "premium": "Premium"
       },
-      "launchOffer": "Bla idrimen ar ma ad ttwarẓment tzenziwin. Ad dak-d nini {days} n wussan zzat n kra n udfaɛ.",
+      "launchOffer": "Offerte, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant tout paiement.",
       "launchOfferEnds": "Bla idrimen ar {date}.",
       "noPlan": "Bla offre, war tzemmreḍ ca ad tessufɣeḍ annonce tamaynut am Pro.",
       "salesClosed": "Abonnements ad ttwarẓmen zeɣ qbel.",
@@ -5415,7 +5416,7 @@
       "title": "Offre nnec",
       "none": "War tella ca offre",
       "launchOffer": "Essentiel bla idrimen",
-      "launchOfferBody": "Bla idrimen ar ad yebdu uzenzi. Ad dak-d nini {days} n wussan zzat n tagra.",
+      "launchOfferBody": "Offerte, sans les crédits mensuels ni les « À la Une » inclus. Vous serez prévenu {days} jours avant la fin.",
       "launchOfferEnds": "Bla idrimen ar {date}. Awi abonnement zzat n wass-a ḥima ad qqiment annonces nnec deg internet.",
       "monthly": "Adfaɛ yal ayyur",
       "yearly": "Adfaɛ yal aseggas",
@@ -6397,7 +6398,7 @@
       "stock": "Inawen n tiddi d yini, d usekcem n stock nnec s ufaylu s tefrayin Business d Premium",
       "planning": "I wid itekran, planning n ṭumubilat d isutar s wussan"
     },
-    "offer": "Twefka n usenṭi: twefka Essentiel bla idrimen i tḥuna yettwaqbalen ar tarzemt n uzenzi. Ad dak-nini {days} n wussan zzat n kra n udfaɛ.",
+    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Taḥanut i yiwen n wayyur? Pass Boutique yerezzem vitrine i {days} n wussan, bla abonnement, zi tarzemt n uzenzi.",
     "stepsTitle": "Mamec ad yeddu",
     "steps": {
@@ -6407,8 +6408,8 @@
     },
     "legal": "Tiwtilin n uzref n yal tawuri ad ttwasmektint xmi ɣa tesnulfuḍ vitrine. Tikkal n tedbelt nnec: <link>amnir n imhniyen d coopératives</link>.",
     "directory": "Ẓar tabdart n tḥuna",
-    "offerUntil": "Offre de lancement : l'offre Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
-    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement."
+    "passOpen": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement.",
+    "offerSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
   },
   "Directory": {
     "metaTitle": "{heading} · Tabdart n imhniyen",
@@ -6509,7 +6510,7 @@
     },
     "pros": {
       "title": "Imhniyen",
-      "launchOffer": "Twefka n usenṭi: formule Essentiel bla idrimen i tḥuna yettwaqbalen ar tarzemt n uzenzi, ad dak-nini {days, number} n wussan zzat n kra n udfaɛ.",
+      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Bla abonnement, bla asnulfu s yiman nnes"
@@ -6531,9 +6532,9 @@
       "stockImport": "Asekcem n stock s ufaylu",
       "recommended": "Nenṣeḥ-ak yis",
       "vatNote": "Ssuma bla taxes: d netta ay tettxelleṣeḍ. Aalan war tettfaktuṛ ca TVA; Pro ixelleṣ TVA n Lmeɣrib s yixef nnes (autoliquidation) mala tettwaxs.",
-      "launchOfferUntil": "Offre de lancement : la formule Essentiel reste offerte aux boutiques validées jusqu'au {date}.",
       "passCredits": "{count, number} crédits offerts pendant le pass",
-      "askQuote": "Demander un devis"
+      "askQuote": "Demander un devis",
+      "launchOfferSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
     },
     "footnote": "Azenzi ad yerzem xmi ɣa yerzem usit. Ssumat i d-banen d tid i d-ɣa yilin deg tarzemt.",
     "compare": {

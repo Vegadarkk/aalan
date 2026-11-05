@@ -4,11 +4,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BadgeCheck, Check, Clock, Coins, Gift, Minus, Rocket, Sparkles, Store, User } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
-import { launchOfferOpen } from "@/config/pricing";
 import { Link } from "@/i18n/navigation";
-import { localeParams, numbersLocale, pageLocale } from "@/i18n/params";
+import { localeParams, pageLocale } from "@/i18n/params";
 import { getFlags, getPricing } from "@/lib/config/runtime";
-import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
+import { launchOfferState } from "@/lib/pro/launch-offer-state";
 import { importsStock } from "@/lib/contracts/stock-import";
 import { alternates } from "@/lib/i18n/metadata";
 import { PRICING_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
@@ -88,11 +87,10 @@ export default async function PricingPage({ params }: { params: Params }) {
     getPricing(),
     getFlags(),
   ]);
-  const offer = launchOfferOpen(pricing.launchOffer, new Date()) ? pricing.launchOffer : null;
-  // Texts of the closed sales only while they are closed (zone 6 audit 6-05): once open, the
-  // launch offer is told by its end date, and the « ventes ouvrent avec le lancement » note goes.
+  // The first `seats` validated shops (owner, 2026-11-05), told while some are left.
+  const offer = await launchOfferState(pricing.launchOffer);
+  // Texts of the closed sales only while they are closed (zone 6 audit 6-05).
   const salesOpen = flags.salesEnabled;
-  const offerEnd = offer?.endsAt ? new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(Date.parse(offer.endsAt)) }).format(new Date(offer.endsAt)) : null;
   const { essentiel, business } = pricing.plans;
   const pass = pricing.passes[0] ?? null;
   const listings = (value: number | null) => (value === null ? t("pros.unlimitedListings") : `${n("count", { count: value })} ${t("pros.activeListings")}`);
@@ -172,10 +170,13 @@ export default async function PricingPage({ params }: { params: Params }) {
 
       <section className="flex flex-col gap-5" aria-labelledby="pricing-pros">
         <h2 id="pricing-pros" className="text-2xl font-semibold">{t("pros.title")}</h2>
-        {offer && (offerEnd || !salesOpen) ? (
+        {offer ? (
           <p className="flex items-start gap-2 rounded-lg bg-featured/15 px-4 py-3 text-sm">
             <Gift className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            {offerEnd ? t("pros.launchOfferUntil", { date: offerEnd }) : n("pros.launchOffer", { days: offer.noticeDays })}
+            <span>
+              {n("pros.launchOffer", { seats: offer.seats, months: offer.months, days: offer.noticeDays })}
+              {offer.seatsLeft === null ? null : <strong className="font-semibold"> {n("pros.launchOfferSeats", { left: offer.seatsLeft })}</strong>}
+            </span>
           </p>
         ) : null}
         {/* Rows 2 rem apart: the « Recommandé » badge rides 0.75 rem above its card (zone 6 audit 6-25). */}

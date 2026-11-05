@@ -552,25 +552,34 @@ describe("nightly plans job", () => {
     expect((await getProProfile(proId))?.launchOfferNoticeSentAt).toBeUndefined();
     mailRoom.value = null;
 
+    // Told 20 days before the offer's end: the shop keeps it 30 days from this first notice (CGU §4.5).
     await proPlansNightly();
-    expect(mailsTo(owner)).toMatchObject([{ template: "launchOfferNotice", data: { kind: "ending", plan: "essentiel", shopName: "Atlas Auto", endsAt: offer.endsAt, freeListings: 0 } }]);
+    const told = (await getProProfile(proId))?.launchOfferNoticeFrom;
+    expect(told).toBeInstanceOf(Date);
+    const end = told!.getTime() + 30 * DAY_MS;
+    expect(end).toBeGreaterThan(endsAt);
+    expect(mailsTo(owner)).toMatchObject([{ template: "launchOfferNotice", data: { kind: "ending", plan: "essentiel", shopName: "Atlas Auto", endsAt: new Date(end).toISOString(), freeListings: 0 } }]);
     expect((await getProProfile(proId))?.launchOfferNoticeSentAt).toBeInstanceOf(Date);
     await proPlansNightly();
     expect(mailsTo(owner)).toHaveLength(1);
-    await proPlansNightly(new Date(endsAt - 6 * DAY_MS));
+    // The offer's own end passes: the shop still has its notice period.
+    await proPlansNightly(new Date(endsAt + 60_000));
+    expect((await getProProfile(proId))?.lifecycle).toBe("verified");
+    expect(mailsTo(owner)).toHaveLength(1);
+    await proPlansNightly(new Date(end - 6 * DAY_MS));
     expect(mailsTo(owner)).toHaveLength(2);
 
     // Past the end without mail budget: the shop keeps the offer until its last mail can go.
     mailRoom.value = 0;
-    await proPlansNightly(new Date(endsAt + 30_000));
+    await proPlansNightly(new Date(end + 30_000));
     expect((await getProProfile(proId))?.lifecycle).toBe("verified");
     mailRoom.value = null;
 
-    await proPlansNightly(new Date(endsAt + 60_000));
+    await proPlansNightly(new Date(end + 60_000));
     expect(await getProProfile(proId)).toMatchObject({ lifecycle: "downgraded", plan: "none", planSource: "none", quotas: DEFAULT_PRICING.pro.none });
     expect(await getListing(listingId)).toMatchObject({ status: "paused", pausedReason: "quota" });
     expect(mailsTo(owner).at(-1)).toMatchObject({ template: "launchOfferNotice", data: { kind: "ended", paused: 1 } });
-    await proPlansNightly(new Date(endsAt + 120_000));
+    await proPlansNightly(new Date(end + 120_000));
     expect(mailsTo(owner)).toHaveLength(3);
   });
 });

@@ -251,8 +251,8 @@ describe("Pass Boutique", () => {
 });
 
 describe("launch offer config", () => {
-  it("defaults to an open Essentiel offer with 30 days' notice", () => {
-    expect(DEFAULT_PRICING.launchOffer).toEqual({ active: true, plan: "essentiel", noticeDays: 30, endsAt: null });
+  it("defaults to an open Essentiel offer for the first 100 validated shops, 6 months each, 30 days of notice", () => {
+    expect(DEFAULT_PRICING.launchOffer).toEqual({ active: true, plan: "essentiel", noticeDays: 30, endsAt: null, seats: 100, months: 6 });
     expect(pricingConfigSchema.safeParse(DEFAULT_PRICING).success).toBe(true);
   });
 

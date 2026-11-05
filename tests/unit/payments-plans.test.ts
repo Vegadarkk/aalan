@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_LEGAL } from "@/config/legal";
-import { DEFAULT_PRICING, planOfEntitlement, resolvePricingConfig } from "@/config/pricing";
+import { addMonths, DEFAULT_PRICING, launchOfferEndFor, launchOfferGrantEnd, launchOfferSeatsLeft, planOfEntitlement, resolvePricingConfig, shopLaunchOfferEnd } from "@/config/pricing";
 import { resetServerEnv } from "@/lib/env";
 import { invoiceViews } from "@/lib/payments/invoices";
 import { noticeDue } from "@/lib/payments/launch-offer";
@@ -323,27 +323,58 @@ describe("invoices list", () => {
 });
 
 describe("launch offer notices", () => {
-  const offer = { ...DEFAULT_PRICING.launchOffer, endsAt: "2027-03-01T00:00:00.000Z" };
-  const before = (days: number) => new Date(Date.parse(offer.endsAt) - days * 86_400_000);
+  const end = new Date("2027-03-01T00:00:00.000Z");
+  const before = (days: number) => new Date(end.getTime() - days * 86_400_000);
 
   it("sends one notice at J-30, J-7 and J-1, none before, after the end or twice", () => {
-    expect(noticeDue({ ...offer, endsAt: null }, undefined, before(10))).toBeNull();
-    expect(noticeDue(offer, undefined, before(31))).toBeNull();
-    expect(noticeDue(offer, undefined, before(30))).toBe(30);
-    expect(noticeDue(offer, before(30), before(20))).toBeNull();
-    expect(noticeDue(offer, before(30), before(6.5))).toBe(7);
-    expect(noticeDue(offer, before(6.5), before(2))).toBeNull();
-    expect(noticeDue(offer, before(6.5), before(0.5))).toBe(1);
-    expect(noticeDue(offer, before(0.5), before(0.1))).toBeNull();
-    expect(noticeDue(offer, undefined, before(0))).toBeNull();
+    expect(noticeDue(end, 30, undefined, before(31))).toBeNull();
+    expect(noticeDue(end, 30, undefined, before(30))).toBe(30);
+    expect(noticeDue(end, 30, before(30), before(20))).toBeNull();
+    expect(noticeDue(end, 30, before(30), before(6.5))).toBe(7);
+    expect(noticeDue(end, 30, before(6.5), before(2))).toBeNull();
+    expect(noticeDue(end, 30, before(6.5), before(0.5))).toBe(1);
+    expect(noticeDue(end, 30, before(0.5), before(0.1))).toBeNull();
+    expect(noticeDue(end, 30, undefined, before(0))).toBeNull();
   });
 
   it("starts again when the end date moves and keeps to a shorter notice", () => {
-    expect(noticeDue({ ...offer, endsAt: "2027-04-01T00:00:00.000Z" }, before(0.5), before(0.2))).toBeNull();
-    expect(noticeDue({ ...offer, endsAt: "2027-03-20T00:00:00.000Z" }, before(30), before(0.2))).toBe(30);
-    expect(noticeDue({ ...offer, noticeDays: 5 }, undefined, before(6))).toBeNull();
-    expect(noticeDue({ ...offer, noticeDays: 5 }, undefined, before(4))).toBe(5);
-    expect(noticeDue({ ...offer, noticeDays: 0 }, undefined, before(0.5))).toBeNull();
+    expect(noticeDue(new Date("2027-04-01T00:00:00.000Z"), 30, before(0.5), before(0.2))).toBeNull();
+    expect(noticeDue(new Date("2027-03-20T00:00:00.000Z"), 30, before(30), before(0.2))).toBe(30);
+    expect(noticeDue(end, 5, undefined, before(6))).toBeNull();
+    expect(noticeDue(end, 5, undefined, before(4))).toBe(5);
+    expect(noticeDue(end, 0, undefined, before(0.5))).toBeNull();
+  });
+});
+
+describe("launch offer end of a shop (owner, 2026-11-05)", () => {
+  const offer = DEFAULT_PRICING.launchOffer;
+  const day = 86_400_000;
+
+  it("offers 6 months to the first 100 validations by default", () => {
+    expect([offer.seats, offer.months, offer.noticeDays]).toEqual([100, 6, 30]);
+    expect(launchOfferSeatsLeft(offer, 0)).toBe(100);
+    expect(launchOfferSeatsLeft(offer, 100)).toBe(0);
+    expect(launchOfferSeatsLeft(offer, 140)).toBe(0);
+  });
+
+  it("ends 6 calendar months after the validation, the day clamped to the month", () => {
+    expect(launchOfferGrantEnd(offer, new Date("2026-12-10T09:30:00.000Z"))?.toISOString()).toBe("2027-06-10T09:30:00.000Z");
+    expect(addMonths(new Date("2026-08-31T12:00:00.000Z"), 6).toISOString()).toBe("2027-02-28T12:00:00.000Z");
+    expect(addMonths(new Date("2027-08-31T12:00:00.000Z"), 6).toISOString()).toBe("2028-02-29T12:00:00.000Z");
+  });
+
+  it("takes the earlier of the shop's end and the offer's end, never sooner than the notice after the first mail", () => {
+    const shopEnd = new Date("2027-06-10T00:00:00.000Z");
+    expect(launchOfferEndFor(offer, shopEnd)).toEqual(shopEnd);
+    expect(launchOfferEndFor(offer, undefined)).toBeNull();
+    expect(launchOfferEndFor({ ...offer, endsAt: "2027-04-01T00:00:00.000Z" }, shopEnd)?.toISOString()).toBe("2027-04-01T00:00:00.000Z");
+    expect(launchOfferEndFor({ ...offer, endsAt: "2027-04-01T00:00:00.000Z" }, undefined)?.toISOString()).toBe("2027-04-01T00:00:00.000Z");
+    // Sales opened 2 days before the shop's end: it keeps the offer 30 days from its first notice.
+    const told = new Date(shopEnd.getTime() - 2 * day);
+    expect(launchOfferEndFor(offer, shopEnd, told)?.getTime()).toBe(told.getTime() + 30 * day);
+    // Told on time (J-30): the end stays.
+    expect(launchOfferEndFor(offer, shopEnd, new Date(shopEnd.getTime() - 30 * day))).toEqual(shopEnd);
+    expect(shopLaunchOfferEnd(offer, { launchOfferEndsAt: shopEnd, launchOfferNoticeSentAt: told })?.getTime()).toBe(told.getTime() + 30 * day);
   });
 });
 

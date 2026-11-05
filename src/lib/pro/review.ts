@@ -1,11 +1,11 @@
 import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { launchOfferOpen, listingQuotas } from "@/config/pricing";
+import { launchOfferEndFor, launchOfferGrantEnd, launchOfferOpen, listingQuotas } from "@/config/pricing";
 import type { StaffContext } from "@/lib/auth/guards";
 import { audit } from "@/lib/audit";
-import { getFlags, getPricing } from "@/lib/config/runtime";
+import { getPricing } from "@/lib/config/runtime";
 import type { ProDecisionInput, ProDecisionResponse, ProPhoneCheckInput, ProPhoneCheckResponse, ProQueueItem, ProQueueResponse, ProReview } from "@/lib/contracts/pro";
-import { getProProfile, listProApplications, proProfileFromSnapshot, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
+import { getProProfile, launchOfferSeatsGranted, launchOfferSeatsRef, listProApplications, proProfileFromSnapshot, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { getUploads } from "@/lib/db/repositories/uploads";
 import { COLLECTIONS } from "@/lib/db/schemas";
@@ -142,7 +142,11 @@ export function underReview(current: Pick<ProProfileRecord, "kybc" | "lifecycle"
 }
 
 /** The profile after the decision: pure, so the unit tests cover every branch without Firestore. */
-export function decidedProfile(current: ProProfileRecord, input: ProDecisionInput, ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>> }): ProProfileDoc {
+export function decidedProfile(
+  current: ProProfileRecord,
+  input: ProDecisionInput,
+  ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>> },
+): ProProfileDoc {
   if (!underReview(current)) throw new HttpError(409, "conflict", "application already decided");
   const revalidation = current.lifecycle === "revalidation_required";
   if (!reviewedSubmission(current, input)) throw new HttpError(409, "conflict", "application resubmitted since the review");
@@ -167,6 +171,9 @@ export function decidedProfile(current: ProProfileRecord, input: ProDecisionInpu
     lifecycle: patch.lifecycle,
     plan: patch.plan,
     planSource: patch.planSource,
+    // A seat of the launch offer: its own end, `months` after this validation (owner, 2026-11-05).
+    launchOfferEndsAt:
+      !revalidation && patch.planSource === "launch_offer" ? launchOfferGrantEnd(ctx.pricing.launchOffer, ctx.now) : doc.launchOfferEndsAt,
     // `null` (a new validation after a withdrawal) clears it; absent keeps it.
     revalidationFrom: patch.revalidationFrom === null ? undefined : (patch.revalidationFrom ?? doc.revalidationFrom),
     quotas: listingQuotas({ type: "pro", plan: patch.plan }, ctx.pricing),
@@ -189,30 +196,41 @@ export function isEffectsRerun(current: Pick<ProProfileRecord, "kybc" | "lifecyc
 }
 
 export async function decideApplication(staff: StaffContext, proId: string, input: ProDecisionInput, identity: RequestIdentity, now = new Date()): Promise<ProDecisionResponse> {
-  const [pricing, flags] = await Promise.all([getPricing(), getFlags()]);
-  // Sales open: no launch offer, whatever config/pricing still says (design D3).
-  const launchOfferActive = !flags.salesEnabled && launchOfferOpen(pricing.launchOffer, now);
+  const pricing = await getPricing();
+  // The first `seats` validations get the offer, sales open or not (owner, 2026-11-05).
+  const offerOpen = launchOfferOpen(pricing.launchOffer, now);
   const ref = proProfileRef(proId);
 
   const decided = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
-    if (isEffectsRerun(current, input)) return { next: current, rerun: true, sectorChange: null, revalidation: false };
+    if (isEffectsRerun(current, input)) return { next: current, rerun: true, sectorChange: null, revalidation: false, launchOfferActive: false };
     const userRef = db().collection(COLLECTIONS.users).doc(current.ownerUid);
     const userSnapshot = await tx.get(userRef);
     if (!userSnapshot.exists) throw new HttpError(409, "conflict", "owner account missing");
     if (userSnapshot.get("proId") !== proId) throw new HttpError(409, "conflict", "owner account linked to another shop");
     if (input.action === "verify" && userSnapshot.get("status") !== "active") throw new HttpError(409, "account_suspended", "owner account not active");
     if (input.action === "verify" && userSnapshot.get("badges.phoneVerified") !== true) throw new HttpError(409, "phone_unverified", "owner phone not verified");
+    // A first validation takes a seat while some are left; a revalidation keeps the plan it had.
+    const seatCandidate = input.action === "verify" && offerOpen && current.lifecycle === "pending_verification";
+    const granted = seatCandidate ? await launchOfferSeatsGranted(tx) : 0;
+    const launchOfferActive = seatCandidate && granted < pricing.launchOffer.seats;
     const next = decidedProfile(current, input, { staffUid: staff.user.uid, now, launchOfferActive, pricing });
     const before = current.sector ?? "general";
     const after = next.sector ?? "general";
     tx.set(ref, proProfileToFirestore(next));
     if (input.action === "verify") tx.update(userRef, { type: "pro", updatedAt: Timestamp.fromDate(now) });
-    return { next, rerun: false, sectorChange: before === after ? null : `sector ${before} -> ${after}`, revalidation: current.lifecycle === "revalidation_required" };
+    if (launchOfferActive) tx.set(launchOfferSeatsRef(), { granted: granted + 1, updatedAt: Timestamp.fromDate(now) });
+    return {
+      next,
+      rerun: false,
+      sectorChange: before === after ? null : `sector ${before} -> ${after}`,
+      revalidation: current.lifecycle === "revalidation_required",
+      launchOfferActive,
+    };
   });
   void consume("firestore.reads", decided.rerun ? 1 : 2);
-  if (!decided.rerun) void consume("firestore.writes", input.action === "verify" ? 2 : 1);
+  if (!decided.rerun) void consume("firestore.writes", (input.action === "verify" ? 2 : 1) + (decided.launchOfferActive ? 1 : 0));
 
   const uid = decided.next.ownerUid;
   if (decided.rerun) {
@@ -252,8 +270,8 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     at: now,
   });
   // A shop validated again keeps its plan: the mail speaks of the launch offer only if it is that plan.
-  const offered = revalidation ? decided.next.planSource === "launch_offer" : launchOfferActive;
-  await notifyApplicant(decided.next, input, offered ? pricing.launchOffer.noticeDays : null);
+  const offered = revalidation ? decided.next.planSource === "launch_offer" : decided.launchOfferActive;
+  await notifyApplicant(decided.next, input, offered ? { noticeDays: pricing.launchOffer.noticeDays, endsAt: launchOfferEndFor(pricing.launchOffer, decided.next.launchOfferEndsAt) } : null);
   return { proId, lifecycle: decided.next.lifecycle, retagged, effectsPending };
 }
 
@@ -303,14 +321,25 @@ export async function checkPhoneByCall(staff: StaffContext, proId: string, input
 }
 
 /** proApproved / proRejected; a failure is logged, never thrown (the decision is committed). */
-async function notifyApplicant(profile: ProProfileDoc, input: ProDecisionInput, noticeDays: number | null): Promise<void> {
+async function notifyApplicant(profile: ProProfileDoc, input: ProDecisionInput, offer: { noticeDays: number; endsAt: Date | null } | null): Promise<void> {
   try {
     const to = await listingRecipient(profile.ownerUid);
     if (!to) return;
     const base = { locale: to.locale, to: to.email, priority: "transactional" as const };
     const key = `${input.action}-${profile.ownerUid}-${input.submittedAt}`.replace(/[^A-Za-z0-9_-]/g, "");
     if (input.action === "verify") {
-      await sendMail({ ...base, template: "proApproved", idempotencyKey: `proApproved-${key}`, data: { displayName: to.displayName, shopName: profile.name, launchOffer: noticeDays !== null, noticeDays: noticeDays ?? 0 } });
+      await sendMail({
+        ...base,
+        template: "proApproved",
+        idempotencyKey: `proApproved-${key}`,
+        data: {
+          displayName: to.displayName,
+          shopName: profile.name,
+          launchOffer: offer !== null,
+          noticeDays: offer?.noticeDays ?? 0,
+          ...(offer?.endsAt ? { offerEndsAt: offer.endsAt.toISOString() } : {}),
+        },
+      });
     } else {
       const contact = (await getLegalConfig()).dsaContactEmail;
       await sendMail({ ...base, template: "proRejected", idempotencyKey: `proRejected-${key}`, data: { displayName: to.displayName, shopName: profile.name, reason: input.reason, contact, ...(profile.lifecycle === "revalidation_required" ? { revalidation: true } : {}) } });

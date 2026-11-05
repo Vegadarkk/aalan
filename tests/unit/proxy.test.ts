@@ -292,14 +292,18 @@ describe("proxy", () => {
 
 describe("proxy before the opening (OPENS_AT)", () => {
   const SECRET = "a".repeat(20) + "B1".repeat(10);
+  const HOST = "aalan.ma";
+  const visitor = (path: string) => request(path, HOST);
+  const signedIn = (path: string) => member(path, HOST);
   beforeEach(() => {
     vi.stubEnv("OPENS_AT", new Date(Date.now() + 86_400_000).toISOString());
+    vi.stubEnv("ADMIN_HOST", `admin.${HOST}`);
   });
 
   it("renders the home page of each locale with the countdown page, as a shared page", async () => {
     for (const locale of ["fr", "ar", "rif"]) {
-      const response = await proxy(request(`/${locale}`));
-      expect(response.headers.get("x-middleware-rewrite")).toBe(`https://joutiya.ma/${locale}/ouverture`);
+      const response = await proxy(visitor(`/${locale}`));
+      expect(response.headers.get("x-middleware-rewrite")).toBe(`https://${HOST}/${locale}/ouverture`);
       expect(response.headers.get(INLINE_HASH_MARKER)).toBe("1");
       expect(response.headers.get("set-cookie")).toBeNull();
     }
@@ -307,33 +311,33 @@ describe("proxy before the opening (OPENS_AT)", () => {
 
   it("sends every other page to the home page, uncached, and keeps the legal texts", async () => {
     for (const path of ["/fr/annonce/velo-casablanca-abcd2345", "/ar/recherche", "/fr/connexion", "/fr/inscription", "/fr/deposer", "/rif/c/vehicules", "/fr/aide"]) {
-      const response = await proxy(member(path));
+      const response = await proxy(signedIn(path));
       expect(response.status, path).toBe(307);
-      expect(response.headers.get("location"), path).toBe(`https://joutiya.ma/${path.split("/")[1]}`);
+      expect(response.headers.get("location"), path).toBe(`https://${HOST}/${path.split("/")[1]}`);
       expect(response.headers.get("cache-control"), path).toBe("no-store");
     }
-    const legal = await proxy(request("/fr/legal/mentions-legales"));
+    const legal = await proxy(visitor("/fr/legal/mentions-legales"));
     expect(legal.status).toBe(200);
     expect(legal.headers.get("x-middleware-rewrite")).toBeNull();
   });
 
   it("closes the public API but health, config, CSP reports, the preview pass and the webhooks", async () => {
-    const closed = await proxy(request("/api/auth/signup"));
+    const closed = await proxy(visitor("/api/auth/signup"));
     expect(closed.status).toBe(503);
     expect(closed.headers.get("cache-control")).toBe("no-store");
     expect(Number(closed.headers.get("retry-after"))).toBeGreaterThan(0);
-    for (const path of ["/api/listings", "/api/search", "/api/auth/login", "/api/uploads/sign"]) expect((await proxy(request(path))).status, path).toBe(503);
+    for (const path of ["/api/listings", "/api/search", "/api/auth/login", "/api/uploads/sign"]) expect((await proxy(visitor(path))).status, path).toBe(503);
     for (const path of ["/api/health", "/api/config", "/api/csp-report", "/api/preview", "/api/webhooks/stripe", "/api/webhooks/revenuecat", "/api/auth/logout"]) {
-      expect((await proxy(request(path))).status, path).toBe(200);
+      expect((await proxy(visitor(path))).status, path).toBe(200);
     }
     // The back office keeps working on its own host.
-    expect((await proxy(request("/api/admin/users", "admin.joutiya.ma"))).status).toBe(200);
+    expect((await proxy(request("/api/admin/users", `admin.${HOST}`))).status).toBe(200);
   });
 
   it("lets a valid preview pass through, never a forged one", async () => {
     vi.stubEnv("PREVIEW_SECRET", SECRET);
     const { previewPass } = await import("@/lib/launch/preview");
-    const pass = (path: string, value: string) => new NextRequest(`https://joutiya.ma${path}`, { headers: { host: "joutiya.ma", cookie: `__Host-preview=${value}` } });
+    const pass = (path: string, value: string) => new NextRequest(`https://${HOST}${path}`, { headers: { host: HOST, cookie: `__Host-preview=${value}` } });
     expect((await proxy(pass("/fr", previewPass(SECRET)))).headers.get("x-middleware-rewrite")).toBeNull();
     expect((await proxy(pass("/fr/annonce/velo-casablanca-abcd2345", previewPass(SECRET)))).status).toBe(200);
     expect((await proxy(pass("/api/listings", previewPass(SECRET)))).status).toBe(200);
@@ -343,13 +347,13 @@ describe("proxy before the opening (OPENS_AT)", () => {
 
   it("opens at the instant, and the countdown page is never reached directly", async () => {
     vi.stubEnv("OPENS_AT", new Date(Date.now() - 1000).toISOString());
-    expect((await proxy(request("/fr"))).headers.get("x-middleware-rewrite")).toBeNull();
-    expect((await proxy(request("/fr/annonce/velo-casablanca-abcd2345"))).status).toBe(200);
-    expect((await proxy(request("/api/listings"))).status).toBe(200);
+    expect((await proxy(visitor("/fr"))).headers.get("x-middleware-rewrite")).toBeNull();
+    expect((await proxy(visitor("/fr/annonce/velo-casablanca-abcd2345"))).status).toBe(200);
+    expect((await proxy(visitor("/api/listings"))).status).toBe(200);
     for (const path of ["/fr/ouverture", "/ar/ouverture"]) {
-      const response = await proxy(request(path));
+      const response = await proxy(visitor(path));
       expect(response.status, path).toBe(307);
-      expect(response.headers.get("location"), path).toBe(`https://joutiya.ma/${path.split("/")[1]}`);
+      expect(response.headers.get("location"), path).toBe(`https://${HOST}/${path.split("/")[1]}`);
     }
   });
 });

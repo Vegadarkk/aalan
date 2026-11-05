@@ -234,7 +234,7 @@ describe("PATCH /api/listings/{id}", () => {
   it("refuses more photos than the quota (photo_limit)", async () => {
     const owner = await member();
     const id = await draft(owner);
-    const ids = await Promise.all(Array.from({ length: 11 }, () => seedReadyUpload(owner, id)));
+    const ids = await Promise.all(Array.from({ length: 6 }, () => seedReadyUpload(owner, id)));
     const tooMany = await api<ErrorBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: ids } });
     expect(tooMany.status).toBe(409);
     expect(tooMany.body.error.code).toBe("photo_limit");

@@ -279,7 +279,7 @@ Peut publier tout titulaire d'un compte de particulier ou d'un compte Pro vérif
 
 Le nombre d'annonces et de photos est limité. Les limites sont affichées lors du dépôt. À ce jour :
 
-- particulier : 5 nouvelles annonces par jour et 10 photos par annonce ;
+- particulier : 5 nouvelles annonces par jour et 5 photos par annonce ;
 - professionnel : les quotas de son offre et 20 photos par annonce.
 
 ### 7.2 Une annonce exacte et loyale {#annonces-2}

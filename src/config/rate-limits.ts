@@ -175,7 +175,7 @@ export const RATE_LIMITS = {
   // GET /api/uploads/{id} (polling) and repeated completes: one Firestore read each.
   "upload.status.uid": { points: 900, duration: HOUR, policy: "open", key: "uid" },
   // DELETE /api/uploads/{id} (~3 reads, the detach transaction, the document delete and up to 3
-  // object deletions): 300 per day per account (20 active listings of 10 photos is 200).
+  // object deletions): 300 per day per account (20 active listings of 5 photos is 100).
   "upload.delete.uid": { points: 300, duration: DAY, policy: "open", key: "uid" },
   // POST /api/listings/{id}/phone (§6): 10 per hour and 30 per day per account, 20 per day per
   // device, 60 per day per IP then Turnstile. Closed: the number is personal data.

@@ -6,7 +6,7 @@ import { DEFAULT_PRICING, PRO_PLANS, listingLifetime, listingQuotas, pricingConf
 describe("config/pricing", () => {
   it("holds the D5 quotas and the §8 plans", () => {
     expect(pricingConfigSchema.strict().safeParse(DEFAULT_PRICING).success).toBe(true);
-    expect(DEFAULT_PRICING.individual).toEqual({ activeListings: 20, photosPerListing: 10, listingsPerDay: 5 });
+    expect(DEFAULT_PRICING.individual).toEqual({ activeListings: 20, photosPerListing: 5, listingsPerDay: 5 });
     expect(DEFAULT_PRICING.pro.essentiel.activeListings).toBe(50);
     expect(DEFAULT_PRICING.pro.business.activeListings).toBe(250);
     expect(DEFAULT_PRICING.pro.premium.activeListings).toBeNull();

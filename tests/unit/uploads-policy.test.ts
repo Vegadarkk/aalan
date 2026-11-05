@@ -42,7 +42,7 @@ describe("upload policy", () => {
     }
   });
 
-  it("allows 10 photos to an individual and 20 to a Pro (D5)", () => {
+  it("allows 5 photos to an individual and 20 to a Pro (D5)", () => {
     expect(maxPhotosOf({ sellerType: "individual" })).toBe(MAX_PHOTOS_INDIVIDUAL);
     expect(maxPhotosOf({ sellerType: "pro" })).toBe(MAX_PHOTOS_PRO);
   });

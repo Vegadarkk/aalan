@@ -214,7 +214,7 @@ describe("processUpload: happy path", () => {
     expect(doc.blurhash).toMatch(/^.{6,}$/);
     expect(doc.hash).toMatch(/^[0-9a-f]{16}$/);
     const attached = { id: record.id, w: 50, h: 100, blurhash: doc.blurhash, hash: doc.hash, variants: ["l", "m", "s"] };
-    expect(markUploadReady).toHaveBeenCalledWith(record.id, expect.objectContaining({ size: bytes, variants: ["l", "m", "s"] }), expect.objectContaining({ listingId: LISTING_ID, photo: attached, maxPhotos: 10 }), NOW);
+    expect(markUploadReady).toHaveBeenCalledWith(record.id, expect.objectContaining({ size: bytes, variants: ["l", "m", "s"] }), expect.objectContaining({ listingId: LISTING_ID, photo: attached, maxPhotos: 5 }), NOW);
     expect((fake.listings.get(LISTING_ID) as ListingRecord).photos).toEqual([attached]);
     expect(recordMediaBytes).toHaveBeenCalledWith(bytes, NOW);
     expect(recordModerationDecision).not.toHaveBeenCalled();

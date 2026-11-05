@@ -16,7 +16,7 @@ vi.mock("@/lib/uploads/storage-gauge", async (importOriginal) => ({
 import { DELETE as removeListing } from "@/app/api/listings/[id]/route";
 import { DELETE as removeUpload } from "@/app/api/uploads/[id]/route";
 import { POST as sign } from "@/app/api/uploads/sign/route";
-import { MAX_UPLOAD_BYTES, UPLOAD_ID_PATTERN, UPLOAD_URL_TTL_SECONDS, UPLOADS_PER_PHOTO_SLOT, type SignUploadResponse } from "@/lib/contracts/media";
+import { MAX_PHOTOS_INDIVIDUAL, MAX_UPLOAD_BYTES, UPLOAD_ID_PATTERN, UPLOAD_URL_TTL_SECONDS, UPLOADS_PER_PHOTO_SLOT, type SignUploadResponse } from "@/lib/contracts/media";
 import { listContentOps } from "@/lib/db/repositories/content-ops";
 import { countUploadsByTarget, getUpload, listUploadsByTarget } from "@/lib/db/repositories/uploads";
 import { resetServerEnv } from "@/lib/env";
@@ -124,33 +124,33 @@ describe("POST /api/uploads/sign", () => {
     expect((await signFor(owner, id, { declaredSize: MAX_UPLOAD_BYTES })).status).toBe(201);
   });
 
-  it("refuses an 11th photo, counting the attached photos and the uploads in flight", async () => {
+  it("refuses a photo over the quota, counting the attached photos and the uploads in flight", async () => {
     const owner = await member();
     const full = await draft(owner);
-    for (let i = 0; i < 10; i += 1) await attachPhoto(full, await seedReadyUpload(owner, full));
+    for (let i = 0; i < MAX_PHOTOS_INDIVIDUAL; i += 1) await attachPhoto(full, await seedReadyUpload(owner, full));
     const refused = await signFor(owner, full);
     expect([refused.status, refused.body.error.code]).toEqual([409, "photo_limit"]);
 
     const busy = await draft(owner);
-    for (let i = 0; i < 10; i += 1) expect((await signFor(owner, busy)).status).toBe(201);
+    for (let i = 0; i < MAX_PHOTOS_INDIVIDUAL; i += 1) expect((await signFor(owner, busy)).status).toBe(201);
     expect((await signFor(owner, busy)).body.error.code).toBe("photo_limit");
   });
 
   it("removes the signed document when presigning fails: no photo slot held, no upload counted", async () => {
     const owner = await member();
     const id = await draft(owner);
-    for (let i = 0; i < 9; i += 1) expect((await signFor(owner, id)).status).toBe(201);
+    for (let i = 0; i < MAX_PHOTOS_INDIVIDUAL - 1; i += 1) expect((await signFor(owner, id)).status).toBe(201);
     vi.spyOn(store, "presignPut").mockRejectedValueOnce(new Error("storage unavailable"));
     expect((await signFor(owner, id)).status).toBe(500);
-    expect(await countUploadsByTarget(id)).toBe(9);
-    // The 10th photo keeps its slot: no orphan in the in-flight hold.
+    expect(await countUploadsByTarget(id)).toBe(MAX_PHOTOS_INDIVIDUAL - 1);
+    // The last photo keeps its slot: no orphan in the in-flight hold.
     expect((await signFor(owner, id)).status).toBe(201);
   });
 
   it("caps the upload documents of a listing at 3x its photo limit, refused ones included, until some are removed", async () => {
     const owner = await member();
     const id = await draft(owner);
-    const cap = UPLOADS_PER_PHOTO_SLOT * 10;
+    const cap = UPLOADS_PER_PHOTO_SLOT * MAX_PHOTOS_INDIVIDUAL;
     // Refused photos are kept 7 days: without the cap, each one would be read by every owner GET.
     const refused: string[] = [];
     for (let i = 0; i < cap; i += 1) refused.push(await seedReadyUpload(owner, id, { status: "rejected", rejectReason: "nsfw" }));

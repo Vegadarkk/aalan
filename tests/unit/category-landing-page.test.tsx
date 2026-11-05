@@ -222,6 +222,49 @@ describe("category landing page", () => {
     expect(metadata.description).toBe("Animaux au Maroc : achetez et vendez entre particuliers et professionnels sur Aalan. Déposez votre annonce gratuitement.");
   });
 
+  it("renders car brand and model pages with their models, linked from the car page (owner, 5 Nov 2026)", async () => {
+    await engine.upsert([
+      doc("g2345678", "voitures", "rabat", { a_car_brand: "renault", a_car_model: "renault-clio" }),
+      doc("h2345678", "voitures", "rabat", { a_car_brand: "renault", a_car_model: "renault-clio" }),
+      doc("j2345678", "voitures", "fes", { a_car_brand: "renault", a_car_model: "renault-megane" }),
+      doc("k2345678", "voitures", "fes", { a_car_brand: "dacia", a_car_model: "dacia-logan" }),
+    ]);
+    const cars = await render("vehicules", ["voitures"]);
+    expect(cars).toContain("Voitures par marque");
+    const brands = cars.slice(cars.indexOf('id="landing-brands"'));
+    expect([...brands.matchAll(/href="\/fr\/c\/vehicules\/voitures\/(renault|dacia)"/g)].map((match) => match[1])).toEqual(["renault", "dacia"]);
+
+    const brand = await render("vehicules", ["voitures", "renault"]);
+    expect(brand).toMatch(/<h1[^>]*>Voitures Renault au Maroc<\/h1>/);
+    expect(brand).toContain("3 annonces en ligne");
+    expect(brand).toContain('href="/fr/recherche?categorie=vehicules&amp;sous-categorie=voitures&amp;f-car-brand=renault"');
+    expect(brand).toMatch(/<a aria-current="page"[^>]*href="\/fr\/c\/vehicules\/voitures\/renault"/);
+    expect(brand).toContain('href="/fr/c/vehicules/voitures/renault/clio"');
+    expect(brand).toContain('href="/fr/c/vehicules/voitures/renault/megane"');
+    expect(brand).not.toContain("landing-cities");
+    expect(brand).not.toContain('href="/fr/c/vehicules/voitures/dacia');
+    expect((await generateMetadata(params("vehicules", ["voitures", "renault"]))).robots).toBeUndefined();
+
+    const model = await render("vehicules", ["voitures", "renault", "clio"]);
+    expect(model).toMatch(/<h1[^>]*>Renault Clio au Maroc<\/h1>/);
+    expect(model).toMatch(/<a aria-current="page"[^>]*href="\/fr\/c\/vehicules\/voitures\/renault\/clio"/);
+    const jsonLd = JSON.parse(/<script type="application\/ld\+json">([^<]*)<\/script>/.exec(model)?.[1] ?? "{}") as { itemListElement?: { name: string; item?: string }[] };
+    expect(jsonLd.itemListElement?.map((step) => [step.name, step.item])).toEqual([
+      ["Accueil", "https://aalan.ma/fr"],
+      ["Véhicules", "https://aalan.ma/fr/c/vehicules"],
+      ["Voitures", "https://aalan.ma/fr/c/vehicules/voitures"],
+      ["Renault", "https://aalan.ma/fr/c/vehicules/voitures/renault"],
+      ["Clio", "https://aalan.ma/fr/c/vehicules/voitures/renault/clio"],
+    ]);
+    // Two listings: a page, out of the index; no listing: 404.
+    expect((await generateMetadata(params("vehicules", ["voitures", "renault", "clio"]))).robots).toEqual({ index: false, follow: true });
+    await expect(LandingPage(params("vehicules", ["voitures", "peugeot"]))).rejects.toThrow("NEXT_NOT_FOUND");
+    await expect(LandingPage(params("vehicules", ["voitures", "renault", "208"]))).rejects.toThrow("NEXT_NOT_FOUND");
+
+    const arabic = await render("vehicules", ["voitures", "renault"], "ar");
+    expect(arabic).toMatch(/<h1[^>]*>سيارات رونو في المغرب<\/h1>/);
+  });
+
   it("speaks Arabic with Arabic city names", async () => {
     const html = await render("vehicules", ["casablanca"], "ar");
     expect(html).toMatch(/<h1[^>]*>مركبات في الدار البيضاء<\/h1>/);

@@ -4,12 +4,14 @@ import { CITY_SLUGS, cityBySlug } from "@/config/regions";
 import { resetServerEnv } from "@/lib/env";
 import { resetSearchEngine, setSearchEngineForTests } from "@/lib/search/engine";
 import { MemoryEngine } from "@/lib/search/memory";
-import { cityLinks, distanceKm, LANDING_DATA_TTL_MS, landingData, resolveSeoSegments, SEO_MIN_LISTINGS, seoCounts, seoPath, seoSearchParams, seoVerdict } from "@/lib/search/seo";
+import { CAR_MODELS } from "@/config/car-models";
+import { CAR_BRANDS } from "@/config/categories";
+import { brandModels, CAR_PAGE_BRANDS, carModelSlug, cityLinks, distanceKm, LANDING_DATA_TTL_MS, landingData, resolveSeoSegments, SEO_MIN_LISTINGS, seoCounts, seoPath, seoSearchParams, seoVerdict } from "@/lib/search/seo";
 import { sitemapShardOf, type SearchDocument } from "@/lib/search/types";
 
 // Category landing pages (design D15): segment resolution from config, thresholds, facet counts.
 
-function doc(id: string, subcategoryId: string, citySlug: string, example = false): SearchDocument {
+function doc(id: string, subcategoryId: string, citySlug: string, example = false, attributes: Partial<SearchDocument> = {}): SearchDocument {
   const sub = subcategoryById(subcategoryId);
   const city = cityBySlug(citySlug);
   if (!sub || !city) throw new Error("fixture");
@@ -38,8 +40,11 @@ function doc(id: string, subcategoryId: string, citySlug: string, example = fals
     _geo: { lat: city.lat, lng: city.lng },
     version: 1,
     ...(example ? { isExample: true as const } : {}),
+    ...attributes,
   };
 }
+
+const car = (id: string, city: string, brand: string, model?: string, example = false) => doc(id, "voitures", city, example, { a_car_brand: brand, ...(model ? { a_car_model: model } : {}) });
 
 beforeEach(() => {
   process.env.APP_ENV = "dev";
@@ -89,6 +94,85 @@ describe("landing segments", () => {
     expect(seoPath({ category: "vehicules" })).toBe("/c/vehicules");
     expect(seoSearchParams(target)).toEqual(target);
     expect(seoSearchParams({ category: "vehicules" })).toEqual({ category: "vehicules" });
+  });
+});
+
+describe("car brand and model pages", () => {
+  it("never lets a car brand collide with a city slug, and gives every catalogue model a path", () => {
+    // Under /c/vehicules/voitures the third segment is read as a city first: a brand spelled like a
+    // city gets no page (a new one would need a decision, not a silent loss).
+    const cities = new Set(CITY_SLUGS);
+    expect(CAR_BRANDS.filter((brand) => cities.has(brand))).toEqual(["tata"]);
+    expect(CAR_BRANDS.filter((brand) => !CAR_PAGE_BRANDS.includes(brand))).toEqual(["tata", "autre"]);
+    expect(resolveSeoSegments("vehicules", ["voitures", "tata"])).toEqual({ category: "vehicules", subcategory: "voitures", city: "tata" });
+    for (const model of CAR_MODELS.filter((each) => CAR_PAGE_BRANDS.includes(each.brand))) {
+      const target = resolveSeoSegments("vehicules", ["voitures", model.brand, carModelSlug(model)]);
+      expect(target, model.id).toEqual({ category: "vehicules", subcategory: "voitures", brand: model.brand, model: model.id });
+      expect(seoPath(target!)).toBe(`/c/vehicules/voitures/${model.brand}/${carModelSlug(model)}`);
+    }
+  });
+
+  it("resolves brand and model paths, and refuses the rest before any engine call", () => {
+    expect(resolveSeoSegments("vehicules", ["voitures", "renault"])).toEqual({ category: "vehicules", subcategory: "voitures", brand: "renault" });
+    expect(resolveSeoSegments("vehicules", ["voitures", "dacia", "sandero-stepway"])).toEqual({ category: "vehicules", subcategory: "voitures", brand: "dacia", model: "dacia-sandero-stepway" });
+    expect(resolveSeoSegments("vehicules", ["voitures", "peugeot", "208"])).toMatchObject({ model: "peugeot-208" });
+    const refused: string[][] = [
+      ["voitures", "autre"],
+      ["voitures", "Renault"],
+      ["voitures", "renault", "208"], // a Peugeot
+      ["voitures", "renault", "inconnue"],
+      ["voitures", "renault", "renault-clio"],
+      ["voitures", "renault", "clio", "casablanca"],
+      ["voitures", "casablanca", "renault"],
+      ["voitures", "casablanca", "clio"],
+      ["location-voitures", "renault"],
+      ["utilitaires-camions", "renault"],
+      ["renault"],
+      ["casablanca", "renault"],
+    ];
+    for (const rest of refused) expect(resolveSeoSegments("vehicules", rest), rest.join("/")).toBeNull();
+  });
+
+  it("builds paths and the matching search scope", () => {
+    const brand = { category: "vehicules", subcategory: "voitures", brand: "renault" } as const;
+    const model = { ...brand, model: "renault-clio" };
+    expect(seoPath(brand)).toBe("/c/vehicules/voitures/renault");
+    expect(seoPath(model)).toBe("/c/vehicules/voitures/renault/clio");
+    expect(seoSearchParams(model)).toEqual({ category: "vehicules", subcategory: "voitures", criteria: { "car-brand": { kind: "options", values: ["renault"] }, "car-model": { kind: "options", values: ["renault-clio"] } } });
+    expect(seoVerdict(brand, 2, 2)).toBe("noindex");
+    expect(seoVerdict(model, 3, 3)).toBe("index");
+    expect(seoVerdict(model, 0)).toBe("notFound");
+  });
+
+  it("counts a brand's models and cities, and the brands of the car page", async () => {
+    const engine = new MemoryEngine({ synonyms: {} });
+    await engine.upsert([
+      car("a2345678", "casablanca", "renault", "renault-clio"),
+      car("b2345678", "rabat", "renault", "renault-clio"),
+      car("c2345678", "rabat", "renault", "renault-megane"),
+      car("d2345678", "rabat", "renault"),
+      car("e2345678", "casablanca", "dacia", "dacia-logan", true),
+      car("f2345678", "casablanca", "autre"),
+      doc("g2345678", "velos", "casablanca"),
+    ]);
+    setSearchEngineForTests(engine);
+    const brand = { category: "vehicules", subcategory: "voitures", brand: "renault" } as const;
+    await expect(seoCounts(brand)).resolves.toEqual({
+      subcategories: {},
+      cities: { casablanca: 1, rabat: 3 },
+      total: 4,
+      indexable: 4,
+      models: { "renault-clio": 2, "renault-megane": 1 },
+    });
+    await expect(seoCounts({ ...brand, model: "renault-clio" })).resolves.toMatchObject({ total: 2, indexable: 2, models: { "renault-clio": 2, "renault-megane": 1 } });
+    await expect(seoCounts({ ...brand, brand: "dacia" })).resolves.toMatchObject({ total: 1, indexable: 0 });
+    // The car page lists its brands (« Autre » has no page); its city pages do not.
+    await expect(seoCounts({ category: "vehicules", subcategory: "voitures" })).resolves.toMatchObject({ total: 6, brands: { renault: 4, dacia: 1 } });
+    expect((await seoCounts({ category: "vehicules", subcategory: "voitures", city: "rabat" })).brands).toBeUndefined();
+    expect(brandModels("renault", { "renault-megane": 1, "renault-clio": 2, "peugeot-208": 5, inconnu: 3 }).map(({ model, count }) => [model.id, count])).toEqual([
+      ["renault-clio", 2],
+      ["renault-megane", 1],
+    ]);
   });
 });
 

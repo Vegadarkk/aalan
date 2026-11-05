@@ -10,9 +10,10 @@ import { PageMessages } from "@/components/i18n/page-messages";
 import { JsonLd } from "@/components/listing/json-ld";
 import { FeaturedRow, withoutFeatured } from "@/components/search/featured-row";
 import { ResultsGrid } from "@/components/search/results-grid";
-import { CityLinks, LandingBreadcrumb, SubcategoryChips, type LandingChip, type LandingCrumb } from "@/components/seo/landing";
+import { CityLinks, LandingBreadcrumb, LandingLinks, SubcategoryChips, type LandingChip, type LandingCrumb, type LandingLink } from "@/components/seo/landing";
 import { Button } from "@/components/ui/button";
-import { categoryById } from "@/config/categories";
+import { carModelById } from "@/config/car-models";
+import { categoryById, type CarBrand } from "@/config/categories";
 import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
@@ -20,7 +21,7 @@ import { pageLocale } from "@/i18n/params";
 import { CATEGORY_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { SEARCH_PATH, searchQueryObject } from "@/lib/search/params";
-import { cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
+import { brandModels, CAR_SCOPE, carLinks, cityLinks, landingData, resolveSeoSegments, seoPath, seoSearchParams, seoVerdict, type SeoTarget } from "@/lib/search/seo";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import type { SearchCard } from "@/lib/search/types";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
@@ -28,7 +29,8 @@ import { getNumbersTranslations } from "@/i18n/numbers-server";
 const favoriteAction = (card: SearchCard) => <FavoriteButton listingId={card.id} />;
 
 // Category landing pages (design D15): /c/{category}, /c/{category}/{subcategory|city},
-// /c/{category}/{subcategory}/{city}. ISR on first visit, kept 10 minutes; segments are checked
+// /c/{category}/{subcategory}/{city}, and the car pages /c/vehicules/voitures/{brand}[/{model}]
+// (owner, 5 Nov 2026; same thresholds). ISR on first visit, kept 10 minutes; segments are checked
 // against the config before any engine call (a cached 404 costs nothing, an engine call per garbage
 // URL would). No query string (the proxy 308s it away), no loading.tsx above: notFound() answers a
 // real 404. Search down: the render throws and Next keeps serving the last good page (D2).
@@ -55,23 +57,41 @@ interface Labels {
   category: string;
   subcategory?: string;
   city?: string;
-  /** H1: "Voitures à Casablanca". */
+  brand?: string;
+  /** Maker's Latin name, the same in every language. */
+  model?: string;
+  /** H1: "Voitures à Casablanca", "Voitures Renault au Maroc", "Renault Clio au Maroc". */
   heading: string;
 }
 
 async function labelsOf(locale: Locale, target: SeoTarget): Promise<Labels> {
-  const [t, names] = await Promise.all([getNumbersTranslations({ locale, namespace: "Seo" }), getTranslations({ locale, namespace: "Categories" })]);
+  const [t, names, brands] = await Promise.all([
+    getNumbersTranslations({ locale, namespace: "Seo" }),
+    getTranslations({ locale, namespace: "Categories" }),
+    brandNames(locale),
+  ]);
   type CategoryKey = Parameters<typeof names>[0];
   const category = names(`${target.category}.name` as CategoryKey);
   const subcategory = target.subcategory ? names(`${target.category}.sub.${target.subcategory}` as CategoryKey) : undefined;
   const cityRecord = target.city ? cityBySlug(target.city) : undefined;
   const city = cityRecord ? cityName(cityRecord, locale) : undefined;
+  const brand = target.brand ? brands(target.brand) : undefined;
+  const model = target.model ? (carModelById(target.model)?.label ?? target.model) : undefined;
   let heading: string;
-  if (subcategory && city) heading = t("heading.subcategoryCity", { subcategory, city });
+  if (brand && model) heading = t("heading.model", { brand, model });
+  else if (brand) heading = t("heading.brand", { subcategory: subcategory ?? "", brand });
+  else if (subcategory && city) heading = t("heading.subcategoryCity", { subcategory, city });
   else if (subcategory) heading = t("heading.subcategory", { subcategory });
   else if (city) heading = t("heading.categoryCity", { category, city });
   else heading = t("heading.category", { category });
-  return { category, subcategory, city, heading };
+  return { category, subcategory, city, brand, model, heading };
+}
+
+/** Brand names in the page's language (« رونو » in Arabic). */
+async function brandNames(locale: Locale): Promise<(brand: CarBrand) => string> {
+  const t = await getTranslations({ locale, namespace: "Criteria" });
+  type CriteriaKey = Parameters<typeof t>[0];
+  return (brand) => t(`car-brand.options.${brand}` as CriteriaKey);
 }
 
 const restKeyOf = (rest: string[] | undefined) => (rest ?? []).join("/");
@@ -105,26 +125,29 @@ export default async function CategoryLandingPage({ params }: { params: Params }
 
   const { target, response, counts, total } = data;
   const recent = withoutFeatured(response.hits, response.featured);
-  const [t, names, labels] = await Promise.all([
+  const [t, names, labels, brandName] = await Promise.all([
     getNumbersTranslations({ locale, namespace: "Seo" }),
     getTranslations({ locale, namespace: "Categories" }),
     labelsOf(locale, target),
+    brandNames(locale),
   ]);
   type CategoryKey = Parameters<typeof names>[0];
   const path = seoPath(target);
 
-  // Home > category > subcategory > city; the last step is this page (same trail in JSON-LD).
+  // Home > category > subcategory > city (or > brand > model); the last step is this page (same trail in JSON-LD).
   const trail = [
     { label: t("home"), path: "" },
     { label: labels.category, path: seoPath({ category: target.category }) },
     ...(labels.subcategory ? [{ label: labels.subcategory, path: seoPath({ category: target.category, subcategory: target.subcategory }) }] : []),
     ...(labels.city ? [{ label: labels.city, path }] : []),
+    ...(target.brand && labels.brand ? [{ label: labels.brand, path: seoPath({ ...CAR_SCOPE, brand: target.brand }) }] : []),
+    ...(target.model && labels.model ? [{ label: labels.model, path }] : []),
   ];
   const steps: LandingCrumb[] = trail.map((step, index) => (index === trail.length - 1 ? { label: step.label } : { label: step.label, href: step.path || "/" }));
   const jsonLd = breadcrumbJsonLd(trail.map((step) => ({ name: step.label, url: `${CANONICAL_ORIGIN}/${locale}${step.path}` })));
 
   const subcategoryTotal = Object.values(counts.subcategories).reduce((sum, count) => sum + count, 0);
-  const chips: LandingChip[] = [
+  const subcategoryChips: LandingChip[] = [
     { id: "all", label: t("allChip"), count: subcategoryTotal, href: seoPath({ category: target.category, city: target.city }), current: !target.subcategory },
     ...(categoryById(target.category)?.subcategories ?? [])
       .filter((sub) => (counts.subcategories[sub.id] ?? 0) > 0)
@@ -136,8 +159,19 @@ export default async function CategoryLandingPage({ params }: { params: Params }
         current: sub.id === target.subcategory,
       })),
   ];
+  // Brand page: its models ("Tous les modèles" is the brand page); model page: the sibling models.
+  const models = target.brand ? brandModels(target.brand, counts.models) : [];
+  const modelChips: LandingChip[] = target.brand
+    ? [
+        { id: "all", label: t("allModelsChip"), count: total, href: seoPath({ ...CAR_SCOPE, brand: target.brand }), current: !target.model },
+        ...models.map(({ model, count }) => ({ id: model.id, label: model.label, count, href: seoPath({ ...CAR_SCOPE, brand: model.brand, model: model.id }), current: model.id === target.model })),
+      ]
+    : [];
+  // /c/vehicules/voitures: one link per brand with listings (« Autre » has no page).
+  const brandLinks: LandingLink[] = carLinks<CarBrand>(counts.brands, brandName).map(({ id, count }) => ({ id, label: brandName(id), count, href: seoPath({ ...CAR_SCOPE, brand: id }) }));
   const scope = labels.subcategory ?? labels.category;
-  const cities = cityLinks(counts.cities, target.city).map(({ city, count }) => ({ city, count, href: seoPath({ ...target, city: city.slug }) }));
+  // Brand and model pages have no city pages under them.
+  const cities = target.brand ? [] : cityLinks(counts.cities, target.city).map(({ city, count }) => ({ city, count, href: seoPath({ ...target, city: city.slug }) }));
   const search = { pathname: SEARCH_PATH, query: searchQueryObject(seoSearchParams(target)) };
   const seeLabel = total === 1 ? t("seeOne") : t("seeAll", { count: total });
 
@@ -162,7 +196,8 @@ export default async function CategoryLandingPage({ params }: { params: Params }
           </header>
         </div>
 
-        {chips.length > 1 ? <SubcategoryChips chips={chips} label={t("subcategoriesLabel")} /> : null}
+        {!target.brand && subcategoryChips.length > 1 ? <SubcategoryChips chips={subcategoryChips} label={t("subcategoriesLabel")} /> : null}
+        {modelChips.length > 1 ? <SubcategoryChips chips={modelChips} label={t("modelsLabel")} /> : null}
 
         {response.featured.length > 0 ? <FeaturedRow cards={response.featured} locale={locale} renderAction={favoriteAction} /> : null}
 
@@ -197,6 +232,8 @@ export default async function CategoryLandingPage({ params }: { params: Params }
             {t("emptyBody")}
           </EmptyState>
         )}
+
+        {brandLinks.length > 0 ? <LandingLinks id="landing-brands" links={brandLinks} title={t("brandsTitle", { scope })} /> : null}
 
         {cities.length > 0 ? <CityLinks id="landing-cities" links={cities} locale={locale} title={target.city ? t("nearbyTitle", { scope }) : t("citiesTitle", { scope })} /> : null}
       </Container>

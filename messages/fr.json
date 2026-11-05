@@ -3698,7 +3698,9 @@
       "category": "{category} au Maroc",
       "categoryCity": "{category} à {city}",
       "subcategory": "{subcategory} au Maroc",
-      "subcategoryCity": "{subcategory} à {city}"
+      "subcategoryCity": "{subcategory} à {city}",
+      "brand": "{subcategory} {brand} au Maroc",
+      "model": "{brand} {model} au Maroc"
     },
     "metaTitle": "{heading} : petites annonces",
     "metaDescription": "{heading} : {count, plural, one {# annonce en ligne} other {# annonces en ligne}} sur Aalan. Achetez et vendez entre particuliers et professionnels, sans afficher votre numéro.",
@@ -3708,6 +3710,9 @@
     "seeAll": "Voir les {count} annonces",
     "subcategoriesLabel": "Sous-catégories",
     "allChip": "Toutes",
+    "brandsTitle": "{scope} par marque",
+    "modelsLabel": "Modèles",
+    "allModelsChip": "Tous les modèles",
     "recentTitle": "Annonces récentes",
     "citiesTitle": "{scope} par ville",
     "nearbyTitle": "{scope} dans les villes proches",

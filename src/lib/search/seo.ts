@@ -1,13 +1,15 @@
 import "server-only";
-import { categoryById, subcategoryById } from "@/config/categories";
+import { carModelById, carModelsOf, type CarModel } from "@/config/car-models";
+import { CAR_BRANDS, categoryById, subcategoryById, type CarBrand } from "@/config/categories";
 import { CITIES, cityBySlug, type City } from "@/config/regions";
 import { searchEngine } from "@/lib/search/engine";
 import { buildFilter, NOT_EXAMPLE, runSearch } from "@/lib/search/service";
 import type { SearchParams } from "./params";
-import { SearchUnavailableError, type EngineQuery, type SearchEngine, type SearchResponse } from "./types";
+import { attributeField, SearchUnavailableError, type EngineQuery, type SearchEngine, type SearchResponse } from "./types";
 
 // Category landing pages (design D15): /c/{category}, /c/{category}/{subcategory|city},
-// /c/{category}/{subcategory}/{city}. Segments are resolved from config only, before any engine
+// /c/{category}/{subcategory}/{city}, and the car brand and model pages (owner, 5 Nov 2026):
+// /c/vehicules/voitures/{brand}[/{model}]. Segments are resolved from config only, before any engine
 // call (ISR caches whatever a path renders, 404s included). Counts come from engine facets.
 
 /** Below this many listings a page is `noindex, follow` and stays out of the sitemaps. */
@@ -20,34 +22,75 @@ export interface SeoTarget {
   category: string;
   subcategory?: string;
   city?: string;
+  /** Car pages only (CAR_SCOPE): never with a city. */
+  brand?: CarBrand;
+  /** Catalogue model id ("renault-clio", src/config/car-models.ts), only with its `brand`. */
+  model?: string;
 }
+
+/** The subcategory that has brand and model pages. */
+export const CAR_SCOPE = { category: "vehicules", subcategory: "voitures" } as const;
+
+/**
+ * Brands with a page: every listed brand but « Autre » and a brand spelled like a city (« Tata »):
+ * /c/vehicules/voitures/tata is the city's page.
+ */
+export const CAR_PAGE_BRANDS: readonly CarBrand[] = CAR_BRANDS.filter((brand) => brand !== "autre" && !cityBySlug(brand));
+const PAGE_BRANDS = new Set<string>(CAR_PAGE_BRANDS);
+
+export function isCarPageBrand(value: string): value is CarBrand {
+  return PAGE_BRANDS.has(value);
+}
+
+/** Path segment of a model: its id without the brand ("renault-clio" -> "clio"). */
+export function carModelSlug(model: Pick<CarModel, "id" | "brand">): string {
+  return model.id.slice(model.brand.length + 1);
+}
+
+/** Whether a target is the car subcategory itself or one of its brand/model pages, without a city. */
+const isCarScope = (target: SeoTarget) => target.category === CAR_SCOPE.category && target.subcategory === CAR_SCOPE.subcategory;
 
 /**
  * Path segments after /c/ -> target, or null (404). The second segment is a subcategory of that
  * category first, else a city (no subcategory id equals a city slug: unit test); the third only
- * follows a subcategory and must be a city.
+ * follows a subcategory and is a city, or under /c/vehicules/voitures a car brand (no brand equals a
+ * city slug: unit test), which a catalogue model of that brand may follow.
  */
 export function resolveSeoSegments(category: string, rest: readonly string[]): SeoTarget | null {
-  if (!categoryById(category) || rest.length > 2) return null;
-  const [second, third] = rest;
+  if (!categoryById(category) || rest.length > 3) return null;
+  const [second, third, fourth] = rest;
   if (second === undefined) return { category };
   const sub = subcategoryById(second);
   if (sub && sub.categoryId === category) {
     if (third === undefined) return { category, subcategory: sub.id };
-    return cityBySlug(third) ? { category, subcategory: sub.id, city: third } : null;
+    if (cityBySlug(third)) return fourth === undefined ? { category, subcategory: sub.id, city: third } : null;
+    if (!isCarScope({ category, subcategory: sub.id }) || !isCarPageBrand(third)) return null;
+    if (fourth === undefined) return { ...CAR_SCOPE, brand: third };
+    const model = carModelById(`${third}-${fourth}`);
+    return model && model.brand === third ? { ...CAR_SCOPE, brand: third, model: model.id } : null;
   }
   if (third === undefined && cityBySlug(second)) return { category, city: second };
   return null;
 }
 
-/** Path without the locale: "/c/vehicules/voitures/casablanca". */
+/** Path without the locale: "/c/vehicules/voitures/casablanca", "/c/vehicules/voitures/renault/clio". */
 export function seoPath(target: SeoTarget): string {
+  const model = target.model ? carModelById(target.model) : undefined;
+  if (target.brand) return ["/c", target.category, target.subcategory, target.brand, model ? carModelSlug(model) : undefined].filter(Boolean).join("/");
   return ["/c", target.category, target.subcategory, target.city].filter(Boolean).join("/");
 }
 
 /** The same scope as search parameters ("Voir les N annonces", engine filters). */
 export function seoSearchParams(target: SeoTarget): SearchParams {
-  return { category: target.category, ...(target.subcategory ? { subcategory: target.subcategory } : {}), ...(target.city ? { city: target.city } : {}) };
+  const criteria: NonNullable<SearchParams["criteria"]> = {};
+  if (target.brand) criteria["car-brand"] = { kind: "options", values: [target.brand] };
+  if (target.brand && target.model) criteria["car-model"] = { kind: "options", values: [target.model] };
+  return {
+    category: target.category,
+    ...(target.subcategory ? { subcategory: target.subcategory } : {}),
+    ...(target.city ? { city: target.city } : {}),
+    ...(target.brand ? { criteria } : {}),
+  };
 }
 
 export type SeoVerdict = "index" | "noindex" | "notFound";
@@ -59,7 +102,7 @@ export type SeoVerdict = "index" | "noindex" | "notFound";
  * `indexable`: the real listings among `total` (example listings never make a deeper page indexable).
  */
 export function seoVerdict(target: SeoTarget, total: number, indexable = total): SeoVerdict {
-  const deeper = Boolean(target.subcategory || target.city);
+  const deeper = Boolean(target.subcategory || target.city || target.brand);
   if (!deeper || indexable >= SEO_MIN_LISTINGS) return "index";
   return total === 0 ? "notFound" : "noindex";
 }
@@ -91,7 +134,7 @@ export function cityLinks(counts: Record<string, number>, around?: string, limit
 }
 
 export interface SeoCounts {
-  /** Subcategory -> listings in the scope without its subcategory (category [+ city]). */
+  /** Subcategory -> listings in the scope without its subcategory (category [+ city]); empty on car brand pages. */
   subcategories: Record<string, number>;
   /** City -> listings in the scope without its city (category [+ subcategory]). */
   cities: Record<string, number>;
@@ -99,14 +142,18 @@ export interface SeoCounts {
   total: number;
   /** Listings of the page's own scope without the example listings: the D15 index threshold. */
   indexable: number;
+  /** /c/vehicules/voitures only: brand -> its listings (links to the brand pages). */
+  brands?: Record<string, number>;
+  /** Brand and model pages: catalogue model -> listings of the brand (links to the model pages). */
+  models?: Record<string, number>;
 }
 
 function positive(distribution: Record<string, number> | undefined): Record<string, number> {
   return Object.fromEntries(Object.entries(distribution ?? {}).filter(([, count]) => count > 0));
 }
 
-function facetQuery(params: SearchParams, field: string, now: Date): EngineQuery {
-  return { q: "", filter: buildFilter(params, now), page: 1, hitsPerPage: 1, facets: [field], fields: ["id"] };
+function facetQuery(params: SearchParams, fields: readonly string[], now: Date): EngineQuery {
+  return { q: "", filter: buildFilter(params, now), page: 1, hitsPerPage: 1, facets: [...fields], fields: ["id"] };
 }
 
 /** Real listings of the page's own scope (exhaustive totalHits). */
@@ -115,13 +162,37 @@ function realQuery(params: SearchParams, now: Date): EngineQuery {
   return { q: "", filter: scope ? { and: [scope, NOT_EXAMPLE] } : NOT_EXAMPLE, page: 1, hitsPerPage: 1, fields: ["id"] };
 }
 
+const BRAND_FIELD = attributeField("car-brand");
+const MODEL_FIELD = attributeField("car-model");
+
+/** Brand and model pages: sibling models, cities (their sum is the total: one city per listing), index threshold. */
+async function carCounts(target: SeoTarget & { brand: CarBrand }, now: Date): Promise<SeoCounts> {
+  const [models, cities, real] = await searchEngine().search([
+    facetQuery(seoSearchParams({ ...CAR_SCOPE, brand: target.brand }), [MODEL_FIELD], now),
+    facetQuery(seoSearchParams(target), ["citySlug"], now),
+    realQuery(seoSearchParams(target), now),
+  ]);
+  if (!models || !cities || !real) throw new SearchUnavailableError("engine returned no result");
+  const cityCounts = positive(cities.facetDistribution?.citySlug);
+  return {
+    subcategories: {},
+    cities: cityCounts,
+    total: Object.values(cityCounts).reduce((sum, count) => sum + count, 0),
+    indexable: real.totalHits,
+    models: positive(models.facetDistribution?.[MODEL_FIELD]),
+  };
+}
+
 /** Chips, city links and the index threshold of a landing page: three queries in one engine round trip. */
 export async function seoCounts(target: SeoTarget, now = new Date()): Promise<SeoCounts> {
+  if (target.brand) return carCounts({ ...target, brand: target.brand }, now);
   const { subcategory: _subcategory, ...withoutSubcategory } = target;
   const { city: _city, ...withoutCity } = target;
+  // /c/vehicules/voitures: the brands come with the cities (same scope, no city to drop).
+  const brands = isCarScope(target) && !target.city;
   const [subs, cities, real] = await searchEngine().search([
-    facetQuery(seoSearchParams(withoutSubcategory), "subcategoryId", now),
-    facetQuery(seoSearchParams(withoutCity), "citySlug", now),
+    facetQuery(seoSearchParams(withoutSubcategory), ["subcategoryId"], now),
+    facetQuery(seoSearchParams(withoutCity), brands ? ["citySlug", BRAND_FIELD] : ["citySlug"], now),
     realQuery(seoSearchParams(target), now),
   ]);
   if (!subs || !cities || !real) throw new SearchUnavailableError("engine returned no result");
@@ -130,7 +201,24 @@ export async function seoCounts(target: SeoTarget, now = new Date()): Promise<Se
   const total = target.subcategory
     ? (subcategories[target.subcategory] ?? 0)
     : Object.values(subcategories).reduce((sum, count) => sum + count, 0);
-  return { subcategories, cities: cityCounts, total, indexable: real.totalHits };
+  const brandCounts = brands ? Object.fromEntries(Object.entries(positive(cities.facetDistribution?.[BRAND_FIELD])).filter(([brand]) => isCarPageBrand(brand))) : undefined;
+  return { subcategories, cities: cityCounts, total, indexable: real.totalHits, ...(brandCounts ? { brands: brandCounts } : {}) };
+}
+
+/** Brand or model links of a car page, busiest first, then by name. */
+export function carLinks<T extends string>(counts: Record<string, number> | undefined, label: (id: T) => string): { id: T; count: number }[] {
+  return Object.entries(counts ?? {})
+    .map(([id, count]) => ({ id: id as T, count }))
+    .sort((a, b) => b.count - a.count || label(a.id).localeCompare(label(b.id)));
+}
+
+/** Models of `brand` with listings, as catalogue entries (unknown ids dropped). */
+export function brandModels(brand: CarBrand, counts: Record<string, number> | undefined): { model: CarModel; count: number }[] {
+  const known = new Map(carModelsOf([brand]).map((model) => [model.id, model]));
+  return carLinks(counts, (id) => known.get(id)?.label ?? id).flatMap(({ id, count }) => {
+    const model = known.get(id);
+    return model ? [{ model, count }] : [];
+  });
 }
 
 // ---- Landing page data ----------------------------------------------------------------------------

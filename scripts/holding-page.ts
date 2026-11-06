@@ -5,7 +5,7 @@
 //
 //   NODE_USE_ENV_PROXY=1 node scripts/holding-page.ts [--apply] [--remove]
 //
-// Environment (never printed): AALAN_CLOUDFLARE_API_TOKEN (former JOUTIYA_CLOUDFLARE_API_TOKEN).
+// Environment (never printed): AALAN_CLOUDFLARE_API_TOKEN (read by owner-env.ts).
 // Touches nothing but the Worker named WORKER and the route PATTERN of the aalan.ma zone.
 
 import { readFileSync, readdirSync } from "node:fs";

@@ -6156,8 +6156,8 @@
     "check": {
       "title": "Tasenqedt n agrément s tweṛiqt",
       "saveFirst": "Ḥrez zzat uṭṭun n agrément nnec: uca ad tzemmreḍ ad tazneḍ tagtint n agrément ḥima ad yban « agrément contrôlé sur document » deg vitrine nnec.",
-      "none": "Azen tagtint n agrément nnec (PDF niɣ tawlaft tbedd). Mala uṭṭun nnes, isem n ccarika niɣ ICE d wass nnes msasan d umiḍan nnec Pro, vitrine nnec ad tessken « agrément contrôlé sur document ».",
-      "pending": "Taweṛiqt tewweḍ: tasenqedt tettwaxdam. Ayen d-ɣa yeffeɣ ad d-yban da deg kra n tusdidin.",
+      "none": "Azen tagtint n agrément nnec (PDF niɣ tawlaft tbedd). Tarbaɛt nneɣ tessenqad-itt d umiḍan nnec Pro (uṭṭun, ICE, ass); mala tettwasenqed, vitrine nnec ad tessken « agrément contrôlé sur document ».",
+      "pending": "Taweṛiqt tewweḍ: tarbaɛt nneɣ ad tt-tessenqed. Ayen d-ɣa yeffeɣ ad d-yban da.",
       "review": "Tarbaɛt nneɣ tessenqad taweṛiqt nnec: ayen d-ɣa yeffeɣ ad d-yban da.",
       "verified": "Agrément yettwasenqed s tweṛiqt deg {date}.",
       "verifiedNote": "Ayen-a ad d-yban deg vitrine nnec. Ad yekkes mala tbeddleḍ uṭṭun n agrément.",

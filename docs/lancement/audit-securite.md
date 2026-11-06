@@ -8,8 +8,8 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 - **Scan ZAP actif du staging** : aucune alerte haute, aucune règle `FAIL` déclenchée.
 - **Revue manuelle** (4 revues Opus en parallèle : comptes et rôles, paiements et Pro, contenus et
   accès aux objets, plateforme) : aucune faille critique ni haute. 9 moyennes, 19 basses et 5 notes ;
-  15 sont corrigées dans la PR #347 et 3 dans la PR #363, les autres sont justifiées ci-dessous ou attendent une
-  décision.
+  15 sont corrigées dans la PR #347 et 3 dans la PR #363, C-4 et C-3 dans la PR #382 et P-3 ensuite,
+  selon les choix du propriétaire ; les autres sont justifiées ci-dessous.
 - **HTTP Observatory** : à mesurer sur la production à l'ouverture (`scripts/launch-check.ts`).
 
 ## 1. Scan ZAP
@@ -90,14 +90,14 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 
 ## 3. Constats non corrigés
 
-### Décisions à prendre
+### Décisions du propriétaire
 
-| Id | Niveau | Constat | Recommandation |
+| Id | Niveau | Constat | Décision |
 |---|---|---|---|
 | C-4 | Moyen | Deux comptes neufs (appareil et IP différents) suffisaient au signal « multi » d'un signalement : un signalement P0 « menace » restreignait un compte et masquait ses annonces ; un vendeur et un faux compte pouvaient masquer un avis négatif. | Choix du propriétaire (4 nov.) : seuls les signaleurs vérifiés comptent, et un profil ou un avis n'est masqué qu'après revue humaine. PR #382. |
 | C-3 | Moyen | Les photos des annonces refusées ou masquées restaient publiques jusqu'à 12 mois (seules les annonces supprimées passaient en privé), avec un cache navigateur d'un an. | Choix du propriétaire (4 nov.) : photos privées et purgées du cache Cloudflare, cache raccourci. PR #382. |
-| P-3 | Moyen | Le badge « agrément contrôlé » de location de voitures est accordé par l'IA seule ; la référence comparée est saisie par la boutique. | Confirmation par un modérateur. Le #350 exige déjà l'ICE pour le badge. Décision n° 5 du propriétaire : à revoir. |
-| D-8 | Bas | `infra/targets.json` publie des identifiants internes (OCID, comptes et zones Cloudflare, tags Access, comptes Stripe) dans le dépôt public. Ce ne sont pas des secrets : aucun ne donne accès seul. | Accepter : les retirer maintenant ne les dépublie pas (forks, historique). Le dépôt redevient privé à l'ouverture. |
+| P-3 | Moyen | Le badge « agrément contrôlé » de location de voitures est accordé par l'IA seule ; la référence comparée est saisie par la boutique. | Choix du propriétaire (6 nov.) : confirmation par un modérateur. La lecture IA prépare seulement la revue (« Lecture IA cohérente » ou les écarts relevés) ; le badge n'apparaît qu'après la validation humaine. Les contrôles déjà validés par l'IA restent tels quels (aucun en production). |
+| D-8 | Bas | `infra/targets.json` publie des identifiants internes (OCID, comptes et zones Cloudflare, tags Access, comptes Stripe) dans le dépôt public. Ce ne sont pas des secrets : aucun ne donne accès seul. | Accepté par le propriétaire (6 nov.) : les retirer maintenant ne les dépublie pas (forks, historique). Le dépôt redevient privé à l'ouverture. |
 
 ### Risques acceptés ou reportés
 

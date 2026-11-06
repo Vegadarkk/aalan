@@ -336,6 +336,10 @@ function RentalCheckPanel({ proId, check, ice }: { proId: string; check: NonNull
             </li>
           ))}
         </ul>
+      ) : read && check.status === "review" ? (
+        <p className="text-sm text-success" data-testid="rental-check-consistent">
+          Lecture IA cohérente avec la boutique : vérifiez le document, puis confirmez.
+        </p>
       ) : null}
       {read && read.signs.length > 0 ? (
         <div className="rounded-md bg-surface-muted p-3 text-sm">

@@ -220,6 +220,14 @@ const QUERYLESS_SEGMENTS: ReadonlySet<string> = new Set(["", "c", "aide", "legal
 
 /** Pages of the account area (src/app/[locale]/(private)/(account)): a member session is required. */
 const MEMBER_SEGMENTS: ReadonlySet<string> = new Set(["deposer", "favoris", "mes-annonces", "mes-avis", "messages", "parametres", "porte-monnaie", "pro", "recherches", "verifications"]);
+/** /recours reads signed out only with the signed link of a decision mail (?jeton=, decisions/contracts.ts APPEAL_TOKEN_PARAM). */
+const APPEALS_SEGMENT = "recours";
+const APPEAL_LINK_PARAM = "jeton";
+
+function needsSession(request: NextRequest, segment: string): boolean {
+  if (MEMBER_SEGMENTS.has(segment)) return true;
+  return segment === APPEALS_SEGMENT && !request.nextUrl.searchParams.get(APPEAL_LINK_PARAM);
+}
 
 /** Second path segment: "/fr/connexion/..." -> "connexion". */
 function pageSegment(pathname: string): string {
@@ -309,7 +317,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // its layout's redirect carried the whole sign-in page (~360 KB, ZAP 10044), a cheap
   // amplification for anonymous requests. A cookie that turns out invalid is still sent there by
   // the layout. Same target as the layout: /{locale}/connexion?next=<path and query>.
-  if (MEMBER_SEGMENTS.has(pageSegment(pathname)) && !request.cookies.get(SESSION_COOKIE)?.value && (request.method === "GET" || request.method === "HEAD")) {
+  if (needsSession(request, pageSegment(pathname)) && !request.cookies.get(SESSION_COOKIE)?.value && (request.method === "GET" || request.method === "HEAD")) {
     const login = new URL(`/${pathLocale(pathname) ?? "fr"}/connexion`, request.url);
     login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(login, 307);

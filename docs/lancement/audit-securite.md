@@ -17,6 +17,7 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 | | Date | Run | Haute | Moyenne | Basse | Info | FAIL |
 |---|---|---|---|---|---|---|---|
 | Full scan actif, staging | 4 nov. 2026, 17:01-18:00 UTC | [41873433402](https://github.com/Vegadarkk/aalan/actions/runs/41873433402) | 0 | 2 | 8 | 9 | 0 |
+| Second full scan actif, staging | 5 nov. 2026, 00:06-00:38 UTC | [41938798387](https://github.com/Vegadarkk/aalan/actions/runs/41938798387) | 0 | 5 | 9 | 12 | 0 |
 | Dernier baseline passif, staging | 2 nov. 2026 | [41512570791](https://github.com/Vegadarkk/aalan/actions/runs/41512570791) | 0 | — | — | — | 0 |
 
 - Code du scan : `main` à `293df8d`, image ZAP 2.17.0 épinglée.
@@ -27,7 +28,7 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
   comptent pas, la règle `OUTOFSCOPE` les filtre.
 - Limite : trois merges sur `main` (17:43 à 17:53 UTC) ont pu redéployer le staging pendant la
   fin du scan ; un redémarrage des conteneurs fait échouer les requêtes de ce moment-là.
-  Un second scan actif après le merge de #347 confirme les corrections (section 5).
+  Un second scan actif après le merge de #347 confirme les corrections (section 1.1).
 - Rapport chiffré lu le 4 novembre au soir (artefact `zap-full-staging`, clé age des sauvegardes,
   PC2). Les 19 alertes et leur suite :
 
@@ -44,6 +45,24 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 | 10010 Cookie sans HttpOnly | Bas | 1 | `NEXT_LOCALE` | Voulu : lu par le script du sélecteur de langue. |
 | 10031 Attribut contrôlable | Info | 1 | `/fr/connexion?next=` | Valeur passée par `safeNextPath` (chemin local seulement) et échappée par React : pas d'injection. |
 | Autres infos | Info | — | — | 10111, 10019, 10109, 10049, 10015, 10112 : informatives, sans suite. |
+
+### 1.1 Second scan (5 novembre)
+
+- Code de `main` à `9faa2ed` (#347, #363 et #382 inclus), aucun merge ni déploiement pendant le
+  scan. Sortie : 135 règles passées, 7 avertissements, 1 règle ignorée, 0 `FAIL`. Le staging
+  sert ses photos depuis `media-staging.aalan.ma` depuis le 4 novembre au soir (#337).
+- Rapport chiffré lu le 5 novembre (déchiffré par Nav, PC2). Pas de nouvelle faille ; la hausse
+  des alertes moyennes (2 à 5) vient de règles actives que le premier scan n'avait pas
+  déclenchées :
+
+| Règle | Niveau | Où | Suite |
+|---|---|---|---|
+| 10038 CSP absente | Moyen | 4 pages, `/sitemap.xml` | Comme au premier scan : CSP en `Report-Only` sur le staging ; `/sitemap.xml` est la page de blocage du WAF (hors périmètre). |
+| 10202 et 20012 Jetons anti-CSRF | Moyen | `/fr/connexion`, `/fr/inscription`, `/fr/mot-de-passe-oublie` | Faux positif (en-tête CSRF signé et Origin exact). `20012`, la variante active de `10202`, est maintenant ignorée aussi (`.zap/rules.tsv`). |
+| 40025 Divulgation de proxy | Moyen | POST des mêmes formulaires | Accepté : la réponse révèle Cloudflare devant le site, ce qui est public (DNS, en-tête `Server`). L'app n'envoie pas `X-Powered-By` (`poweredByHeader: false`). |
+| 40038 Contournement de 403 | Moyen | `GET /` | Faux positif probable : la réponse 403 attendue est le blocage WAF de `/sitemap*` pour les robots non vérifiés. ZAP rejoue la requête sur `/` avec des en-têtes de réécriture (`X-Original-URL`…) que ni Cloudflare ni Next.js n'appliquent : il reçoit l'accueil, pas le sitemap. Les sitemaps sont publics de toute façon. |
+| 10044 Grosse redirection | Bas | `/fr/recours` | Corrigé (PR de ce rapport) : la page des recours ouverte sans session et sans lien signé (`?jeton=`) redirige maintenant depuis le proxy, comme les autres pages du compte. Les pages du compte de #382 n'apparaissent plus. |
+| Autres basses et infos | — | — | Inchangées depuis le premier scan (`NEXT_LOCALE`, COOP/COEP, fichiers de Cloudflare, `10031` sur `next`). |
 
 ## 2. Revue manuelle : corrigé dans la PR #347
 
@@ -119,10 +138,10 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
 
 ## 5. À faire après le merge
 
-1. `scripts/cloudflare.ts zone --apply` : la limite de débit des webhooks sur l'edge. Ensuite,
-   un webhook de test par fournisseur doit répondre 200.
+1. Fait le 4 novembre (accord du propriétaire) : `scripts/cloudflare.ts zone --apply`, limite de
+   débit des webhooks sur l'edge, webhooks vérifiés ensuite.
 2. Avant l'ouverture des ventes : `scripts/stripe-setup.ts <staging|prod> --apply` (clé
    `AALAN_STRIPE_SETUP_KEY` du propriétaire), pour que les webhooks reçoivent
    `charge.refunded` et `charge.dispute.created`.
-3. Un second scan ZAP actif du staging, hors déploiements, pour confirmer les corrections.
+3. Fait le 5 novembre : second scan ZAP actif du staging, hors déploiements (section 1.1).
 4. HTTP Observatory sur la production à l'ouverture : note A ou A+.

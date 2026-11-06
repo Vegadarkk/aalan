@@ -11760,3 +11760,13 @@ html:has(.launch) {
 .hold-sub{color:var(--color-cream-200);text-wrap:balance;font-size:clamp(1rem,.9rem + .4vw,1.1875rem);margin-top:.75rem;max-width:34ch}
 .hold-notice{max-width:46rem;text-wrap:balance;line-height:1.6}
 .hold-notice p+p{margin-top:.25rem}
+
+.hold-legal{min-height:100dvh;display:flex;flex-direction:column;background:var(--color-background,#fff);color:var(--color-foreground,#111)}
+.hold-legal-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 1rem;background:#0f2e2f;color:#f2e9d8}
+.hold-legal-bar a{color:inherit;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:.5rem}
+.hold-legal-bar img{width:28px;height:28px}
+.hold-legal-note{margin:0 auto;max-width:72rem;padding:.75rem 1rem;font-size:.875rem;line-height:1.5;opacity:.85}
+.hold-legal-foot{border-top:1px solid color-mix(in oklab,currentColor 15%,transparent);padding:1.5rem 1rem 2rem;font-size:.875rem}
+.hold-legal-foot ul{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;max-width:72rem;margin:.5rem auto 0;list-style:none;padding:0}
+.hold-legal-foot h2{max-width:72rem;margin:0 auto;font-weight:600}
+.hold-legal-foot a{text-decoration:underline;text-underline-offset:2px}

@@ -354,6 +354,8 @@
     --color-cream-300: #e6d8bd;
     --radius-arch: 999px 999px .75rem .75rem;
     --ease-door: cubic-bezier(.2, .8, .2, 1);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
     --color-primary: var(--primary);
     --color-structure: var(--structure);
   }

@@ -1,5 +1,5 @@
 // Holding page of aalan.ma until the production serves it (6 Nov 2026): the welcome door shut,
-// "Bientôt", Aalan's social accounts and the publisher notice. Static files from site/ (build.mjs),
+// "Bientôt", Aalan's social accounts, the publisher notice and the legal texts. Static files from site/ (build.mjs),
 // uploaded as text and data modules by scripts/holding-page.ts; the route aalan.ma/* sends every
 // request here before the tunnel. Removed by `scripts/holding-page.ts --remove` when the production
 // serves aalan.ma (docs/lancement/page-attente.md).
@@ -7,13 +7,14 @@
 import fr from "./site/fr.html";
 import ar from "./site/ar.html";
 import launchCss from "./site/launch.css";
-import { FONTS, BINARIES } from "./manifest.js";
+import glints from "./site/glints.txt";
+import { LEGAL_PAGES, FONTS, BINARIES } from "./manifest.js";
 
 const ONE_HOUR = 3600;
 
 const SECURITY = {
   "content-security-policy":
-    "default-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   "x-content-type-options": "nosniff",
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
@@ -40,6 +41,13 @@ const worker = {
     const path = url.pathname.replace(/\/+$/, "") || "/";
     if (path === "/" || path === "/fr" || path === "/rif") return html(fr);
     if (path === "/ar") return html(ar);
+    // The legal texts (Tarifit pages read the French ones).
+    const legal = /^\/(fr|ar|rif)\/legal\/([a-z-]+)$/.exec(path);
+    if (legal) {
+      const page = LEGAL_PAGES[`${legal[1] === "ar" ? "ar" : "fr"}-legal-${legal[2]}`];
+      if (page) return html(page);
+    }
+    if (path === "/hold/glints.js") return respond(glints, "text/javascript; charset=utf-8", ONE_HOUR);
     if (path === "/hold/launch.css") return respond(launchCss, "text/css; charset=utf-8", ONE_HOUR);
     const font = /^\/hold\/fonts\/([\w.-]+\.woff2)$/.exec(path);
     if (font && FONTS[font[1]]) return respond(FONTS[font[1]], "font/woff2", 30 * 24 * ONE_HOUR);

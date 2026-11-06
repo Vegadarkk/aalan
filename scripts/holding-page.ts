@@ -23,7 +23,7 @@ const COMPATIBILITY_DATE = "2026-09-29";
 /** Module type of a file the Worker imports (Workers "text" and "data" modules). */
 export function moduleType(file: string): string {
   if (file.endsWith(".js")) return "application/javascript+module";
-  if (/\.(html|css)$/.test(file)) return "text/plain";
+  if (/\.(html|css|txt)$/.test(file)) return "text/plain";
   return "application/octet-stream";
 }
 

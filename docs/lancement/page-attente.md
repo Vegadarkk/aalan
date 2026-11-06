@@ -5,10 +5,14 @@ que la production ne tourne pas encore : le tunnel de production n'a pas de serv
 répondait « 530 ». En attendant, un petit Worker Cloudflare, `aalan-attente`, sert une page fixe sur
 `aalan.ma/*`, devant le tunnel :
 
-- la porte d'Aalan fermée, « Bienvenue sur Aalan », « Bientôt » à la place du compte à rebours,
-  les liens TikTok et Instagram, en français (`/`, `/fr`) et en arabe (`/ar`) ;
+- la porte d'Aalan fermée avec ses reflets dorés, « Bienvenue sur Aalan », « Bientôt » à la place
+  du compte à rebours, les liens Instagram, TikTok, Facebook et X, en français (`/`, `/fr`) et en
+  arabe (`/ar`) ;
 - l'éditeur, l'hébergeur de la page (Cloudflare) et le contact `reseaux@aalan.ma` ; aucun cookie,
-  aucun script, aucune donnée collectée ;
+  aucune donnée collectée ; un seul script, celui des reflets (`glints.js`, servi par le Worker) ;
+- les textes légaux de l'application (`/fr/legal/...`, `/ar/legal/...`, `/rif/legal/...` lit le
+  français), demandés pour les vérifications de Meta, TikTok et YouTube, avec une note : le site
+  est une page d'attente hébergée par Cloudflare ;
 - toute autre adresse renvoie vers l'accueil de sa langue ; `/api/*` répond 404 ;
 - `noindex` : les moteurs attendent le vrai site.
 
@@ -18,11 +22,13 @@ jour).
 
 ## Fichiers
 
-- `workers/holding-page/index.js` : le Worker (routes, en-têtes de sécurité).
+- `workers/holding-page/index.js` : le Worker (routes, en-têtes de sécurité) ; `glints.js` : les
+  reflets de la porte, copie de `src/components/welcome/glint-layer.ts`.
 - `workers/holding-page/site/` et `manifest.js` : la page, sa feuille de style et ses polices,
   générées par `workers/holding-page/build.mjs` à partir de la page de compte à rebours de
   l'application (`src/app/[locale]/(closed)/ouverture`) rendue par un `next dev` local avec
-  `OPENS_AT` et `BRAND_SOCIAL_LINKS`.
+  `OPENS_AT` et `BRAND_SOCIAL_LINKS` (`instagram=aalan_ma tiktok=@aalan_ma facebook=61596493192279
+  x=Aalan_maroc`), plus les pages légales capturées de la même façon (`<langue>-<slug>.html`).
 - `scripts/holding-page.ts` : envoi du Worker et de la route (essai à blanc sans `--apply`).
 
 ## Commandes

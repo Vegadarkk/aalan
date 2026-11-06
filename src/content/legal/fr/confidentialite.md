@@ -384,6 +384,10 @@ Pour une offre ou une demande d'emploi, nous communiquons aux inspecteurs du tra
 - Vos avis publiés, et les réponses des vendeurs, sont visibles par tous (§3.7).
 - La personne visée par une décision de modération reçoit l'exposé des motifs ; l'auteur d'un signalement est informé de la suite donnée.
 
+### 6.6 Nos comptes officiels sur les réseaux sociaux {#destinataires-6}
+
+{brand} publie ses propres vidéos et messages sur ses comptes officiels (YouTube, Instagram, Facebook, TikTok, X). Pour sa chaîne YouTube, {brand} utilise les services d'API YouTube (YouTube API Services) : en regardant nos vidéos sur YouTube, vous acceptez les [Conditions d'utilisation de YouTube](https://www.youtube.com/t/terms), et Google traite vos données selon ses [Règles de confidentialité](https://policies.google.com/privacy). Notre outil n'accède qu'à la chaîne d'{brand} et à ses statistiques globales ; il ne collecte, ne conserve ni ne partage aucune donnée personnelle des spectateurs. L'accès de notre outil peut être retiré à tout moment depuis la [page des autorisations du compte Google](https://myaccount.google.com/connections).
+
 ## 7. Transferts hors de l'Union européenne et du Maroc {#transferts}
 
 ### 7.1 Pourquoi vos données sortent du Maroc {#transferts-1}

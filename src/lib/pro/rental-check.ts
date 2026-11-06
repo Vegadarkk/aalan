@@ -35,10 +35,13 @@ import { ownedPublishingShop } from "./service";
 // budget). The worker sends the document to Claude (`config/ai` models.document, else the appeal
 // model), which only reads it: whether it is such a decision, the beneficiary's name and ICE, the
 // number, the date, visible signs of editing. Nothing declared is sent with it, so the reading is
-// not steered; the comparison is the server's (rental-check-rules.ts). All consistent: `verified`
-// by "ai", the storefront shows « agrément contrôlé sur document le … ». Any doubt, Claude
-// unavailable (no key, budget, spend limit, failure) or no queue: `review`, for a moderator who
-// verifies or refuses with a reason. A new reference in the settings drops the check. The
+// not steered; the comparison is the server's (rental-check-rules.ts). The reading only prepares
+// the moderator's review (audit P-3, owner 2026-11-06: the reference is typed by the shop itself,
+// so the badge needs a human): every outcome is `review`, with the reasons when something does not
+// match (none: « Lecture IA cohérente »), and the storefront shows « agrément contrôlé sur document
+// le … » only once a moderator verifies it. Claude unavailable (no key, budget, spend limit,
+// failure) or no queue: `review` too, with `ai_unavailable`. The moderator verifies or refuses
+// with a reason. Checks verified by "ai" before that change stay as they are. A new reference in the settings drops the check. The
 // document never leaves the private bucket except to Claude and to staff (journaled view).
 // Cost (audit B-05): 5 documents per shop and calendar month; the worker counts the document's
 // tokens first (a free call) and leaves anything longer than a few pages to a moderator.
@@ -327,9 +330,9 @@ export async function runRentalCheck(job: RentalCheckJobData, options: RentalChe
   const referenceTaken = await referenceTakenElsewhere(profile.proId, check.agrementRef);
   const issues = agrementIssues(reading, { agrementRef: check.agrementRef, ice: profile.legal.ice, name: profile.name, referenceTaken }, now);
   const extracted = { companyName: reading.companyName, ice: reading.ice, reference: reading.reference, decisionDate: reading.decisionDate, signs: reading.tamperingSigns, note: reading.note };
-  const status = issues.length === 0 ? "verified" : "review";
-  await finishCheck(profile.proId, job.submittedAt, { status, issues, extracted }, now);
-  return { status: "done", outcome: status, costMicroUsd };
+  // Audit P-3: a consistent reading still waits for a moderator (no badge from the AI alone).
+  await finishCheck(profile.proId, job.submittedAt, { status: "review", issues, extracted }, now);
+  return { status: "done", outcome: "review", costMicroUsd };
 }
 
 /** Licence documents waiting for a moderator, oldest first (equality only: no composite index). */

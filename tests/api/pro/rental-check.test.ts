@@ -4,8 +4,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 // Check of a car rental agency's licence decision (decision 5) against the Firebase emulators and
 // an in-memory object store: the document is signed as a KYBC piece by a publishing agency with a
 // reference, sent for its check (no queue here: straight to a moderator), read by a stubbed Claude
-// in the worker's job (consistent: verified by "ai"; any doubt: review, with the reasons), decided
-// by a moderator, shown on the storefront, kept with the profile, and dropped by a new reference.
+// in the worker's job (always review, audit P-3: no reason when consistent, the reasons otherwise),
+// decided by a moderator, shown on the storefront, kept with the profile, and dropped by a new reference.
 
 vi.mock("@/lib/search/queue", () => ({ notifySearchIndex: vi.fn(async () => undefined) }));
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
@@ -250,20 +250,27 @@ describe("licence check", () => {
 });
 
 describe("the worker's reading", () => {
-  it("verifies a consistent document by AI, without sending the declarations to Claude", async () => {
+  it("leaves a consistent document to a moderator too, without sending the declarations to Claude (audit P-3)", async () => {
     const owner = await agency();
     const uploadId = await documentOf(owner);
     const submittedAt = await pending(owner, uploadId);
     const stub = claude({ reference: printed(owner) });
     setRentalCheckClientForTests(stub);
-    expect(await runRentalCheck({ proId: owner.proId, submittedAt })).toMatchObject({ status: "done", outcome: "verified" });
-    expect((await getProProfile(owner.proId))?.rentalCheck).toMatchObject({ status: "verified", method: "ai", issues: [], extracted: { reference: printed(owner), ice: ICE, signs: [] } });
+    expect(await runRentalCheck({ proId: owner.proId, submittedAt })).toMatchObject({ status: "done", outcome: "review" });
+    const read = (await getProProfile(owner.proId))?.rentalCheck;
+    expect(read).toMatchObject({ status: "review", issues: [], extracted: { reference: printed(owner), ice: ICE, signs: [] } });
+    expect(read?.method).toBeUndefined();
     const request = JSON.stringify(stub.calls[0]);
     expect(request).toContain('"type":"document"');
     expect(request).not.toContain(owner.reference.slice(4));
     expect(request).not.toContain(ICE);
-    // The same job again finds nothing pending.
+    // The same job again finds nothing pending; no badge before a moderator verifies it.
     expect((await runRentalCheck({ proId: owner.proId, submittedAt })).status).toBe("skipped");
+    expect((await getPublicStorefront(owner.proId))?.rentalCheckedAt).toBeNull();
+    const moderator = await staffAccount("moderator");
+    const decided = await admin<RentalCheckDecisionResponse>(decide, "POST", `/api/admin/pros/${owner.proId}/rental-check`, moderator, { action: "verify", submittedAt: new Date(submittedAt).toISOString() });
+    expect(decided.body).toEqual({ proId: owner.proId, status: "verified" });
+    expect((await getProProfile(owner.proId))?.rentalCheck).toMatchObject({ status: "verified", method: "staff" });
     expect((await getPublicStorefront(owner.proId))?.rentalCheckedAt).toEqual(expect.any(String));
   });
 
@@ -284,7 +291,10 @@ describe("the worker's reading", () => {
   it("leaves a reference already verified for another shop to a moderator (audit B-04)", async () => {
     const first = await agency();
     setRentalCheckClientForTests(claude({ reference: printed(first) }));
-    expect((await runRentalCheck({ proId: first.proId, submittedAt: await pending(first, await documentOf(first)) })).outcome).toBe("verified");
+    const firstAt = await pending(first, await documentOf(first));
+    expect((await runRentalCheck({ proId: first.proId, submittedAt: firstAt })).outcome).toBe("review");
+    const moderator = await staffAccount("moderator");
+    expect((await admin(decide, "POST", `/api/admin/pros/${first.proId}/rental-check`, moderator, { action: "verify", submittedAt: new Date(firstAt).toISOString() })).status).toBe(200);
     const second = await agency({ reference: first.reference.replace("AGR ", "AGR-0") });
     expect((await runRentalCheck({ proId: second.proId, submittedAt: await pending(second, await documentOf(second)) })).outcome).toBe("review");
     expect((await getProProfile(second.proId))?.rentalCheck?.issues).toEqual(["reference_taken"]);

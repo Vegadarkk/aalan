@@ -5,7 +5,8 @@ Conseil des IA : interroge plusieurs modèles sur une même question et rend leu
 D'après gcpdev/llm-council-skill (MIT, (c) 2026 Gustavo Publio), adapté pour Adil.
 Modes :
   --payant  : ChatGPT + Gemini (clés OpenAI/Gemini, ou CLI codex/gemini)
-  --gratuit : panel de modèles gratuits via freellmpool (0xzr/freellmpool, MIT)
+  --gratuit : panel de modèles gratuits (Gemini, Groq, OpenRouter, NVIDIA, Mistral, Hugging Face, LLM7),
+              interrogés en direct avec leur liste de modèles du moment ; freellmpool en dernier recours
   --complet : les deux
   (défaut)  : payant si une clé payante existe, sinon gratuit
 Clés : variables d'environnement, puis LLM_COUNCIL_ENV, puis ~/cles/llm-council.env, puis .env.
@@ -114,44 +115,99 @@ def run_raw(cmd, timeout=300, env=None):
         return 99, f"{e}"
 
 
-# Clé gratuite -> identifiant du fournisseur dans freellmpool
-FREE_PROVIDERS = [("GROQ_API_KEY", "groq"), ("OPENROUTER_API_KEY", "openrouter"),
-                  ("MISTRAL_API_KEY", "mistral"), ("GEMINI_API_KEY", "gemini"),
-                  ("NVIDIA_API_KEY", "nvidia"), ("HF_TOKEN", "huggingface"),
-                  ("CLOUDFLARE_API_TOKEN", "cloudflare"), ("REQUESTY_API_KEY", "requesty"),
-                  ("AION_API_KEY", "aion")]
+# --- Panel gratuit en direct ---------------------------------------------------------------
+# Chaque fournisseur expose une API compatible OpenAI. On lit sa liste de modèles EN DIRECT
+# (les catalogues figés vieillissent : modèles retirés = erreurs 404/410), on choisit le
+# meilleur modèle selon des préférences, et on bascule sur le suivant en cas d'échec.
+EXCLUDE = ("embed", "whisper", "tts", "audio", "image", "vision", "guard", "rerank", "reward",
+           "moderation", "transcribe", "speech", "safety", "-vl", "ocr", "live", "realtime")
+
+FREE_DIRECT = [
+    # (nom, variable de clé, URL de base, préférences par ordre, filtre supplémentaire)
+    ("gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/openai",
+     ["pro", "flash"], lambda m: "gemini" in m and "lite" not in m),
+    ("groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1",
+     ["gpt-oss-120b", "kimi", "llama-3.3-70b", "qwen", "llama-4", "gpt-oss"], lambda m: True),
+    ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/api/v1",
+     ["deepseek", "qwen3", "gpt-oss", "llama-3.3-70b", "kimi", "glm", "gemma", "mistral"],
+     lambda m: m.endswith(":free")),
+    ("nvidia", "NVIDIA_API_KEY", "https://integrate.api.nvidia.com/v1",
+     ["deepseek", "qwen3", "kimi", "llama-3.3-70b", "nemotron-super", "gpt-oss", "mistral-large"],
+     lambda m: True),
+    ("mistral", "MISTRAL_API_KEY", "https://api.mistral.ai/v1",
+     ["mistral-medium", "mistral-small", "magistral"], lambda m: "latest" in m),
+    ("huggingface", "HF_TOKEN", "https://router.huggingface.co/v1",
+     ["deepseek", "qwen3", "llama-3.3-70b", "gpt-oss"], lambda m: True),
+    ("llm7", None, "https://api.llm7.io/v1",
+     ["deepseek", "gpt", "codestral", "mistral", "qwen"], lambda m: True),
+]
 
 
-def free_providers(env):
-    """Fournisseurs à clé configurés, plus llm7 (sans clé, le plus fiable) ; vide = laisser freellmpool choisir."""
-    chosen = [pid for key, pid in FREE_PROVIDERS if setting(key, env)]
-    return chosen + ["llm7"] if chosen else []
+def http_json(url, key=None, payload=None, timeout=60):
+    headers = {"Content-Type": "application/json", "User-Agent": "llm-council/1.0"}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(url, data=data, headers=headers)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def rank_models(ids, prefs, extra):
+    ids = [i for i in ids if extra(i) and not any(x in i.lower() for x in EXCLUDE)]
+    def score(i):
+        low = i.lower()
+        for rank, p in enumerate(prefs):
+            if p in low:
+                return (rank, -len([c for c in low if c.isdigit()]), i)
+        return (len(prefs), 0, i)
+    return sorted(ids, key=score, reverse=False)
+
+
+def ask_direct(name, key, base, prefs, extra, prompt, tries=3):
+    try:
+        listing = http_json(base + "/models", key, timeout=30)
+        ids = [m.get("id", "") for m in listing.get("data", [])
+               if m.get("model_type", "chat") == "chat" and m.get("tier") not in ("pro",)
+               and not m.get("usage_based_only", False)]
+        if name == "llm7":  # sélecteurs gratuits documentés par LLM7
+            ids = ["default", "fast"] + ids
+    except Exception as e:
+        return {"fournisseur": name, "modele": None, "reponse": f"Échec liste des modèles : {e}"}
+    candidates = rank_models(ids, prefs, extra)
+    if name == "gemini":  # le plus récent d'abord à préférence égale
+        candidates.sort(key=lambda i: (0 if "pro" in i else 1, [-int(x) for x in __import__("re").findall(r"\d+", i)][:3]))
+    errors = []
+    for model in candidates[:tries]:
+        mid = model.split("/", 1)[1] if name == "gemini" and model.startswith("models/") else model
+        try:
+            d = http_json(base + "/chat/completions", key,
+                          {"model": mid, "messages": [{"role": "user", "content": prompt}], "max_tokens": 1500},
+                          timeout=120)
+            text = (d.get("choices") or [{}])[0].get("message", {}).get("content")
+            if text:
+                return {"fournisseur": name, "modele": mid, "reponse": text.strip()}
+            errors.append(f"{mid} : réponse vide")
+        except Exception as e:
+            errors.append(f"{mid} : {e}")
+    return {"fournisseur": name, "modele": None, "reponse": "Échec : " + " | ".join(errors or ["aucun modèle disponible"])}
 
 
 def free_council(prompt, env, opinions):
-    """Panel de modèles gratuits via freellmpool (CLI installée, sinon uvx).
-    Si tout le panel échoue, une question simple avec bascule automatique sur tous les fournisseurs."""
-    if shutil.which("freellmpool"):
-        base = ["freellmpool"]
-    elif shutil.which("uvx"):
-        base = ["uvx", "freellmpool"]
-    else:
-        return {"source": "aucune",
-                "reponse": "freellmpool absent : `pip install freellmpool` (ou installer uv pour `uvx freellmpool`)"}
-    child_env = {**os.environ, **env}  # transmet les clés gratuites (GROQ_API_KEY, OPENROUTER_API_KEY…)
-    providers = free_providers(env)
-    pfilter = ["-p", ",".join(providers)] if providers else []
-    rc, panel = run_raw(base + ["ask", "--second-opinion", "--opinions", str(opinions)] + pfilter + [prompt],
-                        timeout=150, env=child_env)
-    if rc != 99 and panel and panel.count("(failed)") < opinions:
-        return {"source": "freellmpool --second-opinion", "reponse": panel}
-    rc2, single = run_raw(base + ["ask", "--routing", "quality"] + pfilter + [prompt], timeout=120, env=child_env)
-    if rc2 == 0 and single:
-        return {"source": "freellmpool ask (panel indisponible, un seul modèle gratuit)", "reponse": single,
-                "panel_echoue": panel}
-    return {"source": "freellmpool", "reponse": "Échec : aucun fournisseur gratuit n'a répondu "
-            "(quotas épuisés, clés manquantes ou réseau bloqué). Ajouter des clés gratuites dans llm-council.env.",
-            "detail": panel[-1500:]}
+    """Un avis par fournisseur gratuit disponible (clé présente, ou sans clé pour llm7), en parallèle."""
+    from concurrent.futures import ThreadPoolExecutor
+    jobs = [(n, setting(k, env) if k else None, b, p, x) for n, k, b, p, x in FREE_DIRECT
+            if k is None or setting(k, env)]
+    jobs = jobs[:max(opinions, 2)]
+    with ThreadPoolExecutor(max_workers=len(jobs) or 1) as pool:
+        results = list(pool.map(lambda j: ask_direct(*j, prompt), jobs))
+    ok = [r for r in results if r["modele"]]
+    if not ok and (shutil.which("freellmpool") or shutil.which("uvx")):  # dernier recours
+        base = ["freellmpool"] if shutil.which("freellmpool") else ["uvx", "freellmpool"]
+        rc, text = run_raw(base + ["ask", prompt], timeout=120, env={**os.environ, **env})
+        if rc == 0 and text:
+            results.append({"fournisseur": "freellmpool", "modele": "auto", "reponse": text})
+    return {"avis_obtenus": len([r for r in results if r["modele"]]), "avis": results}
 
 
 def main():

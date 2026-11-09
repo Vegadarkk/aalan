@@ -16,7 +16,7 @@ D'après gcpdev/llm-council-skill (licence MIT, © 2026 Gustavo Publio), adapté
 - **`--payant`** : ChatGPT + Gemini avec les clés d'Adil. Pour les sujets sensibles d'un projet (sans jamais de secret ni de donnée personnelle).
 - **`--complet`** : les deux, pour les décisions les plus lourdes.
 - Sans option : payant si une clé OpenAI ou Gemini existe, sinon gratuit.
-- `--avis N` règle la taille du panel gratuit (2 à 5, 3 par défaut).
+- `--avis N` règle la taille du panel gratuit (2 à 5, 5 par défaut : un fournisseur gratuit sur deux peut être en panne à un instant donné).
 
 ## Déroulé
 1. **Préparer la question** : une question autonome, avec le contexte utile (pile technique, contraintes, options envisagées). **Ne jamais y mettre** de secret, clé, mot de passe, donnée personnelle (adresse, santé, finances d'Adil), donnée de candidature ni code privé sensible : la question part chez des tiers. En mode gratuit, rien qui ne puisse devenir public.
@@ -219,7 +219,7 @@ def free_council(prompt, env, opinions):
 def main():
     args = sys.argv[1:]
     mode = None
-    opinions = 3
+    opinions = 5
     rest = []
     i = 0
     while i < len(args):

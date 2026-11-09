@@ -157,7 +157,7 @@ def free_council(prompt, env, opinions):
 def main():
     args = sys.argv[1:]
     mode = None
-    opinions = 3
+    opinions = 5
     rest = []
     i = 0
     while i < len(args):

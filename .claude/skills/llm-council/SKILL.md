@@ -1,6 +1,6 @@
 ---
 name: llm-council
-description: Conseil des IA — avant de présenter un plan ou une décision importante, consulter d'autres modèles (ChatGPT et Gemini, ou un panel de modèles gratuits via freellmpool), comparer leurs avis avec le mien et rendre un plan synthétisé. À utiliser quand Adil dit « consulte le conseil », « demande à ChatGPT et Gemini », « avis des autres IA », et sur toute décision structurante d'un projet.
+description: Conseil des IA : consulter ChatGPT et Gemini, ou un panel de modèles gratuits (Gemini, Groq, OpenRouter, NVIDIA, LLM7…), avant un plan ou une décision structurante, puis rendre un plan synthétisé.
 ---
 
 # Conseil des IA (llm-council)
@@ -15,14 +15,14 @@ D'après gcpdev/llm-council-skill (licence MIT, © 2026 Gustavo Publio), adapté
 - **`--gratuit`** : un avis par fournisseur gratuit disponible, interrogés en parallèle : Gemini, Groq, OpenRouter, NVIDIA, Mistral, Hugging Face (chacun seulement si sa clé est dans llm-council.env) et LLM7 (sans clé). Le script lit EN DIRECT la liste des modèles de chaque fournisseur et prend le meilleur disponible, puis bascule sur le suivant en cas d'échec : les modèles retirés ne cassent plus le panel. freellmpool ne sert plus qu'en dernier recours. **Uniquement pour les sujets non critiques** : ces fournisseurs peuvent garder la question et s'en servir pour entraîner leurs modèles. Adil l'accepte pour ce type de sujet.
 - **`--payant`** : ChatGPT + Gemini avec les clés d'Adil. Pour les sujets sensibles d'un projet (sans jamais de secret ni de donnée personnelle).
 - **`--complet`** : les deux, pour les décisions les plus lourdes.
-- Sans option : payant si une clé OpenAI ou Gemini existe, sinon gratuit.
+- Sans option : payant si une clé OpenAI ou Gemini existe (ou si les outils codex / gemini sont installés), sinon gratuit. Pour le conseil gratuit, toujours passer `--gratuit` explicitement.
 - `--avis N` règle la taille du panel gratuit (2 à 5, 5 par défaut : un fournisseur gratuit sur deux peut être en panne à un instant donné).
 
 ## Déroulé
 1. **Préparer la question** : une question autonome, avec le contexte utile (pile technique, contraintes, options envisagées). **Ne jamais y mettre** de secret, clé, mot de passe, donnée personnelle (adresse, santé, finances d'Adil), donnée de candidature ni code privé sensible : la question part chez des tiers. En mode gratuit, rien qui ne puisse devenir public.
 2. **Interroger le conseil** : utiliser `.claude/skills/llm-council/scripts/query_llms.py` s'il est dans le dépôt, sinon écrire le script ci-dessous dans un fichier temporaire, puis lancer :
-   `python3 query_llms.py --gratuit "<question>"` (sous Windows : `python ...`).
-   Le mode gratuit demande freellmpool : `pip install freellmpool` (ou `uvx freellmpool` si uv est installé). Les outils en ligne de commande `codex` et `gemini`, s'ils sont installés, servent en priorité pour le mode payant.
+   `python3 query_llms.py --gratuit "<question>"` (sous Windows : `py ...`).
+   Le mode gratuit n'a besoin que de Python et des clés gratuites ; freellmpool (installé sur le PC2 le 09/11/2026) ne sert qu'en dernier recours. Les outils en ligne de commande `codex` et `gemini`, s'ils sont installés, servent en priorité pour le mode payant.
 3. **Analyser** : où les modèles s'accordent, où ils divergent, ce qu'ils apportent que je n'avais pas vu, ce qui est faux ou daté (vérifier tout fait avancé avant de le reprendre). Les modèles gratuits sont souvent plus petits : peser leurs avis en conséquence.
 4. **Synthétiser** : un plan qui combine le meilleur des avis et du mien. Je reste responsable du résultat : un avis majoritaire n'a pas raison pour autant.
 5. **Présenter à Adil**, court :
@@ -31,7 +31,7 @@ D'après gcpdev/llm-council-skill (licence MIT, © 2026 Gustavo Publio), adapté
    - « Désaccords » s'il y en a, et mon arbitrage.
 
 ## Clés et réglages
-Les clés ne vont **jamais** dans un dépôt ni dans un fil. Ordre de lecture : variables d'environnement, puis le fichier désigné par `LLM_COUNCIL_ENV`, puis `C:\Users\<utilisateur>\cles\llm-council.env` (`~/cles/llm-council.env`), puis `.env` du dossier courant en dernier recours (il doit alors figurer dans `.gitignore`). Le script transmet aussi ces clés à freellmpool.
+Les clés ne vont **jamais** dans un dépôt ni dans un fil. Ordre de lecture : variables d'environnement, puis le fichier désigné par `LLM_COUNCIL_ENV`, puis `C:\Users\<utilisateur>\cles\llm-council.env` (`~/cles/llm-council.env`), puis `.env` du dossier courant en dernier recours (il doit alors figurer dans `.gitignore`). 
 
 ```
 # Conseil payant
@@ -187,7 +187,7 @@ EXCLUDE = ("embed", "whisper", "tts", "audio", "image", "vision", "guard", "rera
 FREE_DIRECT = [
     # (nom, variable de clé, URL de base, préférences par ordre, filtre supplémentaire)
     ("gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/openai",
-     ["pro", "flash"], lambda m: "gemini" in m and "lite" not in m),
+     ["flash", "pro"], lambda m: "gemini" in m and "lite" not in m),
     ("groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1",
      ["gpt-oss-120b", "kimi", "llama-3.3-70b", "qwen", "llama-4", "gpt-oss"], lambda m: True),
     ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/api/v1",
@@ -237,8 +237,9 @@ def ask_direct(name, key, base, prefs, extra, prompt, tries=3):
     except Exception as e:
         return {"fournisseur": name, "modele": None, "reponse": f"Échec liste des modèles : {e}"}
     candidates = rank_models(ids, prefs, extra)
-    if name == "gemini":  # le plus récent d'abord à préférence égale
-        candidates.sort(key=lambda i: (0 if "pro" in i else 1, [-int(x) for x in __import__("re").findall(r"\d+", i)][:3]))
+    if name == "gemini":  # Flash d'abord (le Pro a peu ou pas de quota gratuit), version la plus récente d'abord
+        import re
+        candidates.sort(key=lambda i: (0 if "flash" in i else 1, [-int(x) for x in re.findall(r"\d+", i)][:3]))
     errors = []
     for model in candidates[:tries]:
         mid = model.split("/", 1)[1] if name == "gemini" and model.startswith("models/") else model

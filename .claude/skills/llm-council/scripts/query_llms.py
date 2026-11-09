@@ -125,7 +125,7 @@ EXCLUDE = ("embed", "whisper", "tts", "audio", "image", "vision", "guard", "rera
 FREE_DIRECT = [
     # (nom, variable de clé, URL de base, préférences par ordre, filtre supplémentaire)
     ("gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/openai",
-     ["pro", "flash"], lambda m: "gemini" in m and "lite" not in m),
+     ["flash", "pro"], lambda m: "gemini" in m and "lite" not in m),
     ("groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1",
      ["gpt-oss-120b", "kimi", "llama-3.3-70b", "qwen", "llama-4", "gpt-oss"], lambda m: True),
     ("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/api/v1",
@@ -175,8 +175,9 @@ def ask_direct(name, key, base, prefs, extra, prompt, tries=3):
     except Exception as e:
         return {"fournisseur": name, "modele": None, "reponse": f"Échec liste des modèles : {e}"}
     candidates = rank_models(ids, prefs, extra)
-    if name == "gemini":  # le plus récent d'abord à préférence égale
-        candidates.sort(key=lambda i: (0 if "pro" in i else 1, [-int(x) for x in __import__("re").findall(r"\d+", i)][:3]))
+    if name == "gemini":  # Flash d'abord (le Pro a peu ou pas de quota gratuit), version la plus récente d'abord
+        import re
+        candidates.sort(key=lambda i: (0 if "flash" in i else 1, [-int(x) for x in re.findall(r"\d+", i)][:3]))
     errors = []
     for model in candidates[:tries]:
         mid = model.split("/", 1)[1] if name == "gemini" and model.startswith("models/") else model

@@ -114,6 +114,20 @@ def run_raw(cmd, timeout=300, env=None):
         return 99, f"{e}"
 
 
+# Clé gratuite -> identifiant du fournisseur dans freellmpool
+FREE_PROVIDERS = [("GROQ_API_KEY", "groq"), ("OPENROUTER_API_KEY", "openrouter"),
+                  ("MISTRAL_API_KEY", "mistral"), ("GEMINI_API_KEY", "gemini"),
+                  ("NVIDIA_API_KEY", "nvidia"), ("HF_TOKEN", "huggingface"),
+                  ("CLOUDFLARE_API_TOKEN", "cloudflare"), ("REQUESTY_API_KEY", "requesty"),
+                  ("AION_API_KEY", "aion")]
+
+
+def free_providers(env):
+    """Fournisseurs à clé configurés, plus llm7 (sans clé, le plus fiable) ; vide = laisser freellmpool choisir."""
+    chosen = [pid for key, pid in FREE_PROVIDERS if setting(key, env)]
+    return chosen + ["llm7"] if chosen else []
+
+
 def free_council(prompt, env, opinions):
     """Panel de modèles gratuits via freellmpool (CLI installée, sinon uvx).
     Si tout le panel échoue, une question simple avec bascule automatique sur tous les fournisseurs."""
@@ -125,10 +139,13 @@ def free_council(prompt, env, opinions):
         return {"source": "aucune",
                 "reponse": "freellmpool absent : `pip install freellmpool` (ou installer uv pour `uvx freellmpool`)"}
     child_env = {**os.environ, **env}  # transmet les clés gratuites (GROQ_API_KEY, OPENROUTER_API_KEY…)
-    rc, panel = run_raw(base + ["ask", "--second-opinion", "--opinions", str(opinions), prompt], timeout=150, env=child_env)
+    providers = free_providers(env)
+    pfilter = ["-p", ",".join(providers)] if providers else []
+    rc, panel = run_raw(base + ["ask", "--second-opinion", "--opinions", str(opinions)] + pfilter + [prompt],
+                        timeout=150, env=child_env)
     if rc != 99 and panel and panel.count("(failed)") < opinions:
         return {"source": "freellmpool --second-opinion", "reponse": panel}
-    rc2, single = run_raw(base + ["ask", "--routing", "quality", prompt], timeout=120, env=child_env)
+    rc2, single = run_raw(base + ["ask", "--routing", "quality"] + pfilter + [prompt], timeout=120, env=child_env)
     if rc2 == 0 and single:
         return {"source": "freellmpool ask (panel indisponible, un seul modèle gratuit)", "reponse": single,
                 "panel_echoue": panel}

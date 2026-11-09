@@ -212,6 +212,10 @@ def free_council(prompt, env, opinions):
 
 
 def main():
+    try:  # console Windows : éviter les erreurs d'accents à l'affichage
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
     args = sys.argv[1:]
     mode = None
     opinions = 5

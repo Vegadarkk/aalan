@@ -255,7 +255,8 @@ describe("the CA and the certificates", () => {
     const base64 = request(join(work, "der"), "joutiya-prod-worker").csr.replace(/-----[A-Z ]+-----/g, "").replace(/\s+/g, "");
     const pem = csrFromOutput(`warning: noise\ncsr ${base64}\n`);
     expect(pem.split("\n").every((line) => line.length <= 64 || line.startsWith("-----"))).toBe(true);
-    expect(openssl(["req", "-noout", "-subject"], pem).trim()).toBe("subject=CN = joutiya-prod-worker");
+    // OpenSSL 3.0 prints "CN = name", newer releases (GitHub runners since 9 Nov 2026) "CN=name".
+    expect(openssl(["req", "-noout", "-subject"], pem).trim()).toMatch(/^subject=CN ?= ?[a-z]+-prod-worker$/);
     expect(() => csrFromOutput("csr \n")).toThrow(/no certificate request/);
     expect(() => csrFromOutput("nothing")).toThrow(/no certificate request/);
   });

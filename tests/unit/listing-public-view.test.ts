@@ -119,6 +119,7 @@ describe("toPublicListing", () => {
       seller: { publicId: "abcdefghjk", name: "Salma", type: "individual" },
       example: false,
       rental: null,
+      departure: null,
       catalogue: null,
       publishedAt: NOW.toISOString(),
       sortAt: NOW.toISOString(),

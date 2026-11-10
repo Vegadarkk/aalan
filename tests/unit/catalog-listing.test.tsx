@@ -131,6 +131,7 @@ describe("Product markup", () => {
     example: false,
     rental: null,
     catalogue: null,
+    departure: null,
     publishedAt: "2026-10-29T00:00:00.000Z",
     sortAt: "2026-10-29T00:00:00.000Z",
     updatedAt: "2026-10-29T00:00:00.000Z",

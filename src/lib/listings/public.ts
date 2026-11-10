@@ -1,6 +1,7 @@
 import "server-only";
 import { datedRental, type Condition } from "@/config/categories";
 import { REVIEWS_PAGE } from "@/config/reviews";
+import type { CarrierCurrency, CarrierDirection, CarrierSpace } from "@/config/carriers";
 import { DEFAULT_BANNER, type BannerKey } from "@/config/storefront";
 import { avatarUrls } from "@/lib/account/avatar-url";
 import { cardPromo, isSoldOut, priceRange, type CardPromo, type ListingVariants, type PromoView, type ShopSection } from "@/lib/contracts/catalog";
@@ -174,10 +175,33 @@ export interface PublicListing {
   rental: RentalAvailability | null;
   /** A Pro's declared stock or variants (catalogue §2-3); null when the listing has neither. */
   catalogue: PublicCatalogue | null;
+  /** A carrier's departure (transporteurs/spec.md §3): its facts (the note is the description's end); null otherwise. */
+  departure: PublicDeparture | null;
   /** ISO 8601. */
   publishedAt: string;
   sortAt: string;
   updatedAt: string;
+}
+
+export interface PublicDeparture {
+  direction: CarrierDirection;
+  departOn: string;
+  depositBy: string;
+  arriveFrom: string;
+  arriveTo: string;
+  euZones: string[];
+  maCities: string[];
+  space: CarrierSpace;
+  spaceKg: number | null;
+  /** ISO 8601: the room left was last set then. */
+  spaceUpdatedAt: string;
+}
+
+function departureOf(record: ListingRecord): PublicDeparture | null {
+  const departure = record.departure;
+  if (!departure) return null;
+  const { note: _note, spaceKg, spaceUpdatedAt, ...facts } = departure;
+  return { ...facts, spaceKg: spaceKg ?? null, spaceUpdatedAt: spaceUpdatedAt.toISOString() };
 }
 
 export interface PublicCatalogue {
@@ -270,6 +294,7 @@ export function toPublicListing(record: ListingRecord, state: PublicState, slugI
     example: record.example === true,
     rental: datedRental(subcategoryId) ? rentalAvailabilityOf(record) : null,
     catalogue: catalogueOf(record, new Date()),
+    departure: departureOf(record),
     publishedAt: publishedAt.toISOString(),
     sortAt: record.sortAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -510,13 +535,21 @@ export interface PublicShopRef {
   segment: string;
   name: string;
   sector: ProSector;
+  /** A carrier: the lowest per-kg rate of its price list (« dès 2,00 €/kg » on its departures). */
+  carrierFrom?: { perKg: number; currency: CarrierCurrency };
 }
 
 /** The shop of a Pro listing while its storefront is shown, else null: the seller card of a listing links there (UX journeys, 6). */
 export async function publicShopRef(proId: string): Promise<PublicShopRef | null> {
   const profile = await getProProfile(proId);
   if (!profile || !storefrontShown(profile.lifecycle, profile.plan)) return null;
-  return { segment: storefrontSegment(profile.slug, profile.proId), name: profile.name, sector: profile.sector ?? "general" };
+  const tariff = profile.sector === "carrier" ? profile.carrier?.tariff : undefined;
+  return {
+    segment: storefrontSegment(profile.slug, profile.proId),
+    name: profile.name,
+    sector: profile.sector ?? "general",
+    ...(tariff ? { carrierFrom: { perKg: Math.min(tariff.perKg, ...tariff.bands.map((band) => band.perKg)), currency: tariff.currency } } : {}),
+  };
 }
 
 /** The proId of a /boutique segment "{slug}-{proId}", or null when it cannot be one. */

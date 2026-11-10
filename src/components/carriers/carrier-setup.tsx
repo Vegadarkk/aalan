@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import type { ProSelfView } from "@/lib/contracts/pro";
 
 // The carrier's prompt in the Pro space (transporteurs/spec.md §4): publish the price list first,
-// then a summary of it with the way back to its settings.
+// then a summary of it with « Mes départs » and the way back to its settings.
 
 export function CarrierSetup({ shop }: { shop: Pick<ProSelfView, "carrier" | "carrierUpdatedAt"> }) {
   const t = useTranslations("CarrierSettings.setup");
@@ -34,9 +34,20 @@ export function CarrierSetup({ shop }: { shop: Pick<ProSelfView, "carrier" | "ca
           </p>
         </div>
       </div>
-      <Button asChild variant={carrier ? "outline" : "primary"} className="shrink-0">
-        <Link href="/pro/transport">{carrier ? t("edit") : t("action")}</Link>
-      </Button>
+      {carrier ? (
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/pro/departs">{t("departures")}</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/pro/transport">{t("edit")}</Link>
+          </Button>
+        </div>
+      ) : (
+        <Button asChild className="shrink-0">
+          <Link href="/pro/transport">{t("action")}</Link>
+        </Button>
+      )}
     </section>
   );
 }

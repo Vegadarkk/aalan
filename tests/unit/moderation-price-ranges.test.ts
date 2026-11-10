@@ -5,7 +5,8 @@ import { PRICE_OUTLIER_FACTOR, PRICE_RANGES, isPriceOutlier, priceRange } from "
 describe("price ranges", () => {
   it("covers every subcategory except divers/autres, with coherent integer MAD bounds", () => {
     for (const id of SUBCATEGORY_IDS) {
-      if (id === "autres") {
+      // A departure has no price of its own (the carrier's price list gives it).
+      if (id === "autres" || subcategoryById(id)?.tool) {
         expect(priceRange(id)).toBeUndefined();
         continue;
       }

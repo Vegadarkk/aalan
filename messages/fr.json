@@ -784,7 +784,8 @@
       "rental_attestation": "Pour publier une location, confirmez la déclaration de votre agence (agrément, immatriculation, assurance).",
       "rental_agrement_missing": "Pour publier une location, renseignez d'abord le numéro d'agrément de votre agence dans l'espace Pro (Mon agence de location).",
       "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro).",
-      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier.",
+      "carrier_settings_missing": "Enregistrez d'abord votre grille de transport : vos départs en reprennent les zones, les villes et les tarifs."
     },
     "wizard": {
       "title": "Déposer une annonce",
@@ -1181,7 +1182,8 @@
       "stock_with_variants": "Avec des variantes, le stock se saisit pour chaque combinaison.",
       "no_variants": "Cette annonce n'a pas de variantes.",
       "title_soldes": "Le mot « Soldes » n'est permis dans le titre que pendant des soldes lancées depuis « Mes annonces » : retirez-le.",
-      "price_required_amount": "Indiquez un prix."
+      "price_required_amount": "Indiquez un prix.",
+      "departure_required": "Un départ se crée et se modifie depuis « Mes départs »."
     },
     "status": {
       "draft": "Brouillon",
@@ -1387,7 +1389,8 @@
         "travaux-reparations": "Travaux & réparations",
         "menage": "Ménage",
         "evenements": "Événements",
-        "beaute": "Beauté"
+        "beaute": "Beauté",
+        "departs-europe-maroc": "Départs Europe–Maroc"
       }
     },
     "emploi": {
@@ -2903,6 +2906,13 @@
         "maroc": "Tout le Maroc",
         "etranger": "Maroc et étranger"
       }
+    },
+    "departure-direction": {
+      "label": "Sens",
+      "options": {
+        "europe-maroc": "Europe → Maroc",
+        "maroc-europe": "Maroc → Europe"
+      }
     }
   },
   "MyListings": {
@@ -3585,6 +3595,26 @@
       "endsInMinutes": "Se termine dans {minutes} min",
       "reference": "Prix barré : le prix le plus bas affiché aux acheteurs pendant les 30 jours avant la promotion.",
       "noReference": "Pas de prix barré : l'annonce a moins de 30 jours d'historique de prix."
+    },
+    "departure": {
+      "label": "Départ du transporteur",
+      "from": "Dès",
+      "perKg": "le kg",
+      "priceList": "Prix selon la grille du transporteur",
+      "seePrices": "Voir la grille tarifaire",
+      "kgLeft": "{kg} kg restants",
+      "spaceUpdated": "Mis à jour le {date}",
+      "departOn": "Départ",
+      "depositBy": "Dépôt des colis jusqu'au",
+      "arrival": "Arrivée estimée",
+      "range": "du {from} au {to}",
+      "direction": "Sens",
+      "collectEurope": "Collecte en Europe",
+      "collectMorocco": "Collecte au Maroc",
+      "deliverMorocco": "Livraison au Maroc",
+      "deliverEurope": "Livraison en Europe",
+      "more": "{names} et {count} autres",
+      "notice": "Prix indicatif d'après la grille déclarée par le transporteur, sans paiement sur le site. Le prix final est fixé à la pesée de contrôle, avant la prise en charge de vos colis. Le contrat est conclu avec le transporteur seul."
     }
   },
   "Profile": {
@@ -4373,7 +4403,8 @@
       "holidayAgency": "Mon agence de séjours",
       "choosePlan": "Choisir une offre",
       "invoices": "Mes factures",
-      "carrierSettings": "Ma grille de transport"
+      "carrierSettings": "Ma grille de transport",
+      "departures": "Mes départs"
     },
     "errors": {
       "pro_signup_closed": "Les demandes de compte Pro sont fermées pour le moment.",
@@ -6767,6 +6798,12 @@
       "tobacco": "Tabac",
       "cash": "Espèces et valeurs",
       "documents": "Documents officiels"
+    },
+    "spaces": {
+      "lots": "Beaucoup de place",
+      "some": "Encore de la place",
+      "almost_full": "Presque complet",
+      "full": "Complet"
     }
   },
   "CarrierSettings": {
@@ -6881,7 +6918,91 @@
       "action": "Remplir ma grille",
       "readyTitle": "Votre grille est en ligne",
       "ready": "Dès {rate} le kg. Mise à jour le {date}.",
-      "edit": "Modifier ma grille"
+      "edit": "Modifier ma grille",
+      "departures": "Mes départs"
+    }
+  },
+  "Departures": {
+    "title": "Mes départs",
+    "back": "Retour à l'espace Pro",
+    "lead": "Publiez vos prochains départs : chaque départ devient une annonce avec ses dates, ses villes et la place restante. Vos clients voient vos tarifs et vous écrivent directement.",
+    "loading": "Chargement de vos départs",
+    "loadFailed": "Vos départs n'ont pas pu être chargés.",
+    "retry": "Réessayer",
+    "notCarrier": "« Mes départs » est réservé aux boutiques de transporteurs vérifiées.",
+    "new": "Nouveau départ",
+    "priceList": "Ma grille de transport",
+    "settingsMissing": "Enregistrez d'abord votre grille de transport : vos départs en reprennent les zones, les villes et les tarifs.",
+    "settingsAction": "Remplir ma grille",
+    "closed": "L'espace transporteurs n'est pas encore ouvert : vous pourrez publier vos départs dès son ouverture.",
+    "upcoming": "{count, plural, one {# départ à venir} other {# départs à venir}}",
+    "emptyTitle": "Aucun départ à venir",
+    "emptyBody": "Créez votre prochain départ, ou dupliquez un départ passé avec de nouvelles dates.",
+    "past": "Départs passés",
+    "to": "vers",
+    "depositBy": "Dépôt jusqu'au",
+    "arrival": "Arrivée estimée",
+    "range": "du {from} au {to}",
+    "pendingReview": "Ce départ est vérifié par un modérateur : il sera visible dès son approbation.",
+    "space": "Place restante",
+    "spaceKg": "{kg} kg restants",
+    "spaceSaved": "Place restante : {space}",
+    "edit": "Modifier",
+    "copy": "Dupliquer",
+    "view": "Voir l'annonce",
+    "pause": "Mettre en pause",
+    "resume": "Remettre en ligne",
+    "paused": "Départ mis en pause",
+    "resumed": "Départ remis en ligne",
+    "remove": "Supprimer",
+    "removeTitle": "Supprimer ce départ ?",
+    "removeBody": "L'annonce du départ est retirée du site. Vos conversations avec les clients restent dans la messagerie.",
+    "removed": "Départ supprimé",
+    "cancel": "Annuler",
+    "formNew": "Nouveau départ",
+    "formEdit": "Modifier le départ",
+    "formLead": "Les dates, les zones et villes de cette tournée et la place restante. Le prix affiché vient de votre grille de transport.",
+    "direction": "Sens",
+    "departOn": "Date de départ",
+    "departOnHint": "Les autres dates suivent quand vous la changez.",
+    "depositByField": "Dépôt des colis jusqu'au",
+    "arriveFrom": "Arrivée estimée à partir du",
+    "arriveTo": "Arrivée estimée au plus tard le",
+    "collectEurope": "Collecte en Europe",
+    "deliverEurope": "Livraison en Europe",
+    "collectMorocco": "Collecte au Maroc",
+    "deliverMorocco": "Livraison au Maroc",
+    "all": "Tout cocher",
+    "none": "Tout décocher",
+    "spaceKgField": "Kilos restants (facultatif)",
+    "spaceKgHint": "Affichés à côté de la place restante.",
+    "note": "Note pour vos clients (facultatif)",
+    "noteHint": "Lieu de dépôt, horaires, conditions : {max} caractères au plus, sans numéro de téléphone.",
+    "repeat": "Répéter ce départ",
+    "repeatOnce": "Une seule fois",
+    "repeatWeekly": "Chaque semaine",
+    "repeatFortnightly": "Toutes les deux semaines",
+    "repeatCount": "Nombre de départs",
+    "departuresCount": "{count} départs",
+    "repeatUntil": "Dernier départ le {day}.",
+    "accept": "Je confirme que ce départ respecte les <rules>règles de diffusion</rules> et mes engagements de transporteur.",
+    "acceptRequired": "Cochez la confirmation pour publier.",
+    "turnstile": "Une vérification rapide est nécessaire avant de publier.",
+    "publish": "Publier le départ",
+    "publishMany": "Publier les {count} départs",
+    "save": "Enregistrer",
+    "saved": "Départ mis à jour",
+    "created": "{count, plural, one {Départ publié} other {# départs publiés}}",
+    "createdHeld": "{count, plural, one {Un départ est vérifié par un modérateur avant d'être visible.} other {# départs sont vérifiés par un modérateur avant d'être visibles.}}",
+    "partial": "Le départ du {day} n'a pas été publié : {reason}",
+    "choosePlan": "Choisir une offre",
+    "problems": {
+      "invalid_day": "Date invalide.",
+      "deposit_window": "Le dépôt se fixe le jour du départ ou jusqu'à 30 jours avant.",
+      "arrival_window": "L'arrivée se situe entre le jour du départ et 30 jours après.",
+      "departure_past": "Choisissez une date à partir d'aujourd'hui.",
+      "departure_too_far": "Un départ se publie au plus {max} jours à l'avance.",
+      "places": "Cochez au moins un lieu."
     }
   }
 }

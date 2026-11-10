@@ -104,7 +104,8 @@ export async function expireListings(now = new Date()): Promise<ExpireResult> {
         result.expired += 1;
         await notifySearchIndex([candidate.id]);
         if (done.audit) await audit({ actorUid: "system", actorRole: "system", action: done.audit, target: { type: "listing", id: candidate.id }, automated: true, at: now });
-        if (await notify(done.listing, recipients)) result.mailed += 1;
+        // A carrier's departure ends with its day, as planned: no « annonce expirée » mail.
+        if (!done.listing.departure && (await notify(done.listing, recipients))) result.mailed += 1;
       } catch (error) {
         result.failed += 1;
         logger.warn({ listingId: candidate.id, err: (error as Error).message }, "listing not expired");

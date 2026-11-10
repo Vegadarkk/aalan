@@ -78,6 +78,8 @@ export interface ContactBarProps {
   slugId: string;
   /** Hides the actions from the seller looking at their own listing. */
   sellerPublicId: string;
+  /** The owner's edit link (`ownerEditPath`): the wizard, or the tool that made the listing (« Mes départs »). */
+  editHref?: string;
   /** Title of the message dialog ("Écrire à {name}"). */
   sellerName?: string;
   /** Reminded in the message dialog. */
@@ -182,7 +184,7 @@ function BarSpacer({ tall = false }: { tall?: boolean }) {
   return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className={cn(tall ? "h-36" : "h-24", "lg:hidden")} />, document.body) : null;
 }
 
-export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false, promotable = false }: ContactBarProps) {
+export function ContactBar({ listingId, slugId, sellerPublicId, editHref, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false, promotable = false }: ContactBarProps) {
   const t = useTranslations("ListingPage.contact");
   const stay = rental === "night";
   const offers = useTranslations("Offers.listing");
@@ -323,7 +325,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, sellerName, list
           {/* The owner's own actions instead of the buyer's (zone 3 audit P3-9); the wizard path of lib/listings/client/routes. */}
           {shop ? null : (
             <Button asChild variant="primary" className="self-start">
-              <Link href={`/deposer/${encodeURIComponent(listingId)}`}>
+              <Link href={editHref ?? `/deposer/${encodeURIComponent(listingId)}`}>
                 <PencilLine aria-hidden="true" />
                 {t("edit")}
               </Link>

@@ -76,6 +76,30 @@ export const CARRIER_LIMITS = {
 } as const;
 
 /**
+ * Room left on a departure (spec §3), as the carrier sets it in one tap: four levels, the kilograms
+ * left optional. « Complet » keeps the departure online but out of a search for room.
+ */
+export const CARRIER_SPACES = ["lots", "some", "almost_full", "full"] as const;
+export type CarrierSpace = (typeof CARRIER_SPACES)[number];
+
+/** Limits of a departure (spec §3-4). Days are Morocco calendar days ("YYYY-MM-DD"). */
+export const DEPARTURE_LIMITS = {
+  /** Furthest departure day from today. */
+  aheadDays: 180,
+  /** Deposit deadline: on the departure day or up to this many days before. */
+  depositDaysMax: 30,
+  /** Estimated arrival: from the departure day to this many days after (CARRIER_LIMITS.transitDaysMax). */
+  arrivalDaysMax: 30,
+  /** A recurrence: every week or every two weeks, up to 8 departures at once (spec §4). */
+  repeatMax: 8,
+  spaceKgMax: 40_000,
+  /** The carrier's note on one departure (below the facts on its page). */
+  noteMax: 600,
+  /** Departures « Mes départs » lists (upcoming, then the latest past ones to copy). */
+  listMax: 100,
+} as const;
+
+/**
  * Licence reference as the carrier writes it (community licence, transport register, Moroccan
  * authorisation): 3 to 40 Latin letters, digits, spaces and . / - _, one digit at least. Declared,
  * never checked (owner card, 10 Nov 2026: mandatory, shown « déclaré »).

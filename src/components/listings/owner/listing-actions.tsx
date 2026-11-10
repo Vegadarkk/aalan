@@ -5,11 +5,12 @@ import { Copy, Eye, MoreHorizontal, Pause, Pencil, Play, RefreshCw, Tag, Trash2,
 import { useTranslations } from "next-intl";
 import { DropdownMenu } from "radix-ui";
 import { Button } from "@/components/ui/button";
+import { subcategoryById } from "@/config/categories";
 import { Link } from "@/i18n/navigation";
 import type { OwnerListingSummary } from "@/lib/contracts/listings";
 import { isolate } from "@/lib/i18n/bidi";
 import type { OwnerAction } from "@/lib/listings/client/api";
-import { wizardPath } from "@/lib/listings/client/routes";
+import { ownerEditPath } from "@/lib/listings/client/routes";
 import { cn } from "@/lib/utils";
 import { canResume } from "./buckets";
 import { ConfirmDialog } from "@/components/post/controls/confirm-dialog";
@@ -85,13 +86,13 @@ export function ListingActions({ listing, onAction, onDelete, busy, publicHref, 
             ) : null}
             {allowed.edit ? (
               <DropdownMenu.Item asChild>
-                <Link href={wizardPath(listing.id)} className={item}>
+                <Link href={ownerEditPath(listing)} className={item}>
                   <Pencil aria-hidden="true" />
                   {listing.status === "draft" ? t("actions.continueDraft") : t("actions.edit")}
                 </Link>
               </DropdownMenu.Item>
             ) : null}
-            {onDuplicate && listing.status !== "removed" && listing.status !== "purged" ? (
+            {onDuplicate && listing.status !== "removed" && listing.status !== "purged" && !subcategoryById(listing.subcategoryId ?? "")?.tool ? (
               <DropdownMenu.Item className={item} onSelect={onDuplicate} data-testid="listing-duplicate">
                 <Copy aria-hidden="true" />
                 {t("actions.duplicate")}

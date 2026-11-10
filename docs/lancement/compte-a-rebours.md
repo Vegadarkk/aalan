@@ -27,7 +27,7 @@ copie (une minute au plus), la page affiche « La porte s'ouvre… » et réessa
 |---|---|---|
 | `OPENS_AT` | `2026-11-20T10:00:00+01:00` (date ISO avec fuseau) | Ferme le site jusqu'à cet instant. Vide = ouvert. Une valeur mal écrite empêche le démarrage. |
 | `PREVIEW_SECRET` | 32 à 128 lettres et chiffres | Active l'aperçu de l'équipe (ci-dessous). Vide = aucun aperçu. |
-| `BRAND_SOCIAL_LINKS` | `instagram=aalan.ma tiktok=@aalan.ma youtube=https://www.youtube.com/@aalan` | Liens vers les comptes d'Aalan sous le compte à rebours. Vide = pas de liens. |
+| `BRAND_SOCIAL_LINKS` | `instagram=aalan_ma tiktok=@aalan_ma facebook=61596493192279 x=Aalan_maroc` (les comptes de la page d'attente) | Liens vers les comptes d'Aalan sous le compte à rebours. Vide = pas de liens. |
 
 Les valeurs sont lues au démarrage du conteneur : après un changement, relancer le service `web`
 (synchronisation `scripts/oracle-vm.ts`). Le Maroc est à UTC+1 hors ramadan, UTC+0 pendant : écrire
@@ -40,8 +40,9 @@ le fuseau en vigueur le jour de l'ouverture.
 2. `https://aalan.ma/api/preview?fin` retire le cookie. Changer `PREVIEW_SECRET` révoque tous les
    aperçus.
 3. Prérequis : la règle de cache Cloudflare qui ignore les requêtes portant ce cookie
-   (`infra/cloudflare/cache-rules.json`, `node scripts/cloudflare.ts --apply` sur la zone de
-   production). Sans elle, une page vue en aperçu pourrait être mise en cache pour le public.
+   (`infra/cloudflare/cache-rules.json`, `node scripts/cloudflare.ts zone --apply`, appliquée le
+   10 nov. 2026 sur les trois zones du projet ; `zone --check` le vérifie). Sans elle, une
+   page vue en aperçu pourrait être mise en cache pour le public.
 
 ## Le jour de l'ouverture
 

@@ -2,8 +2,8 @@ import { isSocialNetwork, parseSocialLink, socialHref, type SocialNetwork } from
 
 // Aalan's own social accounts, linked from the countdown page (owner, 5 Nov 2026: the campaign's
 // videos live there). BRAND_SOCIAL_LINKS lists "network=handle or profile address" pairs separated
-// by spaces or commas, in display order: "instagram=aalan.ma tiktok=@aalan.ma
-// youtube=https://www.youtube.com/@aalan". Each value goes through the shops' parser
+// by spaces or commas, in display order: "instagram=aalan_ma tiktok=@aalan_ma
+// facebook=61596493192279 x=Aalan_maroc". Each value goes through the shops' parser
 // (src/config/social-links.ts): only the network's own profile page can come out, over https.
 // Unset: no row of links. An invalid pair fails the start (env.ts) and is never shown.
 

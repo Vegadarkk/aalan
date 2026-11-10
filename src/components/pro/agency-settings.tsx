@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { Building2, CarFront, KeyRound, Palmtree, Store } from "lucide-react";
+import { Building2, CarFront, KeyRound, Palmtree, Store, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { FormMessage } from "@/components/auth/form-message";
@@ -24,9 +24,13 @@ import { ProCommitments } from "./pro-commitments";
 // Becoming an agency takes the trade's legal commitments and the admin guide's procedures, ticked
 // before the save (the server refuses it without them).
 
-const ICONS = { general: Store, dealer: CarFront, real_estate: Building2, car_rental: KeyRound, holiday_rental: Palmtree } as const;
+const ICONS = { general: Store, dealer: CarFront, real_estate: Building2, car_rental: KeyRound, holiday_rental: Palmtree, carrier: Truck } as const;
 
-export function AgencySettings({ shop }: { shop: Pick<ProSelfView, "sector" | "feeSchedule"> }) {
+/**
+ * `carriersOpen`: the carrier activity is offered (`carriersEnabled`, or the shop is a carrier). A
+ * company registered in the EU was verified as a carrier and stays one: nothing to choose.
+ */
+export function AgencySettings({ shop, carriersOpen = false }: { shop: Pick<ProSelfView, "sector" | "feeSchedule" | "legalForm">; carriersOpen?: boolean }) {
   const t = useTranslations("Pro.agency");
   const issues = useTranslations("FreeText");
   const commitmentsText = useTranslations("Pro.commitments");
@@ -46,6 +50,7 @@ export function AgencySettings({ shop }: { shop: Pick<ProSelfView, "sector" | "f
   const trimmed = feeSchedule.trim();
   // The server screen, run as the agency types: no contact detail, prohibited term or sensitive data.
   const issue = agency && trimmed ? firstStrictIssue(trimmed) : null;
+  if (shop.legalForm === "entreprise_ue") return null;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,7 +84,7 @@ export function AgencySettings({ shop }: { shop: Pick<ProSelfView, "sector" | "f
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-5">
         <fieldset className="grid gap-2 sm:grid-cols-2">
           <legend className="sr-only">{t("title")}</legend>
-          {PRO_SECTORS.map((value) => {
+          {PRO_SECTORS.filter((value) => value !== "carrier" || carriersOpen || saved.sector === "carrier").map((value) => {
             const Icon = ICONS[value];
             return (
               <label

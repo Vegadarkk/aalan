@@ -15,6 +15,7 @@ import {
   type OpeningHours,
   PRO_DESCRIPTION_MAX,
   PRO_NAME_MAX,
+  PRO_REGISTRY_SOURCES,
   PRO_SECTORS,
   RENTAL_CHECK_REASON_MAX,
   rentalAgencySchema,
@@ -63,7 +64,7 @@ export interface ProApplyResponse {
 // Back office (admin.aalan.ma/pros): the KYBC queue and the moderator's decision. `submittedAt`
 // pins the application the moderator reviewed: a resubmission meanwhile answers 409.
 
-export const PRO_REGISTRY_SOURCES = ["ompic", "directinfo", "odco"] as const;
+export { PRO_REGISTRY_SOURCES };
 export const PRO_REJECT_REASON_MIN = 10;
 export const PRO_REJECT_REASON_MAX = 1000;
 
@@ -424,6 +425,8 @@ export type KybcCompleteResponse = { status: "ready"; uploadId: string } | { sta
 export interface ProMeResponse {
   signupOpen: boolean;
   salesOpen: boolean;
+  /** The carriers space is open (`carriersEnabled`): the carrier activity may be chosen. */
+  carriersOpen: boolean;
   /** How an unverified number gets verified: by WhatsApp before applying, or by a moderator's call during the review ("call": the form asks the number). */
   phoneVerification: "whatsapp" | "call";
   /**
@@ -444,7 +447,10 @@ export interface ProSelfView {
   regionCode: string;
   citySlug: string;
   legalForm: string;
+  /** "" for a company registered in the EU (no ICE). */
   ice: string;
+  /** "MA", or the EU country an `entreprise_ue` is registered in. */
+  legalCountry: string;
   lifecycle: string;
   plan: string;
   planSource: string;

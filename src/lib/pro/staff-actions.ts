@@ -26,6 +26,7 @@ const SECTOR_LABEL: Record<ProSector, string> = {
   real_estate: "Agence immobilière",
   car_rental: "Location de voitures",
   holiday_rental: "Location saisonnière",
+  carrier: "Transporteur Europe–Maroc",
 };
 
 type Note = NonNullable<ProProfileDoc["staffNotes"]>[number];

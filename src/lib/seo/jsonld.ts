@@ -27,7 +27,7 @@ export function breadcrumbJsonLd(steps: readonly BreadcrumbStep[]): Record<strin
 // type with what the page shows. No phone (behind the reveal), no e-mail; the street address only
 // when the shop gave one; the rating from the site's verified reviews.
 
-const SHOP_TYPES = { general: "Store", dealer: "AutoDealer", real_estate: "RealEstateAgent", car_rental: "AutoRental", holiday_rental: "LodgingBusiness" } as const;
+const SHOP_TYPES = { general: "Store", dealer: "AutoDealer", real_estate: "RealEstateAgent", car_rental: "AutoRental", holiday_rental: "LodgingBusiness", carrier: "LocalBusiness" } as const;
 
 const DAY_NAMES = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" } as const;
 

@@ -7,6 +7,7 @@ import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { unavailable } from "@/lib/http/errors";
 import { headroom } from "@/lib/quota";
 import { stripeRequest, type StripeParam } from "./stripe-api";
+import { primaryIdentifier } from "@/lib/pro/kybc";
 
 // The sales of a period, as the tax exports read them (phase 7 design §8): packs from `orders`
 // (B2C, sold on RevenueCat's page; a refund, whole or partial, is a line of its own on its date) and Pro plans from
@@ -160,7 +161,7 @@ async function planLines(period: Period, stripe: typeof stripeRequest): Promise<
     if (!shops.has(customer)) {
       const account = customer ? await findBillingAccountByStripeCustomer(customer) : null;
       const profile = account?.proId ? await getProProfile(account.proId) : null;
-      shops.set(customer, account ? { accountId: account.id, ...(profile ? { name: profile.name } : {}), ...(profile?.legal.ice ? { ice: profile.legal.ice } : {}) } : null);
+      shops.set(customer, account ? { accountId: account.id, ...(profile ? { name: profile.name } : {}), ...(profile ? { ice: primaryIdentifier(profile.legal).value } : {}) } : null);
     }
     const shop = shops.get(customer);
     const vatMinor = (invoice.total_taxes ?? []).reduce((sum, tax) => sum + (tax.amount ?? 0), 0);

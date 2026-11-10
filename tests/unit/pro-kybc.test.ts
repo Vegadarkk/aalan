@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { REQUIRED_IDENTIFIERS, iceFormatOk, normalizeIdentifier, proLegalSchema } from "@/lib/pro/kybc";
+import { REQUIRED_IDENTIFIERS, euRegistryOk, iceFormatOk, normalizeIdentifier, primaryIdentifier, primaryIdentifierOk, proLegalSchema } from "@/lib/pro/kybc";
 
 // KYBC identifiers per legal form (architecture §8): ICE format, required fields, normalisation.
 
@@ -20,7 +20,7 @@ describe("ICE", () => {
 
 describe("legal identifiers per form", () => {
   it("lists the required identifiers of §8", () => {
-    expect(REQUIRED_IDENTIFIERS).toEqual({ societe: ["ice", "rc", "if"], auto_entrepreneur: ["ice", "aeNumber"], commercant: ["ice"], cooperative: ["ice", "coopNumber"] });
+    expect(REQUIRED_IDENTIFIERS).toEqual({ societe: ["ice", "rc", "if"], auto_entrepreneur: ["ice", "aeNumber"], commercant: ["ice"], cooperative: ["ice", "coopNumber"], entreprise_ue: ["country", "registry"] });
   });
 
   it("parses a company and normalises its identifiers", () => {
@@ -47,5 +47,48 @@ describe("legal identifiers per form", () => {
     expect(proLegalSchema.safeParse({ form: "auto_entrepreneur", ice: "123", aeNumber: "1" }).success).toBe(false);
     expect(proLegalSchema.safeParse({ form: "auto_entrepreneur", ice: ICE, aeNumber: "1", extra: "x" }).success).toBe(false);
     expect(proLegalSchema.safeParse({ form: "auto_entrepreneur", ice: ICE, aeNumber: "<script>" }).success).toBe(false);
+  });
+});
+
+describe("EU company (carriers space)", () => {
+  // Public test numbers: Luhn-valid SIREN/SIRET, a mod-97 Belgian enterprise number.
+  it("checks a French SIREN or SIRET by its Luhn key", () => {
+    expect(euRegistryOk("FR", "732 829 320")).toBe(true);
+    expect(euRegistryOk("FR", "73282932000074")).toBe(true);
+    expect(euRegistryOk("FR", "732 829 321")).toBe(false);
+    expect(euRegistryOk("FR", "7328293200007")).toBe(false);
+    // La Poste's establishments: digits summing to a multiple of 5.
+    expect(euRegistryOk("FR", "35600000000056")).toBe(true);
+  });
+
+  it("checks a Belgian enterprise number by mod 97, with or without its BE prefix", () => {
+    expect(euRegistryOk("BE", "0403.170.701")).toBe(true);
+    expect(euRegistryOk("BE", "BE0403170701")).toBe(true);
+    expect(euRegistryOk("BE", "0403170702")).toBe(false);
+  });
+
+  it("bounds the other registers' formats", () => {
+    expect(euRegistryOk("NL", "12345678")).toBe(true);
+    expect(euRegistryOk("NL", "1234567")).toBe(false);
+    expect(euRegistryOk("ES", "B12345678")).toBe(true);
+    expect(euRegistryOk("IT", "12345678901")).toBe(true);
+    expect(euRegistryOk("PT", "123456789")).toBe(true);
+    expect(euRegistryOk("DE", "HRB 12345")).toBe(true);
+    expect(euRegistryOk("DE", "<b>")).toBe(false);
+  });
+
+  it("parses an EU company, normalises its number and checks its VAT prefix", () => {
+    const parsed = proLegalSchema.parse({ form: "entreprise_ue", country: "BE", registry: "BE 0403.170.701", vat: "be 0403 170 701" });
+    expect(parsed).toEqual({ form: "entreprise_ue", country: "BE", registry: "0403170701", vat: "BE0403170701" });
+    expect(primaryIdentifier(parsed)).toEqual({ kind: "eu_registry", value: "0403170701", country: "BE" });
+    expect(primaryIdentifierOk(parsed)).toBe(true);
+    expect(proLegalSchema.safeParse({ form: "entreprise_ue", country: "FR", registry: "732829320", vat: "BE0403170701" }).success).toBe(false);
+    expect(proLegalSchema.safeParse({ form: "entreprise_ue", country: "FR", registry: "123" }).success).toBe(false);
+    expect(proLegalSchema.safeParse({ form: "entreprise_ue", country: "GB", registry: "12345678" }).success).toBe(false);
+    expect(proLegalSchema.safeParse({ form: "entreprise_ue", country: "FR", registry: "732829320", ice: ICE }).success).toBe(false);
+  });
+
+  it("keeps the ICE as a Moroccan shop's main identifier", () => {
+    expect(primaryIdentifier({ form: "auto_entrepreneur", ice: ICE, aeNumber: "1" })).toEqual({ kind: "ice", value: ICE, country: "MA" });
   });
 });

@@ -115,7 +115,8 @@ export const userPrivateSchema = z
     email: z.string().email().max(254),
     /** HMAC of the normalized e-mail (Gmail dots, +tag): limits and duplicates. */
     emailNormHash: z.string().min(16).max(64),
-    phoneE164: z.string().regex(/^\+212[5-7]\d{8}$/).optional(),
+    /** Moroccan (05 to 07, older records), or an EU carrier's mobile verified by a moderator's call (carriers space). */
+    phoneE164: z.string().regex(/^\+212[5-7]\d{8}$|^\+(?:33|32|31|34|39|49|351)\d{6,12}$/).optional(),
     phoneVerifiedAt: ts.optional(),
     legalName: z.string().max(120).optional(),
     consents: z

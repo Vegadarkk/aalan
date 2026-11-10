@@ -31,7 +31,7 @@ import { ACCOUNT_STATUS_LABEL, formatMorocco, targetHref } from "../../../_lib/m
 export const metadata: Metadata = { title: "Vérifier une demande Pro" };
 
 const PIECE_TYPE: Record<string, string> = { "application/pdf": "PDF", "image/jpeg": "Image JPEG", "image/png": "Image PNG" };
-const REGISTRY_LABEL: Record<string, string> = { ompic: "OMPIC", directinfo: "DirectInfo", odco: "ODCo" };
+const REGISTRY_LABEL: Record<string, string> = { ompic: "OMPIC", directinfo: "DirectInfo", odco: "ODCo", eu_register: "Registre UE" };
 
 /** Points the moderator checks before validating (design §4); the CNIE line follows audit C2-03. */
 const CHECKLIST = [

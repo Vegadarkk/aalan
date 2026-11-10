@@ -17,7 +17,7 @@ describe("proApplySchema", () => {
   it("accepts a complete application and defaults the description", () => {
     const parsed = proApplySchema.parse(base);
     expect(parsed.description).toBe("");
-    expect(parsed.legal.ice).toBe("001234567000089");
+    expect(parsed.legal.form === "auto_entrepreneur" && parsed.legal.ice).toBe("001234567000089");
   });
 
   it("requires the compliance commitment and at least one piece", () => {

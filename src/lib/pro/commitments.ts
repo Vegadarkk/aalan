@@ -10,9 +10,9 @@ import type { ProSector } from "./profile-schema";
 // Client-safe.
 
 /** Version of the commitments text (Pro.commitments in messages/*.json), recorded with each acknowledgment. */
-export const COMMITMENTS_VERSION = "2026-10-29";
+export const COMMITMENTS_VERSION = "2026-11-10";
 
-export const COMMITMENT_SCOPES = ["shop", "pass", "real_estate", "car_rental", "holiday_rental"] as const;
+export const COMMITMENT_SCOPES = ["shop", "pass", "real_estate", "car_rental", "holiday_rental", "carrier"] as const;
 export type CommitmentScope = (typeof COMMITMENT_SCOPES)[number];
 
 /** Commitment keys every shop takes, then the ones of an agency's trade. */
@@ -23,6 +23,8 @@ export const COMMITMENT_ITEMS = {
   real_estate: ["mandate", "property", "tourism", "responsible"],
   car_rental: ["agrement", "fleet", "contract", "responsible"],
   holiday_rental: ["authorisation", "guests", "touristTax", "owners", "responsible"],
+  // Europe–Morocco carriers (transporteurs/spec.md §8): licences, insurance, customs, the price shown is the price charged.
+  carrier: ["licence", "insurance", "customs", "prices", "responsible"],
 } as const satisfies Record<CommitmentScope, readonly string[]>;
 export type CommitmentItem = (typeof COMMITMENT_ITEMS)[CommitmentScope][number];
 
@@ -43,6 +45,7 @@ export const COMMITMENT_GUIDE = {
   real_estate: [link("immo-verifier"), link("immo-location"), link("pro-obligations")],
   car_rental: [link("vehicule-mutation"), link("pro-societe"), link("pro-obligations")],
   holiday_rental: [link("immo-location-touristique"), link("immo-taxes-locales"), link("pro-obligations")],
+  carrier: [link("pro-societe"), link("pro-obligations")],
 } as const satisfies Readonly<Record<CommitmentScope, readonly CommitmentGuideLink[]>>;
 
 /** The commitments a sector adds to the shop's own, or null for a general shop or a dealership. */

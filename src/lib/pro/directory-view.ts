@@ -43,6 +43,7 @@ export const SECTOR_SEGMENTS: Record<ProSector, string> = {
   real_estate: "agences-immobilieres",
   car_rental: "location-voitures",
   holiday_rental: "location-saisonniere",
+  carrier: "transporteurs",
 };
 
 /** Cities offered as chips, by number of shops; the current city is added when it is beyond. */

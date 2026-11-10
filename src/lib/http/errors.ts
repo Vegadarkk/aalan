@@ -94,6 +94,10 @@ export type ErrorCode =
   | "invalid_pieces"
   /** Becoming an agency without ticking the trade's legal commitments (400, src/lib/pro/commitments.ts). */
   | "commitments_required"
+  /** An EU company applies, or stays, as a carrier only (400 at the application, 409 at a sector change). */
+  | "legal_form_sector"
+  /** The carriers space is closed (`config/flags.carriersEnabled` off, 403). */
+  | "carriers_closed"
   // Credits and paid options (phase 7, design §5). Messages: Options.errors.<code>.
   /** config/flags.salesEnabled is off: nothing can be bought (403). */
   | "sales_closed"

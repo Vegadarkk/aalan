@@ -40,6 +40,7 @@ import { consumeLimit } from "@/lib/rate-limit/limiter";
 import type { ListingPaymentLink } from "@/lib/db/schemas";
 import type { SellerPaymentDoc } from "./profile-schema";
 import { effectivePayment, foldPending, paymentEligible, paymentShown } from "./seller-payment-rules";
+import { primaryIdentifier } from "./kybc";
 
 // « Payer chez le vendeur » (owner decision 2026-10-28, design phase-7/boutique-temporaire.md §2):
 // - the owner of a verified shop saves a link to its own payment page and/or cash on delivery,
@@ -72,7 +73,7 @@ function ownerView(profile: ProProfileRecord, config: SellerPaymentsConfig, now:
   return {
     eligible: paymentEligible(profile.lifecycle, profile.plan),
     shopName: profile.name,
-    ice: profile.legal.ice,
+    ice: primaryIdentifier(profile.legal).value,
     url: effective.url,
     // Kept while its host is off the list (the form must not drop it at the next save).
     storedUrl: payment ? (foldPending(payment, config, now).url ?? null) : null,
@@ -191,7 +192,7 @@ export function publicShopPayment(profile: ProProfileRecord, config: SellerPayme
   if (!payment || !paymentShown(profile.lifecycle, profile.plan, payment) || !payment.info) return null;
   const link = linkInForce(profile, config, now, listingLink);
   if (!link.url && !payment.cashOnDelivery) return null;
-  return { proId: profile.proId, shopName: profile.name, ice: profile.legal.ice, online: link.url !== null, host: link.host, cashOnDelivery: payment.cashOnDelivery, info: payment.info };
+  return { proId: profile.proId, shopName: profile.name, ice: primaryIdentifier(profile.legal).value, online: link.url !== null, host: link.host, cashOnDelivery: payment.cashOnDelivery, info: payment.info };
 }
 
 /** The shop's payment for a listing (with its own link) or storefront page; never throws (the page renders without it). */
@@ -224,7 +225,7 @@ export async function openShopPayment(proId: string, listingId: string | undefin
   const link = linkInForce(profile, config, now, own?.paymentLink);
   if (!shown?.online || !link.url || !link.host || !(await ownerShown(profile))) throw new HttpError(404, "payment_unavailable");
   if (own) await countClick(own.id, visitor, now);
-  return { url: link.url, host: link.host, shopName: profile.name, ice: profile.legal.ice };
+  return { url: link.url, host: link.host, shopName: profile.name, ice: primaryIdentifier(profile.legal).value };
 }
 
 /**

@@ -7,7 +7,7 @@ import { DEFAULT_FLAGS, flagsConfigSchema, resolveFlagsConfig } from "@/config/f
 
 describe("config/flags", () => {
   it("keeps sales off and Pro applications open by default", () => {
-    expect(DEFAULT_FLAGS).toEqual({ salesEnabled: false, proSignupEnabled: true, paymentInstallmentsEnabled: false, adsMode: "off", adsCmpEea: false });
+    expect(DEFAULT_FLAGS).toEqual({ salesEnabled: false, proSignupEnabled: true, paymentInstallmentsEnabled: false, adsMode: "off", adsCmpEea: false, carriersEnabled: false });
     expect(flagsConfigSchema.safeParse(DEFAULT_FLAGS).success).toBe(true);
   });
 

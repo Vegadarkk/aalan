@@ -17,7 +17,7 @@ import { sendMail } from "@/lib/mail";
 import { listingRecipient } from "@/lib/mail/recipients";
 import { claimVerifiedPhoneIn } from "@/lib/phone-verify/accounts";
 import { notifyPhoneChange } from "@/lib/phone-verify/notify";
-import { normalizeMoroccanMobile } from "@/lib/phone/normalize";
+import { normalizeMobile } from "@/lib/phone/normalize";
 import { consume } from "@/lib/quota";
 import type { RequestIdentity } from "@/lib/rate-limit/keys";
 import { storefrontSegment } from "@/lib/listings/public";
@@ -25,6 +25,7 @@ import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { resetDirectoryShopsCache } from "./directory";
 import { applyVerificationEffects, hasProClaims } from "./effects";
 import { KYBC_END_RETENTION_MS } from "./kybc-retention";
+import { isEuCompany, primaryIdentifier } from "./kybc";
 import { IllegalProTransitionError, publishesAsPro, transition } from "./lifecycle";
 import { sectorCommitmentScope } from "./commitments";
 import { PRO_SECTORS, type ProProfileDoc, type ProSector } from "./profile-schema";
@@ -58,7 +59,7 @@ export async function proQueue(): Promise<ProQueueResponse> {
       name: record.name,
       legalForm: record.legal.form,
       citySlug: record.citySlug,
-      ice: record.legal.ice,
+      ice: primaryIdentifier(record.legal).value,
       iceFormatOk: record.kybc.iceFormatOk,
       pieces: record.kybc.uploadIds.length,
       owner: owner ? { displayName: owner.displayName, publicId: owner.publicId } : null,
@@ -122,7 +123,9 @@ export async function proReview(proId: string): Promise<ProReview | null> {
  * agency sector whose commitments the applicant accepted. Another agency sector needs the Pro's
  * own acceptance of its commitments, from the Pro space.
  */
-export function correctableSectors(current: Pick<ProProfileDoc, "sector" | "sectorCommitment">): ProSector[] {
+export function correctableSectors(current: Pick<ProProfileDoc, "sector" | "sectorCommitment"> & { legal?: ProProfileDoc["legal"] }): ProSector[] {
+  // A company registered in the EU is accepted as a carrier only (carriers space).
+  if (current.legal && isEuCompany(current.legal)) return ["carrier"];
   return PRO_SECTORS.filter((sector) => sectorCommitmentScope(sector) === null || current.sectorCommitment?.sector === sector || (current.sector ?? "general") === sector);
 }
 
@@ -283,10 +286,11 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
  */
 export async function checkPhoneByCall(staff: StaffContext, proId: string, input: ProPhoneCheckInput, identity: RequestIdentity, now = new Date()): Promise<ProPhoneCheckResponse> {
   const ref = proProfileRef(proId);
-  const corrected = input.phone === undefined ? null : normalizeMoroccanMobile(input.phone).e164;
   const checked = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
+    // An EU carrier's number may be an EU mobile (carriers space).
+    const corrected = input.phone === undefined ? null : normalizeMobile(input.phone, { eu: isEuCompany(current.legal) }).e164;
     if (!underReview(current)) throw new HttpError(409, "conflict", "application not under review");
     const userRef = db().collection(COLLECTIONS.users).doc(current.ownerUid);
     const userSnapshot = await tx.get(userRef);

@@ -6,8 +6,18 @@ import { z } from "@/lib/zod";
 // normalised and bounded: their exact formats are not checked automatically (no official source
 // read yet), the moderator verifies them with the uploaded pieces.
 
-export const LEGAL_FORMS = ["societe", "auto_entrepreneur", "commercant", "cooperative"] as const;
+export const LEGAL_FORMS = ["societe", "auto_entrepreneur", "commercant", "cooperative", "entreprise_ue"] as const;
 export type LegalForm = (typeof LEGAL_FORMS)[number];
+/** The Moroccan legal forms (an ICE each), in the order the application lists them. */
+export const MOROCCAN_LEGAL_FORMS = ["societe", "auto_entrepreneur", "commercant", "cooperative"] as const satisfies readonly LegalForm[];
+
+/**
+ * A company registered in the European Union (carriers space, owner 2026-11-10): only a carrier
+ * (sector "carrier") may apply with it, since the Europe–Morocco carriers are often French, Belgian
+ * or Spanish businesses. The countries of the Moroccan diaspora the carriers serve.
+ */
+export const EU_COUNTRIES = ["FR", "BE", "NL", "ES", "IT", "DE", "PT"] as const;
+export type EuCountry = (typeof EU_COUNTRIES)[number];
 
 /** Identifier fields required per legal form; `commercant` needs `rc` or `tp` (one of them). */
 export const REQUIRED_IDENTIFIERS: Record<LegalForm, readonly string[]> = {
@@ -16,6 +26,7 @@ export const REQUIRED_IDENTIFIERS: Record<LegalForm, readonly string[]> = {
   commercant: ["ice"],
   // Law 112-12: registered at the local register of cooperatives (tribunal), mirrored by ODCo's central one.
   cooperative: ["ice", "coopNumber"],
+  entreprise_ue: ["country", "registry"],
 };
 
 /** Removes spaces, dots and dashes users type in identifiers (ICE "001 234 567 000 089"). */
@@ -40,16 +51,105 @@ const registryNumber = z
   .transform((value) => normalizeIdentifier(value))
   .refine((value) => /^[A-Z0-9/]{1,30}$/.test(value), { message: "identifier_format" });
 
-export const proLegalSchema = z.discriminatedUnion("form", [
-  z.object({ form: z.literal("societe"), ice, rc: registryNumber, if: registryNumber }).strict(),
-  z.object({ form: z.literal("auto_entrepreneur"), ice, aeNumber: registryNumber }).strict(),
-  z
-    .object({ form: z.literal("commercant"), ice, rc: registryNumber.optional(), tp: registryNumber.optional() })
-    .strict()
-    .refine((value) => value.rc !== undefined || value.tp !== undefined, { message: "rc_or_tp_required", path: ["rc"] }),
-  z.object({ form: z.literal("cooperative"), ice, coopNumber: registryNumber }).strict(),
+/** Luhn checksum (French SIREN and SIRET). */
+function luhn(digits: string): boolean {
+  let sum = 0;
+  for (let index = 0; index < digits.length; index += 1) {
+    let digit = Number(digits[digits.length - 1 - index]);
+    if (index % 2 === 1) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+  }
+  return sum % 10 === 0;
+}
+
+/**
+ * The company number of an EU business as its country's register writes it, normalised (no spaces,
+ * dots or dashes, upper case, the country prefix of a Belgian number dropped). Checked where the
+ * format carries a checksum (France: SIREN or SIRET, Luhn, La Poste's SIRET by its own rule;
+ * Belgium: enterprise number, mod 97), bounded elsewhere; a moderator checks it on the register.
+ */
+export function euRegistryOk(country: EuCountry, value: string): boolean {
+  const id = normalizeIdentifier(value);
+  switch (country) {
+    case "FR":
+      if (!/^\d{9}$|^\d{14}$/.test(id)) return false;
+      // La Poste (SIREN 356000000): its establishments' SIRET sum to a multiple of 5.
+      if (id.length === 14 && id.startsWith("356000000")) return [...id].reduce((sum, digit) => sum + Number(digit), 0) % 5 === 0;
+      return luhn(id);
+    case "BE": {
+      const digits = id.replace(/^BE/, "");
+      if (!/^[01]\d{9}$/.test(digits)) return false;
+      return 97 - (Number(digits.slice(0, 8)) % 97) === Number(digits.slice(8));
+    }
+    case "NL":
+      // Kamer van Koophandel number.
+      return /^\d{8}$/.test(id);
+    case "ES":
+      // NIF / CIF / NIE: nine characters, a letter or a digit at each end.
+      return /^[A-Z0-9]\d{7}[A-Z0-9]$/.test(id);
+    case "IT":
+      // Partita IVA (11 digits) or a sole trader's codice fiscale (16 characters).
+      return /^\d{11}$/.test(id) || /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/.test(id);
+    case "PT":
+      // NIPC.
+      return /^\d{9}$/.test(id);
+    case "DE":
+      // Handelsregister number (HRA/HRB with the court) or the Steuernummer of a sole trader.
+      return /^[A-Z0-9/]{4,24}$/.test(id) && /\d{3}/.test(id);
+  }
+}
+
+/** Normalised company number (`euRegistryOk`'s form): the stored and compared value. */
+export function normalizeEuRegistry(country: EuCountry, value: string): string {
+  const id = normalizeIdentifier(value);
+  return country === "BE" ? id.replace(/^BE/, "") : id;
+}
+
+/** EU VAT number: the country's prefix (Greece "EL"), then 2 to 13 letters and digits. */
+export const EU_VAT_PATTERN = /^(?:FR|BE|NL|ES|IT|DE|PT)[A-Z0-9]{2,13}$/;
+
+const euCompany = z
+  .object({
+    form: z.literal("entreprise_ue"),
+    country: z.enum(EU_COUNTRIES),
+    registry: z.string().max(40),
+    vat: z.string().transform(normalizeIdentifier).refine((value) => EU_VAT_PATTERN.test(value), { message: "vat_format" }).optional(),
+  })
+  .strict()
+  .transform((value) => ({ ...value, registry: normalizeEuRegistry(value.country, value.registry) }))
+  .refine((value) => euRegistryOk(value.country, value.registry), { message: "registry_format", path: ["registry"] })
+  .refine((value) => value.vat === undefined || value.vat.startsWith(value.country), { message: "vat_country", path: ["vat"] });
+
+export const proLegalSchema = z.union([
+  z.discriminatedUnion("form", [
+    z.object({ form: z.literal("societe"), ice, rc: registryNumber, if: registryNumber }).strict(),
+    z.object({ form: z.literal("auto_entrepreneur"), ice, aeNumber: registryNumber }).strict(),
+    z
+      .object({ form: z.literal("commercant"), ice, rc: registryNumber.optional(), tp: registryNumber.optional() })
+      .strict()
+      .refine((value) => value.rc !== undefined || value.tp !== undefined, { message: "rc_or_tp_required", path: ["rc"] }),
+    z.object({ form: z.literal("cooperative"), ice, coopNumber: registryNumber }).strict(),
+  ]),
+  euCompany,
 ]);
 export type ProLegal = z.infer<typeof proLegalSchema>;
+export type MoroccanLegal = Exclude<ProLegal, { form: "entreprise_ue" }>;
+
+/** The applicant's legal form is an EU company (no ICE). */
+export const isEuCompany = (legal: ProLegal): legal is Extract<ProLegal, { form: "entreprise_ue" }> => legal.form === "entreprise_ue";
+
+/** The shop's main identifier: its ICE, or an EU company's number in its country's register. */
+export function primaryIdentifier(legal: ProLegal): { kind: "ice" | "eu_registry"; value: string; country: "MA" | EuCountry } {
+  return isEuCompany(legal) ? { kind: "eu_registry", value: legal.registry, country: legal.country } : { kind: "ice", value: legal.ice, country: "MA" };
+}
+
+/** The main identifier's format is right (ICE: 15 digits; EU: the register's format). */
+export function primaryIdentifierOk(legal: ProLegal): boolean {
+  return isEuCompany(legal) ? euRegistryOk(legal.country, legal.registry) : iceFormatOk(legal.ice);
+}
 
 /** `withdrawn`: an admin withdrew the validation (P2-10); a new submission is awaited. */
 export const KYBC_STATUSES = ["none", "submitted", "verified", "rejected", "withdrawn"] as const;

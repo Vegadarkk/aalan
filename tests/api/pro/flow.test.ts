@@ -163,7 +163,7 @@ describe("GET /api/pro/me", () => {
     const owner = await member();
     const result = await me(owner);
     expect(result.status).toBe(200);
-    expect(result.body).toEqual({ signupOpen: true, salesOpen: false, phoneVerification: "call", launchOffer: { noticeDays: 30, months: 6, seatsLeft: expect.any(Number) }, eligibility: { emailVerified: true, phoneVerified: false, accountActive: true }, shop: null });
+    expect(result.body).toEqual({ signupOpen: true, salesOpen: false, carriersOpen: false, phoneVerification: "call", launchOffer: { noticeDays: 30, months: 6, seatsLeft: expect.any(Number) }, eligibility: { emailVerified: true, phoneVerified: false, accountActive: true }, shop: null });
   });
 
   it("follows the application from pending to verified, with the storefront and the launch offer", async () => {

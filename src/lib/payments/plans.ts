@@ -104,6 +104,8 @@ export async function subscriptionPage(auth: AuthContext, now = new Date()): Pro
 
 /** The shop's identifiers printed on its invoices (Stripe allows 4 custom fields). */
 export function invoiceFields(legal: ProLegal): { name: string; value: string }[] {
+  // An EU carrier (carriers space): its country's company number and its VAT number.
+  if (legal.form === "entreprise_ue") return [{ name: `N° d'immatriculation (${legal.country})`, value: legal.registry }, ...(legal.vat ? [{ name: "TVA intracommunautaire", value: legal.vat }] : [])];
   const fields = [{ name: "ICE", value: legal.ice }];
   if (legal.form === "societe") fields.push({ name: "IF", value: legal.if }, { name: "RC", value: legal.rc });
   else if (legal.form === "auto_entrepreneur") fields.push({ name: "N° auto-entrepreneur", value: legal.aeNumber });

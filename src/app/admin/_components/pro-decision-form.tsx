@@ -28,7 +28,7 @@ const MESSAGES: Record<string, string> = {
   commitments_required: "Cette activité demande les engagements d'agence du Pro : il la choisira lui-même dans son espace après la validation.",
 };
 
-const REGISTRY_LABEL: Record<(typeof PRO_REGISTRY_SOURCES)[number], string> = { ompic: "OMPIC (registre du commerce)", directinfo: "DirectInfo", odco: "ODCo (registre central des coopératives)" };
+const REGISTRY_LABEL: Record<(typeof PRO_REGISTRY_SOURCES)[number], string> = { ompic: "OMPIC (registre du commerce)", directinfo: "DirectInfo", odco: "ODCo (registre central des coopératives)", eu_register: "Registre du pays de l'entreprise UE (annuaire-entreprises.data.gouv.fr, KBO…)" };
 
 type Choice = "verify" | "reject";
 

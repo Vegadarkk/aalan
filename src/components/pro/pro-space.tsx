@@ -160,7 +160,7 @@ function Application({ me, previous, revalidation = false, onReload }: { me: Pro
       ) : (
         <ErrorBanner tone="danger" title={t("eligibility.inactive")} />
       )}
-      {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})} /> : null}
+      {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} carriersOpen={me.carriersOpen} {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})} /> : null}
     </div>
   );
 }
@@ -437,7 +437,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {canPublish ? <ShopCardSettings shop={shop} onLogo={setLogo} /> : null}
       {/* The storefront's link and QR code to print (UX audit lot 3). */}
       {canPublish && shop.storefront && !suspended ? <ShopShare storefront={shop.storefront} /> : null}
-      {suspended ? null : <AgencySettings shop={shop} />}
+      {suspended ? null : <AgencySettings shop={shop} carriersOpen={me.carriersOpen} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
       {canPublish && shop.sector !== "car_rental" && shop.sector !== "holiday_rental" ? <SectionsSettings shop={shop} /> : null}
 

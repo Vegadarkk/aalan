@@ -8,6 +8,7 @@ import { shopPinsSchema, shopSectionsSchema } from "@/lib/contracts/catalog";
 import { sellerInfoInputSchema } from "@/lib/contracts/seller-payment";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
 import { BANNER_KEYS } from "@/config/storefront";
+import { MOBILE_E164 } from "@/lib/phone/patterns";
 import { KYBC_MAX_PIECES, KYBC_STATUSES, proLegalSchema } from "./kybc";
 import { PLAN_SOURCES, PRO_STATES } from "./lifecycle";
 
@@ -29,9 +30,10 @@ export const SANITARY_NUMBERS_MAX = 50;
  * that shows its vehicle stock, kept so staff and the Pro space see the activity applied for, B13),
  * "real_estate" makes the storefront an agency's,
  * "car_rental" a car rental agency's with its fleet (rental pack §5), "holiday_rental" a seasonal
- * rental agency's (location-saisonniere/conception.md §1); absent reads "general".
+ * rental agency's (location-saisonniere/conception.md §1), "carrier" a Europe–Morocco carrier's
+ * (transporteurs/spec.md, owner 2026-11-10); absent reads "general".
  */
-export const PRO_SECTORS = ["general", "dealer", "real_estate", "car_rental", "holiday_rental"] as const;
+export const PRO_SECTORS = ["general", "dealer", "real_estate", "car_rental", "holiday_rental", "carrier"] as const;
 export type ProSector = (typeof PRO_SECTORS)[number];
 /** The agency's fee schedule shown on its storefront (free text, no contact details). */
 export const AGENCY_FEE_SCHEDULE_MAX = 500;
@@ -121,6 +123,9 @@ export type HolidayAgency = z.infer<typeof holidayAgencySchema>;
 const uid = z.string().min(1).max(128);
 const ts = z.date();
 
+/** Where the moderator checked the company: Moroccan registers, or an EU carrier's own country's (carriers space). */
+export const PRO_REGISTRY_SOURCES = ["ompic", "directinfo", "odco", "eu_register"] as const;
+
 /**
  * Check of the agency's licence decision (decision 5): Claude reads the uploaded document, the
  * server compares what it read with the declared reference and the verified ICE or name; all
@@ -179,8 +184,8 @@ export const rentalCheckSchema = z
   })
   .strict();
 export type RentalCheck = z.infer<typeof rentalCheckSchema>;
-/** Moroccan mobile in E.164, as users/{uid}/private/account.phoneE164 (src/lib/db/schemas.ts). */
-const mobileE164 = z.string().regex(/^\+212[67]\d{8}$/);
+/** Mobile in E.164, as users/{uid}/private/account.phoneE164 (src/lib/db/schemas.ts): Moroccan, or an EU carrier's. */
+const mobileE164 = z.string().regex(MOBILE_E164);
 
 /** Outcome of a moderator's call to the applicant's number (phase 7: the WhatsApp check is parked until Meta validates the app). */
 export const PHONE_CHECK_OUTCOMES = ["verified", "unreachable", "mismatch"] as const;
@@ -268,7 +273,7 @@ export const proProfileSchema = z
       .object({
         status: z.enum(KYBC_STATUSES),
         iceFormatOk: z.boolean(),
-        registryCheck: z.object({ source: z.enum(["ompic", "directinfo", "odco"]), at: ts, by: uid }).strict().optional(),
+        registryCheck: z.object({ source: z.enum(PRO_REGISTRY_SOURCES), at: ts, by: uid }).strict().optional(),
         /** Pieces in the private bucket (uploads purpose `kyb`), purged 6 months after the relationship ends. */
         uploadIds: z.array(z.string().min(1).max(64)).max(KYBC_MAX_PIECES),
         complianceCommitmentAt: ts.optional(),

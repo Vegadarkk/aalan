@@ -21,6 +21,11 @@ export const flagsConfigSchema = z
     adsMode: z.enum(["off", "test", "live"]),
     /** Google's certified consent message runs for EEA/UK/CH visitors (D5); until then they get house promotions. */
     adsCmpEea: z.boolean(),
+    /**
+     * Europe–Morocco carriers space (owner 2026-11-10, ships in v1.0.0): the carrier activity, its
+     * settings and its pages. Off = nothing of it is offered; an existing carrier's shop stays.
+     */
+    carriersEnabled: z.boolean(),
   })
   .strict();
 export type FlagsConfig = z.infer<typeof flagsConfigSchema>;
@@ -31,6 +36,7 @@ export const DEFAULT_FLAGS: FlagsConfig = {
   paymentInstallmentsEnabled: false,
   adsMode: "off",
   adsCmpEea: false,
+  carriersEnabled: false,
 };
 
 /** Editing metadata an admin's write may carry next to the flags: ignored, never an error. */

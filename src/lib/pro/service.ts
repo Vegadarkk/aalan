@@ -23,10 +23,10 @@ import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { displayNameContact } from "@/lib/moderation/display-name";
 import { firstStrictIssue } from "@/lib/moderation/free-text";
 import { isPhoneVerificationConfigured } from "@/lib/phone-verify/config";
-import { normalizeMoroccanMobile } from "@/lib/phone/normalize";
+import { normalizeMobile } from "@/lib/phone/normalize";
 import { consume } from "@/lib/quota";
 import { COMMITMENTS_VERSION, sectorCommitmentScope } from "./commitments";
-import { iceFormatOk, KYBC_NOTICE_VERSION } from "./kybc";
+import { isEuCompany, KYBC_NOTICE_VERSION, primaryIdentifier, primaryIdentifierOk } from "./kybc";
 import { publishesAsPro, storefrontShown, transition } from "./lifecycle";
 import { shopLogoUrl } from "./logo-url";
 import type { ProProfileDoc } from "./profile-schema";
@@ -96,11 +96,18 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
   // An agency applies as such (journey review 2026-10-29): its trade's commitments come with the shop's.
   const agencyScope = sectorCommitmentScope(input.sector);
   if (agencyScope && !input.sectorCommitment) throw new HttpError(400, "commitments_required", "the agency commitments must be accepted");
+  // The carriers space (owner 2026-11-10): open by its flag; an EU company applies as a carrier only.
+  const euCompany = isEuCompany(input.legal);
+  if (euCompany && input.sector !== "carrier") throw new HttpError(400, "legal_form_sector", "an EU company applies as a carrier only");
+  if (input.sector === "carrier" && !existing?.sector) {
+    const { carriersEnabled } = await getFlags();
+    if (!carriersEnabled) throw new HttpError(403, "carriers_closed", "the carriers space is closed");
+  }
   // Without the badge the number to call is part of the application (checked by the moderator at the KYBC).
   let phoneToCheck: string | undefined;
   if (!user.badges.phoneVerified) {
     if (!input.phone) throw new HttpError(400, "phone_required");
-    phoneToCheck = normalizeMoroccanMobile(input.phone).e164;
+    phoneToCheck = normalizeMobile(input.phone, { eu: euCompany }).e164;
   }
 
   const pieces = await getUploads(input.uploadIds);
@@ -123,7 +130,7 @@ export async function submitApplication(actor: ProActor, input: ProApplyInput, n
     legal: input.legal,
     kybc: {
       status: "submitted",
-      iceFormatOk: iceFormatOk(input.legal.ice),
+      iceFormatOk: primaryIdentifierOk(input.legal),
       uploadIds: [...new Set(input.uploadIds)],
       complianceCommitmentAt: now,
       commitmentsVersion: COMMITMENTS_VERSION,
@@ -206,7 +213,7 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
   const profile = user?.proId ? await getProProfile(user.proId) : null;
   // The offer a shop verified today receives (as decideApplication grants it), while seats are left.
   const launchOffer = await launchOfferForApplicant(pricing.launchOffer, profile && profile.ownerUid === uid ? profile.lifecycle : null);
-  const base = { signupOpen: flags.proSignupEnabled, salesOpen: flags.salesEnabled, phoneVerification: isPhoneVerificationConfigured() ? ("whatsapp" as const) : ("call" as const), launchOffer, eligibility };
+  const base = { signupOpen: flags.proSignupEnabled, salesOpen: flags.salesEnabled, carriersOpen: flags.carriersEnabled, phoneVerification: isPhoneVerificationConfigured() ? ("whatsapp" as const) : ("call" as const), launchOffer, eligibility };
   if (!profile || profile.ownerUid !== uid) return { ...base, shop: null };
   const active = profile.lifecycle === "pending_verification" || profile.lifecycle === "rejected" || profile.lifecycle === "revalidation_required" ? 0 : await countActive(uid);
   return {
@@ -219,7 +226,8 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       regionCode: profile.regionCode,
       citySlug: profile.citySlug,
       legalForm: profile.legal.form,
-      ice: profile.legal.ice,
+      ice: isEuCompany(profile.legal) ? "" : profile.legal.ice,
+      legalCountry: primaryIdentifier(profile.legal).country,
       lifecycle: profile.lifecycle,
       plan: profile.plan,
       planSource: profile.planSource,
@@ -324,6 +332,9 @@ export async function updateAgency(auth: AuthContext, input: ProAgencyInput, now
   const [profile, { prohibited }] = await Promise.all([ownedPublishingShop(auth), getAbuseRules()]);
   // Becoming an agency takes the trade's legal commitments, ticked by the owner (owner ask 2026-10-29).
   const becomesAgency = sectorCommitmentScope(input.sector) !== null && input.sector !== (profile.sector ?? "general");
+  // A company registered in the EU was verified as a carrier: it stays one.
+  if (isEuCompany(profile.legal) && input.sector !== "carrier") throw new HttpError(409, "legal_form_sector", "an EU company stays a carrier");
+  if (input.sector === "carrier" && profile.sector !== "carrier" && !(await getFlags()).carriersEnabled) throw new HttpError(403, "carriers_closed", "the carriers space is closed");
   if (becomesAgency && !input.acceptCommitments) throw new HttpError(400, "commitments_required", "the agency commitments must be accepted");
   const feeSchedule = input.sector === "real_estate" ? input.feeSchedule : "";
   // The listing text rules, sensitive data refused outright (as a member's storefront bio).

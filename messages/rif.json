@@ -4140,14 +4140,16 @@
         "dealer": "Concession n tkeṛṛusin",
         "real_estate": "Tajensit n tegrawin (immobilier)",
         "car_rental": "Akra n tkeṛṛusin",
-        "holiday_rental": "Akra n iẓuṛaṛ (saisonnière)"
+        "holiday_rental": "Akra n iẓuṛaṛ (saisonnière)",
+        "carrier": "Anaqel Urupa–Lmeɣrib"
       },
       "activityHints": {
         "shop": "Tijaṛt, axeddam s ufus, taɛawnit, tinefliwin: catalogue nnec deg internet.",
         "dealer": "Tikeṛṛusin nnec ad d-banent waḥed-sent deg vitrine nnec.",
         "real_estate": "Vitrine n tejensit: tiɣawsiwin nnec s twuri, s mandat d s honoraires.",
         "car_rental": "Vitrine n tkeṛṛusin, wussan i xwan, aḥeǧǧeẓ s tebratin.",
-        "holiday_rental": "Tiddar s lfeṛc nsent s yiḍ niɣ s simana, i tejensiyin kan (loi 80-14)."
+        "holiday_rental": "Tiddar s lfeṛc nsent s yiḍ niɣ s simana, i tejensiyin kan (loi 80-14).",
+        "carrier": "Ikwaṛṭunen d tɣawsiwin jar Urupa d Lmeɣrib, s tkamiyunet niɣ s tkamiyut."
       },
       "activityRequired": "Xtar tawuri nnec.",
       "sectorCommitmentRequired": "Ɛellem daɣen x leɛhud n twuri nnec ḥima ad tazneḍ asuter.",
@@ -4164,7 +4166,8 @@
         "societe": "Tacirket (SARL, SA…)",
         "auto_entrepreneur": "Auto-entrepreneur",
         "commercant": "Atejjaṛ d amdan (personne physique)",
-        "cooperative": "Taɛawnit (coopérative)"
+        "cooperative": "Taɛawnit (coopérative)",
+        "entreprise_ue": "Tasharikt n Tamunt Turupit"
       },
       "ice": "ICE",
       "iceHint": "Identifiant commun de l'entreprise: 15 n wuṭṭunen.",
@@ -4210,8 +4213,28 @@
         "societe": "ICE, RC d identifiant fiscal.",
         "auto_entrepreneur": "ICE d uṭṭun n auto-entrepreneur.",
         "commercant": "ICE, d RC niɣ taxe professionnelle.",
-        "cooperative": "ICE d uṭṭun n tira deg registre n tɛawniyin."
-      }
+        "cooperative": "ICE d uṭṭun n tira deg registre n tɛawniyin.",
+        "entreprise_ue": "I inaqlen yettwarsen di Fransa, di Beljika, di Sbanya… : tamurt d wuṭṭun n usekles."
+      },
+      "country": "Tamurt n usekles",
+      "countryPlaceholder": "Fren tamurt",
+      "registry": "Uṭṭun n usekles",
+      "registryHint": "Uṭṭun n tsharikt nnek di registre n tmurt nnes.",
+      "registryHints": {
+        "FR": "SIREN (9 n wuṭṭunen) niɣ SIRET (14 n wuṭṭunen).",
+        "BE": "Uṭṭun n tsharikt BCE (10 n wuṭṭunen, ad yebda s 0 niɣ s 1).",
+        "NL": "Uṭṭun KvK (8 n wuṭṭunen).",
+        "ES": "NIF niɣ CIF (9 n isekkilen).",
+        "IT": "Partita IVA (11 n wuṭṭunen) niɣ codice fiscale.",
+        "DE": "Uṭṭun n Handelsregister (HRB…) niɣ Steuernummer.",
+        "PT": "NIPC (9 n wuṭṭunen)."
+      },
+      "vat": "Uṭṭun n TVA n Urupa",
+      "vatHint": "Macci d lwajib, s usekkil n tmurt (FR, BE…).",
+      "registryFormat": "Uṭṭun-a ur yemsasa ca d registre n tmurt-a.",
+      "vatFormat": "Aru uṭṭun n TVA n tmurt-nni, s usekkil nnes (am FR12345678901).",
+      "phoneHintEu": "Tilifun amerruk n Lmeɣrib (06 niɣ 07) niɣ n Urupa s talɣa tagraɣlant (+33 6…, +32 4…). Amseggad ad ak d-yawi s uṭṭun-a ɣer tesmekta n usuter.",
+      "phoneFormatEu": "Aru tilifun amerruk n Lmeɣrib (06 niɣ 07) niɣ n Urupa s talɣa tagraɣlant (+33 6…)."
     },
     "commitments": {
       "titles": {
@@ -4219,18 +4242,20 @@
         "pass": "Leɛhud nnec i tḥanut n kra n wussan",
         "real_estate": "Leɛhud nnec am tejensit n tegrawin",
         "car_rental": "Leɛhud nnec am tejensit n ukra n tkeṛṛusin",
-        "holiday_rental": "Leɛhud nnec am tejensit n ukra n iẓuṛaṛ"
+        "holiday_rental": "Leɛhud nnec am tejensit n ukra n iẓuṛaṛ",
+        "carrier": "Leɛhud nnek n unaqel"
       },
       "leads": {
         "shop": "Ad terẓmeḍ taḥanut Pro yeqqen tacirket nnec. Ɣar leɛhud-a d senqed ayen ixsen zzat ma ad tazneḍ asuter.",
         "pass": "Taḥanut n kra n wussan d taḥanut Pro s tidett: d nitenti d ilugan, ar ma ad tekmel.",
         "real_estate": "Tajensit n tegrawin texeddem x yixf n imawlan n tiɣawsiwin. Leɛhud-a ad rnun x win n tḥanut nnec.",
         "car_rental": "Akra n tkeṛṛusin d tawuri s yilugan nnes. Leɛhud-a ad rnun x win n tḥanut nnec.",
-        "holiday_rental": "Akra n tiddar i iẓuṛaṛ ixs loi 80-14. Leɛhud-a ad rnun x win n tḥanut nnec."
+        "holiday_rental": "Akra n tiddar i iẓuṛaṛ ixs loi 80-14. Leɛhud-a ad rnun x win n tḥanut nnec.",
+        "carrier": "Anqal n tɣawsiwin n imsaɣen d axeddam yeddan s uzref, di Lmeɣrib am di Tamunt Turupit. Leɛhud-a ttuɣen ɣer leɛhud n tḥanut nnek."
       },
       "items": {
         "identity": "Isefka d tewṛiqin i fekkeɣ ṣeḥḥan d nitni n tcirket inu. War sexdameɣ ca isem, ICE niɣ tiwṛiqin n tcirket nniḍen.",
-        "registered": "Tacirket inu tettwaru deg Lmeɣrib d ttesriḥat nnes n tbaǧit d n CNSS ttwaxedment ar ass-a.",
+        "registered": "Tasharikt inu tettwarsen di Lmeɣrib, niɣ di Tamunt Turupit i unaqel, d tenneḍ di tbeyyinin nnes n lḍarayeb d tmetti.",
         "lawful": "Ssumureɣ kan tiɣawsiwin d tinefliwin i yettaǧǧa uzerf n Lmeɣrib, s ttesriḥat i yexs twuri inu.",
         "responsible": "Nec kan i ɣer tella annonces inu, ssumat inu d contrats inu d iclyanen: {brand} war tettekki ca deg uzenzi niɣ deg ukra.",
         "temporary": "Deffir n tagra n tḥanut n kra n wussan, ad qqimeɣ d nec i ɣer tella tzenziwin i xedmeɣ deg-s (asawaḍ, garantie, ccekwat).",
@@ -4243,7 +4268,11 @@
         "authorisation": "Yal taddart i ssumureɣ ɣar-s ttesriḥ n uxeddem d assurance i yexs loi n° 80-14 x wansa n iẓuṛaṛ.",
         "guests": "Senqadeɣ tamagit n yal aclyan d ttaruɣ yal ass i lḥukuma tiqqimin nnes, am mamec i yexs uzerf.",
         "touristTax": "Ttagmeɣ taxe de séjour d ttakeɣ-tt i tɣiwant.",
-        "owners": "War ssumureɣ ca taddart n bab nniḍen bla mandat nnes yettwarun."
+        "owners": "War ssumureɣ ca taddart n bab nniḍen bla mandat nnes yettwarun.",
+        "licence": "Tasharikt inu tesɛa tiseɣṛin i yxessen i uxeddam inu: licence n Urupa d usekles di registre n inaqlen di Tamunt Turupit, tiseɣṛit n unqal agraɣlan di Lmeɣrib.",
+        "insurance": "Tikeṛṛusin inu ṣeḥḥant d ttwaḍmanent, ttinniɣ i imsaɣen inu mamec ttwaḍmanent tɣawsiwin nsen.",
+        "customs": "Ttqadareɣ ilugan n diwana n tmura i zeggreɣ, ttugiɣ tiɣawsiwin yettwagedlen niɣ i yesɛan lxaṭar.",
+        "prices": "Ssuma i sseknaɣ d ayenni i ttxellaṣeɣ: ur rennuɣ walu n lmeṣṛuf di tawwurt beṛṛa n tfelwit inu, ɣir lfeṛq n wazal i d-yeffɣen di lmizan."
       },
       "fakeTitle": "Taḥanut niɣ tajensit n tikerkas: min ad dak-yaweḍ",
       "fakeBody": "Tasriḥt n tikerkas niɣ akkar n yisem n tcirket nniḍen ad yawi ɣer tigdi n usuter niɣ ɣer uḥbas n umiḍan Pro, d ukkas n annonces nnes. Tzemmer daɣen ad tili d tuccḍa ɣer uzerf (faux, escroquerie). {brand} ad teḥrez isefka n usuter d ad ten-tefk i lḥukuma i ten-yessutren s uzerf.",
@@ -4268,7 +4297,8 @@
         "pass": "Qebleɣ leɛhud-a ar ma ad tekmel tḥanut inu n kra n wussan, nec kan i ɣer tella.",
         "real_estate": "Qebleɣ leɛhud-a n tejensit n tegrawin, nec kan i ɣer tella.",
         "car_rental": "Qebleɣ leɛhud-a n tejensit n ukra n tkeṛṛusin, nec kan i ɣer tella.",
-        "holiday_rental": "Qebleɣ leɛhud-a n tejensit n ukra n iẓuṛaṛ, nec kan i ɣer tella."
+        "holiday_rental": "Qebleɣ leɛhud-a n tejensit n ukra n iẓuṛaṛ, nec kan i ɣer tella.",
+        "carrier": "Qebleɣ leɛhud-a n unaqel, nec kan i ɣer tella."
       },
       "required": "Ɛellem x tkazit ḥima ad tsentmeḍ leɛhud nnec."
     },
@@ -4342,7 +4372,9 @@
       "phone_required": "Ari uṭṭun n portable i ɣer ad yessiwel umsefrez.",
       "account_suspended": "Amiḍan nnec yettwaḥbes: war tzemmreḍ ca ad tessutreḍ amiḍan Pro.",
       "email_not_verified": "Sentem zzat adres nnec n e-mail.",
-      "commitments_required": "Sentem leɛhud nnec n tejensit ḥima ad textareḍ tawuri-a."
+      "commitments_required": "Sentem leɛhud nnec n tejensit ḥima ad textareḍ tawuri-a.",
+      "legal_form_sector": "Taddart n tsharikt n Tamunt Turupit i inaqlen kan.",
+      "carriers_closed": "Tiɣremt n inaqlen ur teffiḥ ca ɛad."
     },
     "agency": {
       "title": "Tawuri (secteur)",
@@ -4352,14 +4384,16 @@
         "dealer": "Concession n tkeṛṛusin",
         "real_estate": "Tajensit n tegrawin (immobilier)",
         "car_rental": "Akra n tkeṛṛusin",
-        "holiday_rental": "Akra n iẓuṛaṛ (saisonnière)"
+        "holiday_rental": "Akra n iẓuṛaṛ (saisonnière)",
+        "carrier": "Anaqel Urupa–Lmeɣrib"
       },
       "sectorHints": {
         "general": "Vitrine n tḥanut tamsasit.",
         "dealer": "Vitrine n tḥanut s tkeṛṛusin nnec i uzenzi.",
         "real_estate": "Vitrine n tejensit, mandat d honoraires deg annonces nnec.",
         "car_rental": "Vitrine n tkeṛṛusin s taggayt, wussan i xwan.",
-        "holiday_rental": "Vitrine n tejensit, tiddar s lfeṛc nsent s yiḍ niɣ s simana."
+        "holiday_rental": "Vitrine n tejensit, tiddar s lfeṛc nsent s yiḍ niɣ s simana.",
+        "carrier": "Tuddriwin, amkan i d-yegran d tfelwit n ssuma s lkilu d s tɣawsa."
       },
       "feeSchedule": "Tabdart n honoraires",
       "feeScheduleHint": "Ad d-tban deg vitrine nnec, {max} n yisekkilen ɣas. Bla tilifun, bla e-mail, bla asaɣ: iclyanen ad dak-d arin s tebratin.",
@@ -6406,6 +6440,10 @@
       "holiday_rental": {
         "title": "Akra n vacances",
         "body": "Ixxamen nnec s lfurniṭu s yiḍ niɣ s ssimana, s calendrier d isutar n uqimi."
+      },
+      "carrier": {
+        "title": "Anaqel Urupa–Lmeɣrib",
+        "body": "Tuddriwin nnek i d-iteddun, amkan i d-yegran d tfelwit n ssuma nnek s lkilu d s tɣawsa, ad ttwasemsasant s yiwet n tmuɣli."
       }
     },
     "includedTitle": "Yedda d umiḍan nnec Pro",
@@ -6449,14 +6487,16 @@
       "dealer": "Concessions n tkeṛṛusin",
       "real_estate": "Agences n ixxamen",
       "car_rental": "Akra n ṭumubilat",
-      "holiday_rental": "Akra n vacances"
+      "holiday_rental": "Akra n vacances",
+      "carrier": "Inaqlen Urupa–Lmeɣrib"
     },
     "sectorOne": {
       "general": "Taḥanut",
       "dealer": "Concession n tkeṛṛusin",
       "real_estate": "Agence n ixxamen",
       "car_rental": "Agence n ukra n ṭumubilat",
-      "holiday_rental": "Agence n ukra n vacances"
+      "holiday_rental": "Agence n ukra n vacances",
+      "carrier": "Anaqel Urupa–Lmeɣrib"
     },
     "count": "{count, plural, one {# n tḥanut} other {# n tḥuna d agences}}",
     "countZero": "Ula d yiwet n tḥanut",

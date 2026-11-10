@@ -155,7 +155,8 @@ async function listingEntries(shard: number): Promise<string[]> {
 }
 
 /** Always indexable: the public Pro page, the directory of shops and its activities, the admin procedures guide (guide-demarches G1) and its rubrics. */
-const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
+// The carriers' activity page joins once their space opens (transporteurs/spec.md lot 5).
+const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.filter((sector) => sector !== "carrier").map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
 
 /** XML of a sitemap file, or null for a 404 (unknown file, empty shard, not production). */
 export async function buildSitemapFile(file: string, env: ServerEnv = serverEnv()): Promise<string | null> {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Building2, CalendarDays, CarFront, CircleCheck, FileSpreadsheet, Gift, House, KeyRound, MessagesSquare, ShieldCheck, Store } from "lucide-react";
+import { Building2, CalendarDays, CarFront, CircleCheck, FileSpreadsheet, Gift, House, KeyRound, MessagesSquare, ShieldCheck, Store, Truck } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
@@ -39,6 +39,7 @@ const SECTORS = [
   { id: "real_estate", Icon: Building2 },
   { id: "car_rental", Icon: KeyRound },
   { id: "holiday_rental", Icon: House },
+  { id: "carrier", Icon: Truck },
 ] as const;
 
 const INCLUDED = [
@@ -98,7 +99,7 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           {t("sectorsTitle")}
         </h2>
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SECTORS.map(({ id, Icon }) => (
+          {SECTORS.filter(({ id }) => id !== "carrier" || flags.carriersEnabled).map(({ id, Icon }) => (
             <li key={id} className="flex gap-4 rounded-lg border border-border bg-surface p-5">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-brand text-structure dark:text-gold-300">
                 <Icon className="size-5" aria-hidden="true" />

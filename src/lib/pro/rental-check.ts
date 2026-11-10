@@ -28,6 +28,7 @@ import { storefrontShown } from "./lifecycle";
 import { RENTAL_CHECK_SIGNS_MAX, rentalCheckSchema, type RentalCheck, type RentalCheckIssue, type RentalCheckStatus } from "./profile-schema";
 import { agrementIssues, referenceKey, rentalCheckView, type AgrementReading } from "./rental-check-rules";
 import { ownedPublishingShop } from "./service";
+import { primaryIdentifier } from "./kybc";
 
 // Check of a car rental agency's licence decision (decision 5). The agency uploads the decision
 // (a KYBC piece signed with `use: "agrement"`, sanitized into the private bucket) and sends it:
@@ -328,7 +329,7 @@ export async function runRentalCheck(job: RentalCheckJobData, options: RentalChe
   if (!parsed) return toModerator(["unreadable"], costMicroUsd);
   const reading = clampReading(parsed);
   const referenceTaken = await referenceTakenElsewhere(profile.proId, check.agrementRef);
-  const issues = agrementIssues(reading, { agrementRef: check.agrementRef, ice: profile.legal.ice, name: profile.name, referenceTaken }, now);
+  const issues = agrementIssues(reading, { agrementRef: check.agrementRef, ice: primaryIdentifier(profile.legal).value, name: profile.name, referenceTaken }, now);
   const extracted = { companyName: reading.companyName, ice: reading.ice, reference: reading.reference, decisionDate: reading.decisionDate, signs: reading.tamperingSigns, note: reading.note };
   // Audit P-3: a consistent reading still waits for a moderator (no badge from the AI alone).
   await finishCheck(profile.proId, job.submittedAt, { status: "review", issues, extracted }, now);

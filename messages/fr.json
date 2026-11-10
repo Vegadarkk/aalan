@@ -4150,14 +4150,16 @@
         "dealer": "Concession automobile",
         "real_estate": "Agence immobilière",
         "car_rental": "Location de voitures",
-        "holiday_rental": "Location saisonnière"
+        "holiday_rental": "Location saisonnière",
+        "carrier": "Transporteur Europe–Maroc"
       },
       "activityHints": {
         "shop": "Commerce, artisan, coopérative, services : votre catalogue en ligne.",
         "dealer": "Votre stock de véhicules s'affiche de lui-même sur votre vitrine.",
         "real_estate": "Vitrine d'agence : vos biens par transaction, mandat et honoraires.",
         "car_rental": "Vitrine de flotte, disponibilités par dates, réservation par messagerie.",
-        "holiday_rental": "Logements meublés à la nuit ou à la semaine, réservés aux agences (loi 80-14)."
+        "holiday_rental": "Logements meublés à la nuit ou à la semaine, réservés aux agences (loi 80-14).",
+        "carrier": "Colis et objets entre l'Europe et le Maroc, en camionnette ou en camion."
       },
       "activityRequired": "Choisissez votre activité.",
       "sectorCommitmentRequired": "Cochez aussi les engagements de votre activité pour envoyer la demande.",
@@ -4174,7 +4176,8 @@
         "societe": "Société (SARL, SA…)",
         "auto_entrepreneur": "Auto-entrepreneur",
         "commercant": "Commerçant personne physique",
-        "cooperative": "Coopérative"
+        "cooperative": "Coopérative",
+        "entreprise_ue": "Entreprise de l'Union européenne"
       },
       "ice": "ICE",
       "iceHint": "Identifiant commun de l'entreprise : 15 chiffres.",
@@ -4220,8 +4223,28 @@
         "societe": "ICE, RC et identifiant fiscal.",
         "auto_entrepreneur": "ICE et numéro d'auto-entrepreneur.",
         "commercant": "ICE, et RC ou taxe professionnelle.",
-        "cooperative": "ICE et numéro d'immatriculation au registre des coopératives."
-      }
+        "cooperative": "ICE et numéro d'immatriculation au registre des coopératives.",
+        "entreprise_ue": "Transporteurs immatriculés en France, en Belgique, en Espagne… : pays et numéro d'immatriculation."
+      },
+      "country": "Pays d'immatriculation",
+      "countryPlaceholder": "Choisissez le pays",
+      "registry": "Numéro d'immatriculation",
+      "registryHint": "Le numéro de votre entreprise au registre de son pays.",
+      "registryHints": {
+        "FR": "SIREN (9 chiffres) ou SIRET (14 chiffres).",
+        "BE": "Numéro d'entreprise BCE (10 chiffres, commence par 0 ou 1).",
+        "NL": "Numéro KvK (8 chiffres).",
+        "ES": "NIF ou CIF (9 caractères).",
+        "IT": "Partita IVA (11 chiffres) ou codice fiscale.",
+        "DE": "Numéro du Handelsregister (HRB…) ou Steuernummer.",
+        "PT": "NIPC (9 chiffres)."
+      },
+      "vat": "Numéro de TVA intracommunautaire",
+      "vatHint": "Facultatif, avec le préfixe du pays (FR, BE…).",
+      "registryFormat": "Ce numéro ne correspond pas au format du registre de ce pays.",
+      "vatFormat": "Saisissez le numéro de TVA du même pays, avec son préfixe (ex. FR12345678901).",
+      "phoneHintEu": "Mobile marocain (06 ou 07) ou européen au format international (+33 6…, +32 4…). Un modérateur vous appellera à ce numéro pendant l'examen de la demande.",
+      "phoneFormatEu": "Saisissez un mobile marocain (06 ou 07) ou un mobile européen au format international (+33 6…)."
     },
     "commitments": {
       "titles": {
@@ -4229,18 +4252,20 @@
         "pass": "Vos engagements pour la boutique temporaire",
         "real_estate": "Vos engagements d'agence immobilière",
         "car_rental": "Vos engagements d'agence de location de voitures",
-        "holiday_rental": "Vos engagements d'agence de location saisonnière"
+        "holiday_rental": "Vos engagements d'agence de location saisonnière",
+        "carrier": "Vos engagements de transporteur"
       },
       "leads": {
         "shop": "Ouvrir une boutique Pro engage votre entreprise. Lisez ces engagements et vérifiez vos démarches avant d'envoyer la demande.",
         "pass": "Une boutique temporaire est une boutique Pro à part entière : les mêmes règles s'appliquent pendant toute sa durée.",
         "real_estate": "Une agence immobilière agit pour le compte de propriétaires. Ces engagements s'ajoutent à ceux de votre boutique.",
         "car_rental": "La location de voitures est une activité réglementée. Ces engagements s'ajoutent à ceux de votre boutique.",
-        "holiday_rental": "Louer des logements à des touristes est encadré par la loi 80-14. Ces engagements s'ajoutent à ceux de votre boutique."
+        "holiday_rental": "Louer des logements à des touristes est encadré par la loi 80-14. Ces engagements s'ajoutent à ceux de votre boutique.",
+        "carrier": "Transporter les marchandises de vos clients est une activité réglementée, au Maroc comme dans l'Union européenne. Ces engagements s'ajoutent à ceux de votre boutique."
       },
       "items": {
         "identity": "Les informations et les pièces que je fournis sont exactes et concernent mon entreprise. Je n'utilise ni le nom, ni l'ICE, ni les documents d'une autre entreprise.",
-        "registered": "Mon entreprise est immatriculée au Maroc et à jour de ses déclarations fiscales et sociales.",
+        "registered": "Mon entreprise est immatriculée au Maroc, ou dans l'Union européenne pour un transporteur, et à jour de ses déclarations fiscales et sociales.",
         "lawful": "Je ne propose que des biens et des services permis par la loi marocaine, avec les autorisations que mon activité exige.",
         "responsible": "Je suis seul responsable de mes annonces, de mes prix et des contrats conclus avec mes clients : {brand} n'est partie à aucune vente ni location.",
         "temporary": "Après la fin de la boutique temporaire, je reste responsable des ventes conclues pendant sa durée (livraison, garantie, réclamations).",
@@ -4253,7 +4278,11 @@
         "authorisation": "Chaque logement que je propose dispose de l'autorisation d'exploitation et de l'assurance exigées par la loi n° 80-14 sur l'hébergement touristique.",
         "guests": "Je vérifie l'identité de chaque client et je déclare ses séjours chaque jour aux autorités, comme la loi l'exige.",
         "touristTax": "Je collecte la taxe de séjour et je la reverse à la commune.",
-        "owners": "Je ne propose le logement d'un autre propriétaire qu'avec son mandat écrit."
+        "owners": "Je ne propose le logement d'un autre propriétaire qu'avec son mandat écrit.",
+        "licence": "Mon entreprise détient les autorisations qu'exige mon activité : licence communautaire et inscription au registre des transporteurs dans l'Union européenne, autorisation de transport international au Maroc.",
+        "insurance": "Mes véhicules sont en règle et assurés, et j'indique à mes clients comment leurs marchandises sont assurées.",
+        "customs": "Je respecte les règles de douane des pays traversés et je refuse les objets interdits ou dangereux.",
+        "prices": "Le prix que j'affiche est celui que je facture : aucun frais ajouté à l'arrivée hors de ma grille, sauf l'écart de poids constaté à la pesée."
       },
       "fakeTitle": "Fausse boutique ou fausse agence : ce que vous risquez",
       "fakeBody": "Une fausse déclaration ou l'usurpation d'une entreprise entraîne le refus de la demande ou la suspension du compte Pro, et le retrait de ses annonces. Elle peut aussi constituer une infraction pénale (faux, escroquerie). {brand} conserve les éléments de la demande et les transmet aux autorités qui les requièrent légalement.",
@@ -4278,7 +4307,8 @@
         "pass": "J'accepte ces engagements pour toute la durée de ma boutique temporaire, sous ma seule responsabilité.",
         "real_estate": "J'accepte ces engagements d'agence immobilière, sous ma seule responsabilité.",
         "car_rental": "J'accepte ces engagements d'agence de location de voitures, sous ma seule responsabilité.",
-        "holiday_rental": "J'accepte ces engagements d'agence de location saisonnière, sous ma seule responsabilité."
+        "holiday_rental": "J'accepte ces engagements d'agence de location saisonnière, sous ma seule responsabilité.",
+        "carrier": "J'accepte ces engagements de transporteur, sous ma seule responsabilité."
       },
       "required": "Cochez la case pour confirmer vos engagements."
     },
@@ -4352,7 +4382,9 @@
       "phone_required": "Indiquez le numéro de mobile qu'un modérateur appellera.",
       "account_suspended": "Votre compte est suspendu : vous ne pouvez pas demander de compte Pro.",
       "email_not_verified": "Confirmez d'abord votre adresse e-mail.",
-      "commitments_required": "Confirmez vos engagements d'agence pour choisir ce secteur."
+      "commitments_required": "Confirmez vos engagements d'agence pour choisir ce secteur.",
+      "legal_form_sector": "Le statut d'entreprise de l'Union européenne est réservé aux transporteurs.",
+      "carriers_closed": "L'espace transporteurs n'est pas encore ouvert."
     },
     "agency": {
       "title": "Secteur d'activité",
@@ -4362,14 +4394,16 @@
         "dealer": "Concession automobile",
         "real_estate": "Agence immobilière",
         "car_rental": "Location de voitures",
-        "holiday_rental": "Location saisonnière"
+        "holiday_rental": "Location saisonnière",
+        "carrier": "Transporteur Europe–Maroc"
       },
       "sectorHints": {
         "general": "Vitrine de boutique classique.",
         "dealer": "Vitrine de boutique avec votre stock de véhicules.",
         "real_estate": "Vitrine d'agence, mandat et honoraires sur vos annonces.",
         "car_rental": "Vitrine de flotte par catégorie, disponibilités par dates.",
-        "holiday_rental": "Vitrine d'agence, logements meublés à la nuit ou à la semaine."
+        "holiday_rental": "Vitrine d'agence, logements meublés à la nuit ou à la semaine.",
+        "carrier": "Départs, place restante et grille de prix au kilo et par objet."
       },
       "feeSchedule": "Barème des honoraires",
       "feeScheduleHint": "Affiché sur votre vitrine, {max} caractères au plus. Pas de téléphone, d'e-mail ni de lien : les clients vous écrivent par la messagerie.",
@@ -6416,6 +6450,10 @@
       "holiday_rental": {
         "title": "Location saisonnière",
         "body": "Vos logements meublés à la nuit ou à la semaine, avec le calendrier et les demandes de séjour."
+      },
+      "carrier": {
+        "title": "Transporteur Europe–Maroc",
+        "body": "Vos prochains départs, la place restante et votre grille de prix au kilo et par objet, comparables en un coup d'œil."
       }
     },
     "includedTitle": "Compris avec votre compte Pro",
@@ -6459,14 +6497,16 @@
       "dealer": "Concessions automobiles",
       "real_estate": "Agences immobilières",
       "car_rental": "Location de voitures",
-      "holiday_rental": "Location saisonnière"
+      "holiday_rental": "Location saisonnière",
+      "carrier": "Transporteurs Europe–Maroc"
     },
     "sectorOne": {
       "general": "Boutique",
       "dealer": "Concession automobile",
       "real_estate": "Agence immobilière",
       "car_rental": "Agence de location de voitures",
-      "holiday_rental": "Agence de location saisonnière"
+      "holiday_rental": "Agence de location saisonnière",
+      "carrier": "Transporteur Europe–Maroc"
     },
     "count": "{count, plural, one {# boutique} other {# boutiques et agences}}",
     "countZero": "Aucune boutique",

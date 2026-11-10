@@ -21,6 +21,7 @@ import { PRICE_LOG_MAX, PROMO_KINDS, listingVariantsSchema, sectionIdSchema, sto
 import { MAX_UPLOAD_BYTES, PHOTO_VARIANTS, UPLOAD_DOC_DECLARED_TYPES, UPLOAD_REJECT_REASONS, UPLOAD_STATUSES, listingPhotoSchema, uploadIdSchema } from "@/lib/contracts/media";
 import { ROLES } from "@/lib/firebase/claims";
 import { DAY_PATTERN, RENTAL_PERIODS_MAX } from "@/lib/listings/rental-availability";
+import { departureFields } from "@/lib/carriers/departure";
 import { PHOTO_KEY_BANDS, PHOTO_KEY_PATTERN } from "@/lib/media/near-duplicate";
 import { SAVED_SEARCH_ALERTS, SAVED_SEARCH_NAME_MAX } from "@/lib/contracts/search";
 import { storedSearchParamsSchema } from "@/lib/search/params";
@@ -414,6 +415,14 @@ export const listingSchema = z
       })
       .strict()
       .optional(),
+    /**
+     * A carrier's departure (transporteurs/spec.md §3), set from « Mes départs » only: its facts, the
+     * title and description are written from them; `spaceUpdatedAt` = the last change of the room left.
+     */
+    departure: z
+      .object({ ...departureFields, spaceUpdatedAt: ts })
+      .strict()
+      .optional(),
     /** Moderated, no open report, not hidden. */
     adsEligible: z.boolean(),
     publishedAt: ts.optional(),
@@ -429,6 +438,7 @@ export const listingSchema = z
   })
   .strict();
 export type ListingDoc = z.infer<typeof listingSchema>;
+export type DepartureDoc = NonNullable<ListingDoc["departure"]>;
 
 /** A listing once published: what a draft may leave empty becomes required. */
 export const publishedListingSchema = listingSchema.extend({

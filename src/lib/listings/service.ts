@@ -39,7 +39,10 @@ import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
 import { getUploads, updateUpload } from "@/lib/db/repositories/uploads";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
-import { listingSchema, type ListingDoc, type ListingModeration, type ListingPaymentLink } from "@/lib/db/schemas";
+import { listingSchema, type DepartureDoc, type ListingDoc, type ListingModeration, type ListingPaymentLink } from "@/lib/db/schemas";
+import type { CarrierSpace } from "@/config/carriers";
+import { departureEnd } from "@/lib/carriers/departure";
+import type { CarrierSettings } from "@/lib/pro/profile-schema";
 import { getPricing, getSellerPayments } from "@/lib/config/runtime";
 import { serverEnv } from "@/lib/env";
 import { db } from "@/lib/firebase/admin";
@@ -100,6 +103,8 @@ export interface SellerContext {
   sanitaryNumbers?: readonly string[];
   /** A car rental agency's licence reference (rental pack decision 3), when its settings hold one. */
   rentalAgrementRef?: string;
+  /** A carrier shop's settings and price list (transporteurs/spec.md §3), when saved: its departures need them. */
+  carrier?: CarrierSettings;
 }
 
 export async function sellerOf(auth: AuthContext): Promise<SellerContext> {
@@ -116,7 +121,8 @@ export async function sellerOf(auth: AuthContext): Promise<SellerContext> {
   const own = profile && profile.ownerUid === user.uid ? profile : null;
   const sanitaryNumbers = own ? (own.sanitaryNumbers ?? []) : [];
   const agrementRef = own?.rental?.agrementRef;
-  return { user, seller, quotas: listingQuotas(seller, pricing), sanitaryNumbers, ...(agrementRef ? { rentalAgrementRef: agrementRef } : {}) };
+  const carrier = own?.sector === "carrier" ? own.carrier : undefined;
+  return { user, seller, quotas: listingQuotas(seller, pricing), sanitaryNumbers, ...(agrementRef ? { rentalAgrementRef: agrementRef } : {}), ...(carrier ? { carrier } : {}) };
 }
 
 async function lifetime(): Promise<Lifetime> {
@@ -164,6 +170,8 @@ export interface DraftOptions {
   patch?: ListingPatch;
   /** The seller already read by the caller (a stock import reads it once). */
   seller?: SellerContext;
+  /** A carrier's departure (« Mes départs »): its facts, written with the draft. */
+  departure?: DepartureDoc;
 }
 
 export async function createDraft(actor: Actor, input: CreateListingInput, now = new Date(), options: DraftOptions = {}): Promise<{ id: string }> {
@@ -173,6 +181,8 @@ export async function createDraft(actor: Actor, input: CreateListingInput, now =
   // A Pro without a plan could never publish the draft: said before the nine steps (zone 6 audit 6-02).
   if (seller.type === "pro" && sellerContext.quotas.activeListings === 0) throw new HttpError(409, "no_plan");
   const subcategory = input.subcategoryId ? subcategoryById(input.subcategoryId) : undefined;
+  // A departure is created by its tool with its facts, never as a wizard draft (it could not publish).
+  if (subcategory?.tool && !options.departure) throw invalidField("subcategoryId", "tool_only");
   const id = newListingId();
   const blank: ListingDoc = listingSchema.parse({
     ownerUid: uid,
@@ -200,6 +210,7 @@ export async function createDraft(actor: Actor, input: CreateListingInput, now =
     updatedAt: now,
     // A draft nobody edits for 30 days goes with its photos (retention-purge, audit A4-04).
     purgeAt: draftPurgeAt(now),
+    ...(options.departure && subcategory?.tool === "departures" ? { departure: options.departure } : {}),
     version: 0,
   });
   const doc = options.patch ? listingSchema.parse(applyPatch(blank, await fieldsOf({ id, ...blank }, options.patch, { uid, quotas: sellerContext.quotas, sellerType: seller.type, now }))) : blank;
@@ -228,6 +239,8 @@ export async function duplicateListing(actor: Actor, id: string, now = new Date(
   const seller = await sellerOf(actor.auth);
   if (seller.seller.type !== "pro") throw new HttpError(403, "forbidden", "duplicate is a Pro tool");
   if (!DUPLICABLE_STATUSES.includes(source.status)) throw new HttpError(409, "conflict", `cannot duplicate a ${source.status} listing`);
+  // A departure is copied in « Mes départs », with new dates.
+  if (subcategoryById(source.subcategoryId ?? "")?.tool) throw new HttpError(409, "conflict", "a departure is copied from its tool");
   const patch: ListingPatch = {
     title: source.title,
     description: source.description,
@@ -257,11 +270,14 @@ async function fieldsOf(listing: ListingRecord, patch: ListingPatch, ctx: { uid:
   if (patch.subcategoryId !== undefined) {
     const subcategory = subcategoryById(patch.subcategoryId);
     if (!subcategory) throw invalidField("subcategoryId", "unknown");
+    // In or out of a tool's subcategory (a departure) only through the tool.
+    if (subcategory.id !== listing.subcategoryId && (subcategory.tool || subcategoryById(listing.subcategoryId ?? "")?.tool)) throw invalidField("subcategoryId", "tool_only");
     fields.subcategoryId = subcategory.id;
     fields.categoryId = subcategory.categoryId;
     // Another subcategory: its criteria differ, the old attributes go unless new ones come along.
     if (subcategory.id !== listing.subcategoryId) fields.attributes = patch.attributes ?? {};
   } else if (patch.categoryId !== undefined) {
+    if (patch.categoryId !== listing.categoryId && subcategoryById(listing.subcategoryId ?? "")?.tool) throw invalidField("categoryId", "tool_only");
     fields.categoryId = patch.categoryId;
     if (listing.subcategoryId && subcategoryById(listing.subcategoryId)?.categoryId !== patch.categoryId) {
       fields.subcategoryId = null;
@@ -407,6 +423,11 @@ export interface PatchOptions {
    * no listing.edit.uid (the import's rows budget counts the line). Screened like a hand edit.
    */
   imported?: { listing: ListingRecord; seller: SellerContext };
+  /**
+   * A departure's new facts (« Mes départs », with the title and text written from them): stored
+   * with the save, its expiry following the new day while the listing has one.
+   */
+  departure?: DepartureDoc;
 }
 
 /**
@@ -439,6 +460,14 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
   if (listing.status !== "draft" && !options.imported) await enforceLimit("listing.edit.uid", uid);
   const seller = options.imported?.seller ?? (await sellerOf(actor.auth));
   const fields = changedFields(listing, await fieldsOf(listing, patch, { uid, quotas: seller.quotas, sellerType: seller.seller.type, now }));
+  if (options.departure) {
+    if (!listing.departure) throw invalidField("departure", "not_a_departure");
+    if (!isDeepStrictEqual(listing.departure, options.departure)) {
+      fields.departure = options.departure;
+      // Online, paused or held: it now leaves the day after its new date (an expired one stays so).
+      if (listing.expiresAt && listing.status !== "expired") fields.expiresAt = departureEnd(options.departure.departOn);
+    }
+  }
   // Nothing changes: nothing is written. A rejected listing's save reopens it, even an empty one.
   if (Object.keys(fields).length === 0 && listing.status !== "rejected") return ownerListingView(listing);
   // Under review (report, authority request, appeal): the reported content stays as it is until the
@@ -548,6 +577,26 @@ export async function updateStock(actor: Actor, id: string, input: StockUpdateIn
   const user = await getUserRecord(actor.auth.user.uid);
   if (!user) throw new HttpError(403, "forbidden", "account record missing");
   return ownerListingView(await commit(listing, changed, effects, { actor, user, now }));
+}
+
+/**
+ * The room left on a departure (transporteurs/spec.md §4): one tap from « Mes départs », one write,
+ * indexed again when online, no screening (no text changes). `spaceKg` null clears the kilograms.
+ */
+export async function setDepartureSpace(actor: Actor, id: string, input: { space: CarrierSpace; spaceKg?: number | null }, now = new Date()): Promise<ListingRecord> {
+  const listing = await ownedListing(actor, id);
+  if (!listing.departure) throw notFound();
+  if (!EDITABLE_STATUSES.includes(listing.status) || listing.status === "expired") throw new HttpError(409, "conflict", "departure is read-only in this status");
+  const { spaceKg: _kept, ...rest } = listing.departure;
+  const spaceKg = input.spaceKg === undefined ? listing.departure.spaceKg : (input.spaceKg ?? undefined);
+  // « Complet » says no kilograms are left: a figure would contradict it.
+  const departure: DepartureDoc = { ...rest, space: input.space, ...(spaceKg !== undefined && input.space !== "full" ? { spaceKg } : {}), spaceUpdatedAt: now };
+  if (departure.space === listing.departure.space && departure.spaceKg === listing.departure.spaceKg) return listing;
+  const changed: ListingFieldPatch = { departure };
+  const effects: TransitionEffects = { search: listing.status === "published" ? "upsert" : null, contentOp: null, audit: null, revalidate: hasPublicPage(listing.status), mail: null };
+  const user = await getUserRecord(actor.auth.user.uid);
+  if (!user) throw new HttpError(403, "forbidden", "account record missing");
+  return commit(listing, changed, effects, { actor, user, now });
 }
 
 /**
@@ -680,6 +729,10 @@ export interface PublishOptions {
   rentalAttestation?: boolean;
   device: Device;
   now?: Date;
+  /** « Mes départs » checked the IP once for its whole batch (one Turnstile token serves one check). */
+  ipChecked?: boolean;
+  /** No « annonce publiée » mail: the carrier published from its own list and sees the result there. */
+  quiet?: boolean;
 }
 
 export interface PublishOutcome {
@@ -710,9 +763,10 @@ export async function publish(actor: Actor, request: Request, id: string, option
   if (needsRealEstateAttestation(subcategory) && !options.realEstateAttestation) throw new HttpError(422, "real_estate_attestation");
   if (listing.subcategoryId === RENTAL_SUBCATEGORY && !seller.rentalAgrementRef) throw new HttpError(422, "rental_agrement_missing");
   if (listing.subcategoryId === RENTAL_SUBCATEGORY && !options.rentalAttestation) throw new HttpError(422, "rental_attestation");
+  if (subcategory?.tool === "departures" && !seller.carrier) throw new HttpError(422, "carrier_settings_missing");
 
   await assertWithinQuota(uid, seller.quotas);
-  const turnstilePassed = await escalateOnIp(request, "listing.create.ip", options.device, options.turnstileToken, "listing");
+  const turnstilePassed = options.ipChecked ? false : await escalateOnIp(request, "listing.create.ip", options.device, options.turnstileToken, "listing");
   await enforceDailyLimit(uid, seller.seller, seller.quotas, now);
 
   const city = cityBySlug(listing.location!.citySlug)!;
@@ -729,7 +783,9 @@ export async function publish(actor: Actor, request: Request, id: string, option
   const updated = await commit(listing, patch, effects, { actor, user: seller.user, now, hold, maxActive: seller.quotas.activeListings });
   await requestScreening(updated);
   const path = `/${seller.user.locale}/annonce/${slugId}`;
-  if (to === "published") await notifySeller(updated, seller.user, { template: "listingPublished", path });
+  if (to === "published") {
+    if (!options.quiet) await notifySeller(updated, seller.user, { template: "listingPublished", path });
+  }
   else await notifySeller(updated, seller.user, { template: "listingPendingReview", statement: statementOf("hold", screening.flags, await redressAddress()) });
 
   return {

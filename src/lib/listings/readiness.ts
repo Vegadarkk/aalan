@@ -47,6 +47,7 @@ export const READINESS_CODES = [
   "stock_pro_only",
   "stock_with_variants",
   "title_soldes",
+  "departure_required",
   "unknown",
 ] as const;
 export type ReadinessCode = (typeof READINESS_CODES)[number];
@@ -57,7 +58,7 @@ export interface SellerFacts {
 }
 
 type Candidate = Pick<ListingDoc, "title" | "description" | "categoryId" | "subcategoryId" | "attributes" | "condition" | "price" | "isDonation" | "location" | "photos" | "contact"> &
-  Partial<Pick<ListingDoc, "variants" | "stock" | "promo">>;
+  Partial<Pick<ListingDoc, "variants" | "stock" | "promo" | "departure">>;
 
 const issue = (path: string, code: ReadinessCode): FieldIssue => ({ path, code });
 
@@ -189,6 +190,8 @@ export function assessReadiness(listing: Candidate, facts: SellerFacts): FieldIs
     issues.push(...dossierIssues(listing.attributes, tree.subcategory, facts.seller));
     issues.push(...realEstateIssues(listing, tree.subcategory));
     issues.push(...rentalIssues(listing, tree.subcategory));
+    // A departure is written from « Mes départs » with its facts: a draft without them never publishes.
+    if (tree.subcategory.tool === "departures" && !listing.departure) issues.push(issue("departure", "departure_required"));
     if (tree.subcategory.condition === "required" && !listing.condition) issues.push(issue("condition", "condition_required"));
     issues.push(...priceIssues(listing, tree.subcategory));
     issues.push(...catalogueIssues(listing, tree.subcategory, facts.seller));

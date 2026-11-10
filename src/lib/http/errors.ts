@@ -98,6 +98,8 @@ export type ErrorCode =
   | "legal_form_sector"
   /** The carriers space is closed (`config/flags.carriersEnabled` off, 403). */
   | "carriers_closed"
+  /** A departure without the carrier's saved settings and price list (422; « Mes départs » leads to them). */
+  | "carrier_settings_missing"
   // Credits and paid options (phase 7, design §5). Messages: Options.errors.<code>.
   /** config/flags.salesEnabled is off: nothing can be bought (403). */
   | "sales_closed"

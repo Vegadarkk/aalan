@@ -38,7 +38,8 @@ export function reminderStart(now: Date, stored: { through: Date; lastId: string
 }
 
 async function remind(listing: ListingRecord, recipients: (uid: string) => Promise<ListingRecipient | null>, result: ReminderResult): Promise<void> {
-  if (!listing.expiresAt) return;
+  // A carrier's departure ends with its day and cannot be renewed: nothing to remind.
+  if (!listing.expiresAt || listing.departure) return;
   try {
     const to = await recipients(listing.ownerUid);
     if (!to) {

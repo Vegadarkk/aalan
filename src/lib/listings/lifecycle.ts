@@ -1,4 +1,5 @@
 import type { ListingStatus } from "@/lib/contracts/listings";
+import { departureEnd } from "@/lib/carriers/departure";
 import { livePriceLog } from "./catalog";
 import type { ListingDoc, PausedReason } from "./lifecycle-types";
 import type { ContentOp, ListingFieldPatch, MailTemplateForListing, TransitionEffects, TransitionResult } from "./lifecycle-types";
@@ -51,6 +52,14 @@ export function expiresAtFor(publishedAt: Date, lifetime: Lifetime): Date {
   return addDays(publishedAt, lifetime.ttlDays);
 }
 
+/**
+ * The expiry a listing takes when it goes (back) online at `now`: its lifetime, or for a carrier's
+ * departure the day after it leaves (transporteurs/spec.md §3), whatever the lifetime.
+ */
+function onlineUntil(listing: Pick<ListingDoc, "departure">, now: Date, lifetime: Lifetime): Date {
+  return listing.departure ? departureEnd(listing.departure.departOn) : expiresAtFor(now, lifetime);
+}
+
 export function purgeAtFor(from: Date, lifetime: Lifetime): Date {
   return addMonths(from, lifetime.purgeMonths);
 }
@@ -87,8 +96,12 @@ export class IllegalTransitionError extends Error {
   }
 }
 
-/** Fewer than RENEW_WINDOW_DAYS left on a published listing, or expired and not purged yet. */
-export function canRenew(listing: Pick<ListingDoc, "status" | "expiresAt" | "purgeAt">, now: Date): boolean {
+/**
+ * Fewer than RENEW_WINDOW_DAYS left on a published listing, or expired and not purged yet. Never a
+ * carrier's departure: it ends with its day, the carrier copies it in « Mes départs » instead.
+ */
+export function canRenew(listing: Pick<ListingDoc, "status" | "expiresAt" | "purgeAt"> & Partial<Pick<ListingDoc, "departure">>, now: Date): boolean {
+  if (listing.departure) return false;
   if (listing.status === "expired") return !listing.purgeAt || now.getTime() < listing.purgeAt.getTime();
   if (listing.status === "published") return listing.expiresAt !== undefined && listing.expiresAt.getTime() - now.getTime() < RENEW_WINDOW_DAYS * DAY_MS;
   return false;
@@ -101,7 +114,7 @@ function effects(partial: Partial<TransitionEffects>): TransitionEffects {
 }
 
 type Listing = Pick<ListingDoc, "status" | "version" | "publishedAt" | "expiresAt" | "purgeAt" | "pausedReason" | "sortAt" | "sortSource"> &
-  Partial<Pick<ListingDoc, "price" | "isDonation" | "variants" | "priceLog">>;
+  Partial<Pick<ListingDoc, "price" | "isDonation" | "variants" | "priceLog" | "departure">>;
 
 const lapsed = (listing: Pick<ListingDoc, "expiresAt">, now: Date) => !listing.expiresAt || listing.expiresAt.getTime() <= now.getTime();
 
@@ -219,7 +232,7 @@ function applyStatus(listing: Listing, to: ListingStatus, ctx: TransitionContext
         }
       }
       // Publish (from draft) or approve a held publication (from pending_review).
-      const expiresAt = expiresAtFor(now, lifetime);
+      const expiresAt = onlineUntil(listing, now, lifetime);
       return {
         patch: { ...base, status: "published", publishedAt: now, expiresAt, purgeAt: purgeAtFor(expiresAt, lifetime), sortAt: now, sortSource: "publish", pausedReason: null },
         effects: effects({
@@ -301,7 +314,7 @@ function applyStatus(listing: Listing, to: ListingStatus, ctx: TransitionContext
 }
 
 function renewPatch(listing: Listing, now: Date, lifetime: Lifetime, ip: string | undefined): TransitionResult {
-  const expiresAt = expiresAtFor(now, lifetime);
+  const expiresAt = onlineUntil(listing, now, lifetime);
   return {
     patch: { version: listing.version + 1, updatedAt: now, status: "published", sortAt: now, sortSource: "renew", expiresAt, purgeAt: purgeAtFor(expiresAt, lifetime), pausedReason: null },
     effects: effects({ search: "upsert", contentOp: { op: "listing.update", ip }, audit: "listing.renew", revalidate: true }),

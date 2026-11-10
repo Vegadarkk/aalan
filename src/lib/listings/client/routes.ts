@@ -1,3 +1,4 @@
+import { subcategoryById } from "@/config/categories";
 import { LISTING_ID_PATTERN } from "@/lib/listings/ids";
 import { WIZARD_DONE, type WizardStep } from "@/lib/contracts/listings";
 import { isWizardStep } from "./validation";
@@ -9,6 +10,11 @@ export type WizardScreen = WizardStep | typeof WIZARD_DONE;
 
 export function wizardPath(id: string, screen?: WizardScreen): string {
   return screen ? `/deposer/${id}/${screen}` : `/deposer/${id}`;
+}
+
+/** Where the owner edits a listing: the wizard, or the tool a listing comes from (a carrier's departure). */
+export function ownerEditPath(listing: { id: string; subcategoryId: string | null }): string {
+  return subcategoryById(listing.subcategoryId ?? "")?.tool === "departures" ? "/pro/departs" : wizardPath(listing.id);
 }
 
 export interface ParsedWizardPath {

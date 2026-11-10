@@ -18,7 +18,7 @@ import type { OwnerAction } from "@/lib/listings/client/api";
 import { blurhashDataUrl } from "@/lib/listings/client/blurhash";
 import { daysUntil, formatPrice, formatRelativeDays } from "@/lib/listings/client/format";
 import { ownerMediaBase, photoUrl } from "@/lib/listings/client/photo-url";
-import { wizardPath } from "@/lib/listings/client/routes";
+import { ownerEditPath } from "@/lib/listings/client/routes";
 import { cn } from "@/lib/utils";
 import { primaryAction } from "./buckets";
 import { ListingActions } from "./listing-actions";
@@ -76,7 +76,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
   const title = listing.title || t("untitled");
   // Inside translated labels the seller's title keeps its own direction (French title, Arabic UI).
   const named = { title: isolate(title) };
-  const href = listing.status === "published" && listing.slugId ? null : wizardPath(listing.id);
+  const href = listing.status === "published" && listing.slugId ? null : ownerEditPath(listing);
   // The public page is a full page load (public pages have their own CSP), in the language on screen.
   const publicHref = listing.slugId ? getPathname({ href: `/annonce/${listing.slugId}`, locale }) : null;
   const primary = primaryAction(listing, now);
@@ -186,7 +186,7 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
           {/* Accessible names start with the visible label (WCAG 2.5.3), then the title. */}
           {!primary ? null : primary.kind === "continue" || primary.kind === "fix" ? (
             <Button asChild variant="outline" size="sm" className="max-sm:h-11">
-              <Link href={wizardPath(listing.id)} aria-label={t(primary.kind === "continue" ? "actions.continueDraftOf" : "actions.editOf", named)}>
+              <Link href={ownerEditPath(listing)} aria-label={t(primary.kind === "continue" ? "actions.continueDraftOf" : "actions.editOf", named)}>
                 <Pencil aria-hidden="true" />
                 {primary.kind === "continue" ? t("actions.continueDraft") : t("actions.edit")}
               </Link>

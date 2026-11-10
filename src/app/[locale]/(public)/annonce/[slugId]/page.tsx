@@ -33,6 +33,7 @@ import { SellerCard } from "@/components/listing/seller-card";
 import { ShareButton } from "@/components/listing/share-button";
 import { ListingMapBlock } from "@/components/map/listing-map-block";
 import { ReportButton } from "@/components/report/report-button";
+import { ownerEditPath } from "@/lib/listings/client/routes";
 import { HOLIDAY_RENTAL_SUBCATEGORY, RENTAL_SUBCATEGORY, VEHICLE_SALE_SUBCATEGORIES, catalogueKind, categoryById, datedRental, paidOptionsAllowed, subcategoryById } from "@/config/categories";
 import { availablePromos } from "@/config/house-promos";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
@@ -48,7 +49,7 @@ import { formatDate, formatPrice } from "@/lib/listings/client/format";
 import { photoUrl } from "@/lib/listings/client/photo-url";
 import { listingJsonLd } from "@/lib/listings/jsonld";
 import { localizeExample } from "@/lib/demo/localized";
-import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
+import { getPublishedBySlugId, getSeller, listingPath, publicShopRef, storefrontPath, toPublicListing, type PublicShopRef, type PublicListing, type PublicSeller } from "@/lib/listings/public";
 import { offerAllowed } from "@/lib/offers/eligibility";
 import { offerReferencePrice } from "@/lib/offers/rules";
 import { priceGuideFor } from "@/lib/price-guide/service";
@@ -59,6 +60,7 @@ import { isIndexable } from "@/lib/search/document";
 import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { PrintSource } from "@/components/print/print-source";
+import { DepartureFacts } from "@/components/carriers/departure-facts";
 
 // Public listing page (design D1, D10, D14, §5, §8): ISR, rendered on the first visit and kept 5
 // minutes (lifecycle transitions revalidate it at once). No loading.tsx above it: notFound() and the
@@ -305,6 +307,15 @@ export default async function ListingPage({ params }: { params: Params }) {
               promo={published ? (listing.catalogue?.promo ?? null) : null}
               renderedAt={renderedAt}
             />
+            {listing.departure ? (
+              <DepartureFacts
+                departure={listing.departure}
+                from={storefront?.carrierFrom ?? null}
+                pricesHref={storefront ? `${storefrontPath(locale, storefront.segment)}#carrier-prices` : null}
+                locale={locale}
+                className="self-stretch sm:max-w-xl"
+              />
+            ) : null}
             {guide && shownPrice !== null ? <PriceGuideBlock guide={guide} price={shownPrice} locale={locale} className="self-stretch sm:max-w-md" /> : null}
             {/* No stock line on real estate, services or jobs; vehicles on a rental car (zone 3 P2-10). */}
             {listing.catalogue && published && catalogueKind(subcategory) !== "none" ? (
@@ -352,6 +363,7 @@ export default async function ListingPage({ params }: { params: Params }) {
                     listingId={listing.id}
                     slugId={listing.slugId}
                     sellerPublicId={listing.seller.publicId}
+                    editHref={ownerEditPath(listing)}
                     sellerName={listing.seller.name}
                     listingTitle={listing.title}
                     showPhone={listing.contact.showPhone}

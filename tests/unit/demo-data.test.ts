@@ -28,7 +28,8 @@ vi.mock("@/lib/media/process", () => ({
 describe("demo catalog", () => {
   it("covers every subcategory and every region", () => {
     const subs = new Set(DEMO_ENTRIES.map((entry) => entry.sub));
-    for (const category of CATEGORIES) for (const sub of category.subcategories) expect(subs.has(sub.id), sub.id).toBe(true);
+    // A carrier's departures are dated and made by « Mes départs » only: no example listing.
+    for (const category of CATEGORIES) for (const sub of category.subcategories) if (!sub.tool) expect(subs.has(sub.id), sub.id).toBe(true);
     const regions = new Set(DEMO_ENTRIES.map((entry) => cityBySlug(entry.city)?.regionCode));
     for (const region of REGIONS) expect(regions.has(region.code), region.code).toBe(true);
   });

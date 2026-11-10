@@ -361,9 +361,14 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
             </>
           ) : null}
           {canPublish && shop.sector === "carrier" ? (
-            <Button asChild variant="outline">
-              <Link href="/pro/transport">{t("carrierSettings")}</Link>
-            </Button>
+            <>
+              <Button asChild variant="outline">
+                <Link href="/pro/departs">{t("departures")}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/pro/transport">{t("carrierSettings")}</Link>
+              </Button>
+            </>
           ) : null}
           {canPublish && shop.sector === "holiday_rental" ? (
             <>

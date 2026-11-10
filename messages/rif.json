@@ -774,7 +774,8 @@
       "rental_attestation": "Ḥima ad tessufɣeḍ akra, sentem ayen tenniḍ x agence nnec (rrexṣa, immatriculation, assurance).",
       "rental_agrement_missing": "Ḥima ad tessufɣeḍ akra, ari zzat uṭṭun n rrexṣa (agrément) n agence nnec deg umkan Pro (Agence inu n ukra).",
       "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro).",
-      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier."
+      "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier.",
+      "carrier_settings_missing": "Ssekles zzat lpri n usiwel nnec: iruḥen nnec ttaɣen zeg-s timnaḍin, timdinin d lpri."
     },
     "wizard": {
       "title": "Ssuffeɣ annonce",
@@ -1171,7 +1172,8 @@
       "stock_with_variants": "S variantes, stock ad t-taruḍ i yal combinaison.",
       "no_variants": "Annonce-a war ɣar-s ca variantes.",
       "title_soldes": "Awal « Soldes » yettwaqbal deg uzwel kan deg lweqt n soldes i tebdiḍ zi « Annonces inu » : kkes-it.",
-      "price_required_amount": "Indiquez un prix."
+      "price_required_amount": "Indiquez un prix.",
+      "departure_required": "Aruḥ yettwasnulfu u yettwabeddel zi « Iruḥen inu »."
     },
     "status": {
       "draft": "Brouillon",
@@ -1377,7 +1379,8 @@
         "travaux-reparations": "Ixeddimen & aṣeggem",
         "menage": "Asizdeg n uxxam",
         "evenements": "Lḥeflat",
-        "beaute": "Ccbaḥa"
+        "beaute": "Ccbaḥa",
+        "departs-europe-maroc": "Iruḥen Urupa–Lmeɣrib"
       }
     },
     "emploi": {
@@ -2893,6 +2896,13 @@
         "maroc": "Marra Lmeɣrib",
         "etranger": "Lmeɣrib d berra"
       }
+    },
+    "departure-direction": {
+      "label": "Tanila",
+      "options": {
+        "europe-maroc": "Urupa → Lmeɣrib",
+        "maroc-europe": "Lmeɣrib → Urupa"
+      }
     }
   },
   "MyListings": {
@@ -3575,6 +3585,26 @@
       "endsInMinutes": "Ad tekmel deg {minutes} min",
       "reference": "Ssuma yettwajerrḍen: ssuma tamecṭuḥt i d-yeban i imsaɣen deg 30 n wussan zzat n promotion.",
       "noReference": "Bla ssuma yettwajerrḍen: annonce ɣar-s ddaw n 30 n wussan n umezruy n ssuma."
+    },
+    "departure": {
+      "label": "Aruḥ n umsiwel",
+      "from": "Zi",
+      "perKg": "i kg",
+      "priceList": "Lpri s lpri n umsiwel",
+      "seePrices": "Ẓer lpri",
+      "kgLeft": "{kg} kg i yeqqimen",
+      "spaceUpdated": "Yettwabeddel ass n {date}",
+      "departOn": "Aruḥ",
+      "depositBy": "Asers n ikemmusen alami",
+      "arrival": "Taweḍ yettwannan",
+      "range": "zi {from} ar {to}",
+      "direction": "Tanila",
+      "collectEurope": "Asuɣ deg Urupa",
+      "collectMorocco": "Asuɣ deg Lmeɣrib",
+      "deliverMorocco": "Asiweḍ deg Lmeɣrib",
+      "deliverEurope": "Asiweḍ deg Urupa",
+      "more": "{names} d {count} nniḍen",
+      "notice": "Lpri ad yeqqen ɣer lpri yenna-t umsiwel, war ttxelleṣeḍ walu deg site. Lpri aneggaru yettwaxḍa mara ttwazznen ikemmusen nnec, qbel ad ten-yawi. Lɛeqd yettili jar-ak d umsiwel kan."
     }
   },
   "Profile": {
@@ -4363,7 +4393,8 @@
       "holidayAgency": "Agence inu n lɛuṭla",
       "choosePlan": "Choisir une offre",
       "invoices": "Mes factures",
-      "carrierSettings": "Lpri n usiwel inu"
+      "carrierSettings": "Lpri n usiwel inu",
+      "departures": "Iruḥen inu"
     },
     "errors": {
       "pro_signup_closed": "Isuturen n umiḍan Pro ttwaqqnen i tura.",
@@ -6757,6 +6788,12 @@
       "tobacco": "Duxxan",
       "cash": "Idrimen d tɣawsiwin n ccama",
       "documents": "Lwṛaq n ddula"
+    },
+    "spaces": {
+      "lots": "Aṭṭas n wadeg",
+      "some": "Mazal wadeg",
+      "almost_full": "Qrib yeččur",
+      "full": "Yeččur"
     }
   },
   "CarrierSettings": {
@@ -6871,7 +6908,91 @@
       "action": "Ččar lpri inu",
       "readyTitle": "Lpri nnec yeffeɣ",
       "ready": "Zi {rate} i kg. Yettwabeddel ass n {date}.",
-      "edit": "Beddel lpri inu"
+      "edit": "Beddel lpri inu",
+      "departures": "Iruḥen inu"
+    }
+  },
+  "Departures": {
+    "title": "Iruḥen inu",
+    "back": "Ɣer tallunt n Pro",
+    "lead": "Ssuffeɣ iruḥen nnec i d-itasen: yal aruḥ ad yuɣal d lɛlan s wussan nnes, temdinin nnes d wadeg i yeqqimen. Imsuɣen ẓerren lpri nnec u ttarin-ak srid.",
+    "loading": "Iruḥen nnec ttwasilen",
+    "loadFailed": "Iruḥen nnec war ttwasilen ca.",
+    "retry": "Ɛawed",
+    "notCarrier": "« Iruḥen inu » i tḥuna n imsiwlen yettwasneqden kan.",
+    "new": "Aruḥ amaynu",
+    "priceList": "Lpri n usiwel inu",
+    "settingsMissing": "Ssekles zzat lpri n usiwel nnec: iruḥen nnec ttaɣen zeg-s timnaḍin, timdinin d lpri.",
+    "settingsAction": "Ččar lpri inu",
+    "closed": "Tallunt n imsiwlen ur tettwaldi ca ixef: ad tzemmreḍ ad tessuffɣeḍ iruḥen nnec mara tettwaldi.",
+    "upcoming": "{count, plural, one {# n uruḥ i d-itasen} other {# n iruḥen i d-itasen}}",
+    "emptyTitle": "Walu aruḥ i d-itasen",
+    "emptyBody": "Ssnulfu aruḥ nnec i d-itasen, niɣ snegmes aruḥ yezrin s wussan imaynuten.",
+    "past": "Iruḥen yezrin",
+    "to": "ɣer",
+    "depositBy": "Asers alami",
+    "arrival": "Taweḍ yettwannan",
+    "range": "zi {from} ar {to}",
+    "pendingReview": "Amseɣẓay iqqar aruḥ-a: ad d-yban mara yettwaqbel.",
+    "space": "Adeg i yeqqimen",
+    "spaceKg": "{kg} kg i yeqqimen",
+    "spaceSaved": "Adeg i yeqqimen: {space}",
+    "edit": "Beddel",
+    "copy": "Snegmes",
+    "view": "Ẓer lɛlan",
+    "pause": "Ḥbes ciṭṭuḥ",
+    "resume": "Ɛawed ssuffeɣ",
+    "paused": "Aruḥ yettwaḥbes",
+    "resumed": "Aruḥ yeffeɣ daɣ",
+    "remove": "Kkes",
+    "removeTitle": "Ad tekkseḍ aruḥ-a?",
+    "removeBody": "Lɛlan n uruḥ ad yekkes zeg usmel. Imeslayen nnec d imsuɣen qqimen deg tira.",
+    "removed": "Aruḥ yekkes",
+    "cancel": "Bḍel",
+    "formNew": "Aruḥ amaynu",
+    "formEdit": "Beddel aruḥ",
+    "formLead": "Ussan, timnaḍin d temdinin n tewwala-ya d wadeg i yeqqimen. Lpri i d-yettbanen yekka-d zi lpri n usiwel nnec.",
+    "direction": "Tanila",
+    "departOn": "Ass n uruḥ",
+    "departOnHint": "Ussan nniḍen ttabaɛen-t mara t-tbeddleḍ.",
+    "depositByField": "Asers n ikemmusen alami",
+    "arriveFrom": "Taweḍ yettwannan zi",
+    "arriveTo": "Taweḍ yettwannan alami",
+    "collectEurope": "Asuɣ deg Urupa",
+    "deliverEurope": "Asiweḍ deg Urupa",
+    "collectMorocco": "Asuɣ deg Lmeɣrib",
+    "deliverMorocco": "Asiweḍ deg Lmeɣrib",
+    "all": "Ẓṛeḍ kulec",
+    "none": "Kkes kulec",
+    "spaceKgField": "Kg i yeqqimen (ma texsed)",
+    "spaceKgHint": "Ttbanen ɣer tama n wadeg i yeqqimen.",
+    "note": "Tazmilt i yimsuɣen (ma texsed)",
+    "noteHint": "Adeg n users, isragen, ccuṛuṭ: {max} n isekkilen xmaksimum, bla uṭṭun n tilifun.",
+    "repeat": "Ɛawed aruḥ-a",
+    "repeatOnce": "Tikelt kan",
+    "repeatWeekly": "Yal ssimana",
+    "repeatFortnightly": "Yal snat n ssimanat",
+    "repeatCount": "Amḍan n iruḥen",
+    "departuresCount": "{count} n iruḥen",
+    "repeatUntil": "Aruḥ aneggaru ass n {day}.",
+    "accept": "Sseqdeɣ belli aruḥ-a yettqadar <rules>ilugan n usuffeɣ</rules> d lɛehd inu d amsiwel.",
+    "acceptRequired": "Ẓṛeḍ asseqdeɣ akken ad tessuffɣeḍ.",
+    "turnstile": "Yessefk usenqed amecṭuḥ zzat usuffeɣ.",
+    "publish": "Ssuffeɣ aruḥ",
+    "publishMany": "Ssuffeɣ {count} n iruḥen",
+    "save": "Ssekles",
+    "saved": "Aruḥ yettwabeddel",
+    "created": "{count, plural, one {Aruḥ yeffeɣ} other {# n iruḥen ffɣen}}",
+    "createdHeld": "{count, plural, one {Amseɣẓay iqqar aruḥ zzat ad d-yban.} other {Amseɣẓay iqqar # n iruḥen zzat ad d-banen.}}",
+    "partial": "Aruḥ n {day} war yeffiɣ ca: {reason}",
+    "choosePlan": "Xtar lɛerḍ",
+    "problems": {
+      "invalid_day": "Ass war yelli d ṣṣeḥ.",
+      "deposit_window": "Asers yettili ass n uruḥ niɣ alami 30 n wussan zzat-s.",
+      "arrival_window": "Taweḍ tettili jar ass n uruḥ d 30 n wussan dffir-s.",
+      "departure_past": "Xtar ass zi ass-a d uqqaren.",
+      "departure_too_far": "Aruḥ yettwassuffeɣ {max} n wussan zzat-s xmaksimum.",
+      "places": "Ẓṛeḍ yiwen n wadeg ɣaren."
     }
   }
 }

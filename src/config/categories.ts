@@ -131,6 +131,11 @@ export interface Subcategory {
   photosOptional?: boolean;
   /** No bump or À la Une (a job seeker's ad): nothing is sold to a candidate, `boost_not_allowed` at purchase. */
   noPaidOptions?: boolean;
+  /**
+   * Created from a Pro tool, never from the wizard: a carrier's departure (« Mes départs »,
+   * transporteurs/spec.md §4). Hidden from the wizard's category picker, edited and copied in the tool.
+   */
+  tool?: "departures";
 }
 
 export interface Category {
@@ -307,6 +312,8 @@ const FIELDS = {
   "course-mode": { id: "course-mode", type: "select", options: ["domicile", "en-ligne", "chez-le-prof"] },
   "transport-type": { id: "transport-type", type: "select", options: ["demenagement", "livraison", "transport-marchandises", "transport-personnes", "camion-chauffeur", "autre"] },
   "transport-vehicle": { id: "transport-vehicle", type: "select", options: ["camion", "camionnette", "voiture", "autre"] },
+  // A carrier's departure (transporteurs/spec.md §3): written from the departure, never typed.
+  "departure-direction": { id: "departure-direction", type: "select", options: ["europe-maroc", "maroc-europe"] },
   "trade": { id: "trade", type: "select", options: ["plomberie", "electricite", "peinture", "maconnerie", "menuiserie", "climatisation", "carrelage", "serrurerie", "reparation-electromenager", "autre"] },
   "service-mode": { id: "service-mode", type: "select", options: ["domicile", "atelier", "les-deux"] },
   "cleaning-type": { id: "cleaning-type", type: "select", options: ["menage-regulier", "grand-nettoyage", "repassage", "nettoyage-bureaux", "fin-chantier", "autre"] },
@@ -377,6 +384,9 @@ const rental = (id: CriterionId, options: { filter?: true } = {}): Criterion => 
 
 /** Car rental by Pro agencies (rental pack): rental terms, availability by dates, fleet storefront. */
 export const RENTAL_SUBCATEGORY = "location-voitures";
+
+/** A Europe–Morocco carrier's departures (transporteurs/spec.md §3): created from « Mes départs ». */
+export const DEPARTURE_SUBCATEGORY = "departs-europe-maroc";
 
 /** Holiday homes rented by nights (seasonal rental conception): a holiday agency's planning of homes. */
 export const HOLIDAY_RENTAL_SUBCATEGORY = "location-vacances";
@@ -571,6 +581,8 @@ const TREE: readonly Category[] = [
     subcategories: [
       { id: "cours", categoryId: "services", priceOptional: true, criteria: [required("course-subject"), optional("course-level"), optional("course-mode")] },
       { id: "demenagement-transport", categoryId: "services", priceOptional: true, criteria: [required("transport-type"), optional("transport-vehicle")] },
+      // Its price comes from the carrier's price list (« dès 2,00 €/kg »), never from the listing.
+      { id: DEPARTURE_SUBCATEGORY, categoryId: "services", proOnly: true, priceOptional: true, priceMode: "none", photosOptional: true, tool: "departures", criteria: [required("departure-direction")] },
       { id: "travaux-reparations", categoryId: "services", priceOptional: true, criteria: [required("trade"), optional("service-mode")] },
       { id: "menage", categoryId: "services", priceOptional: true, criteria: [required("cleaning-type"), optional("frequency")] },
       { id: "evenements", categoryId: "services", priceOptional: true, criteria: [required("event-service"), optional("guests")] },

@@ -1,8 +1,18 @@
 import "server-only";
 import { audit } from "@/lib/audit";
 import type { StaffContext } from "@/lib/auth/guards";
-import { PRO_NOTES_KEPT, type ProLifecycleAction, type ProLifecycleResponse, type ProStaffNoteView } from "@/lib/contracts/pro";
-import { getProProfile, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
+import {
+  PRO_NOTES_KEPT,
+  type ProLifecycleAction,
+  type ProLifecycleResponse,
+  type ProStaffNoteView,
+} from "@/lib/contracts/pro";
+import {
+  getProProfile,
+  proProfileRef,
+  proProfileToFirestore,
+  type ProProfileRecord,
+} from "@/lib/db/repositories/pro-profiles";
 import { getStaff } from "@/lib/db/repositories/staff";
 import { db } from "@/lib/firebase/admin";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -26,27 +36,66 @@ const SECTOR_LABEL: Record<ProSector, string> = {
   real_estate: "Agence immobilière",
   car_rental: "Location de voitures",
   holiday_rental: "Location saisonnière",
+  carrier: "Transporteur Europe–Maroc",
 };
 
 type Note = NonNullable<ProProfileDoc["staffNotes"]>[number];
 
-export function notesView(notes: ProProfileDoc["staffNotes"]): ProStaffNoteView[] {
-  return (notes ?? []).map((note) => ({ at: note.at.toISOString(), by: note.byName, text: note.text }));
+export function notesView(
+  notes: ProProfileDoc["staffNotes"],
+): ProStaffNoteView[] {
+  return (notes ?? []).map((note) => ({
+    at: note.at.toISOString(),
+    by: note.byName,
+    text: note.text,
+  }));
 }
 
 /** The profile after the action: pure, so the unit tests cover every branch without Firestore. */
-export function profileAfter(current: ProProfileRecord, input: ProLifecycleAction, note: Omit<Note, "text">): { doc: ProProfileDoc; sectorChange: { from: ProSector; to: ProSector } | null } {
+export function profileAfter(
+  current: ProProfileRecord,
+  input: ProLifecycleAction,
+  note: Omit<Note, "text">,
+): {
+  doc: ProProfileDoc;
+  sectorChange: { from: ProSector; to: ProSector } | null;
+} {
   const { proId: _proId, ...doc } = current;
   const notes = current.staffNotes ?? [];
-  if (input.action === "note") return { doc: { ...doc, staffNotes: [{ ...note, text: input.text }, ...notes].slice(0, PRO_NOTES_KEPT), updatedAt: note.at }, sectorChange: null };
+  if (input.action === "note")
+    return {
+      doc: {
+        ...doc,
+        staffNotes: [{ ...note, text: input.text }, ...notes].slice(
+          0,
+          PRO_NOTES_KEPT,
+        ),
+        updatedAt: note.at,
+      },
+      sectorChange: null,
+    };
 
   // The activity of a shop that was validated (a suspended one included: it comes back with it).
-  if (current.kybc.status !== "verified" || !(publishesAsPro(current.lifecycle) || current.lifecycle === "suspended")) throw new HttpError(409, "conflict", "the shop is not validated");
+  if (
+    current.kybc.status !== "verified" ||
+    !(publishesAsPro(current.lifecycle) || current.lifecycle === "suspended")
+  )
+    throw new HttpError(409, "conflict", "the shop is not validated");
   const from = current.sector ?? "general";
-  if (input.sector === from) throw new HttpError(409, "conflict", "the shop already has this activity");
-  if (!correctableSectors(current).includes(input.sector)) throw new HttpError(409, "commitments_required", "the owner has not accepted this sector's commitments");
+  if (input.sector === from)
+    throw new HttpError(409, "conflict", "the shop already has this activity");
+  if (!correctableSectors(current).includes(input.sector))
+    throw new HttpError(
+      409,
+      "commitments_required",
+      "the owner has not accepted this sector's commitments",
+    );
   const { agency, ...rest } = doc;
-  const text = `Activité corrigée : ${SECTOR_LABEL[from]} → ${SECTOR_LABEL[input.sector]}. ${input.reason}`.slice(0, 500);
+  const text =
+    `Activité corrigée : ${SECTOR_LABEL[from]} → ${SECTOR_LABEL[input.sector]}. ${input.reason}`.slice(
+      0,
+      500,
+    );
   return {
     doc: {
       ...rest,
@@ -61,13 +110,23 @@ export function profileAfter(current: ProProfileRecord, input: ProLifecycleActio
 }
 
 /** POST /api/admin/pros/{proId}/lifecycle: a note or an activity correction, journaled. */
-export async function proStaffAction(staff: StaffContext, proId: string, input: ProLifecycleAction, identity: RequestIdentity, now = new Date()): Promise<ProLifecycleResponse> {
+export async function proStaffAction(
+  staff: StaffContext,
+  proId: string,
+  input: ProLifecycleAction,
+  identity: RequestIdentity,
+  now = new Date(),
+): Promise<ProLifecycleResponse> {
   const member = await getStaff(staff.user.uid);
   const byName = member?.displayName ?? staff.accessEmail;
   const result = await db().runTransaction(async (tx) => {
     const current = await getProProfile(proId, tx);
     if (!current) throw notFound();
-    const after = profileAfter(current, input, { at: now, by: staff.user.uid, byName });
+    const after = profileAfter(current, input, {
+      at: now,
+      by: staff.user.uid,
+      byName,
+    });
     tx.set(proProfileRef(proId), proProfileToFirestore(after.doc));
     return { ...after, previous: current };
   });
@@ -81,10 +140,20 @@ export async function proStaffAction(staff: StaffContext, proId: string, input: 
     action: input.action === "note" ? "pro.note" : "pro.sector.correct",
     target: { type: "pro", id: proId },
     automated: false,
-    reason: (input.action === "note" ? input.text : `sector ${sectorChange?.from} -> ${sectorChange?.to}: ${input.reason}`).slice(0, 500),
+    reason: (input.action === "note"
+      ? input.text
+      : `sector ${sectorChange?.from} -> ${sectorChange?.to}: ${input.reason}`
+    ).slice(0, 500),
     ip: identity.ip,
     at: now,
   });
-  if (sectorChange && storefrontShown(previous.lifecycle, previous.plan)) revalidateListingPaths({ shopSegment: storefrontSegment(previous.slug, proId) });
-  return { proId, sector: doc.sector ?? "general", notes: notesView(doc.staffNotes) };
+  if (sectorChange && storefrontShown(previous.lifecycle, previous.plan))
+    revalidateListingPaths({
+      shopSegment: storefrontSegment(previous.slug, proId),
+    });
+  return {
+    proId,
+    sector: doc.sector ?? "general",
+    notes: notesView(doc.staffNotes),
+  };
 }

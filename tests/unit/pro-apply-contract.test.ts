@@ -7,7 +7,11 @@ const base = {
   name: "Atlas Auto",
   regionCode: "06",
   citySlug: "casablanca",
-  legal: { form: "auto_entrepreneur", ice: "001 234 567 000 089", aeNumber: "998877" },
+  legal: {
+    form: "auto_entrepreneur",
+    ice: "001 234 567 000 089",
+    aeNumber: "998877",
+  },
   uploadIds: ["up1"],
   complianceCommitment: true,
   turnstileToken: "token",
@@ -17,27 +21,53 @@ describe("proApplySchema", () => {
   it("accepts a complete application and defaults the description", () => {
     const parsed = proApplySchema.parse(base);
     expect(parsed.description).toBe("");
-    expect(parsed.legal.ice).toBe("001234567000089");
+    expect(parsed.legal.form === "auto_entrepreneur" && parsed.legal.ice).toBe(
+      "001234567000089",
+    );
   });
 
   it("requires the compliance commitment and at least one piece", () => {
-    expect(proApplySchema.safeParse({ ...base, complianceCommitment: false }).success).toBe(false);
-    expect(proApplySchema.safeParse({ ...base, uploadIds: [] }).success).toBe(false);
-    expect(proApplySchema.safeParse({ ...base, uploadIds: Array.from({ length: 7 }, (_, i) => `u${i}`) }).success).toBe(false);
+    expect(
+      proApplySchema.safeParse({ ...base, complianceCommitment: false })
+        .success,
+    ).toBe(false);
+    expect(proApplySchema.safeParse({ ...base, uploadIds: [] }).success).toBe(
+      false,
+    );
+    expect(
+      proApplySchema.safeParse({
+        ...base,
+        uploadIds: Array.from({ length: 7 }, (_, i) => `u${i}`),
+      }).success,
+    ).toBe(false);
   });
 
   it("takes the activity: a general shop by default, a dealership, an agency with its commitments", () => {
     expect(proApplySchema.parse(base).sector).toBe("general");
-    expect(proApplySchema.parse({ ...base, sector: "real_estate", sectorCommitment: true })).toMatchObject({ sector: "real_estate", sectorCommitment: true });
+    expect(
+      proApplySchema.parse({
+        ...base,
+        sector: "real_estate",
+        sectorCommitment: true,
+      }),
+    ).toMatchObject({ sector: "real_estate", sectorCommitment: true });
     // The server refuses an agency without its commitments (src/lib/pro/service.ts); the schema only knows the sectors.
     // B13: a dealership is kept as such (it was sent as a general shop and lost).
-    expect(proApplySchema.parse({ ...base, sector: "dealer" }).sector).toBe("dealer");
-    expect(proApplySchema.safeParse({ ...base, sector: "garage" }).success).toBe(false);
-    expect(proApplySchema.safeParse({ ...base, sectorCommitment: false }).success).toBe(false);
+    expect(proApplySchema.parse({ ...base, sector: "dealer" }).sector).toBe(
+      "dealer",
+    );
+    expect(
+      proApplySchema.safeParse({ ...base, sector: "garage" }).success,
+    ).toBe(false);
+    expect(
+      proApplySchema.safeParse({ ...base, sectorCommitment: false }).success,
+    ).toBe(false);
   });
 
   it("refuses unknown fields and a missing Turnstile token", () => {
-    expect(proApplySchema.safeParse({ ...base, role: "pro" }).success).toBe(false);
+    expect(proApplySchema.safeParse({ ...base, role: "pro" }).success).toBe(
+      false,
+    );
     const { turnstileToken: _omit, ...withoutToken } = base;
     expect(proApplySchema.safeParse(withoutToken).success).toBe(false);
   });

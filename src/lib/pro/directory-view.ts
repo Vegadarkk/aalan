@@ -43,6 +43,7 @@ export const SECTOR_SEGMENTS: Record<ProSector, string> = {
   real_estate: "agences-immobilieres",
   car_rental: "location-voitures",
   holiday_rental: "location-saisonniere",
+  carrier: "transporteurs",
 };
 
 /** Cities offered as chips, by number of shops; the current city is added when it is beyond. */
@@ -52,7 +53,9 @@ export const DIRECTORY_CITY_CHIPS = 12;
 export const EXCERPT_MAX = 160;
 
 export function sectorBySegment(segment: string): ProSector | null {
-  return PRO_SECTORS.find((sector) => SECTOR_SEGMENTS[sector] === segment) ?? null;
+  return (
+    PRO_SECTORS.find((sector) => SECTOR_SEGMENTS[sector] === segment) ?? null
+  );
 }
 
 /**
@@ -60,7 +63,9 @@ export function sectorBySegment(segment: string): ProSector | null {
  * or `ville/{city}/activite/{activity}` in that order (one address per page); anything else, an
  * unknown city or activity included, is a 404.
  */
-export function parseDirectorySegments(rest: readonly string[]): DirectoryFilter | null {
+export function parseDirectorySegments(
+  rest: readonly string[],
+): DirectoryFilter | null {
   const filter: DirectoryFilter = {};
   let index = 0;
   if (rest[index] === "ville") {
@@ -87,32 +92,62 @@ export function directoryPath(filter: DirectoryFilter): string {
   return parts.join("/");
 }
 
-export function filterShops(shops: readonly DirectoryShop[], filter: DirectoryFilter): DirectoryShop[] {
-  return shops.filter((shop) => (!filter.city || shop.citySlug === filter.city) && (!filter.sector || shop.sector === filter.sector));
+export function filterShops(
+  shops: readonly DirectoryShop[],
+  filter: DirectoryFilter,
+): DirectoryShop[] {
+  return shops.filter(
+    (shop) =>
+      (!filter.city || shop.citySlug === filter.city) &&
+      (!filter.sector || shop.sector === filter.sector),
+  );
 }
 
 /** Real shops before the examples, the ones with listings before the empty ones, then by name. */
-export function sortShops(shops: readonly DirectoryShop[], locale = "fr"): DirectoryShop[] {
-  const collator = new Intl.Collator(locale === "ar" ? "ar" : "fr", { sensitivity: "base" });
-  return [...shops].sort((a, b) => Number(a.example) - Number(b.example) || Number(b.listings > 0) - Number(a.listings > 0) || collator.compare(a.name, b.name));
+export function sortShops(
+  shops: readonly DirectoryShop[],
+  locale = "fr",
+): DirectoryShop[] {
+  const collator = new Intl.Collator(locale === "ar" ? "ar" : "fr", {
+    sensitivity: "base",
+  });
+  return [...shops].sort(
+    (a, b) =>
+      Number(a.example) - Number(b.example) ||
+      Number(b.listings > 0) - Number(a.listings > 0) ||
+      collator.compare(a.name, b.name),
+  );
 }
 
 /** Cities of the shops, the fullest first, ties by slug. */
-export function countByCity(shops: readonly DirectoryShop[]): { city: string; count: number }[] {
+export function countByCity(
+  shops: readonly DirectoryShop[],
+): { city: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const shop of shops) counts.set(shop.citySlug, (counts.get(shop.citySlug) ?? 0) + 1);
-  return [...counts.entries()].map(([city, count]) => ({ city, count })).sort((a, b) => b.count - a.count || a.city.localeCompare(b.city));
+  for (const shop of shops)
+    counts.set(shop.citySlug, (counts.get(shop.citySlug) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => b.count - a.count || a.city.localeCompare(b.city));
 }
 
-export function countBySector(shops: readonly DirectoryShop[]): Record<ProSector, number> {
-  const counts = Object.fromEntries(PRO_SECTORS.map((sector) => [sector, 0])) as Record<ProSector, number>;
+export function countBySector(
+  shops: readonly DirectoryShop[],
+): Record<ProSector, number> {
+  const counts = Object.fromEntries(
+    PRO_SECTORS.map((sector) => [sector, 0]),
+  ) as Record<ProSector, number>;
   for (const shop of shops) counts[shop.sector] += 1;
   return counts;
 }
 
 /** The first paragraph of a description, cut on a word before `max` characters. */
 export function excerptOf(description: string, max = EXCERPT_MAX): string {
-  const first = description.split(/\r?\n/).map((line) => line.trim()).find((line) => line.length > 0) ?? "";
+  const first =
+    description
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.length > 0) ?? "";
   if (first.length <= max) return first;
   const cut = first.slice(0, max + 1);
   const space = cut.lastIndexOf(" ");
@@ -120,8 +155,17 @@ export function excerptOf(description: string, max = EXCERPT_MAX): string {
 }
 
 /** The home page's row (UX audit of the Pro shops, 10): real shops with listings first, at most `count`. */
-export function homeShops(shops: readonly DirectoryShop[], count = 4, locale = "fr"): DirectoryShop[] {
+export function homeShops(
+  shops: readonly DirectoryShop[],
+  count = 4,
+  locale = "fr",
+): DirectoryShop[] {
   return sortShops(shops, locale)
-    .sort((a, b) => Number(a.example) - Number(b.example) || Number(b.certified) - Number(a.certified) || b.listings - a.listings)
+    .sort(
+      (a, b) =>
+        Number(a.example) - Number(b.example) ||
+        Number(b.certified) - Number(a.certified) ||
+        b.listings - a.listings,
+    )
     .slice(0, count);
 }

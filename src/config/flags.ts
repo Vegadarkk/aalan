@@ -21,6 +21,11 @@ export const flagsConfigSchema = z
     adsMode: z.enum(["off", "test", "live"]),
     /** Google's certified consent message runs for EEA/UK/CH visitors (D5); until then they get house promotions. */
     adsCmpEea: z.boolean(),
+    /**
+     * Europe–Morocco carriers space (owner 2026-11-10, ships in v1.0.0): the carrier activity, its
+     * settings and its pages. Off = nothing of it is offered; an existing carrier's shop stays.
+     */
+    carriersEnabled: z.boolean(),
   })
   .strict();
 export type FlagsConfig = z.infer<typeof flagsConfigSchema>;
@@ -31,6 +36,7 @@ export const DEFAULT_FLAGS: FlagsConfig = {
   paymentInstallmentsEnabled: false,
   adsMode: "off",
   adsCmpEea: false,
+  carriersEnabled: false,
 };
 
 /** Editing metadata an admin's write may carry next to the flags: ignored, never an error. */
@@ -41,14 +47,21 @@ const METADATA_KEYS: ReadonlySet<string> = new Set(["updatedAt", "updatedBy"]);
  * mistyped or unknown (reported, so an admin closing the Pro sign-up with a typo elsewhere in the
  * document does close it). The runtime raises an alert on any error.
  */
-export function resolveFlagsConfig(stored: unknown): { config: FlagsConfig; errors: string[] } {
-  if (stored === undefined || stored === null) return { config: DEFAULT_FLAGS, errors: [] };
-  if (typeof stored !== "object" || Array.isArray(stored)) return { config: DEFAULT_FLAGS, errors: ["config/flags: not an object"] };
+export function resolveFlagsConfig(stored: unknown): {
+  config: FlagsConfig;
+  errors: string[];
+} {
+  if (stored === undefined || stored === null)
+    return { config: DEFAULT_FLAGS, errors: [] };
+  if (typeof stored !== "object" || Array.isArray(stored))
+    return { config: DEFAULT_FLAGS, errors: ["config/flags: not an object"] };
   const config: FlagsConfig = { ...DEFAULT_FLAGS };
   const errors: string[] = [];
   for (const [key, value] of Object.entries(stored)) {
     if (METADATA_KEYS.has(key)) continue;
-    const field = flagsConfigSchema.shape[key as keyof FlagsConfig] as z.ZodType | undefined;
+    const field = flagsConfigSchema.shape[key as keyof FlagsConfig] as
+      | z.ZodType
+      | undefined;
     if (!field) {
       errors.push(`${key}: unknown flag`);
       continue;

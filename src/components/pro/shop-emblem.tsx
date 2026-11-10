@@ -1,4 +1,12 @@
-import { Building2, Car, CarFront, Store, TreePalm, type LucideIcon } from "lucide-react";
+import {
+  Building2,
+  Car,
+  CarFront,
+  Store,
+  TreePalm,
+  Truck,
+  type LucideIcon,
+} from "lucide-react";
 import type { ProSector } from "@/lib/pro/profile-schema";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +15,14 @@ import { cn } from "@/lib/utils";
 // trade; and a zellige band in the same colour for the top of its card. Pure SVG and CSS, the
 // same on the server and in both themes (white on a saturated ground).
 
-const PALETTE = ["#1f5b45", "#b5652b", "#8a6a1c", "#2f4f7a", "#7a2f3a", "#3f6b2a"] as const;
+const PALETTE = [
+  "#1f5b45",
+  "#b5652b",
+  "#8a6a1c",
+  "#2f4f7a",
+  "#7a2f3a",
+  "#3f6b2a",
+] as const;
 
 const SECTOR_ICONS: Record<ProSector, LucideIcon> = {
   general: Store,
@@ -15,41 +30,98 @@ const SECTOR_ICONS: Record<ProSector, LucideIcon> = {
   real_estate: Building2,
   car_rental: Car,
   holiday_rental: TreePalm,
+  carrier: Truck,
 };
 
 /** A stable colour from the shop's name. */
 export function shopHue(name: string): string {
   let hash = 0;
-  for (const char of name) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) >>> 0;
+  for (const char of name)
+    hash = (hash * 31 + (char.codePointAt(0) ?? 0)) >>> 0;
   return PALETTE[hash % PALETTE.length] ?? PALETTE[0];
 }
 
 /** One or two letters: the first of the first two words. */
 export function shopInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter((word) => /\p{L}|\p{N}/u.test(word));
-  const letters = words.slice(0, 2).map((word) => Array.from(word.replace(/^[^\p{L}\p{N}]+/u, ""))[0] ?? "");
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => /\p{L}|\p{N}/u.test(word));
+  const letters = words
+    .slice(0, 2)
+    .map((word) => Array.from(word.replace(/^[^\p{L}\p{N}]+/u, ""))[0] ?? "");
   return letters.join("").toLocaleUpperCase() || "?";
 }
 
-export function ShopEmblem({ name, sector, logo, size = "md", className }: { name: string; sector: ProSector; logo?: string | null; size?: "md" | "lg"; className?: string }) {
+export function ShopEmblem({
+  name,
+  sector,
+  logo,
+  size = "md",
+  className,
+}: {
+  name: string;
+  sector: ProSector;
+  logo?: string | null;
+  size?: "md" | "lg";
+  className?: string;
+}) {
   const Icon = SECTOR_ICONS[sector];
   const large = size === "lg";
   return (
-    <span aria-hidden="true" className={cn("relative inline-flex shrink-0", large ? "size-20" : "size-14", className)}>
+    <span
+      aria-hidden="true"
+      className={cn(
+        "relative inline-flex shrink-0",
+        large ? "size-20" : "size-14",
+        className,
+      )}
+    >
       {logo ? (
         // The uploaded logo (UX audit lot 3), whole on a white square: a transparent logo stays legible in both themes.
         // eslint-disable-next-line @next/next/no-img-element -- an already sized WebP on the media origin.
-        <img src={logo} alt="" width={large ? 80 : 56} height={large ? 80 : 56} decoding="async" className="size-full rounded-lg bg-white object-contain p-1 shadow-sm ring-2 ring-[#f4ead6]" />
+        <img
+          src={logo}
+          alt=""
+          width={large ? 80 : 56}
+          height={large ? 80 : 56}
+          decoding="async"
+          className="size-full rounded-lg bg-white object-contain p-1 shadow-sm ring-2 ring-[#f4ead6]"
+        />
       ) : (
         <svg viewBox="0 0 56 56" className="size-full drop-shadow-sm">
-          <path d="M4 54V24C4 11 15 2 28 2s24 9 24 22v30z" fill={shopHue(name)} stroke="#f4ead6" strokeWidth="2.5" />
-          <path d="M10 54V25c0-10 8-17 18-17s18 7 18 17v29" fill="none" stroke="#d9b45a" strokeWidth="1.5" opacity="0.8" />
-          <text x="28" y="38" textAnchor="middle" fontSize={shopInitials(name).length > 1 ? 17 : 21} fontWeight="700" fill="#fffaf0" fontFamily="inherit">
+          <path
+            d="M4 54V24C4 11 15 2 28 2s24 9 24 22v30z"
+            fill={shopHue(name)}
+            stroke="#f4ead6"
+            strokeWidth="2.5"
+          />
+          <path
+            d="M10 54V25c0-10 8-17 18-17s18 7 18 17v29"
+            fill="none"
+            stroke="#d9b45a"
+            strokeWidth="1.5"
+            opacity="0.8"
+          />
+          <text
+            x="28"
+            y="38"
+            textAnchor="middle"
+            fontSize={shopInitials(name).length > 1 ? 17 : 21}
+            fontWeight="700"
+            fill="#fffaf0"
+            fontFamily="inherit"
+          >
             {shopInitials(name)}
           </text>
         </svg>
       )}
-      <span className={cn("absolute -end-1 -bottom-1 flex items-center justify-center rounded-full bg-featured text-featured-foreground ring-2 ring-surface", large ? "size-8" : "size-6")}>
+      <span
+        className={cn(
+          "absolute -end-1 -bottom-1 flex items-center justify-center rounded-full bg-featured text-featured-foreground ring-2 ring-surface",
+          large ? "size-8" : "size-6",
+        )}
+      >
         <Icon className={large ? "size-4.5" : "size-3.5"} />
       </span>
     </span>
@@ -57,7 +129,13 @@ export function ShopEmblem({ name, sector, logo, size = "md", className }: { nam
 }
 
 /** The zellige band at the top of a shop's card, in the shop's colour. */
-export function ShopBand({ name, className }: { name: string; className?: string }) {
+export function ShopBand({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
   const hue = shopHue(name);
   return (
     <span

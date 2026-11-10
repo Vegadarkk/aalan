@@ -2,11 +2,17 @@ import "server-only";
 import { MA_VAT_RATE } from "@/config/tax";
 import type { PricingConfig } from "@/config/pricing";
 import { getPricing } from "@/lib/config/runtime";
-import { findBillingAccountByStripeCustomer, listOrdersBetween, TooManyOrdersError, type OrderRecord } from "@/lib/db/repositories/billing";
+import {
+  findBillingAccountByStripeCustomer,
+  listOrdersBetween,
+  TooManyOrdersError,
+  type OrderRecord,
+} from "@/lib/db/repositories/billing";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { unavailable } from "@/lib/http/errors";
 import { headroom } from "@/lib/quota";
 import { stripeRequest, type StripeParam } from "./stripe-api";
+import { primaryIdentifier } from "@/lib/pro/kybc";
 
 // The sales of a period, as the tax exports read them (phase 7 design §8): packs from `orders`
 // (B2C, sold on RevenueCat's page; a refund, whole or partial, is a line of its own on its date) and Pro plans from
@@ -31,11 +37,29 @@ const MAX_ORDERS = 20_000;
 /** Offset of `timeZone` from UTC at `instant`, in ms (local wall clock minus UTC). */
 function zoneOffset(instant: number, timeZone: string): number {
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" })
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    })
       .formatToParts(instant)
       .map((part) => [part.type, Number(part.value)]),
   );
-  return Date.UTC(parts.year!, parts.month! - 1, parts.day!, parts.hour!, parts.minute!, parts.second!) - instant;
+  return (
+    Date.UTC(
+      parts.year!,
+      parts.month! - 1,
+      parts.day!,
+      parts.hour!,
+      parts.minute!,
+      parts.second!,
+    ) - instant
+  );
 }
 
 /** The instant of midnight on the 1st of month `m` (0-based, may overflow) of year `y` in `timeZone`. */
@@ -54,12 +78,26 @@ export function parsePeriod(value: string, timeZone = "UTC"): Period | null {
   const quarter = /^(\d{4})-[QT]([1-4])$/.exec(value);
   const year = /^(\d{4})$/.exec(value);
   const at = (y: number, m: number) => monthStart(y, m, timeZone);
-  if (month) return { label: value, from: at(Number(month[1]), Number(month[2]) - 1), to: at(Number(month[1]), Number(month[2])) };
+  if (month)
+    return {
+      label: value,
+      from: at(Number(month[1]), Number(month[2]) - 1),
+      to: at(Number(month[1]), Number(month[2])),
+    };
   if (quarter) {
     const start = (Number(quarter[2]) - 1) * 3;
-    return { label: `${quarter[1]}-T${quarter[2]}`, from: at(Number(quarter[1]), start), to: at(Number(quarter[1]), start + 3) };
+    return {
+      label: `${quarter[1]}-T${quarter[2]}`,
+      from: at(Number(quarter[1]), start),
+      to: at(Number(quarter[1]), start + 3),
+    };
   }
-  if (year) return { label: value, from: at(Number(year[1]), 0), to: at(Number(year[1]) + 1, 0) };
+  if (year)
+    return {
+      label: value,
+      from: at(Number(year[1]), 0),
+      to: at(Number(year[1]) + 1, 0),
+    };
   return null;
 }
 
@@ -86,25 +124,40 @@ export interface SaleLine {
 }
 
 /** Splits a tax-inclusive amount at `rate`. */
-export function splitIncluded(grossMinor: number, rate: number): { netMinor: number; vatMinor: number } {
+export function splitIncluded(
+  grossMinor: number,
+  rate: number,
+): { netMinor: number; vatMinor: number } {
   const vatMinor = rate > 0 ? Math.round((grossMinor * rate) / (1 + rate)) : 0;
   return { netMinor: grossMinor - vatMinor, vatMinor };
 }
 
 /** What the buyer paid: the event's amount, else the pack's price (an order the reconciliation credited has none). */
-export function orderGrossMinor(order: Pick<OrderRecord, "amountMinor" | "packId" | "quantity" | "credits">, pricing: PricingConfig): number {
+export function orderGrossMinor(
+  order: Pick<OrderRecord, "amountMinor" | "packId" | "quantity" | "credits">,
+  pricing: PricingConfig,
+): number {
   const pack = pricing.packs.find((candidate) => candidate.id === order.packId);
-  return order.amountMinor ?? (pack ? pack.priceMinor * order.quantity : order.credits.paid * 100);
+  return (
+    order.amountMinor ??
+    (pack ? pack.priceMinor * order.quantity : order.credits.paid * 100)
+  );
 }
 
-export function packLines(order: OrderRecord, pricing: PricingConfig, period: Period): SaleLine[] {
+export function packLines(
+  order: OrderRecord,
+  pricing: PricingConfig,
+  period: Period,
+): SaleLine[] {
   const grossMinor = orderGrossMinor(order, pricing);
   const rate = order.taxJurisdiction === "MA" ? MA_VAT_RATE : 0;
   const base = {
     kind: "pack" as const,
     reference: order.id,
     accountId: order.accountId,
-    ...(order.locationEvidence.countryCode ? { country: order.locationEvidence.countryCode } : {}),
+    ...(order.locationEvidence.countryCode
+      ? { country: order.locationEvidence.countryCode }
+      : {}),
     jurisdiction: order.taxJurisdiction,
     currency: order.currency,
     vatRate: rate,
@@ -112,12 +165,33 @@ export function packLines(order: OrderRecord, pricing: PricingConfig, period: Pe
   };
   const lines: SaleLine[] = [];
   const inPeriod = (at: Date) => at >= period.from && at < period.to;
-  if (inPeriod(order.purchasedAt)) lines.push({ ...base, at: order.purchasedAt, movement: "sale", grossMinor, ...splitIncluded(grossMinor, rate) });
-  if (order.status === "refunded" && order.refundedAt && inPeriod(order.refundedAt)) {
+  if (inPeriod(order.purchasedAt))
+    lines.push({
+      ...base,
+      at: order.purchasedAt,
+      movement: "sale",
+      grossMinor,
+      ...splitIncluded(grossMinor, rate),
+    });
+  if (
+    order.status === "refunded" &&
+    order.refundedAt &&
+    inPeriod(order.refundedAt)
+  ) {
     // A partial refund (a withdrawal's paid share, a partial chargeback) is a line of its own amount.
-    const refundedMinor = Math.min(order.refundedMinor ?? grossMinor, grossMinor);
+    const refundedMinor = Math.min(
+      order.refundedMinor ?? grossMinor,
+      grossMinor,
+    );
     const split = splitIncluded(refundedMinor, rate);
-    lines.push({ ...base, at: order.refundedAt, movement: "refund", grossMinor: -refundedMinor, netMinor: -split.netMinor, vatMinor: -split.vatMinor });
+    lines.push({
+      ...base,
+      at: order.refundedAt,
+      movement: "refund",
+      grossMinor: -refundedMinor,
+      netMinor: -split.netMinor,
+      vatMinor: -split.vatMinor,
+    });
   }
   return lines;
 }
@@ -135,35 +209,88 @@ interface StripeInvoice {
   lines?: { data?: { description?: string | null }[] } | null;
 }
 
-async function* listStripe<T extends { id: string }>(path: string, params: Record<string, StripeParam>, stripe: typeof stripeRequest): AsyncGenerator<T> {
+async function* listStripe<T extends { id: string }>(
+  path: string,
+  params: Record<string, StripeParam>,
+  stripe: typeof stripeRequest,
+): AsyncGenerator<T> {
   let startingAfter: string | undefined;
   for (let page = 0; page < STRIPE_PAGES; page += 1) {
-    const list = await stripe<{ data?: T[]; has_more?: boolean }>("GET", path, { ...params, limit: 100, starting_after: startingAfter });
+    const list = await stripe<{ data?: T[]; has_more?: boolean }>("GET", path, {
+      ...params,
+      limit: 100,
+      starting_after: startingAfter,
+    });
     for (const item of list.data ?? []) yield item;
     const last = list.data?.at(-1)?.id;
     if (!list.has_more || !last) return;
     startingAfter = last;
   }
-  throw new Error(`${path}: more than ${STRIPE_PAGES * 100} items in the period`);
+  throw new Error(
+    `${path}: more than ${STRIPE_PAGES * 100} items in the period`,
+  );
 }
 
 const seconds = (date: Date) => Math.floor(date.getTime() / 1_000);
 
-async function planLines(period: Period, stripe: typeof stripeRequest): Promise<SaleLine[]> {
+async function planLines(
+  period: Period,
+  stripe: typeof stripeRequest,
+): Promise<SaleLine[]> {
   const lines: SaleLine[] = [];
-  const shops = new Map<string, { accountId: string; name?: string; ice?: string } | null>();
-  const invoices = listStripe<StripeInvoice>("/v1/invoices", { status: "paid", created: { gte: seconds(new Date(period.from.getTime() - INVOICE_LOOKBACK_MS)), lt: seconds(period.to) } }, stripe);
+  const shops = new Map<
+    string,
+    { accountId: string; name?: string; ice?: string } | null
+  >();
+  const invoices = listStripe<StripeInvoice>(
+    "/v1/invoices",
+    {
+      status: "paid",
+      created: {
+        gte: seconds(new Date(period.from.getTime() - INVOICE_LOOKBACK_MS)),
+        lt: seconds(period.to),
+      },
+    },
+    stripe,
+  );
   for await (const invoice of invoices) {
-    const paidAt = invoice.status_transitions?.paid_at ? new Date(invoice.status_transitions.paid_at * 1_000) : null;
-    if (!paidAt || paidAt < period.from || paidAt >= period.to || typeof invoice.total !== "number" || !invoice.currency) continue;
+    const paidAt = invoice.status_transitions?.paid_at
+      ? new Date(invoice.status_transitions.paid_at * 1_000)
+      : null;
+    if (
+      !paidAt ||
+      paidAt < period.from ||
+      paidAt >= period.to ||
+      typeof invoice.total !== "number" ||
+      !invoice.currency
+    )
+      continue;
     const customer = invoice.customer ?? "";
     if (!shops.has(customer)) {
-      const account = customer ? await findBillingAccountByStripeCustomer(customer) : null;
-      const profile = account?.proId ? await getProProfile(account.proId) : null;
-      shops.set(customer, account ? { accountId: account.id, ...(profile ? { name: profile.name } : {}), ...(profile?.legal.ice ? { ice: profile.legal.ice } : {}) } : null);
+      const account = customer
+        ? await findBillingAccountByStripeCustomer(customer)
+        : null;
+      const profile = account?.proId
+        ? await getProProfile(account.proId)
+        : null;
+      shops.set(
+        customer,
+        account
+          ? {
+              accountId: account.id,
+              ...(profile ? { name: profile.name } : {}),
+              ...(profile
+                ? { ice: primaryIdentifier(profile.legal).value }
+                : {}),
+            }
+          : null,
+      );
     }
     const shop = shops.get(customer);
-    const vatMinor = (invoice.total_taxes ?? []).reduce((sum, tax) => sum + (tax.amount ?? 0), 0);
+    const vatMinor = (invoice.total_taxes ?? []).reduce(
+      (sum, tax) => sum + (tax.amount ?? 0),
+      0,
+    );
     const netMinor = invoice.total_excluding_tax ?? invoice.total - vatMinor;
     const country = invoice.customer_address?.country ?? undefined;
     lines.push({
@@ -180,27 +307,50 @@ async function planLines(period: Period, stripe: typeof stripeRequest): Promise<
       grossMinor: invoice.total,
       netMinor,
       vatMinor,
-      vatRate: vatMinor > 0 && netMinor > 0 ? Math.round((vatMinor / netMinor) * 10_000) / 10_000 : 0,
-      description: (invoice.lines?.data?.[0]?.description ?? "Abonnement Pro").slice(0, 120),
+      vatRate:
+        vatMinor > 0 && netMinor > 0
+          ? Math.round((vatMinor / netMinor) * 10_000) / 10_000
+          : 0,
+      description: (
+        invoice.lines?.data?.[0]?.description ?? "Abonnement Pro"
+      ).slice(0, 120),
     });
   }
   return lines;
 }
 
 /** The period's sales and refunds, oldest first; plans only when Stripe is configured. */
-export async function salesOf(period: Period, options: { stripe?: typeof stripeRequest | null } = {}): Promise<SaleLine[]> {
+export async function salesOf(
+  period: Period,
+  options: { stripe?: typeof stripeRequest | null } = {},
+): Promise<SaleLine[]> {
   const pricing = await getPricing();
   // Two lists sharing what the day's Firestore reads leave, a fifth kept for the site.
   const room = await headroom("firestore.reads", 0.8);
-  const max = room === null ? MAX_ORDERS : Math.min(MAX_ORDERS, Math.floor(room / 2));
-  const [paid, refunded] = await Promise.all([listOrdersBetween("purchasedAt", period.from, period.to, max), listOrdersBetween("refundedAt", period.from, period.to, max)]).catch((error: unknown) => {
-    if (error instanceof TooManyOrdersError) throw unavailable(`more orders in ${period.label} than today's Firestore reads allow (${max} per list): export a shorter period or retry tomorrow`);
+  const max =
+    room === null ? MAX_ORDERS : Math.min(MAX_ORDERS, Math.floor(room / 2));
+  const [paid, refunded] = await Promise.all([
+    listOrdersBetween("purchasedAt", period.from, period.to, max),
+    listOrdersBetween("refundedAt", period.from, period.to, max),
+  ]).catch((error: unknown) => {
+    if (error instanceof TooManyOrdersError)
+      throw unavailable(
+        `more orders in ${period.label} than today's Firestore reads allow (${max} per list): export a shorter period or retry tomorrow`,
+      );
     throw error;
   });
-  const orders = new Map([...paid, ...refunded].map((order) => [order.id, order]));
-  const lines = [...orders.values()].flatMap((order) => packLines(order, pricing, period));
-  if (options.stripe !== null) lines.push(...(await planLines(period, options.stripe ?? stripeRequest)));
-  return lines.sort((a, b) => a.at.getTime() - b.at.getTime() || a.reference.localeCompare(b.reference));
+  const orders = new Map(
+    [...paid, ...refunded].map((order) => [order.id, order]),
+  );
+  const lines = [...orders.values()].flatMap((order) =>
+    packLines(order, pricing, period),
+  );
+  if (options.stripe !== null)
+    lines.push(...(await planLines(period, options.stripe ?? stripeRequest)));
+  return lines.sort(
+    (a, b) =>
+      a.at.getTime() - b.at.getTime() || a.reference.localeCompare(b.reference),
+  );
 }
 
 export interface ReceiptLine {
@@ -227,22 +377,63 @@ interface StripeBalanceTransaction {
   net: number;
   exchange_rate?: number | null;
   reporting_category?: string;
-  source?: { object?: string; amount?: number; currency?: string; billing_details?: { address?: { country?: string | null } | null } | null; payment_method_details?: { card?: { country?: string | null } | null } | null } | string | null;
+  source?:
+    | {
+        object?: string;
+        amount?: number;
+        currency?: string;
+        billing_details?: {
+          address?: { country?: string | null } | null;
+        } | null;
+        payment_method_details?: {
+          card?: { country?: string | null } | null;
+        } | null;
+      }
+    | string
+    | null;
 }
 
 /** Categories of money in or out for a sale: payments, refunds and disputes (fees and payouts left out). */
-const RECEIPT_CATEGORIES: ReadonlySet<string> = new Set(["charge", "refund", "dispute", "dispute_reversal"]);
+const RECEIPT_CATEGORIES: ReadonlySet<string> = new Set([
+  "charge",
+  "refund",
+  "dispute",
+  "dispute_reversal",
+]);
 
 /** Stripe's balance transactions of the period in EUR (the account settles in EUR). */
-export async function receiptsOf(period: Period, stripe: typeof stripeRequest = stripeRequest): Promise<ReceiptLine[]> {
+export async function receiptsOf(
+  period: Period,
+  stripe: typeof stripeRequest = stripeRequest,
+): Promise<ReceiptLine[]> {
   const out: ReceiptLine[] = [];
-  const list = listStripe<StripeBalanceTransaction>("/v1/balance_transactions", { created: { gte: seconds(period.from), lt: seconds(period.to) }, expand: ["data.source"] }, stripe);
+  const list = listStripe<StripeBalanceTransaction>(
+    "/v1/balance_transactions",
+    {
+      created: { gte: seconds(period.from), lt: seconds(period.to) },
+      expand: ["data.source"],
+    },
+    stripe,
+  );
   for await (const transaction of list) {
-    if (!transaction.reporting_category || !RECEIPT_CATEGORIES.has(transaction.reporting_category)) continue;
-    if (transaction.currency.toLowerCase() !== "eur") throw new Error(`balance transaction ${transaction.id} settled in ${transaction.currency}, not EUR`);
-    const source = typeof transaction.source === "object" && transaction.source ? transaction.source : null;
+    if (
+      !transaction.reporting_category ||
+      !RECEIPT_CATEGORIES.has(transaction.reporting_category)
+    )
+      continue;
+    if (transaction.currency.toLowerCase() !== "eur")
+      throw new Error(
+        `balance transaction ${transaction.id} settled in ${transaction.currency}, not EUR`,
+      );
+    const source =
+      typeof transaction.source === "object" && transaction.source
+        ? transaction.source
+        : null;
     const sign = transaction.amount < 0 ? -1 : 1;
-    const country = source?.billing_details?.address?.country ?? source?.payment_method_details?.card?.country ?? undefined;
+    const country =
+      source?.billing_details?.address?.country ??
+      source?.payment_method_details?.card?.country ??
+      undefined;
     out.push({
       id: transaction.id,
       at: new Date(transaction.created * 1_000),
@@ -251,7 +442,14 @@ export async function receiptsOf(period: Period, stripe: typeof stripeRequest = 
       feeEurMinor: transaction.fee,
       netEurMinor: transaction.net,
       exchangeRate: transaction.exchange_rate ?? null,
-      ...(source?.currency && source.currency.toLowerCase() !== "eur" && typeof source.amount === "number" ? { originalMinor: sign * Math.abs(source.amount), originalCurrency: source.currency.toUpperCase() } : {}),
+      ...(source?.currency &&
+      source.currency.toLowerCase() !== "eur" &&
+      typeof source.amount === "number"
+        ? {
+            originalMinor: sign * Math.abs(source.amount),
+            originalCurrency: source.currency.toUpperCase(),
+          }
+        : {}),
       ...(country ? { country } : {}),
     });
   }

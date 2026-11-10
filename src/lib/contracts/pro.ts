@@ -2,10 +2,23 @@ import { z } from "@/lib/zod";
 import type { ShopSection } from "@/lib/contracts/catalog";
 import { turnstileTokenSchema } from "@/lib/contracts/auth";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
-import { KYBC_DECLARED_TYPES, MAX_UPLOAD_BYTES, uploadIdSchema, type KybcDeclaredType } from "@/lib/contracts/media";
-import { SOCIAL_INPUT_MAX, SOCIAL_NETWORKS, type SocialNetwork } from "@/config/social-links";
+import {
+  KYBC_DECLARED_TYPES,
+  MAX_UPLOAD_BYTES,
+  uploadIdSchema,
+  type KybcDeclaredType,
+} from "@/lib/contracts/media";
+import {
+  SOCIAL_INPUT_MAX,
+  SOCIAL_NETWORKS,
+  type SocialNetwork,
+} from "@/config/social-links";
 import { BANNER_KEYS, type BannerKey } from "@/config/storefront";
-import { KYBC_MAX_PIECES, KYBC_MIN_PIECES, proLegalSchema } from "@/lib/pro/kybc";
+import {
+  KYBC_MAX_PIECES,
+  KYBC_MIN_PIECES,
+  proLegalSchema,
+} from "@/lib/pro/kybc";
 import {
   AGENCY_FEE_SCHEDULE_MAX,
   PHONE_CHECK_OUTCOMES,
@@ -15,6 +28,7 @@ import {
   type OpeningHours,
   PRO_DESCRIPTION_MAX,
   PRO_NAME_MAX,
+  PRO_REGISTRY_SOURCES,
   PRO_SECTORS,
   RENTAL_CHECK_REASON_MAX,
   rentalAgencySchema,
@@ -43,7 +57,10 @@ export const proApplySchema = z
      * number and the WhatsApp check is unavailable (`ProMeResponse.phoneVerification` "call").
      */
     phone: z.string().trim().max(32).optional(),
-    uploadIds: z.array(z.string().min(1).max(64)).min(KYBC_MIN_PIECES).max(KYBC_MAX_PIECES),
+    uploadIds: z
+      .array(z.string().min(1).max(64))
+      .min(KYBC_MIN_PIECES)
+      .max(KYBC_MAX_PIECES),
     /** Compliance commitment (§7 art. 30-inspired traceability): must be ticked. */
     complianceCommitment: z.literal(true),
     /** The activity chosen with the application (journey review 2026-10-29): a general shop by default. */
@@ -63,7 +80,7 @@ export interface ProApplyResponse {
 // Back office (admin.aalan.ma/pros): the KYBC queue and the moderator's decision. `submittedAt`
 // pins the application the moderator reviewed: a resubmission meanwhile answers 409.
 
-export const PRO_REGISTRY_SOURCES = ["ompic", "directinfo", "odco"] as const;
+export { PRO_REGISTRY_SOURCES };
 export const PRO_REJECT_REASON_MIN = 10;
 export const PRO_REJECT_REASON_MAX = 1000;
 
@@ -82,7 +99,11 @@ export const proDecisionSchema = z.discriminatedUnion("action", [
     .object({
       action: z.literal("reject"),
       /** Sent to the applicant as written: motivated and specific. */
-      reason: z.string().trim().min(PRO_REJECT_REASON_MIN).max(PRO_REJECT_REASON_MAX),
+      reason: z
+        .string()
+        .trim()
+        .min(PRO_REJECT_REASON_MIN)
+        .max(PRO_REJECT_REASON_MAX),
       submittedAt: z.iso.datetime({ offset: true }),
     })
     .strict(),
@@ -95,17 +116,28 @@ export type ProDecisionInput = z.infer<typeof proDecisionSchema>;
  */
 export const RENTAL_CHECK_REASON_MIN = 10;
 export const rentalCheckDecisionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("verify"), submittedAt: z.iso.datetime({ offset: true }) }).strict(),
+  z
+    .object({
+      action: z.literal("verify"),
+      submittedAt: z.iso.datetime({ offset: true }),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("reject"),
       /** Shown to the agency as written. */
-      reason: z.string().trim().min(RENTAL_CHECK_REASON_MIN).max(RENTAL_CHECK_REASON_MAX),
+      reason: z
+        .string()
+        .trim()
+        .min(RENTAL_CHECK_REASON_MIN)
+        .max(RENTAL_CHECK_REASON_MAX),
       submittedAt: z.iso.datetime({ offset: true }),
     })
     .strict(),
 ]);
-export type RentalCheckDecisionInput = z.infer<typeof rentalCheckDecisionSchema>;
+export type RentalCheckDecisionInput = z.infer<
+  typeof rentalCheckDecisionSchema
+>;
 export interface RentalCheckDecisionResponse {
   proId: string;
   status: RentalCheckStatus;
@@ -128,7 +160,14 @@ export interface RentalCheckReview extends RentalCheckView {
   agrementRef: string;
   issues: RentalCheckIssue[];
   /** What Claude read on the document; null when it did not run. */
-  extracted: { companyName: string; ice: string; reference: string; decisionDate: string; signs: string[]; note: string } | null;
+  extracted: {
+    companyName: string;
+    ice: string;
+    reference: string;
+    decisionDate: string;
+    signs: string[];
+    note: string;
+  } | null;
   piece: ProReviewPiece | null;
 }
 
@@ -204,7 +243,13 @@ export interface ProReview {
     withdrawnAt: string | null;
     withdrawReason: string | null;
     /** The moderator's last call to the applicant's number (ISO `at`). */
-    phoneCheck: { at: string; by: string; outcome: PhoneCheckOutcome; phone: string; note: string | null } | null;
+    phoneCheck: {
+      at: string;
+      by: string;
+      outcome: PhoneCheckOutcome;
+      phone: string;
+      note: string | null;
+    } | null;
   };
   lifecycle: string;
   plan: string;
@@ -245,8 +290,19 @@ export const PRO_NOTES_KEPT = 20;
 export const PRO_LIFECYCLE_REASON_MIN = 10;
 
 export const proLifecycleActionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("note"), text: z.string().trim().min(3).max(PRO_NOTE_MAX) }).strict(),
-  z.object({ action: z.literal("sector"), sector: z.enum(PRO_SECTORS), reason: z.string().trim().min(PRO_LIFECYCLE_REASON_MIN).max(PRO_NOTE_MAX) }).strict(),
+  z
+    .object({
+      action: z.literal("note"),
+      text: z.string().trim().min(3).max(PRO_NOTE_MAX),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("sector"),
+      sector: z.enum(PRO_SECTORS),
+      reason: z.string().trim().min(PRO_LIFECYCLE_REASON_MIN).max(PRO_NOTE_MAX),
+    })
+    .strict(),
 ]);
 export type ProLifecycleAction = z.infer<typeof proLifecycleActionSchema>;
 
@@ -256,7 +312,8 @@ export interface ProLifecycleResponse {
   notes: ProStaffNoteView[];
 }
 
-export const PRO_LIFECYCLE_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/lifecycle`;
+export const PRO_LIFECYCLE_ADMIN_API = (proId: string) =>
+  `/api/admin/pros/${proId}/lifecycle`;
 
 // Validation withdrawn (zone 7 audit P2-10, owner decision 2026-11-04): an admin sends a validated
 // shop back to a new KYBC review. `statement` is mailed to the Pro and shown in their space; `note`
@@ -267,7 +324,11 @@ export const PRO_WITHDRAW_STATEMENT_MAX = 1000;
 
 export const proWithdrawSchema = z
   .object({
-    statement: z.string().trim().min(PRO_WITHDRAW_STATEMENT_MIN).max(PRO_WITHDRAW_STATEMENT_MAX),
+    statement: z
+      .string()
+      .trim()
+      .min(PRO_WITHDRAW_STATEMENT_MIN)
+      .max(PRO_WITHDRAW_STATEMENT_MAX),
     note: z.string().trim().min(PRO_LIFECYCLE_REASON_MIN).max(PRO_NOTE_MAX),
     lifecycle: z.enum(["verified", "active", "grace", "downgraded"]),
   })
@@ -281,7 +342,8 @@ export interface ProWithdrawResponse {
   paused: number;
 }
 
-export const PRO_WITHDRAW_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/withdraw`;
+export const PRO_WITHDRAW_ADMIN_API = (proId: string) =>
+  `/api/admin/pros/${proId}/withdraw`;
 
 export interface ProDecisionResponse {
   proId: string;
@@ -340,9 +402,20 @@ export type ProAgencyResponse = Omit<ProAgencyInput, "acceptCommitments">;
 export const proSocialSchema = z
   .object({
     links: z
-      .array(z.object({ network: z.enum(SOCIAL_NETWORKS), value: z.string().max(SOCIAL_INPUT_MAX) }).strict())
+      .array(
+        z
+          .object({
+            network: z.enum(SOCIAL_NETWORKS),
+            value: z.string().max(SOCIAL_INPUT_MAX),
+          })
+          .strict(),
+      )
       .max(SOCIAL_NETWORKS.length)
-      .refine((links) => new Set(links.map((link) => link.network)).size === links.length, "duplicate network"),
+      .refine(
+        (links) =>
+          new Set(links.map((link) => link.network)).size === links.length,
+        "duplicate network",
+      ),
   })
   .strict();
 export type ProSocialInput = z.infer<typeof proSocialSchema>;
@@ -356,8 +429,14 @@ export interface ProSocialView {
 export type ProSocialResponse = { social: ProSocialView };
 
 /** A shop's social links in the back office: GET their state, POST a moderator's hiding or restoration (reason required). */
-export const PRO_SOCIAL_ADMIN_API = (proId: string) => `/api/admin/pros/${proId}/social`;
-export const shopSocialActionSchema = z.object({ action: z.enum(["hide", "restore"]), reason: z.string().trim().min(3).max(500) }).strict();
+export const PRO_SOCIAL_ADMIN_API = (proId: string) =>
+  `/api/admin/pros/${proId}/social`;
+export const shopSocialActionSchema = z
+  .object({
+    action: z.enum(["hide", "restore"]),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
 
 /** 422 `social_link_invalid` details. */
 export interface SocialLinkIssueDetails {
@@ -379,7 +458,9 @@ export type ProRentalResponse = { rental: RentalAgency };
  * POST /api/pro/me/rental/check (decision 5): sends the licence decision, a KYBC piece signed with
  * `use: "agrement"` and completed, for the check against the reference in the settings.
  */
-export const rentalCheckSubmitSchema = z.object({ uploadId: uploadIdSchema }).strict();
+export const rentalCheckSubmitSchema = z
+  .object({ uploadId: uploadIdSchema })
+  .strict();
 export type RentalCheckSubmitInput = z.infer<typeof rentalCheckSubmitSchema>;
 
 /** The licence check as the agency sees it. */
@@ -415,15 +496,24 @@ export interface KybcSignResponse {
 }
 
 /** Reasons a piece is refused: wrong bytes, over 10 MiB, a PDF with active content, or nothing received in time. */
-export const KYBC_REJECT_REASONS = ["too_large", "bad_type", "active_content", "expired"] as const;
+export const KYBC_REJECT_REASONS = [
+  "too_large",
+  "bad_type",
+  "active_content",
+  "expired",
+] as const;
 export type KybcRejectReason = (typeof KYBC_REJECT_REASONS)[number];
 
-export type KybcCompleteResponse = { status: "ready"; uploadId: string } | { status: "rejected"; uploadId: string; reason: KybcRejectReason };
+export type KybcCompleteResponse =
+  | { status: "ready"; uploadId: string }
+  | { status: "rejected"; uploadId: string; reason: KybcRejectReason };
 
 /** GET /api/pro/me: the signed-in account's shop (or application) and what it may do next. */
 export interface ProMeResponse {
   signupOpen: boolean;
   salesOpen: boolean;
+  /** The carriers space is open (`carriersEnabled`): the carrier activity may be chosen. */
+  carriersOpen: boolean;
   /** How an unverified number gets verified: by WhatsApp before applying, or by a moderator's call during the review ("call": the form asks the number). */
   phoneVerification: "whatsapp" | "call";
   /**
@@ -431,8 +521,16 @@ export interface ProMeResponse {
    * from its validation, `seatsLeft` of the first validations (null: counter not read); null when
    * none is open, no seat is left, or the shop is already validated.
    */
-  launchOffer: { noticeDays: number; months: number; seatsLeft: number | null } | null;
-  eligibility: { emailVerified: boolean; phoneVerified: boolean; accountActive: boolean };
+  launchOffer: {
+    noticeDays: number;
+    months: number;
+    seatsLeft: number | null;
+  } | null;
+  eligibility: {
+    emailVerified: boolean;
+    phoneVerified: boolean;
+    accountActive: boolean;
+  };
   shop: ProSelfView | null;
 }
 
@@ -444,7 +542,10 @@ export interface ProSelfView {
   regionCode: string;
   citySlug: string;
   legalForm: string;
+  /** "" for a company registered in the EU (no ICE). */
   ice: string;
+  /** "MA", or the EU country an `entreprise_ue` is registered in. */
+  legalCountry: string;
   lifecycle: string;
   plan: string;
   planSource: string;
@@ -455,7 +556,11 @@ export interface ProSelfView {
   withdrawnAt: string | null;
   /** ISO. */
   submittedAt: string | null;
-  quotas: { activeListings: number | null; listingsPerDay: number | null; photosPerListing: number };
+  quotas: {
+    activeListings: number | null;
+    listingsPerDay: number | null;
+    photosPerListing: number;
+  };
   activeListings: number;
   /** Launch offer in force for this shop (design D3); `endsAt` ISO (its own end) or null while none is set. */
   launchOffer: { endsAt: string | null; noticeDays: number } | null;
@@ -492,7 +597,12 @@ export const proShopCardSchema = z
     hours: openingHoursSchema.nullable(),
     showPhone: z.boolean(),
     whatsapp: z.boolean(),
-    website: z.union([z.literal(""), z.url({ protocol: /^https$/, hostname: z.regexes.domain }).max(PRO_WEBSITE_MAX)]),
+    website: z.union([
+      z.literal(""),
+      z
+        .url({ protocol: /^https$/, hostname: z.regexes.domain })
+        .max(PRO_WEBSITE_MAX),
+    ]),
     bannerKey: z.enum(BANNER_KEYS),
   })
   .strict();
@@ -523,7 +633,9 @@ export type ProLogoResponse = { logo: string | null };
 // Shop counters (UX audit of the Pro shops, lot 1; src/lib/stats): the view beacon of the cached
 // listing and storefront pages, and the Pro space's dashboard.
 
-export const statsViewSchema = z.object({ scope: z.enum(["shop", "listing"]), id: z.string().max(64) }).strict();
+export const statsViewSchema = z
+  .object({ scope: z.enum(["shop", "listing"]), id: z.string().max(64) })
+  .strict();
 export type StatsViewInput = z.infer<typeof statsViewSchema>;
 
 export interface ShopStatsTotals {

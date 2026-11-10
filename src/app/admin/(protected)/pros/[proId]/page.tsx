@@ -12,15 +12,35 @@ import { publishesAsPro, type ProState } from "@/lib/pro/lifecycle";
 import { proReview } from "@/lib/pro/review";
 import { shopPaymentAdmin } from "@/lib/pro/seller-payment";
 import { shopSocialAdmin } from "@/lib/pro/social-links";
-import { ProDecisionForm, ProEffectsRerun } from "../../../_components/pro-decision-form";
-import { IDENTIFIER_LABEL, LEGAL_FORM_LABEL, LIFECYCLE_LABEL, PHONE_OUTCOME_LABEL, RENTAL_CHECK_ISSUE_LABEL, RENTAL_CHECK_STATUS_LABEL, SECTOR_LABEL, formatIce } from "../../../_components/pro-labels";
-import { ProNotes, ProSanctionLinks, ProSectorForm } from "../../../_components/pro-lifecycle-panel";
+import {
+  ProDecisionForm,
+  ProEffectsRerun,
+} from "../../../_components/pro-decision-form";
+import {
+  IDENTIFIER_LABEL,
+  LEGAL_FORM_LABEL,
+  LIFECYCLE_LABEL,
+  PHONE_OUTCOME_LABEL,
+  RENTAL_CHECK_ISSUE_LABEL,
+  RENTAL_CHECK_STATUS_LABEL,
+  SECTOR_LABEL,
+  formatIce,
+} from "../../../_components/pro-labels";
+import {
+  ProNotes,
+  ProSanctionLinks,
+  ProSectorForm,
+} from "../../../_components/pro-lifecycle-panel";
 import { ProPhoneCheckForm } from "../../../_components/pro-phone-check-form";
 import { ProWithdrawForm } from "../../../_components/pro-withdraw-form";
 import { RentalCheckDecisionForm } from "../../../_components/rental-check-decision-form";
 import { ShopPaymentPanel } from "../../../_components/shop-payment-panel";
 import { ShopSocialPanel } from "../../../_components/shop-social-panel";
-import { ACCOUNT_STATUS_LABEL, formatMorocco, targetHref } from "../../../_lib/moderation-format";
+import {
+  ACCOUNT_STATUS_LABEL,
+  formatMorocco,
+  targetHref,
+} from "../../../_lib/moderation-format";
 
 // Review of one Pro application (phase 7 design §4): the shop, the legal identifiers to check
 // against the registry, the KYBC pieces (each opening is journaled), the applicant's account, the
@@ -30,8 +50,17 @@ import { ACCOUNT_STATUS_LABEL, formatMorocco, targetHref } from "../../../_lib/m
 
 export const metadata: Metadata = { title: "Vérifier une demande Pro" };
 
-const PIECE_TYPE: Record<string, string> = { "application/pdf": "PDF", "image/jpeg": "Image JPEG", "image/png": "Image PNG" };
-const REGISTRY_LABEL: Record<string, string> = { ompic: "OMPIC", directinfo: "DirectInfo", odco: "ODCo" };
+const PIECE_TYPE: Record<string, string> = {
+  "application/pdf": "PDF",
+  "image/jpeg": "Image JPEG",
+  "image/png": "Image PNG",
+};
+const REGISTRY_LABEL: Record<string, string> = {
+  ompic: "OMPIC",
+  directinfo: "DirectInfo",
+  odco: "ODCo",
+  eu_register: "Registre UE",
+};
 
 /** Points the moderator checks before validating (design §4); the CNIE line follows audit C2-03. */
 const CHECKLIST = [
@@ -41,7 +70,15 @@ const CHECKLIST = [
   "Un justificatif laisse voir un numéro de CNIE : refusez avec le motif « envoyez une copie où le numéro de CNIE est masqué ».",
 ];
 
-function Panel({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+function Panel({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5">
       <div className="flex items-center justify-between gap-3">
@@ -68,41 +105,77 @@ function Facts({ rows }: { rows: [string, ReactNode][] }) {
 
 function formatSize(bytes: number | null): string {
   if (bytes === null) return "taille inconnue";
-  return bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1).replace(".", ",")} Mo` : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  return bytes >= 1_048_576
+    ? `${(bytes / 1_048_576).toFixed(1).replace(".", ",")} Mo`
+    : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
 }
 
-export default async function ProReviewPage({ params }: { params: Promise<{ proId: string }> }) {
+export default async function ProReviewPage({
+  params,
+}: {
+  params: Promise<{ proId: string }>;
+}) {
   const staff = await requirePageStaff(["moderator", "admin"]);
   const id = proIdSchema.safeParse((await params).proId);
   if (!id.success) notFound();
-  const [review, payment, social] = await Promise.all([proReview(id.data), shopPaymentAdmin(id.data).catch(() => null), shopSocialAdmin(id.data).catch(() => null)]);
+  const [review, payment, social] = await Promise.all([
+    proReview(id.data),
+    shopPaymentAdmin(id.data).catch(() => null),
+    shopSocialAdmin(id.data).catch(() => null),
+  ]);
   if (!review) notFound();
 
   const city = cityBySlug(review.citySlug);
   // A validated shop sent back to a KYBC review (P2-10): its new submission, or the wait for one.
   const revalidation = review.lifecycle === "revalidation_required";
-  const pending = review.kybc.status === "submitted" && (review.lifecycle === "pending_verification" || revalidation);
+  const pending =
+    review.kybc.status === "submitted" &&
+    (review.lifecycle === "pending_verification" || revalidation);
   const owner = review.owner;
   const phoneVerified = owner?.phoneVerified === true;
   const { form, ...identifiers } = review.legal;
   const check = review.kybc.phoneCheck;
   // A validated shop (publishing, or suspended since): its lifecycle actions (zone 7 audit P2-10).
-  const validated = review.kybc.status === "verified" && review.lifecycle !== "pending_verification" && review.lifecycle !== "rejected" && !revalidation;
-  const withdrawable = validated && publishesAsPro(review.lifecycle as ProState);
+  const validated =
+    review.kybc.status === "verified" &&
+    review.lifecycle !== "pending_verification" &&
+    review.lifecycle !== "rejected" &&
+    !revalidation;
+  const withdrawable =
+    validated && publishesAsPro(review.lifecycle as ProState);
 
   return (
     <>
       <div className="flex flex-col gap-2">
-        <Link href="/pros" className="text-sm font-medium text-link underline-offset-2 hover:underline">
+        <Link
+          href="/pros"
+          className="text-sm font-medium text-link underline-offset-2 hover:underline"
+        >
           Retour aux demandes
         </Link>
         <h1 className="text-2xl font-semibold break-words" dir="auto">
           {review.name}
         </h1>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Badge variant={pending || revalidation ? "warning" : review.lifecycle === "rejected" ? "danger" : "success"}>{LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle}</Badge>
-          {review.kybc.submittedAt ? <span className="text-foreground-muted">Envoyée le {formatMorocco(review.kybc.submittedAt)}</span> : null}
-          {review.effectsPending ? <Badge variant="danger">Effets de la validation en attente</Badge> : null}
+          <Badge
+            variant={
+              pending || revalidation
+                ? "warning"
+                : review.lifecycle === "rejected"
+                  ? "danger"
+                  : "success"
+            }
+          >
+            {LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle}
+          </Badge>
+          {review.kybc.submittedAt ? (
+            <span className="text-foreground-muted">
+              Envoyée le {formatMorocco(review.kybc.submittedAt)}
+            </span>
+          ) : null}
+          {review.effectsPending ? (
+            <Badge variant="danger">Effets de la validation en attente</Badge>
+          ) : null}
         </div>
       </div>
 
@@ -111,10 +184,28 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
           <Panel title="Boutique">
             <Facts
               rows={[
-                ["Nom", <span key="name" dir="auto">{review.name}</span>],
+                [
+                  "Nom",
+                  <span key="name" dir="auto">
+                    {review.name}
+                  </span>,
+                ],
                 ["Ville", city ? cityName(city, "fr") : review.citySlug],
                 ["Activité", SECTOR_LABEL[review.sector] ?? review.sector],
-                ["Présentation", review.description ? <span key="description" dir="auto" className="whitespace-pre-line">{review.description}</span> : "Aucune"],
+                [
+                  "Présentation",
+                  review.description ? (
+                    <span
+                      key="description"
+                      dir="auto"
+                      className="whitespace-pre-line"
+                    >
+                      {review.description}
+                    </span>
+                  ) : (
+                    "Aucune"
+                  ),
+                ],
               ]}
             />
           </Panel>
@@ -123,34 +214,62 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
             <Facts
               rows={[
                 ["Forme", LEGAL_FORM_LABEL[form ?? ""] ?? form ?? "Inconnue"],
-                ...Object.entries(identifiers).map(([key, value]): [string, ReactNode] => [
-                  IDENTIFIER_LABEL[key] ?? key,
-                  <span key={key} className="font-mono tabular-nums" dir="ltr">
-                    {key === "ice" ? formatIce(value) : value}
-                  </span>,
-                ]),
+                ...Object.entries(identifiers).map(
+                  ([key, value]): [string, ReactNode] => [
+                    IDENTIFIER_LABEL[key] ?? key,
+                    <span
+                      key={key}
+                      className="font-mono tabular-nums"
+                      dir="ltr"
+                    >
+                      {key === "ice" ? formatIce(value) : value}
+                    </span>,
+                  ],
+                ),
               ]}
             />
-            {review.kybc.iceFormatOk ? null : <p className="text-sm text-warning">L’ICE ne compte pas 15 chiffres : vérifiez-le au registre avant toute validation.</p>}
+            {review.kybc.iceFormatOk ? null : (
+              <p className="text-sm text-warning">
+                L’ICE ne compte pas 15 chiffres : vérifiez-le au registre avant
+                toute validation.
+              </p>
+            )}
             <p className="text-sm text-foreground-muted">
-              Consultez le registre de l’OMPIC ou DirectInfo et notez celui utilisé dans la décision.
-              {review.kybc.registrySource ? ` Registre noté : ${REGISTRY_LABEL[review.kybc.registrySource] ?? review.kybc.registrySource}.` : ""}
+              Consultez le registre de l’OMPIC ou DirectInfo et notez celui
+              utilisé dans la décision.
+              {review.kybc.registrySource
+                ? ` Registre noté : ${REGISTRY_LABEL[review.kybc.registrySource] ?? review.kybc.registrySource}.`
+                : ""}
             </p>
           </Panel>
 
           <Panel title="Justificatifs">
-            <p className="text-sm text-foreground-muted">Chaque ouverture est journalisée à votre nom. Les PDF se téléchargent, les images s’ouvrent dans un nouvel onglet.</p>
+            <p className="text-sm text-foreground-muted">
+              Chaque ouverture est journalisée à votre nom. Les PDF se
+              téléchargent, les images s’ouvrent dans un nouvel onglet.
+            </p>
             <ul className="flex flex-col gap-2" data-testid="pro-pieces">
               {review.pieces.map((piece, index) => (
-                <li key={piece.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2.5 text-sm">
+                <li
+                  key={piece.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2.5 text-sm"
+                >
                   <span className="flex flex-col">
-                    <span className="font-medium">Justificatif {index + 1}</span>
+                    <span className="font-medium">
+                      Justificatif {index + 1}
+                    </span>
                     <span className="text-foreground-muted">
-                      {PIECE_TYPE[piece.declaredType] ?? piece.declaredType}, {formatSize(piece.size)}
+                      {PIECE_TYPE[piece.declaredType] ?? piece.declaredType},{" "}
+                      {formatSize(piece.size)}
                     </span>
                   </span>
                   {piece.status === "ready" ? (
-                    <a href={`/kybc/${review.proId}/${piece.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-link underline underline-offset-2">
+                    <a
+                      href={`/kybc/${review.proId}/${piece.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-link underline underline-offset-2"
+                    >
                       Ouvrir
                     </a>
                   ) : (
@@ -161,7 +280,13 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
             </ul>
           </Panel>
 
-          {review.rentalCheck ? <RentalCheckPanel proId={review.proId} check={review.rentalCheck} ice={review.legal["ice"] ?? ""} /> : null}
+          {review.rentalCheck ? (
+            <RentalCheckPanel
+              proId={review.proId}
+              check={review.rentalCheck}
+              ice={review.legal["ice"] ?? ""}
+            />
+          ) : null}
 
           <Panel title="Points à vérifier">
             <ul className="flex list-disc flex-col gap-1.5 ps-5 text-sm">
@@ -172,8 +297,15 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
           </Panel>
         </article>
 
-        <aside className="flex flex-col gap-6" aria-label="Demandeur, appel et décision">
-          {payment && (payment.url || payment.pendingUrl || payment.cashOnDelivery || payment.suspended) ? (
+        <aside
+          className="flex flex-col gap-6"
+          aria-label="Demandeur, appel et décision"
+        >
+          {payment &&
+          (payment.url ||
+            payment.pendingUrl ||
+            payment.cashOnDelivery ||
+            payment.suspended) ? (
             <Panel title="Paiement chez le vendeur">
               <ShopPaymentPanel proId={review.proId} initial={payment} />
             </Panel>
@@ -187,16 +319,31 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
             {owner ? (
               <Facts
                 rows={[
-                  ["Nom affiché", <span key="owner" dir="auto">{owner.displayName}</span>],
-                  ["Profil", <span key="public" className="font-mono" dir="ltr">{owner.publicId}</span>],
-                  ["Compte", ACCOUNT_STATUS_LABEL[owner.status] ?? owner.status],
+                  [
+                    "Nom affiché",
+                    <span key="owner" dir="auto">
+                      {owner.displayName}
+                    </span>,
+                  ],
+                  [
+                    "Profil",
+                    <span key="public" className="font-mono" dir="ltr">
+                      {owner.publicId}
+                    </span>,
+                  ],
+                  [
+                    "Compte",
+                    ACCOUNT_STATUS_LABEL[owner.status] ?? owner.status,
+                  ],
                   ["Inscrit le", formatMorocco(owner.createdAt, "date")],
                   ["E-mail", owner.emailVerified ? "Vérifié" : "Non vérifié"],
                   ["Téléphone", phoneVerified ? "Vérifié" : "Non vérifié"],
                 ]}
               />
             ) : (
-              <p className="text-sm text-danger">Le compte du demandeur n’existe plus : refusez la demande.</p>
+              <p className="text-sm text-danger">
+                Le compte du demandeur n’existe plus : refusez la demande.
+              </p>
             )}
           </Panel>
 
@@ -205,18 +352,36 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
               {owner.phoneToCheck ? (
                 <p className="text-sm">
                   Numéro déclaré :{" "}
-                  <a href={`tel:${owner.phoneToCheck}`} className="font-mono font-medium text-link underline underline-offset-2" dir="ltr">
+                  <a
+                    href={`tel:${owner.phoneToCheck}`}
+                    className="font-mono font-medium text-link underline underline-offset-2"
+                    dir="ltr"
+                  >
                     {displayPhone(owner.phoneToCheck)}
                   </a>
                 </p>
               ) : null}
               {check ? (
                 <p className="rounded-md bg-surface-muted p-3 text-sm">
-                  Dernier appel le {formatMorocco(check.at)} au <span dir="ltr">{displayPhone(check.phone)}</span> : {PHONE_OUTCOME_LABEL[check.outcome] ?? check.outcome}.
-                  {check.note ? <span className="mt-1 block text-foreground-muted" dir="auto">{check.note}</span> : null}
+                  Dernier appel le {formatMorocco(check.at)} au{" "}
+                  <span dir="ltr">{displayPhone(check.phone)}</span> :{" "}
+                  {PHONE_OUTCOME_LABEL[check.outcome] ?? check.outcome}.
+                  {check.note ? (
+                    <span
+                      className="mt-1 block text-foreground-muted"
+                      dir="auto"
+                    >
+                      {check.note}
+                    </span>
+                  ) : null}
                 </p>
               ) : null}
-              {pending && !phoneVerified ? <ProPhoneCheckForm proId={review.proId} declared={owner.phoneToCheck} /> : null}
+              {pending && !phoneVerified ? (
+                <ProPhoneCheckForm
+                  proId={review.proId}
+                  declared={owner.phoneToCheck}
+                />
+              ) : null}
             </Panel>
           ) : null}
 
@@ -229,25 +394,52 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
               sector={review.sector}
               correctableSectors={review.correctableSectors}
             />
-          ) : review.effectsPending && review.kybc.submittedAt && review.kybc.registrySource ? (
-            <ProEffectsRerun proId={review.proId} submittedAt={review.kybc.submittedAt} registrySource={review.kybc.registrySource} />
+          ) : review.effectsPending &&
+            review.kybc.submittedAt &&
+            review.kybc.registrySource ? (
+            <ProEffectsRerun
+              proId={review.proId}
+              submittedAt={review.kybc.submittedAt}
+              registrySource={review.kybc.registrySource}
+            />
           ) : null}
 
           {revalidation ? (
             <Panel title="Validation retirée">
-              <div data-testid="pro-revalidation-record" className="flex flex-col gap-2 text-sm">
-                {review.kybc.withdrawnAt ? <p className="text-foreground-muted">Retirée le {formatMorocco(review.kybc.withdrawnAt)}. La boutique est masquée et ses annonces en pause jusqu&apos;à une nouvelle validation.</p> : null}
+              <div
+                data-testid="pro-revalidation-record"
+                className="flex flex-col gap-2 text-sm"
+              >
+                {review.kybc.withdrawnAt ? (
+                  <p className="text-foreground-muted">
+                    Retirée le {formatMorocco(review.kybc.withdrawnAt)}. La
+                    boutique est masquée et ses annonces en pause jusqu&apos;à
+                    une nouvelle validation.
+                  </p>
+                ) : null}
                 {review.kybc.withdrawReason ? (
-                  <p dir="auto" className="rounded-md bg-surface-muted p-3 whitespace-pre-line">
+                  <p
+                    dir="auto"
+                    className="rounded-md bg-surface-muted p-3 whitespace-pre-line"
+                  >
                     Motif envoyé au Pro : {review.kybc.withdrawReason}
                   </p>
                 ) : null}
-                <p>{pending ? "Nouveaux justificatifs reçus : décidez ci-dessus. Valider rétablit la boutique, son offre et ses annonces." : review.kybc.status === "rejected" ? "Les derniers justificatifs ont été refusés : le Pro peut en renvoyer." : "En attente de nouveaux justificatifs du Pro."}</p>
+                <p>
+                  {pending
+                    ? "Nouveaux justificatifs reçus : décidez ci-dessus. Valider rétablit la boutique, son offre et ses annonces."
+                    : review.kybc.status === "rejected"
+                      ? "Les derniers justificatifs ont été refusés : le Pro peut en renvoyer."
+                      : "En attente de nouveaux justificatifs du Pro."}
+                </p>
               </div>
             </Panel>
           ) : null}
 
-          {pending || (review.effectsPending && review.kybc.submittedAt && review.kybc.registrySource) ? null : review.kybc.rejectReason ? (
+          {pending ||
+          (review.effectsPending &&
+            review.kybc.submittedAt &&
+            review.kybc.registrySource) ? null : review.kybc.rejectReason ? (
             <Panel title="Motif du refus">
               <p className="text-sm whitespace-pre-line" dir="auto">
                 {review.kybc.rejectReason}
@@ -256,35 +448,74 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
           ) : null}
 
           {validated ? (
-            <section aria-labelledby="pro-lifecycle-title" data-testid="pro-lifecycle" className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5">
+            <section
+              aria-labelledby="pro-lifecycle-title"
+              data-testid="pro-lifecycle"
+              className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5"
+            >
               <h2 id="pro-lifecycle-title" className="text-lg font-semibold">
                 Boutique validée
               </h2>
               <Facts
                 rows={[
-                  ["État", LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle],
+                  [
+                    "État",
+                    LIFECYCLE_LABEL[review.lifecycle] ?? review.lifecycle,
+                  ],
                   ["Activité", SECTOR_LABEL[review.sector] ?? review.sector],
-                  ...(review.kybc.registrySource ? ([["Registre consulté", REGISTRY_LABEL[review.kybc.registrySource] ?? review.kybc.registrySource]] as [string, ReactNode][]) : []),
+                  ...(review.kybc.registrySource
+                    ? ([
+                        [
+                          "Registre consulté",
+                          REGISTRY_LABEL[review.kybc.registrySource] ??
+                            review.kybc.registrySource,
+                        ],
+                      ] as [string, ReactNode][])
+                    : []),
                 ]}
               />
               <div className="flex flex-col gap-2 border-t border-border pt-4">
-                <h3 className="text-sm font-semibold">Corriger l&apos;activité</h3>
-                <ProSectorForm proId={review.proId} sector={review.sector} sectors={review.correctableSectors} />
+                <h3 className="text-sm font-semibold">
+                  Corriger l&apos;activité
+                </h3>
+                <ProSectorForm
+                  proId={review.proId}
+                  sector={review.sector}
+                  sectors={review.correctableSectors}
+                />
               </div>
               {withdrawable ? (
                 <div className="flex flex-col gap-2 border-t border-border pt-4">
-                  <h3 className="text-sm font-semibold">Retirer la validation</h3>
+                  <h3 className="text-sm font-semibold">
+                    Retirer la validation
+                  </h3>
                   {staff.role === "admin" ? (
-                    <ProWithdrawForm proId={review.proId} lifecycle={review.lifecycle as "verified" | "active" | "grace" | "downgraded"} shopName={review.name} />
+                    <ProWithdrawForm
+                      proId={review.proId}
+                      lifecycle={
+                        review.lifecycle as
+                          | "verified"
+                          | "active"
+                          | "grace"
+                          | "downgraded"
+                      }
+                      shopName={review.name}
+                    />
                   ) : (
-                    <p className="text-sm text-foreground-muted">Réservé aux administrateurs : demandez à un admin si les justificatifs de la boutique ne sont plus valables.</p>
+                    <p className="text-sm text-foreground-muted">
+                      Réservé aux administrateurs : demandez à un admin si les
+                      justificatifs de la boutique ne sont plus valables.
+                    </p>
                   )}
                 </div>
               ) : null}
               {owner ? (
                 <div className="flex flex-col gap-2 border-t border-border pt-4">
                   <h3 className="text-sm font-semibold">Suspendre ou fermer</h3>
-                  <ProSanctionLinks ownerUid={owner.uid} decideHref={targetHref(`user:${owner.uid}`)} />
+                  <ProSanctionLinks
+                    ownerUid={owner.uid}
+                    decideHref={targetHref(`user:${owner.uid}`)}
+                  />
                 </div>
               ) : null}
             </section>
@@ -299,37 +530,106 @@ export default async function ProReviewPage({ params }: { params: Promise<{ proI
   );
 }
 
-const CHECK_VARIANT: Record<string, "warning" | "danger" | "success"> = { pending: "warning", review: "warning", verified: "success", rejected: "danger" };
+const CHECK_VARIANT: Record<string, "warning" | "danger" | "success"> = {
+  pending: "warning",
+  review: "warning",
+  verified: "success",
+  rejected: "danger",
+};
 
-function RentalCheckPanel({ proId, check, ice }: { proId: string; check: NonNullable<ProReviewView["rentalCheck"]>; ice: string }) {
+function RentalCheckPanel({
+  proId,
+  check,
+  ice,
+}: {
+  proId: string;
+  check: NonNullable<ProReviewView["rentalCheck"]>;
+  ice: string;
+}) {
   const read = check.extracted;
   const open = check.status === "review" || check.status === "pending";
   return (
-    <section id="agrement" data-testid="rental-check-review" className="flex scroll-mt-6 flex-col gap-3 rounded-lg border border-border bg-surface p-5">
+    <section
+      id="agrement"
+      data-testid="rental-check-review"
+      className="flex scroll-mt-6 flex-col gap-3 rounded-lg border border-border bg-surface p-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Agrément de location</h2>
-        <Badge variant={CHECK_VARIANT[check.status] ?? "warning"}>{RENTAL_CHECK_STATUS_LABEL[check.status] ?? check.status}</Badge>
+        <Badge variant={CHECK_VARIANT[check.status] ?? "warning"}>
+          {RENTAL_CHECK_STATUS_LABEL[check.status] ?? check.status}
+        </Badge>
       </div>
       <p className="text-sm text-foreground-muted">
         Envoyé le {formatMorocco(check.submittedAt)}.
-        {check.checkedAt ? ` ${check.method === "ai" ? "Contrôlé par la lecture IA" : "Décidé par un modérateur"} le ${formatMorocco(check.checkedAt)}.` : ""}
+        {check.checkedAt
+          ? ` ${check.method === "ai" ? "Contrôlé par la lecture IA" : "Décidé par un modérateur"} le ${formatMorocco(check.checkedAt)}.`
+          : ""}
       </p>
       <Facts
         rows={[
-          ["Numéro déclaré", <span key="declared" className="font-mono tabular-nums" dir="ltr">{check.agrementRef}</span>],
-          ["ICE de la boutique", <span key="ice" className="font-mono tabular-nums" dir="ltr">{formatIce(ice)}</span>],
+          [
+            "Numéro déclaré",
+            <span key="declared" className="font-mono tabular-nums" dir="ltr">
+              {check.agrementRef}
+            </span>,
+          ],
+          [
+            "ICE de la boutique",
+            <span key="ice" className="font-mono tabular-nums" dir="ltr">
+              {formatIce(ice)}
+            </span>,
+          ],
           ...(read
             ? ([
-                ["Numéro lu", read.reference ? <span key="reference" className="font-mono tabular-nums" dir="ltr">{read.reference}</span> : "Absent"],
-                ["Bénéficiaire lu", read.companyName ? <span key="company" dir="auto">{read.companyName}</span> : "Absent"],
-                ["ICE lu", read.ice ? <span key="read-ice" className="font-mono tabular-nums" dir="ltr">{formatIce(read.ice)}</span> : "Absent"],
+                [
+                  "Numéro lu",
+                  read.reference ? (
+                    <span
+                      key="reference"
+                      className="font-mono tabular-nums"
+                      dir="ltr"
+                    >
+                      {read.reference}
+                    </span>
+                  ) : (
+                    "Absent"
+                  ),
+                ],
+                [
+                  "Bénéficiaire lu",
+                  read.companyName ? (
+                    <span key="company" dir="auto">
+                      {read.companyName}
+                    </span>
+                  ) : (
+                    "Absent"
+                  ),
+                ],
+                [
+                  "ICE lu",
+                  read.ice ? (
+                    <span
+                      key="read-ice"
+                      className="font-mono tabular-nums"
+                      dir="ltr"
+                    >
+                      {formatIce(read.ice)}
+                    </span>
+                  ) : (
+                    "Absent"
+                  ),
+                ],
                 ["Date lue", read.decisionDate || "Absente"],
               ] as [string, ReactNode][])
             : []),
         ]}
       />
       {check.issues.length > 0 ? (
-        <ul className="flex flex-col gap-1 text-sm" data-testid="rental-check-issues">
+        <ul
+          className="flex flex-col gap-1 text-sm"
+          data-testid="rental-check-issues"
+        >
           {check.issues.map((issue) => (
             <li key={issue} className="text-warning">
               {RENTAL_CHECK_ISSUE_LABEL[issue] ?? issue}
@@ -337,8 +637,12 @@ function RentalCheckPanel({ proId, check, ice }: { proId: string; check: NonNull
           ))}
         </ul>
       ) : read && check.status === "review" ? (
-        <p className="text-sm text-success" data-testid="rental-check-consistent">
-          Lecture IA cohérente avec la boutique : vérifiez le document, puis confirmez.
+        <p
+          className="text-sm text-success"
+          data-testid="rental-check-consistent"
+        >
+          Lecture IA cohérente avec la boutique : vérifiez le document, puis
+          confirmez.
         </p>
       ) : null}
       {read && read.signs.length > 0 ? (
@@ -359,21 +663,38 @@ function RentalCheckPanel({ proId, check, ice }: { proId: string; check: NonNull
         </p>
       ) : null}
       {check.piece?.status === "ready" ? (
-        <a href={`/kybc/${proId}/${check.piece.id}`} target="_blank" rel="noopener noreferrer" className="w-fit text-sm font-medium text-link underline underline-offset-2">
-          Ouvrir le document ({PIECE_TYPE[check.piece.declaredType] ?? check.piece.declaredType}, {formatSize(check.piece.size)})
+        <a
+          href={`/kybc/${proId}/${check.piece.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-fit text-sm font-medium text-link underline underline-offset-2"
+        >
+          Ouvrir le document (
+          {PIECE_TYPE[check.piece.declaredType] ?? check.piece.declaredType},{" "}
+          {formatSize(check.piece.size)})
         </a>
       ) : (
         <Badge variant="warning">Fichier indisponible</Badge>
       )}
       <p className="text-xs text-foreground-muted">
-        Aucune vérification en ligne de l’authenticité n’existe : vérifiez la cohérence du numéro, du bénéficiaire (ICE ou raison sociale) et de la date, et l’absence de retouche.
+        Aucune vérification en ligne de l’authenticité n’existe : vérifiez la
+        cohérence du numéro, du bénéficiaire (ICE ou raison sociale) et de la
+        date, et l’absence de retouche.
       </p>
       {check.status === "rejected" && check.reason ? (
-        <p className="rounded-md bg-surface-muted p-3 text-sm whitespace-pre-line" dir="auto">
+        <p
+          className="rounded-md bg-surface-muted p-3 text-sm whitespace-pre-line"
+          dir="auto"
+        >
           Motif du refus : {check.reason}
         </p>
       ) : null}
-      {open ? <RentalCheckDecisionForm proId={proId} submittedAt={check.submittedAt} /> : null}
+      {open ? (
+        <RentalCheckDecisionForm
+          proId={proId}
+          submittedAt={check.submittedAt}
+        />
+      ) : null}
     </section>
   );
 }

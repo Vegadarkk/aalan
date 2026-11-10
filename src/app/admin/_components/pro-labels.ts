@@ -5,6 +5,7 @@ export const LEGAL_FORM_LABEL: Record<string, string> = {
   auto_entrepreneur: "Auto-entrepreneur",
   commercant: "Commerçant personne physique",
   cooperative: "Coopérative",
+  entreprise_ue: "Entreprise de l'Union européenne (transporteur)",
 };
 
 /** Business sector chosen with the application (src/lib/pro/profile-schema.ts). */
@@ -14,6 +15,7 @@ export const SECTOR_LABEL: Record<string, string> = {
   real_estate: "Agence immobilière",
   car_rental: "Location de voitures",
   holiday_rental: "Location saisonnière",
+  carrier: "Transporteur Europe–Maroc",
 };
 
 export const IDENTIFIER_LABEL: Record<string, string> = {
@@ -23,6 +25,9 @@ export const IDENTIFIER_LABEL: Record<string, string> = {
   aeNumber: "N° d'auto-entrepreneur",
   tp: "Taxe professionnelle (TP)",
   coopNumber: "N° d'immatriculation au registre des coopératives",
+  country: "Pays d'immatriculation (UE)",
+  registry: "N° d'immatriculation au registre du pays",
+  vat: "N° de TVA intracommunautaire",
 };
 
 export const LIFECYCLE_LABEL: Record<string, string> = {

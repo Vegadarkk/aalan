@@ -1,11 +1,7 @@
 import { z } from "@/lib/zod";
 import { CONDITIONS } from "@/config/categories";
 import { LOCALES } from "@/config/site";
-import {
-  REVIEW_REPLY_MAX,
-  REVIEW_STATUSES,
-  REVIEW_TEXT_MAX,
-} from "@/config/reviews";
+import { REVIEW_REPLY_MAX, REVIEW_STATUSES, REVIEW_TEXT_MAX } from "@/config/reviews";
 import { BANNER_KEYS, BIO_MAX } from "@/config/storefront";
 import {
   DESCRIPTION_MAX,
@@ -21,38 +17,14 @@ import {
   regionCodeSchema,
   slugIdSchema,
 } from "@/lib/contracts/listings";
-import {
-  PRICE_LOG_MAX,
-  PROMO_KINDS,
-  listingVariantsSchema,
-  sectionIdSchema,
-  stockSchema,
-  variantItemSchema,
-} from "@/lib/contracts/catalog";
-import {
-  MAX_UPLOAD_BYTES,
-  PHOTO_VARIANTS,
-  UPLOAD_DOC_DECLARED_TYPES,
-  UPLOAD_REJECT_REASONS,
-  UPLOAD_STATUSES,
-  listingPhotoSchema,
-  uploadIdSchema,
-} from "@/lib/contracts/media";
+import { PRICE_LOG_MAX, PROMO_KINDS, listingVariantsSchema, sectionIdSchema, stockSchema, variantItemSchema } from "@/lib/contracts/catalog";
+import { MAX_UPLOAD_BYTES, PHOTO_VARIANTS, UPLOAD_DOC_DECLARED_TYPES, UPLOAD_REJECT_REASONS, UPLOAD_STATUSES, listingPhotoSchema, uploadIdSchema } from "@/lib/contracts/media";
 import { ROLES } from "@/lib/firebase/claims";
-import {
-  DAY_PATTERN,
-  RENTAL_PERIODS_MAX,
-} from "@/lib/listings/rental-availability";
+import { DAY_PATTERN, RENTAL_PERIODS_MAX } from "@/lib/listings/rental-availability";
 import { PHOTO_KEY_BANDS, PHOTO_KEY_PATTERN } from "@/lib/media/near-duplicate";
-import {
-  SAVED_SEARCH_ALERTS,
-  SAVED_SEARCH_NAME_MAX,
-} from "@/lib/contracts/search";
+import { SAVED_SEARCH_ALERTS, SAVED_SEARCH_NAME_MAX } from "@/lib/contracts/search";
 import { storedSearchParamsSchema } from "@/lib/search/params";
-import {
-  MESSAGE_RISK_FLAGS,
-  MESSAGE_TEXT_MAX,
-} from "@/lib/contracts/messaging";
+import { MESSAGE_RISK_FLAGS, MESSAGE_TEXT_MAX } from "@/lib/contracts/messaging";
 import {
   APPOINTMENT_CANCEL_REASONS,
   APPOINTMENT_EVENTS,
@@ -63,43 +35,17 @@ import {
   appointmentIdSchema,
   slotSchema,
 } from "@/lib/contracts/appointments";
-import {
-  RENTAL_GUESTS_MAX,
-  RENTAL_HISTORY_MAX,
-  RENTAL_PICKUP_MAX,
-  RENTAL_REQUEST_EVENTS,
-  RENTAL_REQUEST_STATUSES,
-  rentalRequestIdSchema,
-} from "@/lib/contracts/rental-requests";
-import {
-  OFFER_EVENTS,
-  OFFER_STATUSES,
-  offerIdSchema,
-} from "@/lib/contracts/offers";
-import {
-  REPORT_PRIORITIES,
-  REPORT_REASON_IDS,
-  REPORT_TARGET_TYPES,
-} from "@/config/report-reasons";
+import { RENTAL_GUESTS_MAX, RENTAL_HISTORY_MAX, RENTAL_PICKUP_MAX, RENTAL_REQUEST_EVENTS, RENTAL_REQUEST_STATUSES, rentalRequestIdSchema } from "@/lib/contracts/rental-requests";
+import { OFFER_EVENTS, OFFER_STATUSES, offerIdSchema } from "@/lib/contracts/offers";
+import { REPORT_PRIORITIES, REPORT_REASON_IDS, REPORT_TARGET_TYPES } from "@/config/report-reasons";
 import { PAYMENT_URL_MAX } from "@/config/seller-payments";
 import type { LedgerReason } from "@/lib/payments/wallet";
 
 // The enums shared with the browser are defined in the client-safe contracts (this module is
 // server-only through claims.ts) and re-exported here so the repositories have one import.
-export {
-  CONDITIONS,
-  LISTING_STATUSES,
-  MODERATION_FLAGS,
-  MODERATION_STATES,
-  UPLOAD_REJECT_REASONS,
-  UPLOAD_STATUSES,
-};
+export { CONDITIONS, LISTING_STATUSES, MODERATION_FLAGS, MODERATION_STATES, UPLOAD_REJECT_REASONS, UPLOAD_STATUSES };
 export type { Condition } from "@/config/categories";
-export type {
-  ListingStatus,
-  ModerationFlag,
-  ModerationState,
-} from "@/lib/contracts/listings";
+export type { ListingStatus, ModerationFlag, ModerationState } from "@/lib/contracts/listings";
 export type { UploadRejectReason, UploadStatus } from "@/lib/contracts/media";
 
 // Firestore documents (architecture §5), one Zod schema per collection written in phase 2.
@@ -122,13 +68,7 @@ export const displayNameSchema = z
   // Letters of any script, digits, spaces and a few separators: no URLs, no control characters.
   .regex(/^[\p{L}\p{M}\p{N} .'’-]+$/u);
 
-export const userStatusSchema = z.enum([
-  "active",
-  "restricted",
-  "suspended",
-  "banned",
-  "closed",
-]);
+export const userStatusSchema = z.enum(["active", "restricted", "suspended", "banned", "closed"]);
 
 /** users/{uid}: public profile, rendered by the server. */
 export const userSchema = z
@@ -139,26 +79,11 @@ export const userSchema = z
     type: z.enum(["individual", "pro"]),
     /** The account's shop, set by the Pro application (phase 7); `type` and the claims turn pro at the KYBC verification. */
     proId: z.string().max(64).optional(),
-    regionCode: z
-      .string()
-      .regex(/^(0[1-9]|1[0-2])$/)
-      .optional(),
+    regionCode: z.string().regex(/^(0[1-9]|1[0-2])$/).optional(),
     citySlug: z.string().max(64).optional(),
     /** Storefront of /profil (vitrine-avis §1): "about" text and house banner, both optional. */
-    storefront: z
-      .object({
-        bio: z.string().max(BIO_MAX).optional(),
-        bannerKey: z.enum(BANNER_KEYS).optional(),
-      })
-      .strict()
-      .optional(),
-    badges: z
-      .object({
-        emailVerified: z.boolean(),
-        phoneVerified: z.boolean(),
-        proCertified: z.boolean(),
-      })
-      .strict(),
+    storefront: z.object({ bio: z.string().max(BIO_MAX).optional(), bannerKey: z.enum(BANNER_KEYS).optional() }).strict().optional(),
+    badges: z.object({ emailVerified: z.boolean(), phoneVerified: z.boolean(), proCertified: z.boolean() }).strict(),
     stats: z
       .object({
         activeListings: z.number().int().min(0),
@@ -182,9 +107,7 @@ export const userSchema = z
   .strict();
 export type UserDoc = z.infer<typeof userSchema>;
 
-export const consentSchema = z
-  .object({ version: z.string().min(1).max(20), at: ts })
-  .strict();
+export const consentSchema = z.object({ version: z.string().min(1).max(20), at: ts }).strict();
 
 /** users/{uid}/private/account: never exposed to the client. */
 export const userPrivateSchema = z
@@ -193,10 +116,7 @@ export const userPrivateSchema = z
     /** HMAC of the normalized e-mail (Gmail dots, +tag): limits and duplicates. */
     emailNormHash: z.string().min(16).max(64),
     /** Moroccan (05 to 07, older records), or an EU carrier's mobile verified by a moderator's call (carriers space). */
-    phoneE164: z
-      .string()
-      .regex(/^\+212[5-7]\d{8}$|^\+(?:33|32|31|34|39|49|351)\d{6,12}$/)
-      .optional(),
+    phoneE164: z.string().regex(/^\+212[5-7]\d{8}$|^\+(?:33|32|31|34|39|49|351)\d{6,12}$/).optional(),
     phoneVerifiedAt: ts.optional(),
     legalName: z.string().max(120).optional(),
     consents: z
@@ -219,18 +139,7 @@ export const userPrivateSchema = z
         cguNotice: consentSchema.optional(),
       })
       .strict(),
-    strikes: z
-      .object({
-        level: z.union([
-          z.literal(0),
-          z.literal(1),
-          z.literal(2),
-          z.literal(3),
-        ]),
-        lastAt: ts.optional(),
-        suspendedUntil: ts.optional(),
-      })
-      .strict(),
+    strikes: z.object({ level: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]), lastAt: ts.optional(), suspendedUntil: ts.optional() }).strict(),
     reporter: z
       .object({
         recent: z.array(z.boolean()).max(10),
@@ -257,14 +166,7 @@ export const userPrivateSchema = z
     purgeAt: ts.optional(),
     identityPurgeAt: ts.optional(),
     /** Change of address waiting for the link sent to `newEmail` (Z1-10); removed once confirmed or cancelled. */
-    emailChange: z
-      .object({
-        newEmail: z.string().email().max(254),
-        requestedAt: ts,
-        expiresAt: ts,
-      })
-      .strict()
-      .optional(),
+    emailChange: z.object({ newEmail: z.string().email().max(254), requestedAt: ts, expiresAt: ts }).strict().optional(),
   })
   .strict();
 export type UserPrivateDoc = z.infer<typeof userPrivateSchema>;
@@ -300,16 +202,7 @@ export type EmailIndexDoc = z.infer<typeof emailIndexSchema>;
 export const connectionLogSchema = z
   .object({
     uid,
-    event: z.enum([
-      "signup",
-      "login",
-      "google_login",
-      "google_signup",
-      "staff_login",
-      "password_reset",
-      "password_change",
-      "logout",
-    ]),
+    event: z.enum(["signup", "login", "google_login", "google_signup", "staff_login", "password_reset", "password_change", "logout"]),
     ip: z.string().max(45),
     at: ts,
     purgeAt: ts,
@@ -323,12 +216,7 @@ export const auditLogSchema = z
     actorUid: z.string().max(128),
     actorRole: z.enum([...ROLES, "system"]),
     action: z.string().min(1).max(64),
-    target: z
-      .object({
-        type: z.string().min(1).max(32),
-        id: z.string().min(1).max(128),
-      })
-      .strict(),
+    target: z.object({ type: z.string().min(1).max(32), id: z.string().min(1).max(128) }).strict(),
     automated: z.boolean(),
     reason: z.string().max(500).optional(),
     ipHash: z.string().max(64).optional(),
@@ -341,11 +229,7 @@ export type AuditLogDoc = z.infer<typeof auditLogSchema>;
 
 /** mailSuppressions/{emailHash}: no non-transactional mail to these addresses (webhook of the ESP). */
 export const mailSuppressionSchema = z
-  .object({
-    reason: z.enum(["bounce", "complaint"]),
-    provider: z.string().max(20),
-    at: ts,
-  })
+  .object({ reason: z.enum(["bounce", "complaint"]), provider: z.string().max(20), at: ts })
   .strict();
 export type MailSuppressionDoc = z.infer<typeof mailSuppressionSchema>;
 
@@ -380,28 +264,13 @@ export const SORT_SOURCES = ["publish", "renew", "bump"] as const;
  * "moderation": paused for the length of an account suspension, resumed when it is lifted (phase 5, D14).
  * "pro_revalidation": the shop's validation was withdrawn (zone 7 P2-10), resumed by its next validation.
  */
-export const PAUSED_REASONS = [
-  "owner",
-  "quota",
-  "moderation",
-  "pro_revalidation",
-] as const;
+export const PAUSED_REASONS = ["owner", "quota", "moderation", "pro_revalidation"] as const;
 
 /** City (later district) centroid, rounded (~1 km): never the seller's address. */
-export const geoPointSchema = z
-  .object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  })
-  .strict();
+export const geoPointSchema = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) }).strict();
 
 export const listingLocationSchema = z
-  .object({
-    regionCode: regionCodeSchema,
-    citySlug: citySlugSchema,
-    district: z.string().min(1).max(64).optional(),
-    geo: geoPointSchema,
-  })
+  .object({ regionCode: regionCodeSchema, citySlug: citySlugSchema, district: z.string().min(1).max(64).optional(), geo: geoPointSchema })
   .strict();
 export type ListingLocation = z.infer<typeof listingLocationSchema>;
 
@@ -412,35 +281,17 @@ export const moderationSchema = z
     score: z.number().min(0).max(100),
     flags: z.array(z.enum(MODERATION_FLAGS)).max(MODERATION_FLAGS.length),
     /** Russmedia: the advertiser declares being the person concerned, or holding explicit consent. */
-    sensitiveDeclaration: z
-      .object({ kind: z.enum(SENSITIVE_DECLARATION_KINDS), at: ts })
-      .strict()
-      .optional(),
+    sensitiveDeclaration: z.object({ kind: z.enum(SENSITIVE_DECLARATION_KINDS), at: ts }).strict().optional(),
     openReports: z.number().int().min(0),
     /** Hidden by a report's strong signal (D11) or by a staff `restrict_visibility` decision (D13, `signal: "decision"`, reportId = the decision id when no report). */
-    hiddenBy: z
-      .object({
-        reportId: z.string().min(1).max(128),
-        signal: z.enum(["trusted", "multi", "auto", "authority", "decision"]),
-        at: ts,
-      })
-      .strict()
-      .optional(),
+    hiddenBy: z.object({ reportId: z.string().min(1).max(128), signal: z.enum(["trusted", "multi", "auto", "authority", "decision"]), at: ts }).strict().optional(),
     lastDecisionId: z.string().max(128).optional(),
     /** contentFingerprint of the listing when the last automated hold was written (src/lib/listings/screening.ts). */
-    heldContent: z
-      .string()
-      .regex(/^[0-9a-f]{64}$/)
-      .optional(),
+    heldContent: z.string().regex(/^[0-9a-f]{64}$/).optional(),
     reviewedBy: z.string().max(128).optional(),
     reviewedAt: ts.optional(),
     ai: z
-      .object({
-        decisionId: z.string().min(1).max(128),
-        action: z.enum(["approve", "hold", "reject", "escalate"]),
-        confidence: z.number().min(0).max(1),
-        applied: z.boolean(),
-      })
+      .object({ decisionId: z.string().min(1).max(128), action: z.enum(["approve", "hold", "reject", "escalate"]), confidence: z.number().min(0).max(1), applied: z.boolean() })
       .strict()
       .optional(),
   })
@@ -448,11 +299,7 @@ export const moderationSchema = z
 export type ListingModeration = z.infer<typeof moderationSchema>;
 
 export const priceLogEntrySchema = z
-  .object({
-    at: ts,
-    price: z.number().int().min(0).max(PRICE_MAX).nullable(),
-    key: variantItemSchema.shape.key.optional(),
-  })
+  .object({ at: ts, price: z.number().int().min(0).max(PRICE_MAX).nullable(), key: variantItemSchema.shape.key.optional() })
   .strict();
 export type PriceLogEntry = z.infer<typeof priceLogEntrySchema>;
 
@@ -471,11 +318,7 @@ export const listingPromoSchema = z
     prices: z
       .array(
         z
-          .object({
-            key: z.union([z.literal(""), variantItemSchema.shape.key]),
-            price: z.number().int().min(1).max(PRICE_MAX),
-            reference: z.number().int().min(1).max(PRICE_MAX).nullable(),
-          })
+          .object({ key: z.union([z.literal(""), variantItemSchema.shape.key]), price: z.number().int().min(1).max(PRICE_MAX), reference: z.number().int().min(1).max(PRICE_MAX).nullable() })
           .strict(),
       )
       .min(1)
@@ -492,12 +335,7 @@ const listingPaymentUrl = z.url({ protocol: /^https$/ }).max(PAYMENT_URL_MAX);
  * click time). Shown only while the shop's button is.
  */
 export const listingPaymentLinkSchema = z
-  .object({
-    url: listingPaymentUrl.optional(),
-    pendingUrl: listingPaymentUrl.optional(),
-    pendingFrom: ts.optional(),
-    updatedAt: ts,
-  })
+  .object({ url: listingPaymentUrl.optional(), pendingUrl: listingPaymentUrl.optional(), pendingFrom: ts.optional(), updatedAt: ts })
   .strict();
 export type ListingPaymentLink = z.infer<typeof listingPaymentLinkSchema>;
 
@@ -536,10 +374,7 @@ export const listingSchema = z
      * Band keys of the photos' dHash (src/lib/media/near-duplicate.ts), written by the repository with
      * every `photos` write: the cross-account "photo d'un autre compte" lookup (array-contains-any).
      */
-    photoKeys: z
-      .array(z.string().regex(PHOTO_KEY_PATTERN))
-      .max(50 * PHOTO_KEY_BANDS)
-      .optional(),
+    photoKeys: z.array(z.string().regex(PHOTO_KEY_PATTERN)).max(50 * PHOTO_KEY_BANDS).optional(),
     /** Pro catalogue (lot 4, catalogue-boutique.md §2-3): variants, or the declared stock without them. */
     variants: listingVariantsSchema.optional(),
     stock: stockSchema.optional(),
@@ -558,21 +393,8 @@ export const listingSchema = z
     /** Its own payment link (Pro only, catalogue §6). */
     paymentLink: listingPaymentLinkSchema.optional(),
     /** The number is never here; `showPhone` requires `badges.phoneVerified` at publish. */
-    contact: z
-      .object({
-        messaging: z.literal(true),
-        showPhone: z.boolean(),
-        whatsapp: z.boolean(),
-      })
-      .strict(),
-    boosts: z
-      .object({
-        bumpedAt: ts.optional(),
-        featuredUntil: ts.optional(),
-        dailyBumpUntil: ts.optional(),
-        highlightUntil: ts.optional(),
-      })
-      .strict(),
+    contact: z.object({ messaging: z.literal(true), showPhone: z.boolean(), whatsapp: z.boolean() }).strict(),
+    boosts: z.object({ bumpedAt: ts.optional(), featuredUntil: ts.optional(), dailyBumpUntil: ts.optional(), highlightUntil: ts.optional() }).strict(),
     sortAt: ts,
     sortSource: z.enum(SORT_SOURCES),
     moderation: moderationSchema,
@@ -587,16 +409,7 @@ export const listingSchema = z
      */
     rental: z
       .object({
-        unavailable: z
-          .array(
-            z
-              .object({
-                from: z.string().regex(DAY_PATTERN),
-                to: z.string().regex(DAY_PATTERN),
-              })
-              .strict(),
-          )
-          .max(RENTAL_PERIODS_MAX),
+        unavailable: z.array(z.object({ from: z.string().regex(DAY_PATTERN), to: z.string().regex(DAY_PATTERN) }).strict()).max(RENTAL_PERIODS_MAX),
         updatedAt: ts,
       })
       .strict()
@@ -655,9 +468,7 @@ export const shopStatsDaySchema = z
     /** Numbers and WhatsApp revealed (first reveal of each member). */
     r: statsCount,
     /** The day's most viewed listings: listingId -> [views, conversations] (at most 50). */
-    l: z
-      .record(z.string().max(64), z.tuple([statsCount, statsCount]))
-      .optional(),
+    l: z.record(z.string().max(64), z.tuple([statsCount, statsCount])).optional(),
   })
   .strict();
 export type ShopStatsDay = z.infer<typeof shopStatsDaySchema>;
@@ -676,12 +487,7 @@ export const shopStatsSchema = z
 export type ShopStatsDoc = z.infer<typeof shopStatsSchema>;
 
 /** Every purpose of §5; phase 3 signs `listing` only (contracts/media.ts). */
-export const UPLOAD_DOC_PURPOSES = [
-  "listing",
-  "kyb",
-  "avatar",
-  "pro_logo",
-] as const;
+export const UPLOAD_DOC_PURPOSES = ["listing", "kyb", "avatar", "pro_logo"] as const;
 export const UPLOAD_BUCKETS = ["media", "private"] as const;
 
 /** uploads/{id}: id = photo id; written by the API (sign) and the pipeline (worker or inline). */
@@ -708,21 +514,10 @@ export const uploadSchema = z
     height: z.number().int().min(1).optional(),
     blurhash: z.string().min(6).max(120).optional(),
     /** dHash, 16 hex characters (near-duplicate photos). */
-    hash: z
-      .string()
-      .regex(/^[0-9a-f]{16}$/)
-      .optional(),
+    hash: z.string().regex(/^[0-9a-f]{16}$/).optional(),
     /** Local models: nsfw score in [0, 1], number of faces found. */
-    checks: z
-      .object({
-        nsfw: z.number().min(0).max(1).optional(),
-        faces: z.number().int().min(0).optional(),
-      })
-      .strict(),
-    variants: z
-      .array(z.enum(PHOTO_VARIANTS))
-      .max(PHOTO_VARIANTS.length)
-      .optional(),
+    checks: z.object({ nsfw: z.number().min(0).max(1).optional(), faces: z.number().int().min(0).optional() }).strict(),
+    variants: z.array(z.enum(PHOTO_VARIANTS)).max(PHOTO_VARIANTS.length).optional(),
     rejectReason: z.enum(UPLOAD_REJECT_REASONS).optional(),
     /**
      * Deleted by its owner under a legal hold once ready: `rejected`, but its variants stay as
@@ -738,22 +533,10 @@ export const uploadSchema = z
 export type UploadDoc = z.infer<typeof uploadSchema>;
 
 /** searchOutbox/{listingId}: written in the listing's transaction; consumed in phase 4. */
-export const searchOutboxSchema = z
-  .object({
-    op: z.enum(["upsert", "delete"]),
-    version: z.number().int().min(0),
-    enqueuedAt: ts,
-  })
-  .strict();
+export const searchOutboxSchema = z.object({ op: z.enum(["upsert", "delete"]), version: z.number().int().min(0), enqueuedAt: ts }).strict();
 export type SearchOutboxDoc = z.infer<typeof searchOutboxSchema>;
 
-export const CONTENT_OPS = [
-  "listing.create",
-  "listing.update",
-  "listing.publish",
-  "listing.remove",
-  "upload.create",
-] as const;
+export const CONTENT_OPS = ["listing.create", "listing.update", "listing.publish", "listing.remove", "upload.create"] as const;
 
 /** contentOps/{id}: who published what from which IP (LCEN, IP in clear), purged after 1 year. */
 export const contentOpSchema = z
@@ -785,42 +568,20 @@ export const revealLogSchema = z
   .strict();
 export type RevealLogDoc = z.infer<typeof revealLogSchema>;
 
-export const MODERATION_ACTIONS = [
-  "remove",
-  "restrict_visibility",
-  "demote",
-  "suspend_account",
-  "ban",
-  "warn",
-  "restore",
-  "no_action",
-] as const;
+export const MODERATION_ACTIONS = ["remove", "restrict_visibility", "demote", "suspend_account", "ban", "warn", "restore", "no_action"] as const;
 
 /** moderationDecisions/{id}: statement of reasons (art. 17 DSA), kept 5 years. */
 export const moderationDecisionSchema = z
   .object({
-    target: z
-      .object({
-        type: z.string().min(1).max(32),
-        id: z.string().min(1).max(128),
-      })
-      .strict(),
+    target: z.object({ type: z.string().min(1).max(32), id: z.string().min(1).max(128) }).strict(),
     affectedUid: uid,
     action: z.enum(MODERATION_ACTIONS),
     durationDays: z.number().int().min(1).max(3650).optional(),
     facts: z.string().max(2000),
     origin: z.enum(["notice", "own_initiative", "authority_order"]),
-    automation: z
-      .object({ detection: z.boolean(), decision: z.boolean() })
-      .strict(),
+    automation: z.object({ detection: z.boolean(), decision: z.boolean() }).strict(),
     /** e.g. { type: "terms", ref: "CGU §7.2" }. */
-    ground: z
-      .object({
-        type: z.enum(["illegal", "terms"]),
-        ref: z.string().max(64),
-        explanation: z.string().max(2000),
-      })
-      .strict(),
+    ground: z.object({ type: z.enum(["illegal", "terms"]), ref: z.string().max(64), explanation: z.string().max(2000) }).strict(),
     reportIds: z.array(z.string().min(1).max(128)).max(100),
     templateId: z.string().min(1).max(64),
     /** Staff uid, or "system" for automated decisions. */
@@ -866,16 +627,7 @@ export { uploadIdSchema, listingIdSchema };
 // ---- Phase 4: favorites and saved searches (architecture §5 "Autres collections").
 
 const searchPhotoSchema = z
-  .object({
-    id: z.string().min(1).max(64),
-    w: z.number().int().min(1),
-    h: z.number().int().min(1),
-    blurhash: z.string().max(100),
-    variants: z
-      .array(z.enum(PHOTO_VARIANTS))
-      .max(PHOTO_VARIANTS.length)
-      .optional(),
-  })
+  .object({ id: z.string().min(1).max(64), w: z.number().int().min(1), h: z.number().int().min(1), blurhash: z.string().max(100), variants: z.array(z.enum(PHOTO_VARIANTS)).max(PHOTO_VARIANTS.length).optional() })
   .strict();
 
 /** What a favorite shows once its listing is gone (sold, expired, removed): the card at the time it was saved. */
@@ -896,9 +648,7 @@ export const favoriteSnapshotSchema = z
 export type FavoriteSnapshot = z.infer<typeof favoriteSnapshotSchema>;
 
 /** users/{uid}/favorites/{listingId}. */
-export const favoriteSchema = z
-  .object({ createdAt: ts, listingSnapshot: favoriteSnapshotSchema })
-  .strict();
+export const favoriteSchema = z.object({ createdAt: ts, listingSnapshot: favoriteSnapshotSchema }).strict();
 export type FavoriteDoc = z.infer<typeof favoriteSchema>;
 
 /** users/{uid}/savedSearches/{id}: 10 at most; alerts are daily e-mails, never instant (no reverse search). */
@@ -921,9 +671,7 @@ export type SavedSearchDoc = z.infer<typeof savedSearchSchema>;
 const hold = z.array(z.string().min(1).max(64)).max(50);
 const participantsSchema = z.tuple([uid, uid]);
 
-const storedSlotSchema = z
-  .object({ start: ts, minutes: slotSchema.shape.minutes })
-  .strict();
+const storedSlotSchema = z.object({ start: ts, minutes: slotSchema.shape.minutes }).strict();
 
 /** Conversation.appointment: the conversation's current appointment (architecture §5, 28 Oct). */
 export const appointmentSchema = z
@@ -934,10 +682,7 @@ export const appointmentSchema = z
     /** Sorted by start, no overlap (src/lib/appointments/rules.ts). */
     slots: z.array(storedSlotSchema).min(1).max(APPOINTMENT_SLOTS_MAX),
     /** Links masked like a message (URL_MARKER). */
-    place: z
-      .string()
-      .max(APPOINTMENT_PLACE_MAX + 40)
-      .optional(),
+    place: z.string().max(APPOINTMENT_PLACE_MAX + 40).optional(),
     status: z.enum(APPOINTMENT_STATUSES),
     chosen: storedSlotSchema.optional(),
     cancelledBy: uid.optional(),
@@ -958,10 +703,7 @@ export const appointmentEventSchema = z
     slot: storedSlotSchema.optional(),
     reason: z.enum(APPOINTMENT_CANCEL_REASONS).optional(),
     /** The proposer's place, on a proposal or a rescheduling only (links masked; removed when moderation hides it). */
-    place: z
-      .string()
-      .max(APPOINTMENT_PLACE_MAX + 40)
-      .optional(),
+    place: z.string().max(APPOINTMENT_PLACE_MAX + 40).optional(),
   })
   .strict();
 export type AppointmentEventDoc = z.infer<typeof appointmentEventSchema>;
@@ -978,10 +720,7 @@ export const rentalRequestSchema = z
     /** A holiday home's stay: `from` arrival, `to` departure (nights); absent for a car rental (days). */
     unit: z.literal("night").optional(),
     /** Links masked like a message (URL_MARKER). */
-    pickup: z
-      .string()
-      .max(RENTAL_PICKUP_MAX + 40)
-      .optional(),
+    pickup: z.string().max(RENTAL_PICKUP_MAX + 40).optional(),
     /** A stay's travellers (audit L4-11). */
     guests: z.number().int().min(1).max(RENTAL_GUESTS_MAX).optional(),
     /** Accepted with the days written on the listing as unavailable. */
@@ -1000,10 +739,7 @@ export const rentalRequestEventSchema = z
     from: rentalDay,
     to: rentalDay,
     unit: z.literal("night").optional(),
-    pickup: z
-      .string()
-      .max(RENTAL_PICKUP_MAX + 40)
-      .optional(),
+    pickup: z.string().max(RENTAL_PICKUP_MAX + 40).optional(),
     guests: z.number().int().min(1).max(RENTAL_GUESTS_MAX).optional(),
   })
   .strict();
@@ -1031,13 +767,7 @@ export const offerSchema = z
 export type OfferDoc = z.infer<typeof offerSchema>;
 
 /** Message.offer: the step an offer system message shows. */
-export const offerEventSchema = z
-  .object({
-    id: offerIdSchema,
-    event: z.enum(OFFER_EVENTS),
-    amount: offerAmount,
-  })
-  .strict();
+export const offerEventSchema = z.object({ id: offerIdSchema, event: z.enum(OFFER_EVENTS), amount: offerAmount }).strict();
 export type OfferEventDoc = z.infer<typeof offerEventSchema>;
 
 /** conversations/{cid}: one per (listing, buyer); cid derived on the server (D1). Served to participants by the API (D2). */
@@ -1064,25 +794,12 @@ export const conversationSchema = z
         title: z.string().max(TITLE_MAX),
         price: z.number().int().min(0).max(PRICE_MAX).nullable(),
         isDonation: z.boolean(),
-        photo: z
-          .object({
-            id: z.string().min(1).max(64),
-            blurhash: z.string().max(100),
-          })
-          .strict()
-          .nullable(),
+        photo: z.object({ id: z.string().min(1).max(64), blurhash: z.string().max(100) }).strict().nullable(),
         /** The listing took price offers when the conversation started (Carte vivante lot 5); absent before. */
         offers: z.boolean().optional(),
       })
       .strict(),
-    lastMessage: z
-      .object({
-        preview: z.string().max(140),
-        senderUid: uid,
-        at: ts,
-        flagged: z.boolean(),
-      })
-      .strict(),
+    lastMessage: z.object({ preview: z.string().max(140), senderUid: uid, at: ts, flagged: z.boolean() }).strict(),
     /** Unread count per participant uid. */
     unread: z.record(uid, z.number().int().min(0)),
     blockedBy: z.array(uid).max(2),
@@ -1108,10 +825,7 @@ export const conversationSchema = z
     /** The current booking request of a car rental (requested, answered or withdrawn); the thread keeps every step. */
     rentalRequest: rentalRequestSchema.optional(),
     /** The requests the renter sent before the current one, newest first, without their place (audit L4-04). */
-    rentalHistory: z
-      .array(rentalRequestSchema)
-      .max(RENTAL_HISTORY_MAX)
-      .optional(),
+    rentalHistory: z.array(rentalRequestSchema).max(RENTAL_HISTORY_MAX).optional(),
     /** The buyer's current price offer (open, answered, withdrawn or expired); the thread keeps every step. */
     offer: offerSchema.optional(),
     /** Due time of the pending offer's expiry (job offer-expiry); absent once answered. */
@@ -1133,13 +847,7 @@ export const messageSchema = z
     type: z.enum(["text", "system"]),
     /** URLs masked (D5); `⟦hidden⟧` once hidden by moderation. */
     text: z.string().max(MESSAGE_TEXT_MAX + 200),
-    risk: z
-      .object({
-        flags: z.array(z.enum(MESSAGE_RISK_FLAGS)).min(1).max(4),
-        warned: z.boolean(),
-      })
-      .strict()
-      .optional(),
+    risk: z.object({ flags: z.array(z.enum(MESSAGE_RISK_FLAGS)).min(1).max(4), warned: z.boolean() }).strict().optional(),
     hidden: z.boolean().optional(),
     /** Appointment system message: its text is the appointmentMarker of the event. */
     appointment: appointmentEventSchema.optional(),
@@ -1155,33 +863,16 @@ export type MessageDoc = z.infer<typeof messageSchema>;
 
 /** conversations/{cid}/evidence/{mid}: server-only original of a masked or hidden message (rules deny). */
 export const messageEvidenceSchema = z
-  .object({
-    text: z.string().max(MESSAGE_TEXT_MAX),
-    flags: z.array(z.enum(MESSAGE_RISK_FLAGS)).max(4),
-    reason: z.enum(["masked", "hidden"]),
-    createdAt: ts,
-  })
+  .object({ text: z.string().max(MESSAGE_TEXT_MAX), flags: z.array(z.enum(MESSAGE_RISK_FLAGS)).max(4), reason: z.enum(["masked", "hidden"]), createdAt: ts })
   .strict();
 export type MessageEvidenceDoc = z.infer<typeof messageEvidenceSchema>;
 
 /** userBlocks/{uid}: accounts this user blocked (D6). */
-export const userBlocksSchema = z
-  .object({ uids: z.array(uid).max(500), updatedAt: ts })
-  .strict();
+export const userBlocksSchema = z.object({ uids: z.array(uid).max(500), updatedAt: ts }).strict();
 export type UserBlocksDoc = z.infer<typeof userBlocksSchema>;
 
-export const REPORT_STATUSES = [
-  "open",
-  "in_review",
-  "actioned",
-  "dismissed",
-] as const;
-export const STRONG_SIGNALS = [
-  "trusted",
-  "multi",
-  "auto",
-  "authority",
-] as const;
+export const REPORT_STATUSES = ["open", "in_review", "actioned", "dismissed"] as const;
+export const STRONG_SIGNALS = ["trusted", "multi", "auto", "authority"] as const;
 /** `listing.moderation.hiddenBy.signal`: a strong signal, or "decision" for a staff restriction (D13). */
 export const HIDE_SIGNALS = [...STRONG_SIGNALS, "decision"] as const;
 export type HideSignal = (typeof HIDE_SIGNALS)[number];
@@ -1240,44 +931,18 @@ export const reportSchema = z
   .strict();
 export type ReportDoc = z.infer<typeof reportSchema>;
 
-export const AI_TASKS = [
-  "listing_screen",
-  "report_triage",
-  "appeal_review",
-] as const;
-export const AI_PROVIDERS = [
-  "anthropic",
-  "workers-ai",
-  "openai",
-  "rules",
-] as const;
+export const AI_TASKS = ["listing_screen", "report_triage", "appeal_review"] as const;
+export const AI_PROVIDERS = ["anthropic", "workers-ai", "openai", "rules"] as const;
 export const AI_ACTIONS = ["approve", "hold", "reject", "escalate"] as const;
 /** What a triage or appeal proposal says of the report or appeal it is about (src/lib/ai/types.ts). */
-export const AI_VERDICTS = [
-  "founded",
-  "unfounded",
-  "needs_human",
-  "unclear",
-] as const;
-export const AI_APPLIED = [
-  "auto",
-  "pending",
-  "confirmed",
-  "edited",
-  "rejected",
-  "handed_over",
-] as const;
+export const AI_VERDICTS = ["founded", "unfounded", "needs_human", "unclear"] as const;
+export const AI_APPLIED = ["auto", "pending", "confirmed", "edited", "rejected", "handed_over"] as const;
 
 /** aiDecisions/{id}: the agent's proposal (Z4); never a sanction by itself. */
 export const aiDecisionSchema = z
   .object({
     task: z.enum(AI_TASKS),
-    target: z
-      .object({
-        type: z.enum(["listing", "report", "decision"]),
-        id: z.string().min(1).max(128),
-      })
-      .strict(),
+    target: z.object({ type: z.enum(["listing", "report", "decision"]), id: z.string().min(1).max(128) }).strict(),
     provider: z.enum(AI_PROVIDERS),
     model: z.string().max(80),
     promptVersion: z.string().max(40),
@@ -1320,9 +985,7 @@ export const authorityRequestSchema = z
     kind: z.enum(["removal_order", "data_request", "preservation", "other"]),
     /** "listing:{id}", "user:{uid}", "conversation:{cid}". */
     scope: z.array(z.string().min(3).max(160)).min(1).max(50),
-    identityCheck: z
-      .object({ method: z.string().min(2).max(300), at: ts, by: uid })
-      .strict(),
+    identityCheck: z.object({ method: z.string().min(2).max(300), at: ts, by: uid }).strict(),
     receivedAt: ts,
     dueAt: ts.optional(),
     status: z.enum(["open", "answered", "closed"]),
@@ -1342,9 +1005,7 @@ export const authorityRequestSchema = z
 export type AuthorityRequestDoc = z.infer<typeof authorityRequestSchema>;
 
 /** suspensions/{uid}: active suspension, deleted by lift-suspensions when it ends (D14). */
-export const suspensionSchema = z
-  .object({ until: ts, decisionId: z.string().min(1).max(128), createdAt: ts })
-  .strict();
+export const suspensionSchema = z.object({ until: ts, decisionId: z.string().min(1).max(128), createdAt: ts }).strict();
 export type SuspensionDoc = z.infer<typeof suspensionSchema>;
 
 // ---- Phase 7: credits wallet (design §3, §5) --------------------------------------------------
@@ -1362,27 +1023,14 @@ export const walletSchema = z
     frozen: z.boolean(),
     planCredits: z.number().int().min(0).max(100_000),
     planCreditsResetsAt: ts.optional(),
-    allowances: z
-      .object({
-        featured: z.number().int().min(0).max(1_000),
-        resetsAt: ts.optional(),
-      })
-      .strict(),
+    allowances: z.object({ featured: z.number().int().min(0).max(1_000), resetsAt: ts.optional() }).strict(),
     createdAt: ts,
     updatedAt: ts,
   })
   .strict();
 export type WalletDoc = z.infer<typeof walletSchema>;
 
-export const LEDGER_REASONS = [
-  "purchase",
-  "option",
-  "plan_grant",
-  "refund",
-  "refund_reversed",
-  "withdrawal",
-  "admin_adjust",
-] as const satisfies readonly LedgerReason[];
+export const LEDGER_REASONS = ["purchase", "option", "plan_grant", "refund", "refund_reversed", "withdrawal", "admin_adjust"] as const satisfies readonly LedgerReason[];
 
 /**
  * wallets/{accountId}/ledger/{entryId}: append-only. Ids are deterministic (idempotency):
@@ -1411,10 +1059,7 @@ export const ledgerEntrySchema = z
     /** Country of taxation of a purchase (lot 3). */
     taxJurisdiction: z.enum(["MA", "EU"]).optional(),
     /** Both purchase boxes ticked (CGV + withdrawal, immediate execution), with the text version. */
-    consent: z
-      .object({ version: z.string().min(1).max(20), at: ts })
-      .strict()
-      .optional(),
+    consent: z.object({ version: z.string().min(1).max(20), at: ts }).strict().optional(),
     /** Who acted: the buyer, or "system" for a grant or a webhook. */
     actorUid: uid,
     at: ts,
@@ -1436,18 +1081,11 @@ export const billingAccountSchema = z
     rcAppUserId: z.uuid(),
     /** The last pack checkout opened, with the CGV consent given before the payment page. */
     lastCheckout: z
-      .object({
-        packId: z.string().min(1).max(40),
-        consentVersion: z.string().min(1).max(20),
-        at: ts,
-      })
+      .object({ packId: z.string().min(1).max(40), consentVersion: z.string().min(1).max(20), at: ts })
       .strict()
       .optional(),
     /** Stripe Customer of the shop (Pro subscriptions), created at its first plan checkout. */
-    stripeCustomerId: z
-      .string()
-      .regex(/^cus_[A-Za-z0-9]{1,100}$/)
-      .optional(),
+    stripeCustomerId: z.string().regex(/^cus_[A-Za-z0-9]{1,100}$/).optional(),
     /** The last plan checkout opened, with the CGV and auto-renewal consent. */
     /** The last plan checkout; its session is expired before another one opens (one plan billed). */
     lastPlanCheckout: z
@@ -1457,10 +1095,7 @@ export const billingAccountSchema = z
         consentVersion: z.string().min(1).max(20),
         at: ts,
         idempotencyKey: z.string().max(200).optional(),
-        sessionId: z
-          .string()
-          .regex(/^cs_[A-Za-z0-9_]{1,200}$/)
-          .optional(),
+        sessionId: z.string().regex(/^cs_[A-Za-z0-9_]{1,200}$/).optional(),
       })
       .strict()
       .optional(),
@@ -1473,10 +1108,7 @@ export const billingAccountSchema = z
         commitmentsVersion: z.string().min(1).max(20).optional(),
         at: ts,
         idempotencyKey: z.string().max(200).optional(),
-        sessionId: z
-          .string()
-          .regex(/^cs_[A-Za-z0-9_]{1,200}$/)
-          .optional(),
+        sessionId: z.string().regex(/^cs_[A-Za-z0-9_]{1,200}$/).optional(),
       })
       .strict()
       .optional(),
@@ -1505,12 +1137,7 @@ export const orderSchema = z
     productId: z.string().min(1).max(100),
     quantity: z.number().int().min(1).max(10),
     /** Credits granted (paid part and bonus, already multiplied by the quantity). */
-    credits: z
-      .object({
-        paid: z.number().int().min(0).max(1_000_000),
-        bonus: z.number().int().min(0).max(1_000_000),
-      })
-      .strict(),
+    credits: z.object({ paid: z.number().int().min(0).max(1_000_000), bonus: z.number().int().min(0).max(1_000_000) }).strict(),
     currency: currencyCode,
     /** Price charged in `currency`, minor units, from the event. */
     amountMinor: z.number().int().min(0).max(1_000_000_000).optional(),
@@ -1519,25 +1146,14 @@ export const orderSchema = z
     store: z.string().min(1).max(32),
     taxJurisdiction: z.enum(["MA", "EU"]),
     /** Country of the buyer as RevenueCat saw it (DGI register indicators, design §3). */
-    locationEvidence: z
-      .object({ countryCode: countryCode.optional() })
-      .strict(),
-    consent: z
-      .object({ version: z.string().min(1).max(20), at: ts })
-      .strict()
-      .optional(),
+    locationEvidence: z.object({ countryCode: countryCode.optional() }).strict(),
+    consent: z.object({ version: z.string().min(1).max(20), at: ts }).strict().optional(),
     eventId: z.string().min(1).max(128),
     refundEventId: z.string().min(1).max(128).optional(),
     /** Amount refunded (minor units), when less than the price or known; absent: the whole price. */
     refundedMinor: z.number().int().min(0).max(1_000_000_000).optional(),
     /** Credits taken back by the refund or the withdrawal (absent on older orders: the whole pack). */
-    refundedCredits: z
-      .object({
-        paid: z.number().int().min(0).max(1_000_000),
-        bonus: z.number().int().min(0).max(1_000_000),
-      })
-      .strict()
-      .optional(),
+    refundedCredits: z.object({ paid: z.number().int().min(0).max(1_000_000), bonus: z.number().int().min(0).max(1_000_000) }).strict().optional(),
     /**
      * A consumer's withdrawal (CGV §6, online form): the unspent credits were removed at `requestedAt`;
      * the paid share (`refundMinor`) is refunded by an admin in Stripe within 14 days, then `refunded`.
@@ -1548,22 +1164,14 @@ export const orderSchema = z
         status: z.enum(["requested", "refunded"]),
         requestedAt: ts,
         requestedBy: uid,
-        credits: z
-          .object({
-            paid: z.number().int().min(0).max(1_000_000),
-            bonus: z.number().int().min(0).max(1_000_000),
-          })
-          .strict(),
+        credits: z.object({ paid: z.number().int().min(0).max(1_000_000), bonus: z.number().int().min(0).max(1_000_000) }).strict(),
         refundMinor: z.number().int().min(0).max(1_000_000_000),
         /** Text version of the withdrawal statement shown on the form. */
         statementVersion: z.string().min(1).max(20),
         refundedAt: ts.optional(),
         refundedBy: z.string().min(1).max(128).optional(),
         /** Stripe refund id (re_...) an admin recorded, if any. */
-        stripeRefundId: z
-          .string()
-          .regex(/^(re|pyr)_[A-Za-z0-9]{1,100}$/)
-          .optional(),
+        stripeRefundId: z.string().regex(/^(re|pyr)_[A-Za-z0-9]{1,100}$/).optional(),
       })
       .strict()
       .optional(),
@@ -1575,12 +1183,7 @@ export const orderSchema = z
   .strict();
 export type OrderDoc = z.infer<typeof orderSchema>;
 
-export const BILLING_EVENT_STATUSES = [
-  "received",
-  "processed",
-  "ignored",
-  "failed",
-] as const;
+export const BILLING_EVENT_STATUSES = ["received", "processed", "ignored", "failed"] as const;
 
 /**
  * billingEvents/{source}_{eventId}: every authenticated webhook delivery (RevenueCat or Stripe),
@@ -1609,12 +1212,7 @@ export const billingEventSchema = z
     cancelReason: z.string().min(1).max(64).optional(),
     store: z.string().min(1).max(32).optional(),
     currency: currencyCode.optional(),
-    amountMinor: z
-      .number()
-      .int()
-      .min(-1_000_000_000)
-      .max(1_000_000_000)
-      .optional(),
+    amountMinor: z.number().int().min(-1_000_000_000).max(1_000_000_000).optional(),
     countryCode: countryCode.optional(),
     quantity: z.number().int().min(1).max(10).optional(),
     status: z.enum(BILLING_EVENT_STATUSES),
@@ -1629,13 +1227,7 @@ export const billingEventSchema = z
   .strict();
 export type BillingEventDoc = z.infer<typeof billingEventSchema>;
 
-export const SUBSCRIPTION_STATUSES = [
-  "active",
-  "grace",
-  "billing_issue",
-  "cancelled",
-  "expired",
-] as const;
+export const SUBSCRIPTION_STATUSES = ["active", "grace", "billing_issue", "cancelled", "expired"] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 /**
@@ -1687,10 +1279,7 @@ export const reviewSchema = z
     /** The seller's first reply: the date of the exchange shown with the review (D111-17 C. conso). */
     experienceAt: ts,
     status: z.enum(REVIEW_STATUSES),
-    reply: z
-      .object({ text: z.string().min(1).max(REVIEW_REPLY_MAX), at: ts })
-      .strict()
-      .optional(),
+    reply: z.object({ text: z.string().min(1).max(REVIEW_REPLY_MAX), at: ts }).strict().optional(),
     /** moderationDecisions id that hid the review. */
     hiddenBy: z.string().max(128).optional(),
     createdAt: ts,

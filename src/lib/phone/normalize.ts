@@ -28,21 +28,15 @@ export interface NormalizedPhone {
  */
 export function normalizeMoroccanMobile(input: string): NormalizedPhone {
   const text = input.trim();
-  if (text === "" || text.length > 32 || !ALLOWED_INPUT.test(text))
-    throw new HttpError(400, "phone_invalid");
+  if (text === "" || text.length > 32 || !ALLOWED_INPUT.test(text)) throw new HttpError(400, "phone_invalid");
   const parsed = parsePhoneNumberFromString(text, "MA");
-  if (!parsed || parsed.countryCallingCode !== "212")
-    throw new HttpError(400, "phone_invalid");
+  if (!parsed || parsed.countryCallingCode !== "212") throw new HttpError(400, "phone_invalid");
   // A landline or special number is refused as "not mobile" even when the exact range is
   // unassigned in the metadata: "mobile only" is the message that helps the user.
-  if (MOROCCAN_NON_MOBILE.test(parsed.number))
-    throw new HttpError(400, "phone_not_mobile");
+  if (MOROCCAN_NON_MOBILE.test(parsed.number)) throw new HttpError(400, "phone_not_mobile");
   if (!parsed.isValid()) throw new HttpError(400, "phone_invalid");
   const type = parsed.getType();
-  if (
-    (type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") ||
-    !MOROCCAN_MOBILE_E164.test(parsed.number)
-  ) {
+  if ((type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") || !MOROCCAN_MOBILE_E164.test(parsed.number)) {
     throw new HttpError(400, "phone_not_mobile");
   }
   return { e164: parsed.number, national: displayPhone(parsed.number) };
@@ -52,46 +46,21 @@ export function normalizeMoroccanMobile(input: string): NormalizedPhone {
  * Calling codes of the EU countries a carrier registered there may give a mobile of (carriers
  * space, owner 2026-11-10: KYBC form "entreprise_ue"): FR, BE, NL, ES, IT, DE, PT.
  */
-const EU_CALLING_CODES: ReadonlySet<string> = new Set([
-  "33",
-  "32",
-  "31",
-  "34",
-  "39",
-  "49",
-  "351",
-]);
+const EU_CALLING_CODES: ReadonlySet<string> = new Set(["33", "32", "31", "34", "39", "49", "351"]);
 
 /**
  * A Moroccan mobile, or with `eu` an EU mobile typed in its international form (+33 6…, 0033 6…):
  * a national "06…" stays Moroccan, the form's hint says so. Same errors as `normalizeMoroccanMobile`.
  */
-export function normalizeMobile(
-  input: string,
-  options: { eu: boolean },
-): NormalizedPhone {
+export function normalizeMobile(input: string, options: { eu: boolean }): NormalizedPhone {
   const text = input.trim();
   const international = text.replace(/^00/, "+");
-  if (
-    options.eu &&
-    international.startsWith("+") &&
-    !/^\+\s*2\s*1\s*2/.test(international)
-  ) {
-    if (text.length > 32 || !ALLOWED_INPUT.test(international))
-      throw new HttpError(400, "phone_invalid");
+  if (options.eu && international.startsWith("+") && !/^\+\s*2\s*1\s*2/.test(international)) {
+    if (text.length > 32 || !ALLOWED_INPUT.test(international)) throw new HttpError(400, "phone_invalid");
     const parsed = parsePhoneNumberFromString(international);
-    if (
-      !parsed ||
-      !EU_CALLING_CODES.has(parsed.countryCallingCode) ||
-      !parsed.isValid()
-    )
-      throw new HttpError(400, "phone_invalid");
+    if (!parsed || !EU_CALLING_CODES.has(parsed.countryCallingCode) || !parsed.isValid()) throw new HttpError(400, "phone_invalid");
     const type = parsed.getType();
-    if (
-      (type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") ||
-      !EU_MOBILE_E164.test(parsed.number)
-    )
-      throw new HttpError(400, "phone_not_mobile");
+    if ((type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") || !EU_MOBILE_E164.test(parsed.number)) throw new HttpError(400, "phone_not_mobile");
     return { e164: parsed.number, national: displayPhone(parsed.number) };
   }
   return normalizeMoroccanMobile(input);
@@ -99,8 +68,7 @@ export function normalizeMobile(
 
 /** National display form of a Moroccan E.164 number ("06 12 34 56 78"); an EU mobile in its international form; other values as is. */
 export function displayPhone(e164: string): string {
-  if (EU_MOBILE_E164.test(e164))
-    return parsePhoneNumberFromString(e164)?.formatInternational() ?? e164;
+  if (EU_MOBILE_E164.test(e164)) return parsePhoneNumberFromString(e164)?.formatInternational() ?? e164;
   const match = /^\+212(\d{9})$/.exec(e164);
   if (!match?.[1]) return e164;
   const national = `0${match[1]}`;

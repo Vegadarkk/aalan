@@ -9,22 +9,9 @@ import { PRO_SECTORS } from "@/lib/pro/profile-schema";
 import { searchEngine } from "@/lib/search/engine";
 import { buildFilter, NOT_EXAMPLE } from "@/lib/search/service";
 import { carModelById } from "@/config/car-models";
-import {
-  CAR_SCOPE,
-  isCarPageBrand,
-  SEO_MIN_LISTINGS,
-  seoPath,
-  seoSearchParams,
-  type SeoTarget,
-} from "./seo";
+import { CAR_SCOPE, isCarPageBrand, SEO_MIN_LISTINGS, seoPath, seoSearchParams, type SeoTarget } from "./seo";
 import { DIRECTORY_PATH, PRO_LANDING_PATH } from "./shortcuts";
-import {
-  attributeField,
-  SITEMAP_SHARDS,
-  SearchUnavailableError,
-  type EngineQuery,
-  type SearchDocument,
-} from "./types";
+import { attributeField, SITEMAP_SHARDS, SearchUnavailableError, type EngineQuery, type SearchDocument } from "./types";
 
 // XML sitemaps (design D16), production only, served by src/app/sitemaps/[file]/route.ts (ISR, one
 // hour) and reached by verified bots only (Cloudflare WAF rule `sitemaps_verified_bots`):
@@ -40,15 +27,10 @@ import {
 /** Google: 50 000 URLs per sitemap file. */
 export const SITEMAP_URL_MAX = 50_000;
 /** Listings per shard file: each listing is one URL per hreflang locale. */
-export const SITEMAP_LISTINGS_MAX = Math.floor(
-  SITEMAP_URL_MAX / HREFLANG_LOCALES.length,
-);
+export const SITEMAP_LISTINGS_MAX = Math.floor(SITEMAP_URL_MAX / HREFLANG_LOCALES.length);
 const DOCUMENTS_PAGE = 1_000;
 
-export type SitemapFile =
-  | { kind: "index" }
-  | { kind: "pages" }
-  | { kind: "listings"; shard: number };
+export type SitemapFile = { kind: "index" } | { kind: "pages" } | { kind: "listings"; shard: number };
 
 /** "index.xml" | "pages.xml" | "listings-{0..SITEMAP_SHARDS-1}.xml", else null. */
 export function parseSitemapFile(file: string): SitemapFile | null {
@@ -56,41 +38,21 @@ export function parseSitemapFile(file: string): SitemapFile | null {
   if (file === "pages.xml") return { kind: "pages" };
   const match = /^listings-(0|[1-9]\d?)\.xml$/.exec(file);
   const shard = match ? Number(match[1]) : NaN;
-  return Number.isInteger(shard) && shard < SITEMAP_SHARDS
-    ? { kind: "listings", shard }
-    : null;
+  return Number.isInteger(shard) && shard < SITEMAP_SHARDS ? { kind: "listings", shard } : null;
 }
 
 export function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
 const absolute = (path: string) => `${CANONICAL_ORIGIN}${path}`;
 
 /** One <url> per hreflang locale of `path` (locale-free), each with the full cluster. */
 export function urlEntries(path: string, lastmod?: number): string[] {
-  const languages = Object.entries(alternates("fr", path)?.languages ?? {}).map(
-    ([tag, href]) => [tag, absolute(String(href))] as const,
-  );
-  const links = languages
-    .map(
-      ([tag, href]) =>
-        `<xhtml:link rel="alternate" hreflang="${escapeXml(tag)}" href="${escapeXml(href)}"/>`,
-    )
-    .join("");
-  const modified =
-    lastmod !== undefined && Number.isFinite(lastmod)
-      ? `<lastmod>${new Date(lastmod).toISOString()}</lastmod>`
-      : "";
-  return HREFLANG_LOCALES.map(
-    (locale) =>
-      `<url><loc>${escapeXml(absolute(`/${locale}${path}`))}</loc>${modified}${links}</url>`,
-  );
+  const languages = Object.entries(alternates("fr", path)?.languages ?? {}).map(([tag, href]) => [tag, absolute(String(href))] as const);
+  const links = languages.map(([tag, href]) => `<xhtml:link rel="alternate" hreflang="${escapeXml(tag)}" href="${escapeXml(href)}"/>`).join("");
+  const modified = lastmod !== undefined && Number.isFinite(lastmod) ? `<lastmod>${new Date(lastmod).toISOString()}</lastmod>` : "";
+  return HREFLANG_LOCALES.map((locale) => `<url><loc>${escapeXml(absolute(`/${locale}${path}`))}</loc>${modified}${links}</url>`);
 }
 
 export function urlset(entries: readonly string[]): string {
@@ -106,12 +68,7 @@ export function sitemapIndex(files: readonly string[]): string {
   return (
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    files
-      .map(
-        (file) =>
-          `<sitemap><loc>${escapeXml(absolute(`/sitemaps/${file}`))}</loc></sitemap>\n`,
-      )
-      .join("") +
+    files.map((file) => `<sitemap><loc>${escapeXml(absolute(`/sitemaps/${file}`))}</loc></sitemap>\n`).join("") +
     `</sitemapindex>\n`
   );
 }
@@ -119,14 +76,7 @@ export function sitemapIndex(files: readonly string[]): string {
 /** Real listings only: example listings never make a landing page indexable (same rule as seoCounts). */
 function countQuery(target: SeoTarget, facets: readonly string[]): EngineQuery {
   const scope = buildFilter(seoSearchParams(target), new Date());
-  return {
-    q: "",
-    filter: scope ? { and: [scope, NOT_EXAMPLE] } : NOT_EXAMPLE,
-    page: 1,
-    hitsPerPage: 1,
-    facets: [...facets],
-    fields: ["id"],
-  };
+  return { q: "", filter: scope ? { and: [scope, NOT_EXAMPLE] } : NOT_EXAMPLE, page: 1, hitsPerPage: 1, facets: [...facets], fields: ["id"] };
 }
 
 const BRAND_FIELD = attributeField("car-brand");
@@ -134,23 +84,12 @@ const MODEL_FIELD = attributeField("car-model");
 
 /** Shards holding at least one document. */
 export async function listingShards(): Promise<number[]> {
-  const [result] = await searchEngine().search([
-    {
-      q: "",
-      page: 1,
-      hitsPerPage: 1,
-      facets: ["sitemapShard"],
-      fields: ["id"],
-    },
-  ]);
+  const [result] = await searchEngine().search([{ q: "", page: 1, hitsPerPage: 1, facets: ["sitemapShard"], fields: ["id"] }]);
   if (!result) throw new SearchUnavailableError("engine returned no result");
   return Object.entries(result.facetDistribution?.sitemapShard ?? {})
     .filter(([, count]) => count > 0)
     .map(([shard]) => Number(shard))
-    .filter(
-      (shard) =>
-        Number.isInteger(shard) && shard >= 0 && shard < SITEMAP_SHARDS,
-    )
+    .filter((shard) => Number.isInteger(shard) && shard >= 0 && shard < SITEMAP_SHARDS)
     .sort((a, b) => a - b);
 }
 
@@ -162,25 +101,14 @@ export async function listingShards(): Promise<number[]> {
  * query of that round trip (brand and model facets of the car subcategory).
  */
 export async function indexableLandingPaths(): Promise<string[]> {
-  const subcategories = CATEGORIES.flatMap((category) =>
-    category.subcategories.map((sub) => ({
-      category: category.id,
-      subcategory: sub.id,
-    })),
-  );
-  const results = await searchEngine().search([
-    ...subcategories.map((target) => countQuery(target, ["citySlug"])),
-    countQuery(CAR_SCOPE, [BRAND_FIELD, MODEL_FIELD]),
-  ]);
+  const subcategories = CATEGORIES.flatMap((category) => category.subcategories.map((sub) => ({ category: category.id, subcategory: sub.id })));
+  const results = await searchEngine().search([...subcategories.map((target) => countQuery(target, ["citySlug"])), countQuery(CAR_SCOPE, [BRAND_FIELD, MODEL_FIELD])]);
   const paths: string[] = [];
   const categoryCities = new Map<string, Map<string, number>>();
   subcategories.forEach((target, index) => {
-    const cities = Object.entries(
-      results[index]?.facetDistribution?.citySlug ?? {},
-    ).filter(([, count]) => count > 0);
+    const cities = Object.entries(results[index]?.facetDistribution?.citySlug ?? {}).filter(([, count]) => count > 0);
     const total = cities.reduce((sum, [, count]) => sum + count, 0);
-    const perCity =
-      categoryCities.get(target.category) ?? new Map<string, number>();
+    const perCity = categoryCities.get(target.category) ?? new Map<string, number>();
     for (const [city, count] of cities) {
       perCity.set(city, (perCity.get(city) ?? 0) + count);
       if (count >= SEO_MIN_LISTINGS) paths.push(seoPath({ ...target, city }));
@@ -192,30 +120,23 @@ export async function indexableLandingPaths(): Promise<string[]> {
     // Always indexable (seoVerdict): every top-level category page, whatever its count.
     paths.push(seoPath({ category: category.id }));
     for (const [city, count] of categoryCities.get(category.id) ?? []) {
-      if (count >= SEO_MIN_LISTINGS)
-        paths.push(seoPath({ category: category.id, city }));
+      if (count >= SEO_MIN_LISTINGS) paths.push(seoPath({ category: category.id, city }));
     }
   }
   const cars = results[subcategories.length]?.facetDistribution ?? {};
   for (const [brand, count] of Object.entries(cars[BRAND_FIELD] ?? {})) {
-    if (count >= SEO_MIN_LISTINGS && isCarPageBrand(brand))
-      paths.push(seoPath({ ...CAR_SCOPE, brand }));
+    if (count >= SEO_MIN_LISTINGS && isCarPageBrand(brand)) paths.push(seoPath({ ...CAR_SCOPE, brand }));
   }
   for (const [id, count] of Object.entries(cars[MODEL_FIELD] ?? {})) {
     const model = carModelById(id);
-    if (count >= SEO_MIN_LISTINGS && model && isCarPageBrand(model.brand))
-      paths.push(
-        seoPath({ ...CAR_SCOPE, brand: model.brand, model: model.id }),
-      );
+    if (count >= SEO_MIN_LISTINGS && model && isCarPageBrand(model.brand)) paths.push(seoPath({ ...CAR_SCOPE, brand: model.brand, model: model.id }));
   }
   return paths.sort();
 }
 
 async function listingEntries(shard: number): Promise<string[]> {
   const entries: string[] = [];
-  const documents = searchEngine().documents<
-    Pick<SearchDocument, "slugId" | "updatedAt">
-  >({
+  const documents = searchEngine().documents<Pick<SearchDocument, "slugId" | "updatedAt">>({
     filter: { field: "sitemapShard", op: "eq", value: shard },
     fields: ["slugId", "updatedAt"],
     pageSize: DOCUMENTS_PAGE,
@@ -235,36 +156,18 @@ async function listingEntries(shard: number): Promise<string[]> {
 
 /** Always indexable: the public Pro page, the directory of shops and its activities, the admin procedures guide (guide-demarches G1) and its rubrics. */
 // The carriers' activity page joins once their space opens (transporteurs/spec.md lot 5).
-const FIXED_PATHS = [
-  PRO_LANDING_PATH,
-  DIRECTORY_PATH,
-  ...PRO_SECTORS.filter((sector) => sector !== "carrier").map((sector) =>
-    directoryPath({ sector }),
-  ),
-  "/demarches",
-  ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`),
-];
+const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.filter((sector) => sector !== "carrier").map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
 
 /** XML of a sitemap file, or null for a 404 (unknown file, empty shard, not production). */
-export async function buildSitemapFile(
-  file: string,
-  env: ServerEnv = serverEnv(),
-): Promise<string | null> {
+export async function buildSitemapFile(file: string, env: ServerEnv = serverEnv()): Promise<string | null> {
   if (env.APP_ENV !== "prod") return null;
   const parsed = parseSitemapFile(file);
   if (!parsed) return null;
   switch (parsed.kind) {
     case "index":
-      return sitemapIndex([
-        "pages.xml",
-        ...(await listingShards()).map((shard) => `listings-${shard}.xml`),
-      ]);
+      return sitemapIndex(["pages.xml", ...(await listingShards()).map((shard) => `listings-${shard}.xml`)]);
     case "pages":
-      return urlset([
-        ...urlEntries(""),
-        ...FIXED_PATHS.flatMap((path) => urlEntries(path)),
-        ...(await indexableLandingPaths()).flatMap((path) => urlEntries(path)),
-      ]);
+      return urlset([...urlEntries(""), ...FIXED_PATHS.flatMap((path) => urlEntries(path)), ...(await indexableLandingPaths()).flatMap((path) => urlEntries(path))]);
     case "listings": {
       const entries = await listingEntries(parsed.shard);
       return entries.length > 0 ? urlset(entries) : null;

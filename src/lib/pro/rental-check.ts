@@ -2,31 +2,15 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { Timestamp } from "firebase-admin/firestore";
-import {
-  claudeBlocked,
-  latchSpendLimit,
-  recordClaudeCost,
-} from "@/lib/ai/budget";
+import { claudeBlocked, latchSpendLimit, recordClaudeCost } from "@/lib/ai/budget";
 import { aiConfig } from "@/lib/ai/config";
 import { classifyAnthropicError } from "@/lib/ai/providers/anthropic";
 import { enqueueRentalCheck, type RentalCheckJobData } from "@/lib/ai/queue";
 import { ProviderError, RetryableAiError } from "@/lib/ai/types";
 import type { AuthContext, StaffContext } from "@/lib/auth/guards";
 import { audit } from "@/lib/audit";
-import type {
-  RentalCheckDecisionInput,
-  RentalCheckDecisionResponse,
-  RentalCheckQueueItem,
-  RentalCheckResponse,
-  RentalCheckReview,
-  RentalCheckSubmitInput,
-} from "@/lib/contracts/pro";
-import {
-  getProProfile,
-  proProfileFromSnapshot,
-  proProfileRef,
-  type ProProfileRecord,
-} from "@/lib/db/repositories/pro-profiles";
+import type { RentalCheckDecisionInput, RentalCheckDecisionResponse, RentalCheckQueueItem, RentalCheckResponse, RentalCheckReview, RentalCheckSubmitInput } from "@/lib/contracts/pro";
+import { getProProfile, proProfileFromSnapshot, proProfileRef, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { datesToTimestamps } from "@/lib/db/repositories/timestamps";
 import { getUpload, getUploads } from "@/lib/db/repositories/uploads";
 import { COLLECTIONS } from "@/lib/db/schemas";
@@ -41,19 +25,8 @@ import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { objectStore } from "@/lib/storage";
 import { z } from "@/lib/zod";
 import { storefrontShown } from "./lifecycle";
-import {
-  RENTAL_CHECK_SIGNS_MAX,
-  rentalCheckSchema,
-  type RentalCheck,
-  type RentalCheckIssue,
-  type RentalCheckStatus,
-} from "./profile-schema";
-import {
-  agrementIssues,
-  referenceKey,
-  rentalCheckView,
-  type AgrementReading,
-} from "./rental-check-rules";
+import { RENTAL_CHECK_SIGNS_MAX, rentalCheckSchema, type RentalCheck, type RentalCheckIssue, type RentalCheckStatus } from "./profile-schema";
+import { agrementIssues, referenceKey, rentalCheckView, type AgrementReading } from "./rental-check-rules";
 import { ownedPublishingShop } from "./service";
 import { primaryIdentifier } from "./kybc";
 
@@ -102,39 +75,15 @@ Report only what you can read on the document, never a guess:
 
 const readingSchema = z
   .object({
-    isAgrementDecision: z
-      .boolean()
-      .describe(
-        "The document is a Moroccan administrative decision allowing car rental without a driver",
-      ),
-    legible: z
-      .boolean()
-      .describe("Beneficiary, number and date read with certainty"),
-    companyName: z
-      .string()
-      .describe("Beneficiary company name as written, empty if absent"),
+    isAgrementDecision: z.boolean().describe("The document is a Moroccan administrative decision allowing car rental without a driver"),
+    legible: z.boolean().describe("Beneficiary, number and date read with certainty"),
+    companyName: z.string().describe("Beneficiary company name as written, empty if absent"),
     ice: z.string().describe("Beneficiary ICE as written, empty if absent"),
-    reference: z
-      .string()
-      .describe("Decision number or reference as written, empty if absent"),
-    decisionDate: z
-      .string()
-      .describe("Decision date as YYYY-MM-DD, empty if absent"),
-    tamperingSigns: z
-      .array(z.string())
-      .describe(
-        "Short French phrases, one per visible sign of editing; empty when none",
-      ),
-    confidence: z
-      .number()
-      .describe(
-        "Probability between 0 and 1 that the reading is right and the document shows no editing",
-      ),
-    note: z
-      .string()
-      .describe(
-        "One short French sentence for the moderator, no personal data",
-      ),
+    reference: z.string().describe("Decision number or reference as written, empty if absent"),
+    decisionDate: z.string().describe("Decision date as YYYY-MM-DD, empty if absent"),
+    tamperingSigns: z.array(z.string()).describe("Short French phrases, one per visible sign of editing; empty when none"),
+    confidence: z.number().describe("Probability between 0 and 1 that the reading is right and the document shows no editing"),
+    note: z.string().describe("One short French sentence for the moderator, no personal data"),
   })
   .strict();
 type ModelReading = z.infer<typeof readingSchema>;
@@ -148,9 +97,7 @@ let override: { client: RentalCheckClient | null } | undefined;
 let shared: RentalCheckClient | undefined;
 
 /** Tests: a stub client, or null for "no API key"; undefined restores the real one. */
-export function setRentalCheckClientForTests(
-  client: RentalCheckClient | null | undefined,
-): void {
+export function setRentalCheckClientForTests(client: RentalCheckClient | null | undefined): void {
   override = client === undefined ? undefined : { client };
 }
 
@@ -168,9 +115,7 @@ const clip = (text: string, max: number) => {
 };
 
 /** Bounds Claude's answer (the JSON schema cannot carry lengths or ranges). */
-export function clampReading(
-  raw: ModelReading,
-): AgrementReading & { note: string } {
+export function clampReading(raw: ModelReading): AgrementReading & { note: string } {
   return {
     isAgrementDecision: raw.isAgrementDecision === true,
     legible: raw.legible === true,
@@ -182,83 +127,43 @@ export function clampReading(
       .map((sign) => clip(sign, 200))
       .filter(Boolean)
       .slice(0, RENTAL_CHECK_SIGNS_MAX),
-    confidence: Number.isFinite(raw.confidence)
-      ? Math.round(Math.min(1, Math.max(0, raw.confidence)) * 1000) / 1000
-      : 0,
+    confidence: Number.isFinite(raw.confidence) ? Math.round(Math.min(1, Math.max(0, raw.confidence)) * 1000) / 1000 : 0,
     note: clip(raw.note, 500),
   };
 }
 
-const shopSegment = (profile: Pick<ProProfileRecord, "slug" | "proId">) =>
-  `${profile.slug}-${profile.proId}`;
+const shopSegment = (profile: Pick<ProProfileRecord, "slug" | "proId">) => `${profile.slug}-${profile.proId}`;
 
-function revalidateStorefront(
-  profile: Pick<ProProfileRecord, "slug" | "proId" | "lifecycle" | "plan">,
-): void {
-  if (storefrontShown(profile.lifecycle, profile.plan))
-    revalidateListingPaths({ shopSegment: shopSegment(profile) });
+function revalidateStorefront(profile: Pick<ProProfileRecord, "slug" | "proId" | "lifecycle" | "plan">): void {
+  if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: shopSegment(profile) });
 }
 
 /**
  * The owner's publishing shop with a licence reference in its settings (the document is checked
  * against it): the precondition of signing a licence document and of sending it.
  */
-export async function ownedRentalAgency(
-  auth: AuthContext,
-): Promise<
-  ProProfileRecord & { rental: NonNullable<ProProfileRecord["rental"]> }
-> {
+export async function ownedRentalAgency(auth: AuthContext): Promise<ProProfileRecord & { rental: NonNullable<ProProfileRecord["rental"]> }> {
   const profile = await ownedPublishingShop(auth);
-  if (!profile.rental?.agrementRef)
-    throw new HttpError(
-      409,
-      "rental_agrement_missing",
-      "save the licence reference first",
-    );
-  return profile as ProProfileRecord & {
-    rental: NonNullable<ProProfileRecord["rental"]>;
-  };
+  if (!profile.rental?.agrementRef) throw new HttpError(409, "rental_agrement_missing", "save the licence reference first");
+  return profile as ProProfileRecord & { rental: NonNullable<ProProfileRecord["rental"]> };
 }
 
 /**
  * POST /api/pro/me/rental/check: the document `uploadId` (the caller's, ready, not a piece of its
  * Pro application) replaces any previous check. Sending the pending document again answers it.
  */
-export async function submitRentalCheck(
-  auth: AuthContext,
-  input: RentalCheckSubmitInput,
-  now = new Date(),
-): Promise<RentalCheckResponse> {
+export async function submitRentalCheck(auth: AuthContext, input: RentalCheckSubmitInput, now = new Date()): Promise<RentalCheckResponse> {
   const uid = auth.user.uid;
   const profile = await ownedRentalAgency(auth);
   const previous = profile.rentalCheck;
-  if (
-    previous &&
-    previous.uploadId === input.uploadId &&
-    previous.status !== "rejected"
-  )
-    return { rentalCheck: rentalCheckView(previous) };
+  if (previous && previous.uploadId === input.uploadId && previous.status !== "rejected") return { rentalCheck: rentalCheckView(previous) };
   await enforceLimit("pro.rental.check.uid", uid);
   const month = now.toISOString().slice(0, 7);
-  const sent =
-    profile.rentalCheckUsage?.month === month
-      ? profile.rentalCheckUsage.count
-      : 0;
-  if (sent >= RENTAL_CHECK_MONTHLY_MAX)
-    throw rateLimited(
-      (Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1) - now.getTime()) /
-        1000,
-    );
+  const sent = profile.rentalCheckUsage?.month === month ? profile.rentalCheckUsage.count : 0;
+  if (sent >= RENTAL_CHECK_MONTHLY_MAX) throw rateLimited((Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1) - now.getTime()) / 1000);
   const upload = await getUpload(input.uploadId);
-  if (
-    !upload ||
-    upload.ownerUid !== uid ||
-    upload.purpose !== "kyb" ||
-    profile.kybc.uploadIds.includes(upload.id)
-  )
-    throw notFound();
-  if (upload.status !== "ready" || !upload.finalKey)
-    throw new HttpError(409, "upload_not_ready");
+  if (!upload || upload.ownerUid !== uid || upload.purpose !== "kyb" || profile.kybc.uploadIds.includes(upload.id)) throw notFound();
+  if (upload.status !== "ready" || !upload.finalKey) throw new HttpError(409, "upload_not_ready");
 
   const check: RentalCheck = rentalCheckSchema.parse({
     status: "pending",
@@ -268,11 +173,7 @@ export async function submitRentalCheck(
     submittedAt: now,
     issues: [],
   });
-  await proProfileRef(profile.proId).update({
-    rentalCheck: datesToTimestamps(check),
-    rentalCheckUsage: { month, count: sent + 1 },
-    updatedAt: Timestamp.fromDate(now),
-  });
+  await proProfileRef(profile.proId).update({ rentalCheck: datesToTimestamps(check), rentalCheckUsage: { month, count: sent + 1 }, updatedAt: Timestamp.fromDate(now) });
   void consume("firestore.reads", 2);
   void consume("firestore.writes", 1);
   // The badge of the previous document goes until this one is checked.
@@ -280,25 +181,12 @@ export async function submitRentalCheck(
 
   let queued = false;
   try {
-    queued = (
-      await enqueueRentalCheck({
-        proId: profile.proId,
-        submittedAt: now.getTime(),
-      })
-    ).queued;
+    queued = (await enqueueRentalCheck({ proId: profile.proId, submittedAt: now.getTime() })).queued;
   } catch (error) {
-    logger.warn(
-      { err: (error as Error).message },
-      "rental check not enqueued: left to a moderator",
-    );
+    logger.warn({ err: (error as Error).message }, "rental check not enqueued: left to a moderator");
   }
   if (!queued) {
-    const finished = await finishCheck(
-      profile.proId,
-      now.getTime(),
-      { status: "review", issues: ["ai_unavailable"] },
-      now,
-    );
+    const finished = await finishCheck(profile.proId, now.getTime(), { status: "review", issues: ["ai_unavailable"] }, now);
     if (finished) return { rentalCheck: rentalCheckView(finished) };
   }
   return { rentalCheck: rentalCheckView(check) };
@@ -314,36 +202,20 @@ interface CheckOutcome {
  * Records the outcome on the check still pending for this very submission (a new document or a
  * moderator meanwhile wins); returns it, or null when the check moved.
  */
-async function finishCheck(
-  proId: string,
-  submittedAt: number,
-  outcome: CheckOutcome,
-  now: Date,
-): Promise<RentalCheck | null> {
+async function finishCheck(proId: string, submittedAt: number, outcome: CheckOutcome, now: Date): Promise<RentalCheck | null> {
   const ref = proProfileRef(proId);
   const finished = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     const check = current?.rentalCheck;
-    if (
-      !current ||
-      !check ||
-      check.status !== "pending" ||
-      check.submittedAt.getTime() !== submittedAt
-    )
-      return null;
+    if (!current || !check || check.status !== "pending" || check.submittedAt.getTime() !== submittedAt) return null;
     const next = rentalCheckSchema.parse({
       ...check,
       status: outcome.status,
       issues: outcome.issues,
       ...(outcome.extracted ? { extracted: outcome.extracted } : {}),
-      ...(outcome.status === "verified"
-        ? { checkedAt: now, method: "ai" }
-        : {}),
+      ...(outcome.status === "verified" ? { checkedAt: now, method: "ai" } : {}),
     });
-    tx.update(ref, {
-      rentalCheck: datesToTimestamps(next),
-      updatedAt: Timestamp.fromDate(now),
-    });
+    tx.update(ref, { rentalCheck: datesToTimestamps(next), updatedAt: Timestamp.fromDate(now) });
     return { next, profile: current };
   });
   void consume("firestore.reads", 1);
@@ -352,10 +224,7 @@ async function finishCheck(
   await audit({
     actorUid: "system",
     actorRole: "system",
-    action:
-      outcome.status === "verified"
-        ? "pro.rental_check.verified"
-        : "pro.rental_check.review",
+    action: outcome.status === "verified" ? "pro.rental_check.verified" : "pro.rental_check.review",
     target: { type: "pro", id: proId },
     automated: true,
     ...(outcome.issues.length > 0 ? { reason: outcome.issues.join(", ") } : {}),
@@ -381,84 +250,36 @@ export interface RentalCheckRunResult {
 type DocumentBlock = Anthropic.DocumentBlockParam | Anthropic.ImageBlockParam;
 
 /** Another shop holds a verified check of this reference (equality only: no composite index). */
-async function referenceTakenElsewhere(
-  proId: string,
-  agrementRef: string,
-): Promise<boolean> {
+async function referenceTakenElsewhere(proId: string, agrementRef: string): Promise<boolean> {
   const key = referenceKey(agrementRef);
   if (!key) return false;
-  const query = await db()
-    .collection(COLLECTIONS.proProfiles)
-    .where("rentalCheck.referenceKey", "==", key)
-    .limit(20)
-    .get();
+  const query = await db().collection(COLLECTIONS.proProfiles).where("rentalCheck.referenceKey", "==", key).limit(20).get();
   void consume("firestore.reads", Math.max(1, query.size));
-  return query.docs.some(
-    (doc) =>
-      doc.id !== proId &&
-      proProfileFromSnapshot(doc)?.rentalCheck?.status === "verified",
-  );
+  return query.docs.some((doc) => doc.id !== proId && proProfileFromSnapshot(doc)?.rentalCheck?.status === "verified");
 }
 
 function documentBlock(bytes: Buffer, type: string): DocumentBlock {
   const data = bytes.toString("base64");
-  if (type === "application/pdf")
-    return {
-      type: "document",
-      source: { type: "base64", media_type: "application/pdf", data },
-    };
-  return {
-    type: "image",
-    source: {
-      type: "base64",
-      media_type: type === "image/png" ? "image/png" : "image/jpeg",
-      data,
-    },
-  };
+  if (type === "application/pdf") return { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
+  return { type: "image", source: { type: "base64", media_type: type === "image/png" ? "image/png" : "image/jpeg", data } };
 }
 
 /** The worker's job (src/worker/jobs/agent.ts): reads the pending document with Claude and records the outcome. */
-export async function runRentalCheck(
-  job: RentalCheckJobData,
-  options: RentalCheckRunOptions = {},
-): Promise<RentalCheckRunResult> {
+export async function runRentalCheck(job: RentalCheckJobData, options: RentalCheckRunOptions = {}): Promise<RentalCheckRunResult> {
   const now = options.now ?? new Date();
   const profile = await getProProfile(job.proId);
   const check = profile?.rentalCheck;
-  if (
-    !profile ||
-    !check ||
-    check.status !== "pending" ||
-    check.submittedAt.getTime() !== job.submittedAt
-  )
-    return { status: "skipped" };
-  const toModerator = async (
-    issues: RentalCheckIssue[],
-    costMicroUsd = 0,
-  ): Promise<RentalCheckRunResult> => {
-    await finishCheck(
-      profile.proId,
-      job.submittedAt,
-      { status: "review", issues },
-      now,
-    );
+  if (!profile || !check || check.status !== "pending" || check.submittedAt.getTime() !== job.submittedAt) return { status: "skipped" };
+  const toModerator = async (issues: RentalCheckIssue[], costMicroUsd = 0): Promise<RentalCheckRunResult> => {
+    await finishCheck(profile.proId, job.submittedAt, { status: "review", issues }, now);
     return { status: "done", outcome: "review", costMicroUsd };
   };
 
   const upload = await getUpload(check.uploadId);
-  if (
-    !upload ||
-    upload.status !== "ready" ||
-    !upload.finalKey ||
-    upload.ownerUid !== profile.ownerUid
-  )
-    return toModerator(["unreadable"]);
+  if (!upload || upload.status !== "ready" || !upload.finalKey || upload.ownerUid !== profile.ownerUid) return toModerator(["unreadable"]);
   const client = checkClient();
-  if (!client || (await claudeBlocked(now)) !== null)
-    return toModerator(["ai_unavailable"]);
-  const bytes = await objectStore().get("private", upload.finalKey, {
-    maxBytes: MAX_DOCUMENT_BYTES,
-  });
+  if (!client || (await claudeBlocked(now)) !== null) return toModerator(["ai_unavailable"]);
+  const bytes = await objectStore().get("private", upload.finalKey, { maxBytes: MAX_DOCUMENT_BYTES });
   if (!bytes) return toModerator(["unreadable"]);
 
   const config = await aiConfig();
@@ -476,38 +297,14 @@ export async function runRentalCheck(
       }
     },
   };
-  const system: Anthropic.TextBlockParam[] = [
-    {
-      type: "text",
-      text: SYSTEM_PROMPT,
-      cache_control: { type: "ephemeral", ttl: "1h" },
-    },
-  ];
-  const messages: Anthropic.MessageParam[] = [
-    {
-      role: "user",
-      content: [
-        documentBlock(bytes, upload.declaredType),
-        {
-          type: "text",
-          text: "Lisez ce document et répondez au format demandé.",
-        },
-      ],
-    },
-  ];
+  const system: Anthropic.TextBlockParam[] = [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }];
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: [documentBlock(bytes, upload.declaredType), { type: "text", text: "Lisez ce document et répondez au format demandé." }] }];
   let response;
   try {
     // Free and unbilled: a document of more than a few pages is not read at the budget's expense.
-    const { input_tokens: inputTokens } = await client.messages.countTokens({
-      model,
-      system,
-      messages,
-    });
+    const { input_tokens: inputTokens } = await client.messages.countTokens({ model, system, messages });
     if (inputTokens > RENTAL_CHECK_MAX_INPUT_TOKENS) {
-      logger.info(
-        { model, inputTokens, prompt: RENTAL_CHECK_PROMPT_VERSION },
-        "rental check: document too long, left to a moderator",
-      );
+      logger.info({ model, inputTokens, prompt: RENTAL_CHECK_PROMPT_VERSION }, "rental check: document too long, left to a moderator");
       return toModerator(["too_long"]);
     }
     response = await client.messages.parse({
@@ -516,111 +313,55 @@ export async function runRentalCheck(
       system,
       messages,
       output_config: { effort: "medium", format: lenient },
-      ...(model.startsWith("claude-haiku-")
-        ? { thinking: { type: "disabled" as const } }
-        : {}),
+      ...(model.startsWith("claude-haiku-") ? { thinking: { type: "disabled" as const } } : {}),
     });
   } catch (error) {
     const classified = classifyAnthropicError(error);
-    if (
-      classified instanceof ProviderError &&
-      classified.code === "spend_limit"
-    )
-      await latchSpendLimit(now);
-    if (classified instanceof RetryableAiError && !options.final)
-      throw classified;
-    logger.warn(
-      { err: classified.message, prompt: RENTAL_CHECK_PROMPT_VERSION },
-      "rental check: Claude unavailable, left to a moderator",
-    );
+    if (classified instanceof ProviderError && classified.code === "spend_limit") await latchSpendLimit(now);
+    if (classified instanceof RetryableAiError && !options.final) throw classified;
+    logger.warn({ err: classified.message, prompt: RENTAL_CHECK_PROMPT_VERSION }, "rental check: Claude unavailable, left to a moderator");
     return toModerator(["ai_unavailable"]);
   }
 
   const costMicroUsd = await recordClaudeCost(config, model, response.usage);
-  const parsed =
-    response.stop_reason === "refusal" || response.stop_reason === "max_tokens"
-      ? null
-      : response.parsed_output;
-  logger.info(
-    {
-      model,
-      costMicroUsd,
-      stop: response.stop_reason,
-      prompt: RENTAL_CHECK_PROMPT_VERSION,
-    },
-    "rental check read",
-  );
+  const parsed = response.stop_reason === "refusal" || response.stop_reason === "max_tokens" ? null : response.parsed_output;
+  logger.info({ model, costMicroUsd, stop: response.stop_reason, prompt: RENTAL_CHECK_PROMPT_VERSION }, "rental check read");
   if (!parsed) return toModerator(["unreadable"], costMicroUsd);
   const reading = clampReading(parsed);
-  const referenceTaken = await referenceTakenElsewhere(
-    profile.proId,
-    check.agrementRef,
-  );
-  const issues = agrementIssues(
-    reading,
-    {
-      agrementRef: check.agrementRef,
-      ice: primaryIdentifier(profile.legal).value,
-      name: profile.name,
-      referenceTaken,
-    },
-    now,
-  );
-  const extracted = {
-    companyName: reading.companyName,
-    ice: reading.ice,
-    reference: reading.reference,
-    decisionDate: reading.decisionDate,
-    signs: reading.tamperingSigns,
-    note: reading.note,
-  };
+  const referenceTaken = await referenceTakenElsewhere(profile.proId, check.agrementRef);
+  const issues = agrementIssues(reading, { agrementRef: check.agrementRef, ice: primaryIdentifier(profile.legal).value, name: profile.name, referenceTaken }, now);
+  const extracted = { companyName: reading.companyName, ice: reading.ice, reference: reading.reference, decisionDate: reading.decisionDate, signs: reading.tamperingSigns, note: reading.note };
   // Audit P-3: a consistent reading still waits for a moderator (no badge from the AI alone).
-  await finishCheck(
-    profile.proId,
-    job.submittedAt,
-    { status: "review", issues, extracted },
-    now,
-  );
+  await finishCheck(profile.proId, job.submittedAt, { status: "review", issues, extracted }, now);
   return { status: "done", outcome: "review", costMicroUsd };
 }
 
 /** Licence documents waiting for a moderator, oldest first (equality only: no composite index). */
-export async function rentalCheckQueue(): Promise<{
-  items: RentalCheckQueueItem[];
-  hasMore: boolean;
-}> {
+export async function rentalCheckQueue(): Promise<{ items: RentalCheckQueueItem[]; hasMore: boolean }> {
   const query = await db()
     .collection(COLLECTIONS.proProfiles)
     .where("rentalCheck.status", "==", "review")
     .limit(RENTAL_CHECK_QUEUE_PAGE + 1)
     .get();
   void consume("firestore.reads", Math.max(1, query.size));
-  const records = query.docs
-    .map((doc) => proProfileFromSnapshot(doc))
-    .filter(
-      (record): record is ProProfileRecord & { rentalCheck: RentalCheck } =>
-        record?.rentalCheck !== undefined,
-    );
-  records.sort(
-    (a, b) =>
-      a.rentalCheck.submittedAt.getTime() - b.rentalCheck.submittedAt.getTime(),
-  );
+  const records = query.docs.map((doc) => proProfileFromSnapshot(doc)).filter((record): record is ProProfileRecord & { rentalCheck: RentalCheck } => record?.rentalCheck !== undefined);
+  records.sort((a, b) => a.rentalCheck.submittedAt.getTime() - b.rentalCheck.submittedAt.getTime());
   return {
-    items: records.slice(0, RENTAL_CHECK_QUEUE_PAGE).map((record) => ({
-      proId: record.proId,
-      name: record.name,
-      agrementRef: record.rentalCheck.agrementRef,
-      issues: record.rentalCheck.issues,
-      submittedAt: record.rentalCheck.submittedAt.toISOString(),
-    })),
+    items: records
+      .slice(0, RENTAL_CHECK_QUEUE_PAGE)
+      .map((record) => ({
+        proId: record.proId,
+        name: record.name,
+        agrementRef: record.rentalCheck.agrementRef,
+        issues: record.rentalCheck.issues,
+        submittedAt: record.rentalCheck.submittedAt.toISOString(),
+      })),
     hasMore: records.length > RENTAL_CHECK_QUEUE_PAGE,
   };
 }
 
 /** The check of a shop as the back office shows it (ProReview.rentalCheck). */
-export async function rentalCheckReview(
-  profile: Pick<ProProfileRecord, "rentalCheck">,
-): Promise<RentalCheckReview | null> {
+export async function rentalCheckReview(profile: Pick<ProProfileRecord, "rentalCheck">): Promise<RentalCheckReview | null> {
   const check = profile.rentalCheck;
   if (!check) return null;
   const [upload] = await getUploads([check.uploadId]);
@@ -630,14 +371,7 @@ export async function rentalCheckReview(
     agrementRef: check.agrementRef,
     issues: check.issues,
     extracted: check.extracted ?? null,
-    piece: upload
-      ? {
-          id: upload.id,
-          status: upload.status,
-          declaredType: upload.declaredType,
-          size: upload.size ?? null,
-        }
-      : null,
+    piece: upload ? { id: upload.id, status: upload.status, declaredType: upload.declaredType, size: upload.size ?? null } : null,
   };
 }
 
@@ -646,26 +380,14 @@ export async function rentalCheckReview(
  * review (or still pending: a stuck job). `submittedAt` pins the document reviewed (409 when the
  * agency sent another meanwhile).
  */
-export async function decideRentalCheck(
-  staff: StaffContext,
-  proId: string,
-  input: RentalCheckDecisionInput,
-  identity: RequestIdentity,
-  now = new Date(),
-): Promise<RentalCheckDecisionResponse> {
+export async function decideRentalCheck(staff: StaffContext, proId: string, input: RentalCheckDecisionInput, identity: RequestIdentity, now = new Date()): Promise<RentalCheckDecisionResponse> {
   const ref = proProfileRef(proId);
   const decided = await db().runTransaction(async (tx) => {
     const current = proProfileFromSnapshot(await tx.get(ref));
     if (!current) throw notFound();
     const check = current.rentalCheck;
-    if (!check || (check.status !== "review" && check.status !== "pending"))
-      throw new HttpError(409, "conflict", "no licence document to decide");
-    if (check.submittedAt.getTime() !== Date.parse(input.submittedAt))
-      throw new HttpError(
-        409,
-        "conflict",
-        "another document was sent since the review",
-      );
+    if (!check || (check.status !== "review" && check.status !== "pending")) throw new HttpError(409, "conflict", "no licence document to decide");
+    if (check.submittedAt.getTime() !== Date.parse(input.submittedAt)) throw new HttpError(409, "conflict", "another document was sent since the review");
     const next = rentalCheckSchema.parse({
       ...check,
       status: input.action === "verify" ? "verified" : "rejected",
@@ -674,10 +396,7 @@ export async function decideRentalCheck(
       by: staff.user.uid,
       ...(input.action === "reject" ? { reason: input.reason } : {}),
     });
-    tx.update(ref, {
-      rentalCheck: datesToTimestamps(next),
-      updatedAt: Timestamp.fromDate(now),
-    });
+    tx.update(ref, { rentalCheck: datesToTimestamps(next), updatedAt: Timestamp.fromDate(now) });
     return { next, profile: current };
   });
   void consume("firestore.reads", 1);
@@ -685,15 +404,10 @@ export async function decideRentalCheck(
   await audit({
     actorUid: staff.user.uid,
     actorRole: staff.role,
-    action:
-      input.action === "verify"
-        ? "pro.rental_check.verify"
-        : "pro.rental_check.reject",
+    action: input.action === "verify" ? "pro.rental_check.verify" : "pro.rental_check.reject",
     target: { type: "pro", id: proId },
     automated: false,
-    ...(input.action === "reject"
-      ? { reason: input.reason.slice(0, 500) }
-      : {}),
+    ...(input.action === "reject" ? { reason: input.reason.slice(0, 500) } : {}),
     ip: identity.ip,
     at: now,
   });

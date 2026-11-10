@@ -150,7 +150,7 @@ export type ErrorCode =
   | "invalid_signature"
   /** A stock import file that is no CSV (empty, unclosed quote, over 300 lines; 400; details: { reason, line }). Messages: StockImport.errors. */
   | "invalid_csv"
-  /** Firestore daily quota degraded (src/lib/quota/gate.ts): deposit or sign-up suspended until the reset. */
+    /** Firestore daily quota degraded (src/lib/quota/gate.ts): deposit or sign-up suspended until the reset. */
   | "quota_exhausted"
   // Messaging, reports, appeals, assistant (phase 5). Messages: Messaging.errors / Report.errors.
   /** One side blocked the other (403). */
@@ -227,12 +227,7 @@ export class HttpError extends Error {
   readonly details?: unknown;
   readonly headers?: Record<string, string>;
 
-  constructor(
-    status: number,
-    code: ErrorCode,
-    message?: string,
-    options: { details?: unknown; headers?: Record<string, string> } = {},
-  ) {
+  constructor(status: number, code: ErrorCode, message?: string, options: { details?: unknown; headers?: Record<string, string> } = {}) {
     super(message ?? code);
     this.name = "HttpError";
     this.status = status;
@@ -242,13 +237,7 @@ export class HttpError extends Error {
   }
 
   toResponse(): Response {
-    return errorResponse(
-      this.status,
-      this.code,
-      this.message === this.code ? undefined : this.message,
-      this.details,
-      this.headers,
-    );
+    return errorResponse(this.status, this.code, this.message === this.code ? undefined : this.message, this.details, this.headers);
   }
 }
 
@@ -256,39 +245,14 @@ export interface ErrorBody {
   error: { code: ErrorCode; message?: string; details?: unknown };
 }
 
-export function errorResponse(
-  status: number,
-  code: ErrorCode,
-  message?: string,
-  details?: unknown,
-  headers: Record<string, string> = {},
-): Response {
-  const body: ErrorBody = {
-    error: {
-      code,
-      ...(message ? { message } : {}),
-      ...(details !== undefined ? { details } : {}),
-    },
-  };
-  return Response.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...headers },
-  });
+export function errorResponse(status: number, code: ErrorCode, message?: string, details?: unknown, headers: Record<string, string> = {}): Response {
+  const body: ErrorBody = { error: { code, ...(message ? { message } : {}), ...(details !== undefined ? { details } : {}) } };
+  return Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
 }
 
-export const unauthenticated = (message?: string) =>
-  new HttpError(401, "unauthenticated", message);
-export const forbidden = (message?: string) =>
-  new HttpError(403, "forbidden", message);
-export const notFound = (message?: string) =>
-  new HttpError(404, "not_found", message);
-export const unavailable = (message?: string) =>
-  new HttpError(503, "unavailable", message, {
-    headers: { "Retry-After": "30" },
-  });
+export const unauthenticated = (message?: string) => new HttpError(401, "unauthenticated", message);
+export const forbidden = (message?: string) => new HttpError(403, "forbidden", message);
+export const notFound = (message?: string) => new HttpError(404, "not_found", message);
+export const unavailable = (message?: string) => new HttpError(503, "unavailable", message, { headers: { "Retry-After": "30" } });
 export const rateLimited = (retryAfterSeconds: number) =>
-  new HttpError(429, "rate_limited", undefined, {
-    headers: {
-      "Retry-After": String(Math.max(1, Math.ceil(retryAfterSeconds))),
-    },
-  });
+  new HttpError(429, "rate_limited", undefined, { headers: { "Retry-After": String(Math.max(1, Math.ceil(retryAfterSeconds))) } });

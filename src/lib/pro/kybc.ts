@@ -6,21 +6,10 @@ import { z } from "@/lib/zod";
 // normalised and bounded: their exact formats are not checked automatically (no official source
 // read yet), the moderator verifies them with the uploaded pieces.
 
-export const LEGAL_FORMS = [
-  "societe",
-  "auto_entrepreneur",
-  "commercant",
-  "cooperative",
-  "entreprise_ue",
-] as const;
+export const LEGAL_FORMS = ["societe", "auto_entrepreneur", "commercant", "cooperative", "entreprise_ue"] as const;
 export type LegalForm = (typeof LEGAL_FORMS)[number];
 /** The Moroccan legal forms (an ICE each), in the order the application lists them. */
-export const MOROCCAN_LEGAL_FORMS = [
-  "societe",
-  "auto_entrepreneur",
-  "commercant",
-  "cooperative",
-] as const satisfies readonly LegalForm[];
+export const MOROCCAN_LEGAL_FORMS = ["societe", "auto_entrepreneur", "commercant", "cooperative"] as const satisfies readonly LegalForm[];
 
 /**
  * A company registered in the European Union (carriers space, owner 2026-11-10): only a carrier
@@ -60,9 +49,7 @@ const ice = z
 const registryNumber = z
   .string()
   .transform((value) => normalizeIdentifier(value))
-  .refine((value) => /^[A-Z0-9/]{1,30}$/.test(value), {
-    message: "identifier_format",
-  });
+  .refine((value) => /^[A-Z0-9/]{1,30}$/.test(value), { message: "identifier_format" });
 
 /** Luhn checksum (French SIREN and SIRET). */
 function luhn(digits: string): boolean {
@@ -90,8 +77,7 @@ export function euRegistryOk(country: EuCountry, value: string): boolean {
     case "FR":
       if (!/^\d{9}$|^\d{14}$/.test(id)) return false;
       // La Poste (SIREN 356000000): its establishments' SIRET sum to a multiple of 5.
-      if (id.length === 14 && id.startsWith("356000000"))
-        return [...id].reduce((sum, digit) => sum + Number(digit), 0) % 5 === 0;
+      if (id.length === 14 && id.startsWith("356000000")) return [...id].reduce((sum, digit) => sum + Number(digit), 0) % 5 === 0;
       return luhn(id);
     case "BE": {
       const digits = id.replace(/^BE/, "");
@@ -106,10 +92,7 @@ export function euRegistryOk(country: EuCountry, value: string): boolean {
       return /^[A-Z0-9]\d{7}[A-Z0-9]$/.test(id);
     case "IT":
       // Partita IVA (11 digits) or a sole trader's codice fiscale (16 characters).
-      return (
-        /^\d{11}$/.test(id) ||
-        /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/.test(id)
-      );
+      return /^\d{11}$/.test(id) || /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/.test(id);
     case "PT":
       // NIPC.
       return /^\d{9}$/.test(id);
@@ -133,62 +116,22 @@ const euCompany = z
     form: z.literal("entreprise_ue"),
     country: z.enum(EU_COUNTRIES),
     registry: z.string().max(40),
-    vat: z
-      .string()
-      .transform(normalizeIdentifier)
-      .refine((value) => EU_VAT_PATTERN.test(value), { message: "vat_format" })
-      .optional(),
+    vat: z.string().transform(normalizeIdentifier).refine((value) => EU_VAT_PATTERN.test(value), { message: "vat_format" }).optional(),
   })
   .strict()
-  .transform((value) => ({
-    ...value,
-    registry: normalizeEuRegistry(value.country, value.registry),
-  }))
-  .refine((value) => euRegistryOk(value.country, value.registry), {
-    message: "registry_format",
-    path: ["registry"],
-  })
-  .refine(
-    (value) => value.vat === undefined || value.vat.startsWith(value.country),
-    { message: "vat_country", path: ["vat"] },
-  );
+  .transform((value) => ({ ...value, registry: normalizeEuRegistry(value.country, value.registry) }))
+  .refine((value) => euRegistryOk(value.country, value.registry), { message: "registry_format", path: ["registry"] })
+  .refine((value) => value.vat === undefined || value.vat.startsWith(value.country), { message: "vat_country", path: ["vat"] });
 
 export const proLegalSchema = z.union([
   z.discriminatedUnion("form", [
+    z.object({ form: z.literal("societe"), ice, rc: registryNumber, if: registryNumber }).strict(),
+    z.object({ form: z.literal("auto_entrepreneur"), ice, aeNumber: registryNumber }).strict(),
     z
-      .object({
-        form: z.literal("societe"),
-        ice,
-        rc: registryNumber,
-        if: registryNumber,
-      })
-      .strict(),
-    z
-      .object({
-        form: z.literal("auto_entrepreneur"),
-        ice,
-        aeNumber: registryNumber,
-      })
-      .strict(),
-    z
-      .object({
-        form: z.literal("commercant"),
-        ice,
-        rc: registryNumber.optional(),
-        tp: registryNumber.optional(),
-      })
+      .object({ form: z.literal("commercant"), ice, rc: registryNumber.optional(), tp: registryNumber.optional() })
       .strict()
-      .refine((value) => value.rc !== undefined || value.tp !== undefined, {
-        message: "rc_or_tp_required",
-        path: ["rc"],
-      }),
-    z
-      .object({
-        form: z.literal("cooperative"),
-        ice,
-        coopNumber: registryNumber,
-      })
-      .strict(),
+      .refine((value) => value.rc !== undefined || value.tp !== undefined, { message: "rc_or_tp_required", path: ["rc"] }),
+    z.object({ form: z.literal("cooperative"), ice, coopNumber: registryNumber }).strict(),
   ]),
   euCompany,
 ]);
@@ -196,37 +139,20 @@ export type ProLegal = z.infer<typeof proLegalSchema>;
 export type MoroccanLegal = Exclude<ProLegal, { form: "entreprise_ue" }>;
 
 /** The applicant's legal form is an EU company (no ICE). */
-export const isEuCompany = (
-  legal: ProLegal,
-): legal is Extract<ProLegal, { form: "entreprise_ue" }> =>
-  legal.form === "entreprise_ue";
+export const isEuCompany = (legal: ProLegal): legal is Extract<ProLegal, { form: "entreprise_ue" }> => legal.form === "entreprise_ue";
 
 /** The shop's main identifier: its ICE, or an EU company's number in its country's register. */
-export function primaryIdentifier(legal: ProLegal): {
-  kind: "ice" | "eu_registry";
-  value: string;
-  country: "MA" | EuCountry;
-} {
-  return isEuCompany(legal)
-    ? { kind: "eu_registry", value: legal.registry, country: legal.country }
-    : { kind: "ice", value: legal.ice, country: "MA" };
+export function primaryIdentifier(legal: ProLegal): { kind: "ice" | "eu_registry"; value: string; country: "MA" | EuCountry } {
+  return isEuCompany(legal) ? { kind: "eu_registry", value: legal.registry, country: legal.country } : { kind: "ice", value: legal.ice, country: "MA" };
 }
 
 /** The main identifier's format is right (ICE: 15 digits; EU: the register's format). */
 export function primaryIdentifierOk(legal: ProLegal): boolean {
-  return isEuCompany(legal)
-    ? euRegistryOk(legal.country, legal.registry)
-    : iceFormatOk(legal.ice);
+  return isEuCompany(legal) ? euRegistryOk(legal.country, legal.registry) : iceFormatOk(legal.ice);
 }
 
 /** `withdrawn`: an admin withdrew the validation (P2-10); a new submission is awaited. */
-export const KYBC_STATUSES = [
-  "none",
-  "submitted",
-  "verified",
-  "rejected",
-  "withdrawn",
-] as const;
+export const KYBC_STATUSES = ["none", "submitted", "verified", "rejected", "withdrawn"] as const;
 export type KybcStatus = (typeof KYBC_STATUSES)[number];
 
 /** Pieces uploaded with an application (private bucket, purpose `kyb`). */
@@ -243,28 +169,12 @@ export const KYBC_SNIFF_BYTES = 16;
  * Real type of a KYBC piece from its first bytes: JPEG, PNG or PDF (`%PDF-` at offset 0, stricter
  * than readers that search the first kilobyte), null otherwise. Never the declared type.
  */
-export function sniffKybcType(
-  bytes: Uint8Array,
-): "image/jpeg" | "image/png" | "application/pdf" | null {
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  )
-    return "image/jpeg";
+export function sniffKybcType(bytes: Uint8Array): "image/jpeg" | "image/png" | "application/pdf" | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
   const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  if (
-    bytes.length >= png.length &&
-    png.every((byte, index) => bytes[index] === byte)
-  )
-    return "image/png";
+  if (bytes.length >= png.length && png.every((byte, index) => bytes[index] === byte)) return "image/png";
   const pdf = [0x25, 0x50, 0x44, 0x46, 0x2d];
-  if (
-    bytes.length >= pdf.length &&
-    pdf.every((byte, index) => bytes[index] === byte)
-  )
-    return "application/pdf";
+  if (bytes.length >= pdf.length && pdf.every((byte, index) => bytes[index] === byte)) return "application/pdf";
   return null;
 }
 
@@ -287,15 +197,10 @@ export const KYBC_NOTICE_VERSION = "2026-10-19";
  * compressed object streams (`pdfHasActiveContentDeep`, src/lib/pro/kybc-pdf.ts). Defence in
  * depth, not a sanitiser.
  */
-const PDF_ACTIVE_TOKENS =
-  /\/(?:JavaScript|JS|Launch|OpenAction|AA|EmbeddedFiles?|RichMedia|XFA|GoToR|SubmitForm|ImportData)(?![A-Za-z0-9_])/;
+const PDF_ACTIVE_TOKENS = /\/(?:JavaScript|JS|Launch|OpenAction|AA|EmbeddedFiles?|RichMedia|XFA|GoToR|SubmitForm|ImportData)(?![A-Za-z0-9_])/;
 
 export function pdfHasActiveContent(bytes: Uint8Array): boolean {
   // `#xx` escapes in names (`/J#61vaScript`) are decoded before the match.
-  const text = new TextDecoder("latin1")
-    .decode(bytes)
-    .replace(/#([0-9A-Fa-f]{2})/g, (_, hex: string) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    );
+  const text = new TextDecoder("latin1").decode(bytes).replace(/#([0-9A-Fa-f]{2})/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
   return PDF_ACTIVE_TOKENS.test(text);
 }

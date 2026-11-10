@@ -1,19 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import {
-  Building2,
-  CalendarDays,
-  CarFront,
-  CircleCheck,
-  FileSpreadsheet,
-  Gift,
-  House,
-  KeyRound,
-  MessagesSquare,
-  ShieldCheck,
-  Store,
-  Truck,
-} from "lucide-react";
+import { Building2, CalendarDays, CarFront, CircleCheck, FileSpreadsheet, Gift, House, KeyRound, MessagesSquare, ShieldCheck, Store, Truck } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { quietLinkClassName } from "@/components/ui/text-link";
@@ -22,11 +9,7 @@ import { localeParams, pageLocale } from "@/i18n/params";
 import { getFlags, getPricing } from "@/lib/config/runtime";
 import { launchOfferState } from "@/lib/pro/launch-offer-state";
 import { alternates } from "@/lib/i18n/metadata";
-import {
-  DIRECTORY_PATH,
-  PRO_LANDING_PATH,
-  PRO_SPACE_PATH,
-} from "@/lib/search/shortcuts";
+import { DIRECTORY_PATH, PRO_LANDING_PATH, PRO_SPACE_PATH } from "@/lib/search/shortcuts";
 import { cn } from "@/lib/utils";
 import { getNumbersTranslations } from "@/i18n/numbers-server";
 
@@ -44,18 +27,10 @@ export function generateStaticParams() {
 
 type Params = Promise<{ locale: string }>;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const locale = pageLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "ProLanding" });
-  return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
-    alternates: alternates(locale, PRO_LANDING_PATH),
-  };
+  return { title: t("metaTitle"), description: t("metaDescription"), alternates: alternates(locale, PRO_LANDING_PATH) };
 }
 
 const SECTORS = [
@@ -100,47 +75,20 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           <Store className="size-7" aria-hidden="true" />
         </span>
         <div className="flex flex-col gap-3 text-center sm:text-start">
-          <p className="text-sm font-semibold tracking-wide text-gold-300 uppercase">
-            {t("eyebrow")}
-          </p>
-          <h1 className="text-3xl font-semibold text-balance md:text-4xl">
-            {t("title")}
-          </h1>
-          <p className="max-w-prose text-structure-foreground/85 text-pretty md:text-lg">
-            {t("lead")}
-          </p>
+          <p className="text-sm font-semibold tracking-wide text-gold-300 uppercase">{t("eyebrow")}</p>
+          <h1 className="text-3xl font-semibold text-balance md:text-4xl">{t("title")}</h1>
+          <p className="max-w-prose text-structure-foreground/85 text-pretty md:text-lg">{t("lead")}</p>
         </div>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-          <Link
-            href={PRO_SPACE_PATH}
-            prefetch={false}
-            className={cn(
-              buttonVariants({ variant: "primary", size: "lg" }),
-              "w-full sm:w-auto",
-            )}
-          >
+          <Link href={PRO_SPACE_PATH} prefetch={false} className={cn(buttonVariants({ variant: "primary", size: "lg" }), "w-full sm:w-auto")}>
             <Store aria-hidden="true" />
             {t("cta")}
           </Link>
-          <Link
-            href={PRO_SPACE_PATH}
-            prefetch={false}
-            className={cn(
-              quietLinkClassName,
-              "text-sm font-medium text-structure-foreground/85 underline underline-offset-4 hover:text-structure-foreground",
-            )}
-          >
+          <Link href={PRO_SPACE_PATH} prefetch={false} className={cn(quietLinkClassName, "text-sm font-medium text-structure-foreground/85 underline underline-offset-4 hover:text-structure-foreground")}>
             {t("already")}
           </Link>
           {/* The directory of verified shops (owner's choice of 30 Oct 2026): what a Pro gets, seen on others. */}
-          <Link
-            href={DIRECTORY_PATH}
-            prefetch={false}
-            className={cn(
-              quietLinkClassName,
-              "text-sm font-medium text-structure-foreground/85 underline underline-offset-4 hover:text-structure-foreground",
-            )}
-          >
+          <Link href={DIRECTORY_PATH} prefetch={false} className={cn(quietLinkClassName, "text-sm font-medium text-structure-foreground/85 underline underline-offset-4 hover:text-structure-foreground")}>
             {t("directory")}
           </Link>
         </div>
@@ -151,31 +99,21 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           {t("sectorsTitle")}
         </h2>
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SECTORS.filter(
-            ({ id }) => id !== "carrier" || flags.carriersEnabled,
-          ).map(({ id, Icon }) => (
-            <li
-              key={id}
-              className="flex gap-4 rounded-lg border border-border bg-surface p-5"
-            >
+          {SECTORS.filter(({ id }) => id !== "carrier" || flags.carriersEnabled).map(({ id, Icon }) => (
+            <li key={id} className="flex gap-4 rounded-lg border border-border bg-surface p-5">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-brand text-structure dark:text-gold-300">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <div className="flex flex-col gap-1">
                 <h3 className="font-semibold">{t(`sectors.${id}.title`)}</h3>
-                <p className="text-sm text-foreground-muted text-pretty">
-                  {t(`sectors.${id}.body`)}
-                </p>
+                <p className="text-sm text-foreground-muted text-pretty">{t(`sectors.${id}.body`)}</p>
               </div>
             </li>
           ))}
         </ul>
       </section>
 
-      <section
-        aria-labelledby="pro-included"
-        className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
-      >
+      <section aria-labelledby="pro-included" className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-5">
           <h2 id="pro-included" className="text-2xl font-semibold text-balance">
             {t("includedTitle")}
@@ -183,15 +121,8 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           <ul className="flex flex-col gap-3">
             {INCLUDED.map(({ id, Icon }) => (
               <li key={id} className="flex items-start gap-3">
-                <Icon
-                  className="mt-0.5 size-5 shrink-0 text-structure dark:text-bab-200"
-                  aria-hidden="true"
-                />
-                <span className="text-pretty">
-                  {id === "listings"
-                    ? count("included.listings", { count: essentiel ?? 0 })
-                    : t(`included.${id}`)}
-                </span>
+                <Icon className="mt-0.5 size-5 shrink-0 text-structure dark:text-bab-200" aria-hidden="true" />
+                <span className="text-pretty">{id === "listings" ? count("included.listings", { count: essentiel ?? 0 }) : t(`included.${id}`)}</span>
               </li>
             ))}
           </ul>
@@ -199,52 +130,25 @@ export default async function ProLandingPage({ params }: { params: Params }) {
         <div className="flex flex-col gap-4 self-start rounded-lg bg-surface-brand p-5">
           {offer ? (
             <p className="flex items-start gap-3 text-sm text-pretty">
-              <Gift
-                className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300"
-                aria-hidden="true"
-              />
+              <Gift className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
               <span>
-                {count("offer", {
-                  seats: offer.seats,
-                  months: offer.months,
-                  days: offer.noticeDays,
-                })}
-                {offer.seatsLeft === null ? null : (
-                  <strong className="font-semibold">
-                    {" "}
-                    {count("offerSeats", { left: offer.seatsLeft })}
-                  </strong>
-                )}
+                {count("offer", { seats: offer.seats, months: offer.months, days: offer.noticeDays })}
+                {offer.seatsLeft === null ? null : <strong className="font-semibold"> {count("offerSeats", { left: offer.seatsLeft })}</strong>}
               </span>
             </p>
           ) : null}
           {pass ? (
             <p className="flex items-start gap-3 text-sm text-pretty">
-              <CalendarDays
-                className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300"
-                aria-hidden="true"
-              />
-              <span>
-                {count(salesOpen ? "passOpen" : "pass", { days: pass.days })}
-              </span>
+              <CalendarDays className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
+              <span>{count(salesOpen ? "passOpen" : "pass", { days: pass.days })}</span>
             </p>
           ) : null}
           <p className="flex items-start gap-3 text-sm text-pretty">
-            <ShieldCheck
-              className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300"
-              aria-hidden="true"
-            />
+            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
             <span>
               {t.rich("legal", {
                 link: (chunks) => (
-                  <Link
-                    href="/demarches/pro-cooperative"
-                    prefetch={false}
-                    className={cn(
-                      quietLinkClassName,
-                      "font-medium text-link underline underline-offset-2",
-                    )}
-                  >
+                  <Link href="/demarches/pro-cooperative" prefetch={false} className={cn(quietLinkClassName, "font-medium text-link underline underline-offset-2")}>
                     {chunks}
                   </Link>
                 ),
@@ -260,14 +164,8 @@ export default async function ProLandingPage({ params }: { params: Params }) {
         </h2>
         <ol className="grid gap-4 sm:grid-cols-3">
           {STEPS.map((step, index) => (
-            <li
-              key={step}
-              className="flex gap-4 rounded-lg border border-border bg-surface p-5"
-            >
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-structure text-sm font-semibold text-structure-foreground tabular-nums"
-                aria-hidden="true"
-              >
+            <li key={step} className="flex gap-4 rounded-lg border border-border bg-surface p-5">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-structure text-sm font-semibold text-structure-foreground tabular-nums" aria-hidden="true">
                 {index + 1}
               </span>
               <p className="text-sm text-pretty">{t(`steps.${step}`)}</p>
@@ -275,11 +173,7 @@ export default async function ProLandingPage({ params }: { params: Params }) {
           ))}
         </ol>
         <div>
-          <Link
-            href={PRO_SPACE_PATH}
-            prefetch={false}
-            className={buttonVariants({ variant: "structure", size: "md" })}
-          >
+          <Link href={PRO_SPACE_PATH} prefetch={false} className={buttonVariants({ variant: "structure", size: "md" })}>
             <Store aria-hidden="true" />
             {t("cta")}
           </Link>

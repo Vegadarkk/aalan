@@ -33,14 +33,7 @@ export const SANITARY_NUMBERS_MAX = 50;
  * rental agency's (location-saisonniere/conception.md §1), "carrier" a Europe–Morocco carrier's
  * (transporteurs/spec.md, owner 2026-11-10); absent reads "general".
  */
-export const PRO_SECTORS = [
-  "general",
-  "dealer",
-  "real_estate",
-  "car_rental",
-  "holiday_rental",
-  "carrier",
-] as const;
+export const PRO_SECTORS = ["general", "dealer", "real_estate", "car_rental", "holiday_rental", "carrier"] as const;
 export type ProSector = (typeof PRO_SECTORS)[number];
 /** The agency's fee schedule shown on its storefront (free text, no contact details). */
 export const AGENCY_FEE_SCHEDULE_MAX = 500;
@@ -52,8 +45,7 @@ export const RENTAL_HOURS_MAX = 200;
 export const RENTAL_PAYMENTS = ["cash", "card", "transfer"] as const;
 export type RentalPayment = (typeof RENTAL_PAYMENTS)[number];
 /** Ministry of Transport licence reference as the agency writes it: 3 to 40 Latin letters, digits, spaces and . / - _, one digit at least. */
-export const RENTAL_AGREMENT_PATTERN =
-  /^(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ./_-]{1,38}[A-Za-z0-9]$/;
+export const RENTAL_AGREMENT_PATTERN = /^(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ./_-]{1,38}[A-Za-z0-9]$/;
 
 const unique = <T>(items: readonly T[]) => new Set(items).size === items.length;
 
@@ -65,15 +57,7 @@ const unique = <T>(items: readonly T[]) => new Set(items).size === items.length;
 export const PRO_ADDRESS_MAX = 160;
 export const PRO_HOURS_NOTE_MAX = 200;
 export const PRO_WEBSITE_MAX = 200;
-export const WEEKDAYS = [
-  "mon",
-  "tue",
-  "wed",
-  "thu",
-  "fri",
-  "sat",
-  "sun",
-] as const;
+export const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 export type Weekday = (typeof WEEKDAYS)[number];
 /** Two opening periods a day at most (morning, afternoon). */
 export const HOURS_SLOTS_MAX = 2;
@@ -86,25 +70,10 @@ export const openingHoursSchema = z
           .object({
             day: z.enum(WEEKDAYS),
             slots: z
-              .array(
-                z
-                  .object({ from: clock, to: clock })
-                  .strict()
-                  .refine(
-                    (slot) => slot.from < slot.to,
-                    "slot ends before it starts",
-                  ),
-              )
+              .array(z.object({ from: clock, to: clock }).strict().refine((slot) => slot.from < slot.to, "slot ends before it starts"))
               .min(1)
               .max(HOURS_SLOTS_MAX)
-              .refine(
-                (slots) =>
-                  slots.every(
-                    (slot, index) =>
-                      index === 0 || (slots[index - 1]?.to ?? "") <= slot.from,
-                  ),
-                "slots overlap",
-              ),
+              .refine((slots) => slots.every((slot, index) => index === 0 || (slots[index - 1]?.to ?? "") <= slot.from), "slots overlap"),
           })
           .strict(),
       )
@@ -124,33 +93,12 @@ export const rentalAgencySchema = z
   .object({
     agrementRef: z.string().trim().regex(RENTAL_AGREMENT_PATTERN),
     branches: z
-      .array(
-        z
-          .object({
-            citySlug: citySlugSchema,
-            address: z.string().trim().min(5).max(RENTAL_ADDRESS_MAX),
-          })
-          .strict(),
-      )
+      .array(z.object({ citySlug: citySlugSchema, address: z.string().trim().min(5).max(RENTAL_ADDRESS_MAX) }).strict())
       .max(RENTAL_BRANCHES_MAX)
-      .refine(
-        (branches) =>
-          unique(
-            branches.map(
-              (branch) => `${branch.citySlug}|${branch.address.toLowerCase()}`,
-            ),
-          ),
-        "duplicate branch",
-      ),
+      .refine((branches) => unique(branches.map((branch) => `${branch.citySlug}|${branch.address.toLowerCase()}`)), "duplicate branch"),
     hours: z.string().trim().max(RENTAL_HOURS_MAX),
-    payments: z
-      .array(z.enum(RENTAL_PAYMENTS))
-      .max(RENTAL_PAYMENTS.length)
-      .refine(unique, "duplicate payment"),
-    airports: z
-      .array(z.enum(AIRPORT_IDS))
-      .max(AIRPORT_IDS.length)
-      .refine(unique, "duplicate airport"),
+    payments: z.array(z.enum(RENTAL_PAYMENTS)).max(RENTAL_PAYMENTS.length).refine(unique, "duplicate payment"),
+    airports: z.array(z.enum(AIRPORT_IDS)).max(AIRPORT_IDS.length).refine(unique, "duplicate airport"),
   })
   .strict();
 export type RentalAgency = z.infer<typeof rentalAgencySchema>;
@@ -164,11 +112,7 @@ export const HOLIDAY_AUTHORIZATION_PATTERN = CRITERION_FORMATS.authorization;
 export const HOLIDAY_MIN_NIGHTS_MAX = 30;
 export const holidayAgencySchema = z
   .object({
-    authorization: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(HOLIDAY_AUTHORIZATION_PATTERN),
+    authorization: z.string().trim().toUpperCase().regex(HOLIDAY_AUTHORIZATION_PATTERN),
     checkIn: clock,
     checkOut: clock,
     minNights: z.number().int().min(1).max(HOLIDAY_MIN_NIGHTS_MAX),
@@ -180,12 +124,7 @@ const uid = z.string().min(1).max(128);
 const ts = z.date();
 
 /** Where the moderator checked the company: Moroccan registers, or an EU carrier's own country's (carriers space). */
-export const PRO_REGISTRY_SOURCES = [
-  "ompic",
-  "directinfo",
-  "odco",
-  "eu_register",
-] as const;
+export const PRO_REGISTRY_SOURCES = ["ompic", "directinfo", "odco", "eu_register"] as const;
 
 /**
  * Check of the agency's licence decision (decision 5): Claude reads the uploaded document, the
@@ -193,12 +132,7 @@ export const PRO_REGISTRY_SOURCES = [
  * consistent gives the badge « agrément contrôlé sur document », any doubt goes to a moderator.
  * The agency stays solely responsible for its declaration (no online authentication exists).
  */
-export const RENTAL_CHECK_STATUSES = [
-  "pending",
-  "verified",
-  "review",
-  "rejected",
-] as const;
+export const RENTAL_CHECK_STATUSES = ["pending", "verified", "review", "rejected"] as const;
 export type RentalCheckStatus = (typeof RENTAL_CHECK_STATUSES)[number];
 /** Why a document went to a moderator: not a licence decision, unreadable, reference, company or date not matching, signs of editing, low confidence, Claude unavailable. */
 export const RENTAL_CHECK_ISSUES = [
@@ -232,9 +166,7 @@ export const rentalCheckSchema = z
     method: z.enum(["ai", "staff"]).optional(),
     /** The moderator who decided (method "staff"). */
     by: uid.optional(),
-    issues: z
-      .array(z.enum(RENTAL_CHECK_ISSUES))
-      .max(RENTAL_CHECK_ISSUES.length),
+    issues: z.array(z.enum(RENTAL_CHECK_ISSUES)).max(RENTAL_CHECK_ISSUES.length),
     /** What Claude read on the document (business identifiers only), for the moderator. */
     extracted: z
       .object({
@@ -256,11 +188,7 @@ export type RentalCheck = z.infer<typeof rentalCheckSchema>;
 const mobileE164 = z.string().regex(MOBILE_E164);
 
 /** Outcome of a moderator's call to the applicant's number (phase 7: the WhatsApp check is parked until Meta validates the app). */
-export const PHONE_CHECK_OUTCOMES = [
-  "verified",
-  "unreachable",
-  "mismatch",
-] as const;
+export const PHONE_CHECK_OUTCOMES = ["verified", "unreachable", "mismatch"] as const;
 export type PhoneCheckOutcome = (typeof PHONE_CHECK_OUTCOMES)[number];
 
 const paymentUrl = z.url({ protocol: /^https$/ }).max(PAYMENT_URL_MAX);
@@ -282,10 +210,7 @@ export const sellerPaymentSchema = z
     /** `pendingHost` is not on the allowlist yet: listed for an admin's review. */
     hostReview: z.boolean().optional(),
     /** The last host an admin refused, with the reason shown to the owner. */
-    hostRejected: z
-      .object({ host, reason: z.string().min(1).max(500), at: ts })
-      .strict()
-      .optional(),
+    hostRejected: z.object({ host, reason: z.string().min(1).max(500), at: ts }).strict().optional(),
     cashOnDelivery: z.boolean(),
     info: sellerInfoSchema.optional(),
     /** Cut by a moderator (report « Lien de paiement suspect »): nothing is shown until restored. */
@@ -304,22 +229,9 @@ export type SellerPaymentDoc = z.infer<typeof sellerPaymentSchema>;
 export const socialLinksSchema = z
   .object({
     links: z
-      .array(
-        z
-          .object({
-            network: z.enum(SOCIAL_NETWORKS),
-            handle: z
-              .string()
-              .regex(/^[A-Za-z0-9._/-]+$/)
-              .max(SOCIAL_HANDLE_MAX),
-          })
-          .strict(),
-      )
+      .array(z.object({ network: z.enum(SOCIAL_NETWORKS), handle: z.string().regex(/^[A-Za-z0-9._/-]+$/).max(SOCIAL_HANDLE_MAX) }).strict())
       .max(SOCIAL_NETWORKS.length)
-      .refine(
-        (links) => unique(links.map((link) => link.network)),
-        "duplicate network",
-      ),
+      .refine((links) => unique(links.map((link) => link.network)), "duplicate network"),
     /** Hidden by a moderator (report « Lien de réseau social suspect »): nothing is shown until restored. */
     hiddenAt: ts.optional(),
     hiddenReason: z.string().min(1).max(500).optional(),
@@ -334,11 +246,7 @@ export const proProfileSchema = z
     /** `editor` seats arrive in V1.1 (§6); the MVP has the owner only. */
     members: z.record(uid, z.enum(["owner", "editor"])),
     name: z.string().trim().min(2).max(PRO_NAME_MAX),
-    slug: z
-      .string()
-      .min(1)
-      .max(PRO_SLUG_MAX)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    slug: z.string().min(1).max(PRO_SLUG_MAX).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     description: z.string().max(PRO_DESCRIPTION_MAX),
     /** The presentation in Arabic (shop card, UX audit lot 1): the storefront shows it in Arabic, falling back to `description`. */
     descriptionAr: z.string().max(PRO_DESCRIPTION_MAX).optional(),
@@ -355,10 +263,7 @@ export const proProfileSchema = z
     /** Verified number, revealed under quota like an individual's (never in the HTML). */
     phonePublic: z.string().max(20).optional(),
     whatsapp: z.boolean(),
-    website: z
-      .url({ protocol: /^https$/ })
-      .max(PRO_WEBSITE_MAX)
-      .optional(),
+    website: z.url({ protocol: /^https$/ }).max(PRO_WEBSITE_MAX).optional(),
     /** Social links shown on the storefront (PUT /api/pro/me/social); absent until the owner sets some. */
     social: socialLinksSchema.optional(),
     regionCode: regionCodeSchema,
@@ -368,10 +273,7 @@ export const proProfileSchema = z
       .object({
         status: z.enum(KYBC_STATUSES),
         iceFormatOk: z.boolean(),
-        registryCheck: z
-          .object({ source: z.enum(PRO_REGISTRY_SOURCES), at: ts, by: uid })
-          .strict()
-          .optional(),
+        registryCheck: z.object({ source: z.enum(PRO_REGISTRY_SOURCES), at: ts, by: uid }).strict().optional(),
         /** Pieces in the private bucket (uploads purpose `kyb`), purged 6 months after the relationship ends. */
         uploadIds: z.array(z.string().min(1).max(64)).max(KYBC_MAX_PIECES),
         complianceCommitmentAt: ts.optional(),
@@ -382,16 +284,7 @@ export const proProfileSchema = z
         /** Number to call, declared with the application while the account has no verified number; deleted once verified. */
         phoneToCheck: mobileE164.optional(),
         /** The moderator's last call (who, when, outcome, number); `verified` also set the account's badge. */
-        phoneCheck: z
-          .object({
-            at: ts,
-            by: uid,
-            outcome: z.enum(PHONE_CHECK_OUTCOMES),
-            phone: mobileE164,
-            note: z.string().max(200).optional(),
-          })
-          .strict()
-          .optional(),
+        phoneCheck: z.object({ at: ts, by: uid, outcome: z.enum(PHONE_CHECK_OUTCOMES), phone: mobileE164, note: z.string().max(200).optional() }).strict().optional(),
         submittedAt: ts.optional(),
         rejectReason: z.string().max(1000).optional(),
         /** Validation withdrawn by an admin (P2-10): when, and the statement sent to the Pro. */
@@ -404,21 +297,11 @@ export const proProfileSchema = z
     certified: z.object({ at: ts, by: uid }).strict().optional(),
     sector: z.enum(PRO_SECTORS).optional(),
     /** The owner's acknowledgment of the agency commitments of `sector` (PUT /api/pro/me/agency). */
-    sectorCommitment: z
-      .object({
-        sector: z.enum(PRO_SECTORS),
-        version: z.string().max(20),
-        at: ts,
-      })
-      .strict()
-      .optional(),
+    sectorCommitment: z.object({ sector: z.enum(PRO_SECTORS), version: z.string().max(20), at: ts }).strict().optional(),
     /** Example shop (src/lib/demo): fictitious, labelled on its storefront, never shown as verified. */
     example: z.literal(true).optional(),
     /** Real-estate agency details (sector "real_estate"), set by the owner (PUT /api/pro/me/agency). */
-    agency: z
-      .object({ feeSchedule: z.string().trim().max(AGENCY_FEE_SCHEDULE_MAX) })
-      .strict()
-      .optional(),
+    agency: z.object({ feeSchedule: z.string().trim().max(AGENCY_FEE_SCHEDULE_MAX) }).strict().optional(),
     /** Sections of the storefront (catalogue §5), in display order. */
     sections: shopSectionsSchema.optional(),
     /** « Sélection de la boutique » (UX audit lot 3): listings pinned above the storefront grid, in order. */
@@ -431,10 +314,7 @@ export const proProfileSchema = z
     holiday: holidayAgencySchema.optional(),
     /** Licence documents sent in the calendar month (UTC, Morocco's time): each costs one Claude call. */
     rentalCheckUsage: z
-      .object({
-        month: z.string().regex(/^\d{4}-\d{2}$/),
-        count: z.number().int().min(0).max(1000),
-      })
+      .object({ month: z.string().regex(/^\d{4}-\d{2}$/), count: z.number().int().min(0).max(1000) })
       .strict()
       .optional(),
     lifecycle: z.enum(PRO_STATES),
@@ -461,22 +341,10 @@ export const proProfileSchema = z
      * ONSSA numbers a moderator checked on an approved listing of the shop (Produits du terroir):
      * a later listing with one of them is not held for that reason again.
      */
-    sanitaryNumbers: z
-      .array(z.string().regex(CRITERION_FORMATS.onssa))
-      .max(SANITARY_NUMBERS_MAX)
-      .optional(),
+    sanitaryNumbers: z.array(z.string().regex(CRITERION_FORMATS.onssa)).max(SANITARY_NUMBERS_MAX).optional(),
     /** Staff notes on the shop (back office, zone 7 audit P2-10), newest first, the last 20 kept. */
     staffNotes: z
-      .array(
-        z
-          .object({
-            at: ts,
-            by: uid,
-            byName: z.string().min(1).max(120),
-            text: z.string().min(1).max(500),
-          })
-          .strict(),
-      )
+      .array(z.object({ at: ts, by: uid, byName: z.string().min(1).max(120), text: z.string().min(1).max(500) }).strict())
       .max(20)
       .optional(),
     /** Derived from config/pricing for `plan`. */

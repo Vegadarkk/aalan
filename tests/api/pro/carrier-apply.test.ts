@@ -25,35 +25,18 @@ vi.mock("@/lib/security/turnstile", () => ({
 }));
 
 import { GET as getQueue } from "@/app/api/admin/pros/route";
-import {
-  GET as getReview,
-  POST as postDecision,
-} from "@/app/api/admin/pros/[proId]/route";
+import { GET as getReview, POST as postDecision } from "@/app/api/admin/pros/[proId]/route";
 import { POST as postPhoneCheck } from "@/app/api/admin/pros/[proId]/phone/route";
 import { PUT as putAgency } from "@/app/api/pro/me/agency/route";
 import { GET as getMe } from "@/app/api/pro/me/route";
-import type {
-  ProDecisionResponse,
-  ProMeResponse,
-  ProPhoneCheckResponse,
-  ProQueueResponse,
-  ProReview,
-} from "@/lib/contracts/pro";
+import type { ProDecisionResponse, ProMeResponse, ProPhoneCheckResponse, ProQueueResponse, ProReview } from "@/lib/contracts/pro";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { resetServerEnv } from "@/lib/env";
 import { createSessionForUid } from "@/lib/firebase/session";
 import { csrfToken } from "@/lib/security/csrf";
 import { api, member, type ErrorBody, type Member } from "../listings/helpers";
-import {
-  admin,
-  application,
-  applyAs,
-  code,
-  kybPiece,
-  staffAccount,
-  type Staff,
-} from "./helpers";
+import { admin, application, applyAs, code, kybPiece, staffAccount, type Staff } from "./helpers";
 
 const EU_LEGAL = {
   form: "entreprise_ue",
@@ -63,8 +46,7 @@ const EU_LEGAL = {
 };
 let counter = 0;
 /** A French mobile no other test account holds (+33 6 1x xx xx xx). */
-const euMobile = () =>
-  `+3361${String((Date.now() + counter++) % 10_000_000).padStart(7, "0")}`;
+const euMobile = () => `+3361${String((Date.now() + counter++) % 10_000_000).padStart(7, "0")}`;
 
 let moderator: Staff;
 
@@ -81,10 +63,7 @@ describe("carrier application", () => {
   it("is offered only while the carriers space is open", async () => {
     const owner = await member();
     flags.carriersEnabled = false;
-    expect(
-      (await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner }))
-        .body.carriersOpen,
-    ).toBe(false);
+    expect((await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner })).body.carriersOpen).toBe(false);
     const closed = await applyAs(
       owner,
       application([await kybPiece(owner)], {
@@ -96,10 +75,7 @@ describe("carrier application", () => {
     expect(closed.status).toBe(403);
     expect(code(closed.body)).toBe("carriers_closed");
     flags.carriersEnabled = true;
-    expect(
-      (await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner }))
-        .body.carriersOpen,
-    ).toBe(true);
+    expect((await api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner })).body.carriersOpen).toBe(true);
   });
 
   it("refuses an EU company for another activity, and a carrier without its commitments", async () => {
@@ -184,21 +160,9 @@ describe("carrier application", () => {
       legalCountry: "FR",
     });
 
-    const queue = await admin<ProQueueResponse>(
-      getQueue,
-      "GET",
-      "/api/admin/pros",
-      moderator,
-    );
-    expect(queue.body.items.find((item) => item.proId === proId)).toMatchObject(
-      { legalForm: "entreprise_ue", ice: "73282932000074", iceFormatOk: true },
-    );
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${proId}`,
-      moderator,
-    );
+    const queue = await admin<ProQueueResponse>(getQueue, "GET", "/api/admin/pros", moderator);
+    expect(queue.body.items.find((item) => item.proId === proId)).toMatchObject({ legalForm: "entreprise_ue", ice: "73282932000074", iceFormatOk: true });
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${proId}`, moderator);
     expect(review.body.review.legal).toEqual({
       form: "entreprise_ue",
       country: "FR",
@@ -207,56 +171,31 @@ describe("carrier application", () => {
     });
     expect(review.body.review.correctableSectors).toEqual(["carrier"]);
 
-    const called = await admin<ProPhoneCheckResponse>(
-      postPhoneCheck,
-      "POST",
-      `/api/admin/pros/${proId}/phone`,
-      moderator,
-      { outcome: "verified" },
-    );
+    const called = await admin<ProPhoneCheckResponse>(postPhoneCheck, "POST", `/api/admin/pros/${proId}/phone`, moderator, { outcome: "verified" });
     expect(called.body).toMatchObject({
       outcome: "verified",
       phoneVerified: true,
     });
     expect((await getUserPrivate(owner.uid))?.phoneE164).toBe(phone);
 
-    const wrongSector = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "eu_register",
-        sector: "general",
-        submittedAt: review.body.review.kybc.submittedAt!,
-      },
-    );
+    const wrongSector = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, {
+      action: "verify",
+      registrySource: "eu_register",
+      sector: "general",
+      submittedAt: review.body.review.kybc.submittedAt!,
+    });
     expect(wrongSector.status).toBe(409);
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "eu_register",
-        submittedAt: review.body.review.kybc.submittedAt!,
-      },
-    );
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, {
+      action: "verify",
+      registrySource: "eu_register",
+      submittedAt: review.body.review.kybc.submittedAt!,
+    });
     expect(decided.status).toBe(200);
-    expect((await getProProfile(proId))?.kybc.registryCheck?.source).toBe(
-      "eu_register",
-    );
+    expect((await getProProfile(proId))?.kybc.registryCheck?.source).toBe("eu_register");
 
     // Signed in again (the decision revoked the session): the EU carrier stays a carrier.
     await signInAgain(owner);
-    const general = await api<ErrorBody>(
-      putAgency,
-      "PUT",
-      "/api/pro/me/agency",
-      { member: owner, body: { sector: "general", feeSchedule: "" } },
-    );
+    const general = await api<ErrorBody>(putAgency, "PUT", "/api/pro/me/agency", { member: owner, body: { sector: "general", feeSchedule: "" } });
     expect(general.status).toBe(409);
     expect(code(general.body)).toBe("legal_form_sector");
   });

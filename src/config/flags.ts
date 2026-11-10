@@ -47,21 +47,14 @@ const METADATA_KEYS: ReadonlySet<string> = new Set(["updatedAt", "updatedBy"]);
  * mistyped or unknown (reported, so an admin closing the Pro sign-up with a typo elsewhere in the
  * document does close it). The runtime raises an alert on any error.
  */
-export function resolveFlagsConfig(stored: unknown): {
-  config: FlagsConfig;
-  errors: string[];
-} {
-  if (stored === undefined || stored === null)
-    return { config: DEFAULT_FLAGS, errors: [] };
-  if (typeof stored !== "object" || Array.isArray(stored))
-    return { config: DEFAULT_FLAGS, errors: ["config/flags: not an object"] };
+export function resolveFlagsConfig(stored: unknown): { config: FlagsConfig; errors: string[] } {
+  if (stored === undefined || stored === null) return { config: DEFAULT_FLAGS, errors: [] };
+  if (typeof stored !== "object" || Array.isArray(stored)) return { config: DEFAULT_FLAGS, errors: ["config/flags: not an object"] };
   const config: FlagsConfig = { ...DEFAULT_FLAGS };
   const errors: string[] = [];
   for (const [key, value] of Object.entries(stored)) {
     if (METADATA_KEYS.has(key)) continue;
-    const field = flagsConfigSchema.shape[key as keyof FlagsConfig] as
-      | z.ZodType
-      | undefined;
+    const field = flagsConfigSchema.shape[key as keyof FlagsConfig] as z.ZodType | undefined;
     if (!field) {
       errors.push(`${key}: unknown flag`);
       continue;

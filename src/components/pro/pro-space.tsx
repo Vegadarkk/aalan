@@ -1,29 +1,9 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import {
-  ArrowRight,
-  BadgeCheck,
-  CircleCheck,
-  CircleDashed,
-  Gift,
-  Hourglass,
-  PhoneCall,
-  ReceiptText,
-  ShieldCheck,
-  Store,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowRight, BadgeCheck, CircleCheck, CircleDashed, Gift, Hourglass, PhoneCall, ReceiptText, ShieldCheck, Store } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  FormMessage,
-  useApiErrorMessage,
-} from "@/components/auth/form-message";
+import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { StatusPanel } from "@/components/auth/status-panel";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Badge } from "@/components/ui/badge";
@@ -59,10 +39,7 @@ import { moroccoTimeZone } from "@/lib/i18n/morocco-time";
 // or the shop's dashboard (plan, launch offer, quotas, sector, shortcuts). Payments stay closed until the
 // sales gate: nothing here sells.
 
-type View =
-  | { kind: "loading" }
-  | { kind: "failed"; error: unknown }
-  | { kind: "ready"; me: ProMeResponse };
+type View = { kind: "loading" } | { kind: "failed"; error: unknown } | { kind: "ready"; me: ProMeResponse };
 
 const PLANS = ["none", "essentiel", "business", "premium"] as const;
 
@@ -104,12 +81,7 @@ export function ProSpace() {
           error={view.error}
           title={t("loadFailed")}
           action={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void load()}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
               {t("retry")}
             </Button>
           }
@@ -123,44 +95,21 @@ export function ProSpace() {
   );
 }
 
-function ProScreen({
-  me,
-  onReload,
-}: {
-  me: ProMeResponse;
-  onReload: () => void;
-}) {
+function ProScreen({ me, onReload }: { me: ProMeResponse; onReload: () => void }) {
   const shop = me.shop;
   if (!shop) return <Application me={me} previous={null} onReload={onReload} />;
   const lifecycle = shop.lifecycle as ProState;
   if (lifecycle === "pending_verification") return <Pending shop={shop} />;
-  if (lifecycle === "rejected")
-    return <Application me={me} previous={shop} onReload={onReload} />;
+  if (lifecycle === "rejected") return <Application me={me} previous={shop} onReload={onReload} />;
   // Validation withdrawn (P2-10): the new submission under review, or the form to send one.
-  if (lifecycle === "revalidation_required")
-    return shop.kybcStatus === "submitted" ? (
-      <Pending shop={shop} revalidation />
-    ) : (
-      <Application me={me} previous={shop} revalidation onReload={onReload} />
-    );
+  if (lifecycle === "revalidation_required") return shop.kybcStatus === "submitted" ? <Pending shop={shop} revalidation /> : <Application me={me} previous={shop} revalidation onReload={onReload} />;
   return <Dashboard me={me} shop={shop} lifecycle={lifecycle} />;
 }
 
-function Application({
-  me,
-  previous,
-  revalidation = false,
-  onReload,
-}: {
-  me: ProMeResponse;
-  previous: ProSelfView | null;
-  revalidation?: boolean;
-  onReload: () => void;
-}) {
+function Application({ me, previous, revalidation = false, onReload }: { me: ProMeResponse; previous: ProSelfView | null; revalidation?: boolean; onReload: () => void }) {
   const t = useTranslations("Pro");
   // A shop sent back to a KYBC review resubmits even while new applications are closed.
-  if (!me.signupOpen && !revalidation)
-    return <ErrorBanner tone="info" title={t("closed")} />;
+  if (!me.signupOpen && !revalidation) return <ErrorBanner tone="info" title={t("closed")} />;
   const { emailVerified, phoneVerified, accountActive } = me.eligibility;
   // A Pro's phone is checked by a moderator's call during the KYBC review (decision of 19 Oct 2026,
   // WhatsApp parked with Meta): an unverified number never blocks the application (Z1-03, L4-01).
@@ -183,75 +132,35 @@ function Application({
         <Intro launchOffer={me.launchOffer} />
       )}
       {accountActive ? (
-        <section
-          className="flex flex-col gap-4"
-          aria-labelledby="pro-eligibility"
-        >
+        <section className="flex flex-col gap-4" aria-labelledby="pro-eligibility">
           <h2 id="pro-eligibility" className="text-lg font-semibold">
             {t("eligibility.title")}
           </h2>
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
-            <Requirement
-              done={emailVerified}
-              label={t("eligibility.email")}
-              action={
-                emailVerified ? null : (
-                  <InlineLink href="/parametres">
-                    {t("eligibility.settings")}
-                  </InlineLink>
-                )
-              }
-            />
+            <Requirement done={emailVerified} label={t("eligibility.email")} action={emailVerified ? null : <InlineLink href="/parametres">{t("eligibility.settings")}</InlineLink>} />
             {byCall ? (
               <li className="flex items-start gap-3 px-4 py-3.5">
-                <PhoneCall
-                  className="mt-0.5 size-5 shrink-0 text-structure dark:text-gold-300"
-                  aria-hidden="true"
-                />
+                <PhoneCall className="mt-0.5 size-5 shrink-0 text-structure dark:text-gold-300" aria-hidden="true" />
                 <span className="flex-1 text-sm text-pretty">
                   {t("eligibility.phoneCall")}
                   {me.phoneVerification === "whatsapp" ? (
                     <>
                       {" "}
-                      <InlineLink href="/verifications">
-                        {t("eligibility.verifyPhoneNow")}
-                      </InlineLink>
+                      <InlineLink href="/verifications">{t("eligibility.verifyPhoneNow")}</InlineLink>
                     </>
                   ) : null}
                 </span>
               </li>
             ) : (
-              <Requirement
-                done={phoneVerified}
-                label={t("eligibility.phone")}
-                action={
-                  phoneVerified ? null : (
-                    <InlineLink href="/verifications">
-                      {t("eligibility.verifyPhone")}
-                    </InlineLink>
-                  )
-                }
-              />
+              <Requirement done={phoneVerified} label={t("eligibility.phone")} action={phoneVerified ? null : <InlineLink href="/verifications">{t("eligibility.verifyPhone")}</InlineLink>} />
             )}
           </ul>
-          {eligible ? (
-            <p className="text-sm text-foreground-muted">
-              {t("eligibility.ready")}
-            </p>
-          ) : null}
+          {eligible ? <p className="text-sm text-foreground-muted">{t("eligibility.ready")}</p> : null}
         </section>
       ) : (
         <ErrorBanner tone="danger" title={t("eligibility.inactive")} />
       )}
-      {eligible ? (
-        <ProApplicationForm
-          previous={previous}
-          needsPhone={byCall}
-          onDone={onReload}
-          carriersOpen={me.carriersOpen}
-          {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})}
-        />
-      ) : null}
+      {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} carriersOpen={me.carriersOpen} {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})} /> : null}
     </div>
   );
 }
@@ -276,10 +185,7 @@ function RevalidationBanner({ shop }: { shop: ProSelfView }) {
         <p className="text-pretty">{t("resubmit")}</p>
         <p>
           {t("contact")}{" "}
-          <Link
-            href="/aide/contact"
-            className={cn("font-medium text-link", textLinkClassName)}
-          >
+          <Link href="/aide/contact" className={cn("font-medium text-link", textLinkClassName)}>
             {t("contactLink")}
           </Link>
         </p>
@@ -298,36 +204,20 @@ function Intro({ launchOffer }: { launchOffer: ProMeResponse["launchOffer"] }) {
       </span>
       <div className="flex flex-col gap-3 text-center sm:text-start">
         <h2 className="text-2xl font-semibold text-balance">{t("title")}</h2>
-        <p className="max-w-prose text-structure-foreground/85 text-pretty">
-          {t("lead")}
-        </p>
+        <p className="max-w-prose text-structure-foreground/85 text-pretty">{t("lead")}</p>
       </div>
       <ul className="flex flex-col gap-3 text-sm">
         {launchOffer ? (
           <li className="flex items-start gap-3">
-            <Gift
-              className="mt-0.5 size-5 shrink-0 text-gold-300"
-              aria-hidden="true"
-            />
+            <Gift className="mt-0.5 size-5 shrink-0 text-gold-300" aria-hidden="true" />
             <span className="text-pretty">
-              {t("offer", {
-                months: launchOffer.months,
-                days: launchOffer.noticeDays,
-              })}
-              {launchOffer.seatsLeft === null ? null : (
-                <strong className="font-semibold">
-                  {" "}
-                  {t("offerSeats", { left: launchOffer.seatsLeft })}
-                </strong>
-              )}
+              {t("offer", { months: launchOffer.months, days: launchOffer.noticeDays })}
+              {launchOffer.seatsLeft === null ? null : <strong className="font-semibold"> {t("offerSeats", { left: launchOffer.seatsLeft })}</strong>}
             </span>
           </li>
         ) : null}
         <li className="flex items-start gap-3">
-          <ShieldCheck
-            className="mt-0.5 size-5 shrink-0 text-gold-300"
-            aria-hidden="true"
-          />
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-gold-300" aria-hidden="true" />
           <span className="text-pretty">{t("how")}</span>
         </li>
       </ul>
@@ -335,31 +225,12 @@ function Intro({ launchOffer }: { launchOffer: ProMeResponse["launchOffer"] }) {
   );
 }
 
-function Requirement({
-  done,
-  label,
-  action,
-}: {
-  done: boolean;
-  label: string;
-  action: ReactNode;
-}) {
+function Requirement({ done, label, action }: { done: boolean; label: string; action: ReactNode }) {
   const Icon = done ? CircleCheck : CircleDashed;
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3.5">
-      <Icon
-        className={cn(
-          "size-5 shrink-0",
-          done ? "text-success" : "text-foreground-muted",
-        )}
-        aria-hidden="true"
-      />
-      <span
-        className={cn(
-          "flex-1 text-sm",
-          done ? "text-foreground" : "font-medium",
-        )}
-      >
+      <Icon className={cn("size-5 shrink-0", done ? "text-success" : "text-foreground-muted")} aria-hidden="true" />
+      <span className={cn("flex-1 text-sm", done ? "text-foreground" : "font-medium")}>
         {label}
         <span className="sr-only">{done ? " ✓" : ""}</span>
       </span>
@@ -368,18 +239,9 @@ function Requirement({
   );
 }
 
-function InlineLink({
-  href,
-  children,
-}: {
-  href: "/parametres" | "/verifications";
-  children: ReactNode;
-}) {
+function InlineLink({ href, children }: { href: "/parametres" | "/verifications"; children: ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="text-sm font-medium text-link underline underline-offset-2"
-    >
+    <Link href={href} className="text-sm font-medium text-link underline underline-offset-2">
       {children}
     </Link>
   );
@@ -387,59 +249,31 @@ function InlineLink({
 
 function useDate() {
   const locale = useLocale() as Locale;
-  return (iso: string) =>
-    new Intl.DateTimeFormat(numbersLocale(locale), {
-      dateStyle: "long",
-      timeZone: moroccoTimeZone(new Date(iso).getTime()),
-    }).format(new Date(iso));
+  return (iso: string) => new Intl.DateTimeFormat(numbersLocale(locale), { dateStyle: "long", timeZone: moroccoTimeZone(new Date(iso).getTime()) }).format(new Date(iso));
 }
 
-function Pending({
-  shop,
-  revalidation = false,
-}: {
-  shop: ProSelfView;
-  revalidation?: boolean;
-}) {
+function Pending({ shop, revalidation = false }: { shop: ProSelfView; revalidation?: boolean }) {
   const t = useTranslations("Pro");
   const date = useDate();
-  const values = {
-    name: isolate(shop.name),
-    date: shop.submittedAt ? date(shop.submittedAt) : "",
-  };
+  const values = { name: isolate(shop.name), date: shop.submittedAt ? date(shop.submittedAt) : "" };
   return (
-    <StatusPanel
-      icon={Hourglass}
-      title={t(revalidation ? "revalidation.pendingTitle" : "pending.title")}
-      autoFocus={false}
-    >
+    <StatusPanel icon={Hourglass} title={t(revalidation ? "revalidation.pendingTitle" : "pending.title")} autoFocus={false}>
       {t(revalidation ? "revalidation.pendingBody" : "pending.body", values)}
     </StatusPanel>
   );
 }
 
-function Dashboard({
-  me,
-  shop,
-  lifecycle,
-}: {
-  me: ProMeResponse;
-  shop: ProSelfView;
-  lifecycle: ProState;
-}) {
+function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfView; lifecycle: ProState }) {
   const t = useTranslations("Pro.dashboard");
   const locale = useLocale() as Locale;
   const date = useDate();
   const { session } = useSession();
   const router = useRouter();
   const city = cityBySlug(shop.citySlug);
-  const plan = (PLANS as readonly string[]).includes(shop.plan)
-    ? (shop.plan as (typeof PLANS)[number])
-    : "none";
+  const plan = (PLANS as readonly string[]).includes(shop.plan) ? (shop.plan as (typeof PLANS)[number]) : "none";
   const suspended = lifecycle === "suspended";
   // The role is read from the session cookie: a shop verified since the last sign-in publishes as Pro only after a new one.
-  const staleRole =
-    publishesAsPro(lifecycle) && session !== null && session.role !== "pro";
+  const staleRole = publishesAsPro(lifecycle) && session !== null && session.role !== "pro";
   const canPublish = publishesAsPro(lifecycle) && plan !== "none" && !staleRole;
   // The header follows the logo set below at once.
   const [logo, setLogo] = useState(shop.card.logo);
@@ -458,24 +292,14 @@ function Dashboard({
           <h2 dir="auto" className="truncate text-2xl font-semibold">
             {shop.name}
           </h2>
-          {city ? (
-            <p className="text-sm text-structure-foreground/80">
-              {cityName(city, locale)}
-            </p>
-          ) : null}
+          {city ? <p className="text-sm text-structure-foreground/80">{cityName(city, locale)}</p> : null}
         </div>
         {suspended ? (
-          <Badge
-            variant="danger"
-            className="self-start px-3 py-1 text-sm sm:self-center"
-          >
+          <Badge variant="danger" className="self-start px-3 py-1 text-sm sm:self-center">
             {t("suspended")}
           </Badge>
         ) : (
-          <Badge
-            variant="featured"
-            className="self-start px-3 py-1 text-sm sm:self-center"
-          >
+          <Badge variant="featured" className="self-start px-3 py-1 text-sm sm:self-center">
             <BadgeCheck className="size-4" aria-hidden="true" />
             {t("verified")}
           </Badge>
@@ -487,12 +311,7 @@ function Dashboard({
           tone="info"
           title={t("signInAgain")}
           action={
-            <Button
-              type="button"
-              variant="structure"
-              size="sm"
-              onClick={() => void signInAgain()}
-            >
+            <Button type="button" variant="structure" size="sm" onClick={() => void signInAgain()}>
               {t("signIn")}
             </Button>
           }
@@ -572,34 +391,17 @@ function Dashboard({
 
       {suspended ? null : (
         <div className="grid gap-6 md:grid-cols-2">
-          <section
-            className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5"
-            aria-labelledby="pro-plan"
-          >
-            <h2
-              id="pro-plan"
-              className="text-sm font-medium text-foreground-muted"
-            >
+          <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5" aria-labelledby="pro-plan">
+            <h2 id="pro-plan" className="text-sm font-medium text-foreground-muted">
               {t("plan")}
             </h2>
             <p className="text-2xl font-semibold">{t(`plans.${plan}`)}</p>
             {plan === "none" ? (
-              <p className="text-sm text-foreground-muted text-pretty">
-                {lifecycle === "downgraded" ? null : t("noPlan")}
-              </p>
+              <p className="text-sm text-foreground-muted text-pretty">{lifecycle === "downgraded" ? null : t("noPlan")}</p>
             ) : shop.launchOffer ? (
               <p className="flex items-start gap-2 text-sm text-pretty">
-                <Gift
-                  className="mt-0.5 size-4 shrink-0 text-gold-500 dark:text-gold-300"
-                  aria-hidden="true"
-                />
-                <span>
-                  {shop.launchOffer.endsAt
-                    ? t("launchOfferEnds", {
-                        date: date(shop.launchOffer.endsAt),
-                      })
-                    : t("launchOffer", { days: shop.launchOffer.noticeDays })}
-                </span>
+                <Gift className="mt-0.5 size-4 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
+                <span>{shop.launchOffer.endsAt ? t("launchOfferEnds", { date: date(shop.launchOffer.endsAt) }) : t("launchOffer", { days: shop.launchOffer.noticeDays })}</span>
               </p>
             ) : null}
             {/* Without a plan, a real call to action while subscriptions are open (zone 6 audit 6-02). */}
@@ -608,28 +410,13 @@ function Dashboard({
                 <Link href="/pro/abonnement">{t("choosePlan")}</Link>
               </Button>
             ) : (
-              <Link
-                href="/pro/abonnement"
-                className={cn(
-                  "mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link",
-                  textLinkClassName,
-                )}
-              >
+              <Link href="/pro/abonnement" className={cn("mt-auto inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
                 {t("subscription")}
-                <ArrowRight
-                  aria-hidden="true"
-                  className="size-4 shrink-0 rtl:rotate-180"
-                />
+                <ArrowRight aria-hidden="true" className="size-4 shrink-0 rtl:rotate-180" />
               </Link>
             )}
             {/* The invoices were reachable only by their address (zone 6 audit 6-20). */}
-            <Link
-              href="/pro/factures"
-              className={cn(
-                "inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link",
-                textLinkClassName,
-              )}
-            >
+            <Link href="/pro/factures" className={cn("inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-link", textLinkClassName)}>
               <ReceiptText aria-hidden="true" className="size-4 shrink-0" />
               {t("invoices")}
             </Link>
@@ -641,33 +428,19 @@ function Dashboard({
       {/* The shop's counters (UX audit lot 1): what « statistiques » in the offers stands for. */}
       {canPublish ? <ShopStats /> : null}
 
-      {canPublish && shop.sector === "car_rental" ? (
-        <RentalSetup shop={shop} />
-      ) : null}
-      {canPublish && shop.sector === "holiday_rental" ? (
-        <RentalSetup shop={shop} kind="homes" />
-      ) : null}
+      {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
+      {canPublish && shop.sector === "holiday_rental" ? <RentalSetup shop={shop} kind="homes" /> : null}
       {/* The booking requests waiting for an answer and the rentals coming up (audit L4-06). */}
-      {canPublish &&
-      (shop.sector === "car_rental" || shop.sector === "holiday_rental") ? (
-        <RentalRequestsPanel stays={shop.sector === "holiday_rental"} />
-      ) : null}
+      {canPublish && (shop.sector === "car_rental" || shop.sector === "holiday_rental") ? <RentalRequestsPanel stays={shop.sector === "holiday_rental"} /> : null}
 
       {/* The storefront's card first: what a buyer sees besides the listings (UX audit lot 1). */}
       {canPublish ? <ShopCardSettings shop={shop} onLogo={setLogo} /> : null}
       {/* The storefront's link and QR code to print (UX audit lot 3). */}
-      {canPublish && shop.storefront && !suspended ? (
-        <ShopShare storefront={shop.storefront} />
-      ) : null}
-      {suspended ? null : (
-        <AgencySettings shop={shop} carriersOpen={me.carriersOpen} />
-      )}
+      {canPublish && shop.storefront && !suspended ? <ShopShare storefront={shop.storefront} /> : null}
+      {suspended ? null : <AgencySettings shop={shop} carriersOpen={me.carriersOpen} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
-      {canPublish &&
-      shop.sector !== "car_rental" &&
-      shop.sector !== "holiday_rental" ? (
-        <SectionsSettings shop={shop} />
-      ) : null}
+      {canPublish && shop.sector !== "car_rental" && shop.sector !== "holiday_rental" ? <SectionsSettings shop={shop} /> : null}
+
     </div>
   );
 }
@@ -677,21 +450,14 @@ function Quotas({ shop }: { shop: ProSelfView }) {
   const limit = shop.quotas.activeListings;
   const used = limit ? Math.min(1, shop.activeListings / limit) : 0;
   return (
-    <section
-      className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5"
-      aria-labelledby="pro-quotas"
-    >
+    <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5" aria-labelledby="pro-quotas">
       <h2 id="pro-quotas" className="text-sm font-medium text-foreground-muted">
         {t("quotasTitle")}
       </h2>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">
           <span className="text-sm font-medium">{t("active")}</span>
-          <span className="text-sm tabular-nums">
-            {limit === null
-              ? t("activeUnlimited", { count: shop.activeListings })
-              : t("activeCount", { count: shop.activeListings, limit })}
-          </span>
+          <span className="text-sm tabular-nums">{limit === null ? t("activeUnlimited", { count: shop.activeListings }) : t("activeCount", { count: shop.activeListings, limit })}</span>
         </div>
         {limit === null ? null : (
           <div
@@ -702,22 +468,12 @@ function Quotas({ shop }: { shop: ProSelfView }) {
             aria-valuenow={Math.min(shop.activeListings, limit)}
             className="h-2 overflow-hidden rounded-full bg-surface-muted"
           >
-            <span
-              className={cn(
-                "block h-full rounded-full transition-[width] duration-300 ease-door",
-                used >= 1 ? "bg-warning" : "bg-structure dark:bg-gold-300",
-              )}
-              style={{ width: `${Math.round(used * 100)}%` }}
-            />
+            <span className={cn("block h-full rounded-full transition-[width] duration-300 ease-door", used >= 1 ? "bg-warning" : "bg-structure dark:bg-gold-300")} style={{ width: `${Math.round(used * 100)}%` }} />
           </div>
         )}
       </div>
       <ul className="flex flex-col gap-1.5 text-sm text-foreground-muted">
-        <li>
-          {shop.quotas.listingsPerDay === null
-            ? t("perDayUnlimited")
-            : t("perDay", { count: shop.quotas.listingsPerDay })}
-        </li>
+        <li>{shop.quotas.listingsPerDay === null ? t("perDayUnlimited") : t("perDay", { count: shop.quotas.listingsPerDay })}</li>
         <li>{t("photos", { count: shop.quotas.photosPerListing })}</li>
       </ul>
     </section>

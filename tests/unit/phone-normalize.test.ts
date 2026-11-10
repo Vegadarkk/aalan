@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HttpError } from "@/lib/http/errors";
-import {
-  displayPhone,
-  MOBILE_E164,
-  MOROCCAN_MOBILE_E164,
-  normalizeMobile,
-  normalizeMoroccanMobile,
-} from "@/lib/phone/normalize";
+import { displayPhone, MOBILE_E164, MOROCCAN_MOBILE_E164, normalizeMobile, normalizeMoroccanMobile } from "@/lib/phone/normalize";
 
 function codeOf(input: string): string {
   try {
@@ -87,8 +81,7 @@ describe("normalizeMobile (carriers space)", () => {
     expect(code("0032 470 12 34 56", true)).toBe("+32470123456");
     expect(code("+34 612 345 678", true)).toBe("+34612345678");
     expect(code("+33 6 12 34 56 78", false)).toBe("phone_invalid");
-    for (const e164 of ["+33612345678", "+32470123456", "+34612345678"])
-      expect(MOBILE_E164.test(e164)).toBe(true);
+    for (const e164 of ["+33612345678", "+32470123456", "+34612345678"]) expect(MOBILE_E164.test(e164)).toBe(true);
   });
 
   it("keeps a national 06 number Moroccan, and refuses landlines and other countries", () => {

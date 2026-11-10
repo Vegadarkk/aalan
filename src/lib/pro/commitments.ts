@@ -12,14 +12,7 @@ import type { ProSector } from "./profile-schema";
 /** Version of the commitments text (Pro.commitments in messages/*.json), recorded with each acknowledgment. */
 export const COMMITMENTS_VERSION = "2026-11-10";
 
-export const COMMITMENT_SCOPES = [
-  "shop",
-  "pass",
-  "real_estate",
-  "car_rental",
-  "holiday_rental",
-  "carrier",
-] as const;
+export const COMMITMENT_SCOPES = ["shop", "pass", "real_estate", "car_rental", "holiday_rental", "carrier"] as const;
 export type CommitmentScope = (typeof COMMITMENT_SCOPES)[number];
 
 /** Commitment keys every shop takes, then the ones of an agency's trade. */
@@ -29,13 +22,7 @@ export const COMMITMENT_ITEMS = {
   pass: [...SHOP_ITEMS, "temporary"],
   real_estate: ["mandate", "property", "tourism", "responsible"],
   car_rental: ["agrement", "fleet", "contract", "responsible"],
-  holiday_rental: [
-    "authorisation",
-    "guests",
-    "touristTax",
-    "owners",
-    "responsible",
-  ],
+  holiday_rental: ["authorisation", "guests", "touristTax", "owners", "responsible"],
   // Europe–Morocco carriers (transporteurs/spec.md §8): licences, insurance, customs, the price shown is the price charged.
   carrier: ["licence", "insurance", "customs", "prices", "responsible"],
 } as const satisfies Record<CommitmentScope, readonly string[]>;
@@ -46,53 +33,25 @@ export interface CommitmentGuideLink {
   procedure: GuideProcedureId;
 }
 
-const link = <P extends GuideProcedureId>(procedure: P) => ({
-  rubric: GUIDE_PROCEDURES[procedure].rubric as GuideRubric,
-  procedure,
-});
+const link = <P extends GuideProcedureId>(procedure: P) => ({ rubric: GUIDE_PROCEDURES[procedure].rubric as GuideRubric, procedure });
 
 /**
  * Guide procedures per scope. Only procedures whose official links are confirmed (a procedure whose
  * links are all hidden is not on its rubric page; tests/unit/pro-commitments.test.ts checks it).
  */
 export const COMMITMENT_GUIDE = {
-  shop: [
-    link("pro-societe"),
-    link("pro-ice"),
-    link("pro-obligations"),
-    link("ae-impots"),
-  ],
+  shop: [link("pro-societe"), link("pro-ice"), link("pro-obligations"), link("ae-impots")],
   pass: [link("pro-ice"), link("pro-obligations"), link("ae-impots")],
-  real_estate: [
-    link("immo-verifier"),
-    link("immo-location"),
-    link("pro-obligations"),
-  ],
-  car_rental: [
-    link("vehicule-mutation"),
-    link("pro-societe"),
-    link("pro-obligations"),
-  ],
-  holiday_rental: [
-    link("immo-location-touristique"),
-    link("immo-taxes-locales"),
-    link("pro-obligations"),
-  ],
+  real_estate: [link("immo-verifier"), link("immo-location"), link("pro-obligations")],
+  car_rental: [link("vehicule-mutation"), link("pro-societe"), link("pro-obligations")],
+  holiday_rental: [link("immo-location-touristique"), link("immo-taxes-locales"), link("pro-obligations")],
   carrier: [link("pro-societe"), link("pro-obligations")],
-} as const satisfies Readonly<
-  Record<CommitmentScope, readonly CommitmentGuideLink[]>
->;
+} as const satisfies Readonly<Record<CommitmentScope, readonly CommitmentGuideLink[]>>;
 
 /** The commitments a sector adds to the shop's own, or null for a general shop or a dealership. */
-export function sectorCommitmentScope(
-  sector: ProSector,
-): CommitmentScope | null {
+export function sectorCommitmentScope(sector: ProSector): CommitmentScope | null {
   return sector === "general" || sector === "dealer" ? null : sector;
 }
 
 /** Deep link to a procedure of the guide (its heading id on the rubric page). */
-export const guideProcedureHref = ({
-  rubric,
-  procedure,
-}: CommitmentGuideLink) =>
-  `/demarches/${rubric}#procedure-${procedure}` as const;
+export const guideProcedureHref = ({ rubric, procedure }: CommitmentGuideLink) => `/demarches/${rubric}#procedure-${procedure}` as const;

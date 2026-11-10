@@ -8,43 +8,26 @@ import type * as ClaimsModule from "@/lib/firebase/claims";
 // rerun of the post-commit effects when Firebase Auth failed once; while the WhatsApp check is
 // unavailable, the number declared with the application and the moderator's call that verifies it.
 
-vi.mock("@/lib/search/queue", () => ({
-  notifySearchIndex: vi.fn(async () => undefined),
-}));
+vi.mock("@/lib/search/queue", () => ({ notifySearchIndex: vi.fn(async () => undefined) }));
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
-vi.mock("@/lib/security/turnstile", () => ({
-  verifyTurnstile: vi.fn(async () => ({ ok: true, codes: [] })),
-}));
+vi.mock("@/lib/security/turnstile", () => ({ verifyTurnstile: vi.fn(async () => ({ ok: true, codes: [] })) }));
 vi.mock("@/lib/firebase/claims", async (importOriginal) => {
   const actual = await importOriginal<typeof ClaimsModule>();
   return { ...actual, updateClaims: vi.fn(actual.updateClaims) };
 });
 
 import { GET as getQueue } from "@/app/api/admin/pros/route";
-import {
-  GET as getReview,
-  POST as postDecision,
-} from "@/app/api/admin/pros/[proId]/route";
+import { GET as getReview, POST as postDecision } from "@/app/api/admin/pros/[proId]/route";
 import { POST as postPhoneCheck } from "@/app/api/admin/pros/[proId]/phone/route";
 import { POST as create } from "@/app/api/listings/route";
 import { PATCH as patch } from "@/app/api/listings/[id]/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
 import { GET as getMe } from "@/app/api/pro/me/route";
 import type { CreateListingResponse } from "@/lib/contracts/listings";
-import type {
-  ProDecisionResponse,
-  ProMeResponse,
-  ProPhoneCheckResponse,
-  ProQueueResponse,
-  ProReview,
-} from "@/lib/contracts/pro";
+import type { ProDecisionResponse, ProMeResponse, ProPhoneCheckResponse, ProQueueResponse, ProReview } from "@/lib/contracts/pro";
 import { getListing } from "@/lib/db/repositories/listings";
 import { DEFAULT_PRICING } from "@/config/pricing";
-import {
-  getProProfile,
-  launchOfferSeatsGranted,
-  launchOfferSeatsRef,
-} from "@/lib/db/repositories/pro-profiles";
+import { getProProfile, launchOfferSeatsGranted, launchOfferSeatsRef } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { COLLECTIONS } from "@/lib/db/schemas";
@@ -56,64 +39,19 @@ import { sendMail } from "@/lib/mail";
 import { KYBC_NOTICE_VERSION } from "@/lib/pro/kybc";
 import { csrfToken } from "@/lib/security/csrf";
 import { lastMail } from "../auth/helpers";
-import {
-  api,
-  attachPhoto,
-  freshPhone,
-  member,
-  readyPatch,
-  seedReadyUpload,
-  type ErrorBody,
-  type ListingBody,
-  type Member,
-  type PublishBody,
-} from "../listings/helpers";
-import {
-  admin,
-  application,
-  applyAs,
-  code,
-  kybPiece,
-  staffAccount,
-  withWhatsApp,
-  type Staff,
-} from "./helpers";
+import { api, attachPhoto, freshPhone, member, readyPatch, seedReadyUpload, type ErrorBody, type ListingBody, type Member, type PublishBody } from "../listings/helpers";
+import { admin, application, applyAs, code, kybPiece, staffAccount, withWhatsApp, type Staff } from "./helpers";
 
-const me = (owner: Member) =>
-  api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
+const me = (owner: Member) => api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
 
 async function publishedListing(owner: Member): Promise<string> {
-  const created = await api<CreateListingResponse>(
-    create,
-    "POST",
-    "/api/listings",
-    { member: owner, body: {} },
-  );
+  const created = await api<CreateListingResponse>(create, "POST", "/api/listings", { member: owner, body: {} });
   const id = created.body.id;
-  expect(
-    (
-      await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, {
-        member: owner,
-        body: readyPatch(),
-      })
-    ).status,
-  ).toBe(200);
+  expect((await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: readyPatch() })).status).toBe(200);
   const first = await seedReadyUpload(owner, id);
-  expect(
-    (
-      await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, {
-        member: owner,
-        body: { photos: [first] },
-      })
-    ).status,
-  ).toBe(200);
+  expect((await api<ListingBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { photos: [first] } })).status).toBe(200);
   await attachPhoto(id, await seedReadyUpload(owner, id));
-  const result = await api<PublishBody>(
-    publish,
-    "POST",
-    `/api/listings/${id}/publish`,
-    { member: owner, body: { acceptRules: true } },
-  );
+  const result = await api<PublishBody>(publish, "POST", `/api/listings/${id}/publish`, { member: owner, body: { acceptRules: true } });
   expect(result.status).toBe(200);
   return id;
 }
@@ -126,10 +64,7 @@ async function signInAgain(owner: Member): Promise<void> {
 }
 
 async function auditActions(proId: string): Promise<string[]> {
-  const audits = await db()
-    .collection(COLLECTIONS.auditLogs)
-    .where("target.id", "==", proId)
-    .get();
+  const audits = await db().collection(COLLECTIONS.auditLogs).where("target.id", "==", proId).get();
   return audits.docs.map((doc) => doc.get("action") as string);
 }
 
@@ -150,13 +85,9 @@ describe("POST /api/pro/apply", () => {
     const owner = await member();
     const piece = await kybPiece(owner);
     const phone = freshPhone();
-    const result = await withWhatsApp(() =>
-      applyAs(owner, application([piece], { phone })),
-    );
+    const result = await withWhatsApp(() => applyAs(owner, application([piece], { phone })));
     expect(result.status).toBe(201);
-    expect((await getProProfile(result.body.proId))?.kybc.phoneToCheck).toBe(
-      phone,
-    );
+    expect((await getProProfile(result.body.proId))?.kybc.phoneToCheck).toBe(phone);
   });
 
   it("without the WhatsApp check, takes the Moroccan mobile a moderator will call", async () => {
@@ -165,20 +96,12 @@ describe("POST /api/pro/apply", () => {
     const missing = await applyAs(owner, application([piece]));
     expect(missing.status).toBe(400);
     expect(code(missing.body)).toBe("phone_required");
-    const landline = await applyAs(
-      owner,
-      application([piece], { phone: "05 22 12 34 56" }),
-    );
+    const landline = await applyAs(owner, application([piece], { phone: "05 22 12 34 56" }));
     expect(code(landline.body)).toBe("phone_not_mobile");
     const phone = freshPhone();
-    const result = await applyAs(
-      owner,
-      application([piece], { phone: `0${phone.slice(4)}` }),
-    );
+    const result = await applyAs(owner, application([piece], { phone: `0${phone.slice(4)}` }));
     expect(result.status).toBe(201);
-    expect((await getProProfile(result.body.proId))?.kybc.phoneToCheck).toBe(
-      phone,
-    );
+    expect((await getProProfile(result.body.proId))?.kybc.phoneToCheck).toBe(phone);
   });
 
   it("refuses pieces that are not the applicant's KYBC uploads", async () => {
@@ -195,10 +118,7 @@ describe("POST /api/pro/apply", () => {
 
   it("refuses a body without the compliance commitment", async () => {
     const owner = await member({ phone: freshPhone() });
-    const result = await applyAs(
-      owner,
-      application([await kybPiece(owner)], { complianceCommitment: false }),
-    );
+    const result = await applyAs(owner, application([await kybPiece(owner)], { complianceCommitment: false }));
     expect(result.status).toBe(400);
   });
 
@@ -209,18 +129,8 @@ describe("POST /api/pro/apply", () => {
     expect(result.status).toBe(201);
     expect(result.body.status).toBe("pending_verification");
     const profile = await getProProfile(result.body.proId);
-    expect(profile).toMatchObject({
-      ownerUid: owner.uid,
-      lifecycle: "pending_verification",
-      plan: "none",
-      legal: { ice: "001234567000089" },
-    });
-    expect(profile?.kybc).toMatchObject({
-      status: "submitted",
-      iceFormatOk: true,
-      uploadIds: [piece],
-      noticeVersion: KYBC_NOTICE_VERSION,
-    });
+    expect(profile).toMatchObject({ ownerUid: owner.uid, lifecycle: "pending_verification", plan: "none", legal: { ice: "001234567000089" } });
+    expect(profile?.kybc).toMatchObject({ status: "submitted", iceFormatOk: true, uploadIds: [piece], noticeVersion: KYBC_NOTICE_VERSION });
     expect(profile?.purgeAt).toBeUndefined();
     expect((await getUserRecord(owner.uid))?.proId).toBe(result.body.proId);
     expect((await getUserRecord(owner.uid))?.type).toBe("individual");
@@ -232,56 +142,19 @@ describe("POST /api/pro/apply", () => {
 
   it("takes a cooperative with its register number, checked against ODCo", async () => {
     const owner = await member({ phone: freshPhone() });
-    const legal = {
-      form: "cooperative",
-      ice: "001 234 567 000 089",
-      coopNumber: "12/2019",
-    };
-    const missing = await applyAs(
-      owner,
-      application([await kybPiece(owner)], {
-        legal: { form: "cooperative", ice: legal.ice },
-      }),
-    );
+    const legal = { form: "cooperative", ice: "001 234 567 000 089", coopNumber: "12/2019" };
+    const missing = await applyAs(owner, application([await kybPiece(owner)], { legal: { form: "cooperative", ice: legal.ice } }));
     expect(missing.status).toBe(400);
-    const applied = await applyAs(
-      owner,
-      application([await kybPiece(owner)], { legal }),
-    );
+    const applied = await applyAs(owner, application([await kybPiece(owner)], { legal }));
     expect(applied.status).toBe(201);
     const proId = applied.body.proId;
-    expect((await getProProfile(proId))?.legal).toEqual({
-      form: "cooperative",
-      ice: "001234567000089",
-      coopNumber: "12/2019",
-    });
+    expect((await getProProfile(proId))?.legal).toEqual({ form: "cooperative", ice: "001234567000089", coopNumber: "12/2019" });
 
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${proId}`,
-      moderator,
-    );
-    expect(review.body.review.legal).toEqual({
-      form: "cooperative",
-      ice: "001234567000089",
-      coopNumber: "12/2019",
-    });
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "odco",
-        submittedAt: review.body.review.kybc.submittedAt!,
-      },
-    );
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${proId}`, moderator);
+    expect(review.body.review.legal).toEqual({ form: "cooperative", ice: "001234567000089", coopNumber: "12/2019" });
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "odco", submittedAt: review.body.review.kybc.submittedAt! });
     expect(decided.status).toBe(200);
-    expect((await getProProfile(proId))?.kybc.registryCheck?.source).toBe(
-      "odco",
-    );
+    expect((await getProProfile(proId))?.kybc.registryCheck?.source).toBe("odco");
   });
 });
 
@@ -290,19 +163,7 @@ describe("GET /api/pro/me", () => {
     const owner = await member();
     const result = await me(owner);
     expect(result.status).toBe(200);
-    expect(result.body).toEqual({
-      signupOpen: true,
-      salesOpen: false,
-      carriersOpen: false,
-      phoneVerification: "call",
-      launchOffer: { noticeDays: 30, months: 6, seatsLeft: expect.any(Number) },
-      eligibility: {
-        emailVerified: true,
-        phoneVerified: false,
-        accountActive: true,
-      },
-      shop: null,
-    });
+    expect(result.body).toEqual({ signupOpen: true, salesOpen: false, carriersOpen: false, phoneVerification: "call", launchOffer: { noticeDays: 30, months: 6, seatsLeft: expect.any(Number) }, eligibility: { emailVerified: true, phoneVerified: false, accountActive: true }, shop: null });
   });
 
   it("follows the application from pending to verified, with the storefront and the launch offer", async () => {
@@ -310,69 +171,25 @@ describe("GET /api/pro/me", () => {
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
     const proId = applied.body.proId;
     const pending = await me(owner);
-    expect(pending.body.shop).toMatchObject({
-      proId,
-      name: "Atlas Vélos",
-      lifecycle: "pending_verification",
-      kybcStatus: "submitted",
-      plan: "none",
-      storefront: null,
-      launchOffer: null,
-      activeListings: 0,
-      rejectReason: null,
-    });
-    expect(pending.body.shop?.submittedAt).toBe(
-      (await getProProfile(proId))!.kybc.submittedAt!.toISOString(),
-    );
+    expect(pending.body.shop).toMatchObject({ proId, name: "Atlas Vélos", lifecycle: "pending_verification", kybcStatus: "submitted", plan: "none", storefront: null, launchOffer: null, activeListings: 0, rejectReason: null });
+    expect(pending.body.shop?.submittedAt).toBe((await getProProfile(proId))!.kybc.submittedAt!.toISOString());
 
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "ompic",
-        submittedAt: pending.body.shop!.submittedAt,
-      },
-    );
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: pending.body.shop!.submittedAt });
     expect(decided.status).toBe(200);
     await signInAgain(owner);
     const verified = await me(owner);
-    expect(verified.body.shop).toMatchObject({
-      lifecycle: "verified",
-      kybcStatus: "verified",
-      plan: "essentiel",
-      planSource: "launch_offer",
-      launchOffer: { noticeDays: 30 },
-      storefront: `${pending.body.shop!.slug}-${proId}`,
-    });
-    expect(verified.body.shop?.quotas).toEqual(
-      expect.objectContaining({ photosPerListing: expect.any(Number) }),
-    );
+    expect(verified.body.shop).toMatchObject({ lifecycle: "verified", kybcStatus: "verified", plan: "essentiel", planSource: "launch_offer", launchOffer: { noticeDays: 30 }, storefront: `${pending.body.shop!.slug}-${proId}` });
+    expect(verified.body.shop?.quotas).toEqual(expect.objectContaining({ photosPerListing: expect.any(Number) }));
   });
 
   it("carries the moderator's reason after a rejection", async () => {
     const owner = await member({ phone: freshPhone() });
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
-    const submittedAt = (await getProProfile(
-      applied.body.proId,
-    ))!.kybc.submittedAt!.toISOString();
+    const submittedAt = (await getProProfile(applied.body.proId))!.kybc.submittedAt!.toISOString();
     const reason = "Le numéro d'auto-entrepreneur est illisible.";
-    await admin(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${applied.body.proId}`,
-      moderator,
-      { action: "reject", reason, submittedAt },
-    );
+    await admin(postDecision, "POST", `/api/admin/pros/${applied.body.proId}`, moderator, { action: "reject", reason, submittedAt });
     const rejected = await me(owner);
-    expect(rejected.body.shop).toMatchObject({
-      lifecycle: "rejected",
-      kybcStatus: "rejected",
-      rejectReason: reason,
-      storefront: null,
-    });
+    expect(rejected.body.shop).toMatchObject({ lifecycle: "rejected", kybcStatus: "rejected", rejectReason: reason, storefront: null });
   });
 
   it("is for signed-in members only", async () => {
@@ -384,41 +201,18 @@ describe("GET /api/pro/me", () => {
 describe("back-office KYBC decision", () => {
   it("validates without the launch offer once its seats are taken (owner, 2026-11-05)", async () => {
     const granted = await launchOfferSeatsGranted();
-    await launchOfferSeatsRef().set({
-      granted: DEFAULT_PRICING.launchOffer.seats,
-    });
+    await launchOfferSeatsRef().set({ granted: DEFAULT_PRICING.launchOffer.seats });
     try {
       const owner = await member({ phone: freshPhone() });
-      const applied = await applyAs(
-        owner,
-        application([await kybPiece(owner)]),
-      );
+      const applied = await applyAs(owner, application([await kybPiece(owner)]));
       expect((await me(owner)).body.launchOffer).toBeNull();
-      const submittedAt = (await getProProfile(
-        applied.body.proId,
-      ))!.kybc.submittedAt!.toISOString();
-      const decided = await admin<ProDecisionResponse>(
-        postDecision,
-        "POST",
-        `/api/admin/pros/${applied.body.proId}`,
-        moderator,
-        { action: "verify", registrySource: "ompic", submittedAt },
-      );
+      const submittedAt = (await getProProfile(applied.body.proId))!.kybc.submittedAt!.toISOString();
+      const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${applied.body.proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
       expect(decided.status).toBe(200);
-      expect(await getProProfile(applied.body.proId)).toMatchObject({
-        lifecycle: "verified",
-        plan: "none",
-        planSource: "none",
-      });
-      expect(
-        (await getProProfile(applied.body.proId))?.launchOfferEndsAt,
-      ).toBeUndefined();
-      expect(await launchOfferSeatsGranted()).toBe(
-        DEFAULT_PRICING.launchOffer.seats,
-      );
-      expect(
-        lastMail(sendMail, "proApproved", owner.email)?.data,
-      ).toMatchObject({ launchOffer: false });
+      expect(await getProProfile(applied.body.proId)).toMatchObject({ lifecycle: "verified", plan: "none", planSource: "none" });
+      expect((await getProProfile(applied.body.proId))?.launchOfferEndsAt).toBeUndefined();
+      expect(await launchOfferSeatsGranted()).toBe(DEFAULT_PRICING.launchOffer.seats);
+      expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ launchOffer: false });
     } finally {
       await launchOfferSeatsRef().set({ granted });
     }
@@ -430,43 +224,21 @@ describe("back-office KYBC decision", () => {
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
     const proId = applied.body.proId;
     // The application is acknowledged by mail (audit L4-16).
-    expect(
-      lastMail(sendMail, "proApplicationReceived", owner.email)?.data,
-    ).toMatchObject({ shopName: "Atlas Vélos" });
+    expect(lastMail(sendMail, "proApplicationReceived", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos" });
 
-    const queue = await admin<ProQueueResponse>(
-      getQueue,
-      "GET",
-      "/api/admin/pros",
-      moderator,
-    );
+    const queue = await admin<ProQueueResponse>(getQueue, "GET", "/api/admin/pros", moderator);
     expect(queue.status).toBe(200);
     expect(queue.body.items.some((item) => item.proId === proId)).toBe(true);
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${proId}`,
-      moderator,
-    );
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${proId}`, moderator);
     expect(review.status).toBe(200);
     expect(review.body.review.pieces).toHaveLength(1);
     expect(review.body.review.effectsPending).toBe(false);
     const submittedAt = review.body.review.kybc.submittedAt!;
 
     const seatsBefore = await launchOfferSeatsGranted();
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "ompic", submittedAt },
-    );
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
     expect(decided.status).toBe(200);
-    expect(decided.body).toMatchObject({
-      proId,
-      lifecycle: "verified",
-      effectsPending: false,
-    });
+    expect(decided.body).toMatchObject({ proId, lifecycle: "verified", effectsPending: false });
     expect(decided.body.retagged).toBeGreaterThanOrEqual(1);
     // One seat of the launch offer, 6 months from this validation (owner, 2026-11-05).
     expect(await launchOfferSeatsGranted()).toBe(seatsBefore + 1);
@@ -474,128 +246,47 @@ describe("back-office KYBC decision", () => {
     expect(offerEnd!.getTime() - Date.now()).toBeGreaterThan(180 * 86_400_000);
     expect(offerEnd!.getTime() - Date.now()).toBeLessThan(185 * 86_400_000);
 
-    expect(await getProProfile(proId)).toMatchObject({
-      lifecycle: "verified",
-      plan: "essentiel",
-      planSource: "launch_offer",
-      kybc: { status: "verified" },
-    });
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "verified", plan: "essentiel", planSource: "launch_offer", kybc: { status: "verified" } });
     expect((await getProProfile(proId))?.effectsPendingSince).toBeUndefined();
     expect((await getUserRecord(owner.uid))?.type).toBe("pro");
-    expect(await getClaims(owner.uid)).toMatchObject({
-      role: "pro",
-      proId,
-      proRole: "owner",
-    });
-    expect(await getListing(listingId)).toMatchObject({
-      sellerType: "pro",
-      proId,
-    });
-    expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({
-      shopName: "Atlas Vélos",
-      launchOffer: true,
-      noticeDays: 30,
-      offerEndsAt: offerEnd!.toISOString(),
-    });
+    expect(await getClaims(owner.uid)).toMatchObject({ role: "pro", proId, proRole: "owner" });
+    expect(await getListing(listingId)).toMatchObject({ sellerType: "pro", proId });
+    expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30, offerEndsAt: offerEnd!.toISOString() });
     expect(await auditActions(proId)).toContain("pro.verify");
 
     // Verified, claims in place, nothing pending: a second verify is a decided application.
-    const twice = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "ompic", submittedAt },
-    );
+    const twice = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
     expect(twice.status).toBe(409);
     expect(updateClaims).toHaveBeenCalledTimes(1);
 
     // Signed in again, the shop publishes as a Pro under the Essentiel quotas.
     await signInAgain(owner);
     const second = await publishedListing(owner);
-    expect(await getListing(second)).toMatchObject({
-      sellerType: "pro",
-      proId,
-    });
+    expect(await getListing(second)).toMatchObject({ sellerType: "pro", proId });
   });
 
   it("keeps a dealership applied for, and lets the moderator correct the activity (B13)", async () => {
     const dealer = await member({ phone: freshPhone() });
-    const applied = await applyAs(
-      dealer,
-      application([await kybPiece(dealer)], { sector: "dealer" }),
-    );
+    const applied = await applyAs(dealer, application([await kybPiece(dealer)], { sector: "dealer" }));
     expect(applied.status).toBe(201);
     const dealerId = applied.body.proId;
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${dealerId}`,
-      moderator,
-    );
-    expect(review.body.review).toMatchObject({
-      sector: "dealer",
-      correctableSectors: ["general", "dealer"],
-    });
-    const refused = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${dealerId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "ompic",
-        submittedAt: review.body.review.kybc.submittedAt,
-        sector: "car_rental",
-      },
-    );
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${dealerId}`, moderator);
+    expect(review.body.review).toMatchObject({ sector: "dealer", correctableSectors: ["general", "dealer"] });
+    const refused = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${dealerId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: review.body.review.kybc.submittedAt, sector: "car_rental" });
     expect(code(refused.body)).toBe("commitments_required");
-    const verified = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${dealerId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "ompic",
-        submittedAt: review.body.review.kybc.submittedAt,
-      },
-    );
+    const verified = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${dealerId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: review.body.review.kybc.submittedAt });
     expect(verified.status).toBe(200);
     expect((await getProProfile(dealerId))?.sector).toBe("dealer");
 
     // A shop applied as a general one, corrected into a dealership at the verification: journaled.
     const shop = await member({ phone: freshPhone() });
-    const shopId = (await applyAs(shop, application([await kybPiece(shop)])))
-      .body.proId;
-    const shopReview = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${shopId}`,
-      moderator,
-    );
+    const shopId = (await applyAs(shop, application([await kybPiece(shop)]))).body.proId;
+    const shopReview = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${shopId}`, moderator);
     expect(shopReview.body.review.sector).toBe("general");
-    const corrected = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${shopId}`,
-      moderator,
-      {
-        action: "verify",
-        registrySource: "ompic",
-        submittedAt: shopReview.body.review.kybc.submittedAt,
-        sector: "dealer",
-      },
-    );
+    const corrected = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${shopId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: shopReview.body.review.kybc.submittedAt, sector: "dealer" });
     expect(corrected.status).toBe(200);
     expect((await getProProfile(shopId))?.sector).toBe("dealer");
-    const entry = (
-      await db()
-        .collection(COLLECTIONS.auditLogs)
-        .where("target.id", "==", shopId)
-        .where("action", "==", "pro.verify")
-        .get()
-    ).docs[0];
+    const entry = (await db().collection(COLLECTIONS.auditLogs).where("target.id", "==", shopId).where("action", "==", "pro.verify").get()).docs[0];
     expect(entry?.get("reason")).toBe("sector general -> dealer");
   });
 
@@ -604,85 +295,32 @@ describe("back-office KYBC decision", () => {
     const listingId = await publishedListing(owner);
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
     const proId = applied.body.proId;
-    const submittedAt = (await getProProfile(
-      proId,
-    ))!.kybc.submittedAt!.toISOString();
-    vi.mocked(updateClaims).mockRejectedValueOnce(
-      new Error("auth unavailable"),
-    );
+    const submittedAt = (await getProProfile(proId))!.kybc.submittedAt!.toISOString();
+    vi.mocked(updateClaims).mockRejectedValueOnce(new Error("auth unavailable"));
 
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "directinfo", submittedAt },
-    );
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "directinfo", submittedAt });
     expect(decided.status).toBe(200);
-    expect(decided.body).toMatchObject({
-      lifecycle: "verified",
-      effectsPending: true,
-    });
+    expect(decided.body).toMatchObject({ lifecycle: "verified", effectsPending: true });
     // The profile and the account are verified; the retag ran (it does not depend on Auth); the trace and the mail exist.
-    expect(await getProProfile(proId)).toMatchObject({
-      lifecycle: "verified",
-      plan: "essentiel",
-      effectsPendingSince: expect.any(Date),
-    });
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "verified", plan: "essentiel", effectsPendingSince: expect.any(Date) });
     expect((await getUserRecord(owner.uid))?.type).toBe("pro");
     expect((await getClaims(owner.uid)).role).toBe("individual");
-    expect(await getListing(listingId)).toMatchObject({
-      sellerType: "pro",
-      proId,
-    });
+    expect(await getListing(listingId)).toMatchObject({ sellerType: "pro", proId });
     expect(await auditActions(proId)).toContain("pro.verify");
     expect(lastMail(sendMail, "proApproved", owner.email)).toBeDefined();
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${proId}`,
-      moderator,
-    );
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${proId}`, moderator);
     expect(review.body.review.effectsPending).toBe(true);
 
     // The moderator verifies again: the effects rerun, the marker clears, no new mail.
-    const rerun = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "directinfo", submittedAt },
-    );
+    const rerun = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "directinfo", submittedAt });
     expect(rerun.status).toBe(200);
-    expect(rerun.body).toMatchObject({
-      lifecycle: "verified",
-      effectsPending: false,
-      retagged: 0,
-    });
-    expect(await getClaims(owner.uid)).toMatchObject({
-      role: "pro",
-      proId,
-      proRole: "owner",
-    });
+    expect(rerun.body).toMatchObject({ lifecycle: "verified", effectsPending: false, retagged: 0 });
+    expect(await getClaims(owner.uid)).toMatchObject({ role: "pro", proId, proRole: "owner" });
     expect((await getProProfile(proId))?.effectsPendingSince).toBeUndefined();
     expect(await auditActions(proId)).toContain("pro.verify.rerun");
-    expect(
-      vi
-        .mocked(sendMail)
-        .mock.calls.filter(
-          ([mail]) =>
-            (mail as { to: string; template: string }).to === owner.email &&
-            (mail as { template: string }).template === "proApproved",
-        ),
-    ).toHaveLength(1);
+    expect(vi.mocked(sendMail).mock.calls.filter(([mail]) => (mail as { to: string; template: string }).to === owner.email && (mail as { template: string }).template === "proApproved")).toHaveLength(1);
 
-    const third = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "directinfo", submittedAt },
-    );
+    const third = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "directinfo", submittedAt });
     expect(third.status).toBe(409);
   });
 
@@ -690,170 +328,74 @@ describe("back-office KYBC decision", () => {
     const owner = await member({ phone: freshPhone() });
     const applied = await applyAs(owner, application([await kybPiece(owner)]));
     const proId = applied.body.proId;
-    const submittedAt = (await getProProfile(
-      proId,
-    ))!.kybc.submittedAt!.toISOString();
+    const submittedAt = (await getProProfile(proId))!.kybc.submittedAt!.toISOString();
     const reason = "L'ICE ne correspond pas au registre du commerce.";
 
-    const stale = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      {
-        action: "reject",
-        reason,
-        submittedAt: new Date(Date.parse(submittedAt) - 1000).toISOString(),
-      },
-    );
+    const stale = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "reject", reason, submittedAt: new Date(Date.parse(submittedAt) - 1000).toISOString() });
     expect(stale.status).toBe(409);
 
-    const rejected = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "reject", reason, submittedAt },
-    );
+    const rejected = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "reject", reason, submittedAt });
     expect(rejected.status).toBe(200);
-    expect(rejected.body).toMatchObject({
-      lifecycle: "rejected",
-      retagged: 0,
-      effectsPending: false,
-    });
+    expect(rejected.body).toMatchObject({ lifecycle: "rejected", retagged: 0, effectsPending: false });
     const profile = await getProProfile(proId);
-    expect(profile).toMatchObject({
-      lifecycle: "rejected",
-      kybc: { status: "rejected", rejectReason: reason },
-    });
-    expect(
-      profile!.purgeAt!.getTime() - Date.parse(submittedAt),
-    ).toBeGreaterThan(180 * 24 * 3_600_000);
+    expect(profile).toMatchObject({ lifecycle: "rejected", kybc: { status: "rejected", rejectReason: reason } });
+    expect(profile!.purgeAt!.getTime() - Date.parse(submittedAt)).toBeGreaterThan(180 * 24 * 3_600_000);
     expect((await getClaims(owner.uid)).role).toBe("individual");
-    expect(lastMail(sendMail, "proRejected", owner.email)?.data).toMatchObject({
-      reason,
-    });
+    expect(lastMail(sendMail, "proRejected", owner.email)?.data).toMatchObject({ reason });
 
-    const again = await applyAs(
-      owner,
-      application([await kybPiece(owner)], { name: "Atlas Vélos SARL" }),
-    );
+    const again = await applyAs(owner, application([await kybPiece(owner)], { name: "Atlas Vélos SARL" }));
     expect(again.status).toBe(201);
     expect(again.body.proId).toBe(proId);
-    expect(await getProProfile(proId)).toMatchObject({
-      lifecycle: "pending_verification",
-      name: "Atlas Vélos SARL",
-      kybc: { status: "submitted" },
-    });
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "pending_verification", name: "Atlas Vélos SARL", kybc: { status: "submitted" } });
     expect((await getProProfile(proId))?.purgeAt).toBeUndefined();
   });
 
   it("is for staff on the admin host only", async () => {
     const individual = await staffAccount("individual");
-    const denied = await admin<ErrorBody>(
-      getQueue,
-      "GET",
-      "/api/admin/pros",
-      individual,
-    );
+    const denied = await admin<ErrorBody>(getQueue, "GET", "/api/admin/pros", individual);
     expect(denied.status).toBe(403);
     expect(code(denied.body)).toBe("forbidden");
   });
 });
 
 describe("back-office phone check by call", () => {
-  const check = (proId: string, body: unknown, staff = moderator) =>
-    admin<ProPhoneCheckResponse & ErrorBody>(
-      postPhoneCheck,
-      "POST",
-      `/api/admin/pros/${proId}/phone`,
-      staff,
-      body,
-    );
+  const check = (proId: string, body: unknown, staff = moderator) => admin<ProPhoneCheckResponse & ErrorBody>(postPhoneCheck, "POST", `/api/admin/pros/${proId}/phone`, staff, body);
 
   async function callApplicant(phone = freshPhone()) {
     const owner = await member();
-    const applied = await applyAs(
-      owner,
-      application([await kybPiece(owner)], { phone }),
-    );
+    const applied = await applyAs(owner, application([await kybPiece(owner)], { phone }));
     expect(applied.status).toBe(201);
     return { owner, proId: applied.body.proId, phone };
   }
 
   it("records each call; verified marks the number on the account, then the verification goes through", async () => {
     const { owner, proId, phone } = await callApplicant();
-    const review = await admin<{ review: ProReview }>(
-      getReview,
-      "GET",
-      `/api/admin/pros/${proId}`,
-      moderator,
-    );
-    expect(review.body.review.owner).toMatchObject({
-      phoneVerified: false,
-      phoneToCheck: phone,
-    });
+    const review = await admin<{ review: ProReview }>(getReview, "GET", `/api/admin/pros/${proId}`, moderator);
+    expect(review.body.review.owner).toMatchObject({ phoneVerified: false, phoneToCheck: phone });
     expect(review.body.review.kybc.phoneCheck).toBeNull();
     const submittedAt = review.body.review.kybc.submittedAt!;
-    const early = await admin<ErrorBody>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "ompic", submittedAt },
-    );
+    const early = await admin<ErrorBody>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
     expect(early.status).toBe(409);
     expect(code(early.body)).toBe("phone_unverified");
 
-    const unreachable = await check(proId, {
-      outcome: "unreachable",
-      note: "Messagerie, rappel demain",
-    });
-    expect(unreachable.body).toEqual({
-      proId,
-      outcome: "unreachable",
-      phoneVerified: false,
-      transferred: false,
-    });
+    const unreachable = await check(proId, { outcome: "unreachable", note: "Messagerie, rappel demain" });
+    expect(unreachable.body).toEqual({ proId, outcome: "unreachable", phoneVerified: false, transferred: false });
     expect((await getUserRecord(owner.uid))?.badges.phoneVerified).toBe(false);
 
     const verified = await check(proId, { outcome: "verified" });
     expect(verified.status).toBe(200);
-    expect(verified.body).toEqual({
-      proId,
-      outcome: "verified",
-      phoneVerified: true,
-      transferred: false,
-    });
+    expect(verified.body).toEqual({ proId, outcome: "verified", phoneVerified: true, transferred: false });
     expect((await getUserRecord(owner.uid))?.badges.phoneVerified).toBe(true);
     expect((await getUserPrivate(owner.uid))?.phoneE164).toBe(phone);
     const profile = await getProProfile(proId);
     expect(profile?.kybc.phoneToCheck).toBeUndefined();
-    expect(profile?.kybc.phoneCheck).toMatchObject({
-      by: moderator.uid,
-      outcome: "verified",
-      phone,
-    });
-    expect(
-      vi
-        .mocked(sendMail)
-        .mock.calls.filter(([mail]) => mail.template === "phoneVerified"),
-    ).toHaveLength(1);
-    expect(
-      (await auditActions(proId)).filter(
-        (action) => action === "pro.phone.check",
-      ),
-    ).toHaveLength(2);
+    expect(profile?.kybc.phoneCheck).toMatchObject({ by: moderator.uid, outcome: "verified", phone });
+    expect(vi.mocked(sendMail).mock.calls.filter(([mail]) => mail.template === "phoneVerified")).toHaveLength(1);
+    expect((await auditActions(proId)).filter((action) => action === "pro.phone.check")).toHaveLength(2);
     expect(await auditActions(owner.uid)).toContain("phone.verified");
     expect((await check(proId, { outcome: "verified" })).status).toBe(409);
 
-    const decided = await admin<ProDecisionResponse>(
-      postDecision,
-      "POST",
-      `/api/admin/pros/${proId}`,
-      moderator,
-      { action: "verify", registrySource: "ompic", submittedAt },
-    );
+    const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt });
     expect(decided.status).toBe(200);
     expect((await check(proId, { outcome: "unreachable" })).status).toBe(409);
   });
@@ -862,18 +404,10 @@ describe("back-office phone check by call", () => {
     const holder = await member({ phone: freshPhone() });
     const held = (await getUserPrivate(holder.uid))!.phoneE164!;
     const { owner, proId } = await callApplicant();
-    const bad = await check(proId, {
-      outcome: "verified",
-      phone: "05 22 12 34 56",
-    });
+    const bad = await check(proId, { outcome: "verified", phone: "05 22 12 34 56" });
     expect(code(bad.body)).toBe("phone_not_mobile");
     const moved = await check(proId, { outcome: "verified", phone: held });
-    expect(moved.body).toEqual({
-      proId,
-      outcome: "verified",
-      phoneVerified: true,
-      transferred: true,
-    });
+    expect(moved.body).toEqual({ proId, outcome: "verified", phoneVerified: true, transferred: true });
     expect((await getUserPrivate(owner.uid))?.phoneE164).toBe(held);
     expect((await getUserRecord(holder.uid))?.badges.phoneVerified).toBe(false);
     expect((await getUserPrivate(holder.uid))?.phoneE164).toBeUndefined();
@@ -883,9 +417,7 @@ describe("back-office phone check by call", () => {
   it("is for staff on the admin host, on an application under review", async () => {
     const { proId } = await callApplicant();
     const individual = await staffAccount("individual");
-    expect(
-      (await check(proId, { outcome: "verified" }, individual)).status,
-    ).toBe(403);
+    expect((await check(proId, { outcome: "verified" }, individual)).status).toBe(403);
     expect((await check("zzzzzzzz", { outcome: "verified" })).status).toBe(404);
     expect((await check(proId, { outcome: "maybe" })).status).toBe(400);
     expect((await getProProfile(proId))?.kybc.phoneCheck).toBeUndefined();

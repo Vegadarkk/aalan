@@ -4119,6 +4119,7 @@
       "options": "{label}: {values}",
       "dates": "{from} – {to} · {days, plural, one {# n wass} other {# n wussan}}",
       "datesNights": "{from} – {to} · {days, plural, one {# n yiḍ} other {# n iḍan}}",
+      "route": "{from} → {to}",
       "includeSoldOut": "S wid yekmelen",
       "promo": "S promotion"
     },
@@ -7011,6 +7012,12 @@
       "body": "Ssiweḍ lweqt, xtar tamurt marra deg umkan n yiwet n tmnaḍt, niɣ smun iruḥen iččuren.",
       "reset": "Ẓer iruḥen marra",
       "carrier": "Cek d amsiwel? Ssufeɣ iruḥen nnek"
+    },
+    "alert": {
+      "button": "Snulef asmekti i ubrid-a",
+      "hint": "Ad k-d-yawḍ yiwen n imayl mara yessufeɣ umsiwel aruḥ deg ubrid-a.",
+      "name": "Iruḥen {route}",
+      "nameAll": "Iruḥen {direction}"
     },
     "form": {
       "label": "Anadi ɣef uruḥ",

@@ -8,7 +8,14 @@ import type { CarrierShop } from "@/lib/carriers/directory";
 const shops = vi.hoisted(() => ({ map: new Map<string, unknown>() }));
 vi.mock("@/lib/carriers/directory", () => ({ carrierShops: vi.fn(async () => shops.map) }));
 
+import { createTranslator } from "next-intl";
+import ar from "../../messages/ar.json";
+import fr from "../../messages/fr.json";
+import { makeFilterLabels, type LooseTranslator } from "@/components/search/filter-labels";
+import { describeFilters } from "@/components/search/filter-model";
 import { DEPARTURE_SUBCATEGORY } from "@/config/categories";
+import type { Locale } from "@/config/site";
+import { routeAlertParams } from "@/lib/carriers/route-alert";
 import { departureFilter, searchDepartures, searchPeriod } from "@/lib/carriers/search";
 import { basketOf, carrierSearchPath, parseCarrierSearch, type CarrierSearchParams } from "@/lib/carriers/search-params";
 import type { ListingRecord } from "@/lib/db/repositories/listings";
@@ -17,6 +24,8 @@ import type { CarrierSettings } from "@/lib/pro/profile-schema";
 import { toSearchDocument } from "@/lib/search/document";
 import { setSearchEngineForTests } from "@/lib/search/engine";
 import { MemoryEngine } from "@/lib/search/memory";
+import { parseSearchParams, searchPath, storedSearchParamsSchema } from "@/lib/search/params";
+import { runSearch } from "@/lib/search/service";
 
 const NOW = new Date("2026-11-10T10:00:00.000Z");
 
@@ -180,5 +189,56 @@ describe("searchDepartures", () => {
     shops.map.set("hidden", carrier("hidden", 260));
     const found = await searchDepartures(params({ full: true }), NOW);
     expect(found.guide).toEqual({ currency: "EUR", min: 180, max: 300, carriers: 6 });
+  });
+});
+
+describe("route alerts", () => {
+  const labels = (locale: Locale) => {
+    const loose = (namespace: string) => createTranslator({ locale, messages: locale === "ar" ? ar : fr, namespace: namespace as never }) as unknown as LooseTranslator;
+    return makeFilterLabels({ chips: loose("SearchFilters.chips"), categories: loose("Categories"), criteria: loose("Criteria"), units: loose("Listing.units") }, locale);
+  };
+  const routeChip = (search: ReturnType<typeof routeAlertParams>, locale: Locale) => describeFilters(search, locale, labels(locale)).find((filter) => filter.key === "route")?.label;
+
+  it("are a saved search of the departures on the route, whatever the period or basket", () => {
+    const search = routeAlertParams(params({ zone: "FR-69", country: "FR", city: "oujda", from: "2026-12-01", kg: 20 }));
+    expect(search).toEqual({ category: "services", subcategory: DEPARTURE_SUBCATEGORY, criteria: { "departure-direction": { kind: "options", values: ["europe-maroc"] } }, route: { zone: "FR-69", city: "oujda" } });
+    const path = searchPath(search);
+    expect(path).toBe("/recherche?categorie=services&sous-categorie=departs-europe-maroc&f-departure-direction=europe-maroc&pays-ue=FR&zone-ue=FR-69&ville-maroc=oujda");
+    const back = parseSearchParams(new URLSearchParams(path.split("?")[1]));
+    expect(back.route).toEqual({ country: "FR", zone: "FR-69", city: "oujda" });
+    expect(storedSearchParamsSchema.safeParse(back).success).toBe(true);
+    expect(routeAlertParams(params({ direction: "ma_eu" }))).not.toHaveProperty("route");
+  });
+
+  it("keep a route only on departures, and only places that exist", () => {
+    expect(parseSearchParams({ "pays-ue": "BE", "ville-maroc": "oujda" }).route).toBeUndefined();
+    expect(parseSearchParams({ "sous-categorie": DEPARTURE_SUBCATEGORY, "pays-ue": "XX", "zone-ue": "FR-999", "ville-maroc": "atlantis" }).route).toBeUndefined();
+    expect(parseSearchParams({ "sous-categorie": DEPARTURE_SUBCATEGORY, "pays-ue": "be", "zone-ue": "FR-59" }).route).toEqual({ country: "FR", zone: "FR-59" });
+  });
+
+  it("name the route in its direction", () => {
+    expect(routeChip(routeAlertParams(params({ zone: "FR-69", city: "oujda" })), "fr")).toBe("Rhône (France) → Oujda");
+    expect(routeChip(routeAlertParams(params({ direction: "ma_eu", country: "BE", city: "nador" })), "fr")).toBe("Nador → Belgique");
+    expect(routeChip(routeAlertParams(params({ city: "nador" })), "fr")).toBe("Nador");
+    expect(routeChip(routeAlertParams(params({ country: "BE", city: "nador" })), "ar")).toMatch(/^من .+ إلى .+$/);
+  });
+
+  it("find the new departures of the route", async () => {
+    const engine = new MemoryEngine();
+    setSearchEngineForTests(engine);
+    try {
+      await engine.upsert([
+        toSearchDocument(departureListing("aaaaaaaa", "atlas"), NOW)!,
+        toSearchDocument(departureListing("bbbbbbbb", "rif", { euZones: ["BE-BRU"], maCities: ["oujda"] }), NOW)!,
+        toSearchDocument(departureListing("cccccccc", "souss", { direction: "ma_eu" }), NOW)!,
+      ]);
+      const found = async (query: Partial<CarrierSearchParams>) => (await runSearch({ ...routeAlertParams(params(query)), sort: "recent" }, { featured: false, facets: false, now: NOW })).hits.map((hit) => hit.id).sort();
+      expect(await found({ zone: "FR-69", city: "oujda" })).toEqual(["aaaaaaaa"]);
+      expect(await found({ country: "BE" })).toEqual(["bbbbbbbb"]);
+      expect(await found({ city: "oujda" })).toEqual(["aaaaaaaa", "bbbbbbbb"]);
+      expect(await found({ direction: "ma_eu" })).toEqual(["cccccccc"]);
+    } finally {
+      setSearchEngineForTests(null);
+    }
   });
 });

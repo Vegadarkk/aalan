@@ -4,19 +4,25 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Scale, Truck } from "lucide-react";
 import { CarrierSearchForm, CarrierSortSelect } from "@/components/carriers/carrier-search-form";
 import { DepartureResults } from "@/components/carriers/departure-results";
+import { RouteAlertButton, type RouteAlertButtonProps } from "@/components/carriers/route-alert-button";
 import { PageMessages } from "@/components/i18n/page-messages";
 import { Container } from "@/components/layout/container";
+import { summarizeSearch } from "@/components/saved-searches/summary";
+import { makeFilterLabels, type LooseTranslator } from "@/components/search/filter-labels";
+import { describeFilters } from "@/components/search/filter-model";
 import { SearchChallenge } from "@/components/search/search-challenge";
 import { SearchError } from "@/components/search/search-error";
 import { Button } from "@/components/ui/button";
 import { DEPARTURE_SUBCATEGORY } from "@/config/categories";
-import { LOCALE_TAGS } from "@/config/site";
+import { LOCALE_TAGS, type Locale } from "@/config/site";
 import { CARRIERS_PAGE_CLIENT_NAMESPACES } from "@/i18n/client-messages";
 import { Link } from "@/i18n/navigation";
 import { numbersLocale, pageLocale } from "@/i18n/params";
+import { routeAlertParams } from "@/lib/carriers/route-alert";
 import { searchDepartures, searchPeriod } from "@/lib/carriers/search";
 import { basketOf, CARRIERS_PATH, carrierSearchQuery, parseCarrierSearch, type CarrierSearchParams } from "@/lib/carriers/search-params";
 import { getFlags } from "@/lib/config/runtime";
+import { SAVED_SEARCH_NAME_MAX } from "@/lib/contracts/search";
 import type { CarrierSearchResponse } from "@/lib/contracts/carrier-search";
 import { HttpError } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
@@ -70,12 +76,30 @@ async function load(query: CarrierSearchParams): Promise<Outcome> {
   }
 }
 
+/** The route alert of this search: its saved-search parameters, words and proposed name (server translators). */
+async function routeAlert(locale: Locale, query: CarrierSearchParams): Promise<Omit<RouteAlertButtonProps, "label" | "variant" | "className">> {
+  const params = routeAlertParams(query);
+  const [t, carriers, chips, categories, criteria, units] = await Promise.all([
+    getTranslations({ locale, namespace: "CarrierSearch.alert" }),
+    getTranslations({ locale, namespace: "Carriers" }),
+    getTranslations({ locale, namespace: "SearchFilters.chips" }),
+    getTranslations({ locale, namespace: "Categories" }),
+    getTranslations({ locale, namespace: "Criteria" }),
+    getTranslations({ locale, namespace: "Listing.units" }),
+  ]);
+  const loose = (translator: unknown) => translator as LooseTranslator;
+  const labels = makeFilterLabels({ chips: loose(chips), categories: loose(categories), criteria: loose(criteria), units: loose(units) }, locale);
+  const route = describeFilters(params, locale, labels).find((filter) => filter.key === "route")?.label;
+  const name = route ? t("name", { route }) : t("nameAll", { direction: carriers(`directions.${query.direction}`) });
+  return { params, summary: summarizeSearch(params, locale, labels, (q) => q), suggestedName: name.slice(0, SAVED_SEARCH_NAME_MAX).trim() };
+}
+
 export default async function CarriersPage({ params, searchParams }: Props) {
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
   if (!(await getFlags()).carriersEnabled) notFound();
   const query = parseCarrierSearch(await searchParams);
-  const [t, outcome] = await Promise.all([getTranslations({ locale, namespace: "CarrierSearch" }), load(query)]);
+  const [t, outcome, alert] = await Promise.all([getTranslations({ locale, namespace: "CarrierSearch" }), load(query), routeAlert(locale, query)]);
   const period = searchPeriod(query, new Date());
   const basket = basketOf(query) !== null;
   const money = (minor: number, currency: string) => new Intl.NumberFormat(LOCALE_TAGS[numbersLocale(locale)], { style: "currency", currency }).format(minor / 100);
@@ -107,7 +131,9 @@ export default async function CarriersPage({ params, searchParams }: Props) {
               </span>
               <h2 className="text-xl font-semibold text-balance">{bare ? t("empty.soonTitle") : t("empty.title")}</h2>
               <p className="max-w-prose text-foreground-muted text-pretty">{bare ? t("empty.soonBody") : t("empty.body")}</p>
+              <p className="max-w-prose text-sm text-pretty">{t("alert.hint")}</p>
               <div className="flex flex-wrap gap-3">
+                <RouteAlertButton {...alert} label={t("alert.button")} variant="primary" />
                 {bare ? null : (
                   <Button asChild variant="outline">
                     <Link href={CARRIERS_PATH}>{t("empty.reset")}</Link>
@@ -124,7 +150,10 @@ export default async function CarriersPage({ params, searchParams }: Props) {
                 <h2 className="text-lg font-semibold" data-testid="carrier-count">
                   {t("count", { count: outcome.response.departures.length })}
                 </h2>
-                <CarrierSortSelect params={query} basket={basket} />
+                <div className="flex flex-wrap items-center gap-3">
+                  <CarrierSortSelect params={query} basket={basket} />
+                  <RouteAlertButton {...alert} label={t("alert.button")} />
+                </div>
               </div>
               {outcome.response.guide ? (
                 <p className="flex items-start gap-3 rounded-md bg-surface-muted px-4 py-3 text-sm text-pretty" data-testid="carrier-guide">

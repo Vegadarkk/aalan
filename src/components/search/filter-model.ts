@@ -1,5 +1,6 @@
 import { CATEGORIES, CONDITIONS, categoryById, criterionById, datedRental, searchCriteria, subcategoryById, type Condition, type CriterionUnit } from "@/config/categories";
 import { cityBySlug, cityName, regionByCode, regionName } from "@/config/regions";
+import { euZoneById } from "@/config/carriers";
 import type { Locale } from "@/config/site";
 import { formatPrice, groupDigits, intlLocale } from "@/lib/listings/client/format";
 import { canonicalSearchParams, rentalDuration, SEARCH_MAX_PAGE, SEARCH_PATH, searchQueryObject, type CriterionFilter, type SearchParams, type SearchSort } from "@/lib/search/params";
@@ -30,6 +31,7 @@ export type FilterKey =
   | "promo"
   | "conditions"
   | "dates"
+  | "route"
   | `criterion:${string}`;
 
 /** Messages of `SearchFilters.chips`. */
@@ -56,6 +58,7 @@ export const CHIP_KEYS = [
   "options",
   "dates",
   "datesNights",
+  "route",
 ] as const;
 export type ChipKey = (typeof CHIP_KEYS)[number];
 
@@ -142,6 +145,9 @@ export function withoutFilter(params: SearchParams, key: FilterKey): SearchParam
     case "dates":
       delete next.dates;
       break;
+    case "route":
+      delete next.route;
+      break;
   }
   return canonicalSearchParams(next);
 }
@@ -157,6 +163,7 @@ export function activeFilterKeys(params: SearchParams): FilterKey[] {
   if (params.category) keys.push("category");
   if (params.dates) keys.push("dates");
   if (params.city || params.region || params.zone) keys.push("location");
+  if (params.route) keys.push("route");
   if (params.district) keys.push("district");
   if (params.priceMin !== undefined || params.priceMax !== undefined) keys.push("price");
   if (params.shop) keys.push("shop");
@@ -260,8 +267,28 @@ function filterLabel(params: SearchParams, key: FilterKey, locale: Locale, label
       const nights = datedRental(params.subcategory)?.unit === "night";
       return nights ? labels.chip("datesNights", { from: at(params.dates.from), to: at(params.dates.to), days: rentalDuration(params.dates) }) : labels.chip("dates", { from: at(params.dates.from), to: at(params.dates.to), days: rentalDuration(params.dates) });
     }
+    case "route":
+      return params.route ? routeLabel(params, locale, labels) : key;
   }
   return key;
+}
+
+/**
+ * A carrier route in its direction (« Nord (France) → Oujda »): the EU zone (with its country) or
+ * the country, and the Moroccan city; one side alone when the other is open.
+ */
+function routeLabel(params: SearchParams, locale: Locale, labels: FilterLabels): string {
+  const route = params.route ?? {};
+  const zone = route.zone ? euZoneById(route.zone) : null;
+  const code = zone?.country ?? route.country;
+  const country = code ? (new Intl.DisplayNames([intlLocale(locale)], { type: "region" }).of(code) ?? code) : undefined;
+  const europe = zone ? `${zone.name} (${country})` : country;
+  const city = route.city ? cityBySlug(route.city) : undefined;
+  const morocco = city ? cityName(city, locale) : undefined;
+  const direction = params.criteria?.["departure-direction"];
+  const toEurope = direction?.kind === "options" && direction.values.length === 1 && direction.values[0] === "maroc-europe";
+  const [from, to] = toEurope ? [morocco, europe] : [europe, morocco];
+  return from && to ? labels.chip("route", { from, to }) : (from ?? to ?? "");
 }
 
 /** The active filters as chips: label + the search without it. */

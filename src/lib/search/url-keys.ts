@@ -32,6 +32,10 @@ export const SEARCH_QUERY_KEYS = {
   conditions: "etat",
   rentFrom: "du",
   rentTo: "au",
+  /** Carrier departures (route alerts): EU country, EU zone, Moroccan city served. */
+  routeCountry: "pays-ue",
+  routeZone: "zone-ue",
+  routeCity: "ville-maroc",
   sort: "tri",
   page: "page",
 } as const;

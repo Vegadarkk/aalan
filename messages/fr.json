@@ -4129,6 +4129,7 @@
       "options": "{label} : {values}",
       "dates": "{from} – {to} · {days, plural, one {# jour} other {# jours}}",
       "datesNights": "{from} – {to} · {days, plural, one {# nuit} other {# nuits}}",
+      "route": "{from} → {to}",
       "includeSoldOut": "Épuisés inclus",
       "promo": "En promotion"
     },
@@ -7021,6 +7022,12 @@
       "body": "Élargissez la période, choisissez tout le pays plutôt qu'un département, ou incluez les départs complets.",
       "reset": "Voir tous les départs",
       "carrier": "Vous êtes transporteur ? Publiez vos départs"
+    },
+    "alert": {
+      "button": "Créer une alerte pour ce trajet",
+      "hint": "Recevez un e-mail dès qu'un transporteur publie un départ sur ce trajet.",
+      "name": "Départs {route}",
+      "nameAll": "Départs {direction}"
     },
     "form": {
       "label": "Rechercher un départ",

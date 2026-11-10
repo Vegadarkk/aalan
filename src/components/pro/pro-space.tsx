@@ -23,6 +23,7 @@ import { paymentEligible } from "@/lib/pro/seller-payment-rules";
 import { cn } from "@/lib/utils";
 import { RentalRequestsPanel } from "@/components/rental/rental-requests-panel";
 import { RentalSetup } from "@/components/rental/rental-setup";
+import { CarrierSetup } from "@/components/carriers/carrier-setup";
 import { AgencySettings } from "./agency-settings";
 import { ShopEmblem } from "./shop-emblem";
 import { ShopCardSettings } from "./shop-card-settings";
@@ -359,6 +360,11 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
               </Button>
             </>
           ) : null}
+          {canPublish && shop.sector === "carrier" ? (
+            <Button asChild variant="outline">
+              <Link href="/pro/transport">{t("carrierSettings")}</Link>
+            </Button>
+          ) : null}
           {canPublish && shop.sector === "holiday_rental" ? (
             <>
               <Button asChild variant="outline">
@@ -430,6 +436,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
 
       {canPublish && shop.sector === "car_rental" ? <RentalSetup shop={shop} /> : null}
       {canPublish && shop.sector === "holiday_rental" ? <RentalSetup shop={shop} kind="homes" /> : null}
+      {canPublish && shop.sector === "carrier" ? <CarrierSetup shop={shop} /> : null}
       {/* The booking requests waiting for an answer and the rentals coming up (audit L4-06). */}
       {canPublish && (shop.sector === "car_rental" || shop.sector === "holiday_rental") ? <RentalRequestsPanel stays={shop.sector === "holiday_rental"} /> : null}
 

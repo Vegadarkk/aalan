@@ -20,6 +20,8 @@ import {
   RENTAL_CHECK_REASON_MAX,
   rentalAgencySchema,
   holidayAgencySchema,
+  carrierSchema,
+  type CarrierSettings,
   type HolidayAgency,
   type PhoneCheckOutcome,
   type ProSector,
@@ -311,6 +313,8 @@ export const PRO_API = {
   rental: "/api/pro/me/rental",
   /** PUT ProHolidayInput -> ProHolidayResponse: a holiday rental agency's settings (audit L4-02). */
   holiday: "/api/pro/me/holiday",
+  /** PUT ProCarrierInput -> ProCarrierResponse: a Europe–Morocco carrier's settings and price list (transporteurs/spec.md §3). */
+  carrier: "/api/pro/me/carrier",
   rentalCheck: "/api/pro/me/rental/check",
   social: "/api/pro/me/social",
   /** PUT: the shop card (presentation FR/AR, city, address, hours, contact, website, banner). */
@@ -370,6 +374,12 @@ export interface SocialLinkIssueDetails {
 export const proHolidaySchema = holidayAgencySchema;
 export type ProHolidayInput = HolidayAgency;
 export type ProHolidayResponse = { holiday: HolidayAgency };
+
+/** PUT /api/pro/me/carrier (transporteurs/spec.md §3): a carrier's settings and price list, replaced whole. */
+export const proCarrierSchema = carrierSchema;
+export type ProCarrierInput = CarrierSettings;
+/** `carrierUpdatedAt`: when the price list last changed (shown as « grille mise à jour le »). */
+export type ProCarrierResponse = { carrier: CarrierSettings; carrierUpdatedAt: string | null };
 
 /** PUT /api/pro/me/rental (rental pack §5): the car rental agency's settings, replaced whole. */
 export const proRentalSchema = rentalAgencySchema;
@@ -476,6 +486,9 @@ export interface ProSelfView {
   rental: RentalAgency | null;
   /** Holiday rental agency settings, null until saved (audit L4-02). */
   holiday: HolidayAgency | null;
+  /** Europe–Morocco carrier settings, null until saved; when its price list last changed. */
+  carrier: CarrierSettings | null;
+  carrierUpdatedAt: string | null;
   /** Check of the licence decision, null until a document is sent (or after the reference changed). */
   rentalCheck: RentalCheckView | null;
   /** Social links shown on the storefront. */

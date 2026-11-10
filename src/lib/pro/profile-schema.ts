@@ -8,6 +8,7 @@ import { shopPinsSchema, shopSectionsSchema } from "@/lib/contracts/catalog";
 import { sellerInfoInputSchema } from "@/lib/contracts/seller-payment";
 import { citySlugSchema, regionCodeSchema } from "@/lib/contracts/listings";
 import { BANNER_KEYS } from "@/config/storefront";
+import { CARRIER_CURRENCIES, CARRIER_DIRECTIONS, CARRIER_ITEM_IDS, CARRIER_LICENCE_PATTERN, CARRIER_LIMITS, CARRIER_RESTRICTED, CARRIER_SURCHARGE_IDS, CARRIER_SURCHARGES, CARRIER_VEHICLES, isEuZone, type CarrierItem, type CarrierSurcharge } from "@/config/carriers";
 import { MOBILE_E164 } from "@/lib/phone/patterns";
 import { KYBC_MAX_PIECES, KYBC_STATUSES, proLegalSchema } from "./kybc";
 import { PLAN_SOURCES, PRO_STATES } from "./lifecycle";
@@ -119,6 +120,85 @@ export const holidayAgencySchema = z
   })
   .strict();
 export type HolidayAgency = z.infer<typeof holidayAgencySchema>;
+
+/**
+ * A Europe–Morocco carrier's settings (transporteurs/spec.md §3): the licence reference (declared,
+ * mandatory: owner card 10 Nov 2026), the directions, EU collection zones and Moroccan cities
+ * served, how parcels are collected and delivered, the vehicle, the days in transit, the price list
+ * every departure uses (per kg with weight bands, minimum charge, volumetric weight, flat prices
+ * of catalogue items, surcharges) and the goods refused. Amounts in minor units of `currency`.
+ */
+const amount = (max: number) => z.number().int().min(0).max(max);
+const AMOUNT_MAX = Math.max(CARRIER_LIMITS.amountMax.EUR, CARRIER_LIMITS.amountMax.MAD);
+const PER_KG_MAX = Math.max(CARRIER_LIMITS.perKgMax.EUR, CARRIER_LIMITS.perKgMax.MAD);
+const modes = z
+  .object({ depot: z.boolean(), home: z.boolean() })
+  .strict()
+  .refine((value) => value.depot || value.home, "one mode at least");
+export const carrierTariffSchema = z
+  .object({
+    currency: z.enum(CARRIER_CURRENCIES),
+    perKg: z.number().int().min(1).max(PER_KG_MAX),
+    /** Lower rates from a weight on (« 1,80 € dès 60 kg »), ascending weights. */
+    bands: z
+      .array(z.object({ fromKg: z.number().int().min(2).max(CARRIER_LIMITS.bandFromKgMax), perKg: z.number().int().min(1).max(PER_KG_MAX) }).strict())
+      .max(CARRIER_LIMITS.bandsMax)
+      .refine((bands) => bands.every((band, index) => index === 0 || band.fromKg > (bands[index - 1]?.fromKg ?? 0)), "bands not ascending"),
+    minimum: amount(AMOUNT_MAX),
+    /** Kg counted per m³ when the volumetric weight is higher than the real one; null: the real weight only. */
+    volumetricKgPerM3: z.number().int().min(CARRIER_LIMITS.volumetricMin).max(CARRIER_LIMITS.volumetricMax).nullable(),
+    items: z
+      .array(z.object({ item: z.enum(CARRIER_ITEM_IDS as [CarrierItem, ...CarrierItem[]]), price: z.number().int().min(1).max(AMOUNT_MAX) }).strict())
+      .max(CARRIER_ITEM_IDS.length)
+      .refine((items) => unique(items.map((entry) => entry.item)), "duplicate item"),
+    /** A flat amount, or a percent for `peak` (the whole price) and `insurance` (the declared value). */
+    surcharges: z
+      .array(z.object({ kind: z.enum(CARRIER_SURCHARGE_IDS as [CarrierSurcharge, ...CarrierSurcharge[]]), value: z.number().int().min(1).max(AMOUNT_MAX) }).strict())
+      .max(CARRIER_SURCHARGE_IDS.length)
+      .refine((surcharges) => unique(surcharges.map((entry) => entry.kind)), "duplicate surcharge")
+      .refine((surcharges) => surcharges.every((entry) => CARRIER_SURCHARGES[entry.kind] !== "percent" || entry.value <= CARRIER_LIMITS.percentMax), "percent above 100"),
+  })
+  .strict()
+  .superRefine((tariff, context) => {
+    // Bounds of the currency: 100 EUR or 1,000 MAD a kg, 5,000 EUR or 50,000 MAD an amount.
+    const perKgMax = CARRIER_LIMITS.perKgMax[tariff.currency];
+    const amountMax = CARRIER_LIMITS.amountMax[tariff.currency];
+    if (tariff.perKg > perKgMax || tariff.bands.some((band) => band.perKg > perKgMax)) context.addIssue({ code: "custom", message: "per_kg_max", path: ["perKg"] });
+    if (tariff.minimum > amountMax || tariff.items.some((entry) => entry.price > amountMax)) context.addIssue({ code: "custom", message: "amount_max", path: ["items"] });
+    if (tariff.surcharges.some((entry) => CARRIER_SURCHARGES[entry.kind] === "amount" && entry.value > amountMax)) context.addIssue({ code: "custom", message: "amount_max", path: ["surcharges"] });
+  });
+export type CarrierTariff = z.infer<typeof carrierTariffSchema>;
+
+export const carrierSchema = z
+  .object({
+    licenceRef: z.string().trim().regex(CARRIER_LICENCE_PATTERN),
+    directions: z.array(z.enum(CARRIER_DIRECTIONS)).min(1).max(CARRIER_DIRECTIONS.length).refine(unique, "duplicate direction"),
+    euZones: z.array(z.string().max(8).refine(isEuZone, "unknown zone")).min(1).max(CARRIER_LIMITS.zonesMax).refine(unique, "duplicate zone"),
+    maCities: z.array(citySlugSchema).min(1).max(CARRIER_LIMITS.citiesMax).refine(unique, "duplicate city"),
+    pickup: modes,
+    delivery: modes,
+    vehicle: z
+      .object({
+        kind: z.enum(CARRIER_VEHICLES),
+        volumeM3: z.number().int().min(1).max(CARRIER_LIMITS.volumeM3Max).nullable(),
+        payloadKg: z.number().int().min(100).max(CARRIER_LIMITS.payloadKgMax).nullable(),
+      })
+      .strict(),
+    transitDays: z
+      .object({ min: z.number().int().min(1).max(CARRIER_LIMITS.transitDaysMax), max: z.number().int().min(1).max(CARRIER_LIMITS.transitDaysMax) })
+      .strict()
+      .refine((days) => days.min <= days.max, "min after max"),
+    tariff: carrierTariffSchema,
+    /** Goods refused: catalogue items or restricted goods; the note says the conditions (« batteries démontées »). */
+    refused: z
+      .array(z.union([z.enum(CARRIER_ITEM_IDS as [CarrierItem, ...CarrierItem[]]), z.enum(CARRIER_RESTRICTED)]))
+      .max(CARRIER_ITEM_IDS.length + CARRIER_RESTRICTED.length)
+      .refine(unique, "duplicate good"),
+    note: z.string().trim().max(CARRIER_LIMITS.noteMax),
+  })
+  .strict()
+  .refine((carrier) => !carrier.tariff.items.some((entry) => (carrier.refused as string[]).includes(entry.item)), { message: "priced item refused", path: ["refused"] });
+export type CarrierSettings = z.infer<typeof carrierSchema>;
 
 const uid = z.string().min(1).max(128);
 const ts = z.date();
@@ -312,6 +392,9 @@ export const proProfileSchema = z
     rentalCheck: rentalCheckSchema.optional(),
     /** Holiday rental agency settings, set by the owner (PUT /api/pro/me/holiday, audit L4-02). */
     holiday: holidayAgencySchema.optional(),
+    /** Europe–Morocco carrier settings, set by the owner (PUT /api/pro/me/carrier), and when its price list last changed. */
+    carrier: carrierSchema.optional(),
+    carrierUpdatedAt: ts.optional(),
     /** Licence documents sent in the calendar month (UTC, Morocco's time): each costs one Claude call. */
     rentalCheckUsage: z
       .object({ month: z.string().regex(/^\d{4}-\d{2}$/), count: z.number().int().min(0).max(1000) })

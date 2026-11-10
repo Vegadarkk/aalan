@@ -6,8 +6,9 @@ import { COLLECTIONS, listingStatsSchema, type ListingStatsDoc } from "../schema
 import { timestampsToDates } from "./timestamps";
 
 // listingStats/{listingId} (§5): counters kept apart from the listing (no version bump, no
-// reindex). Phase 3 counts phone reveals synchronously; views, favorites and contacts arrive with
-// the nightly stats-flush of later phases.
+// reindex). Phone reveals and payment clicks are counted synchronously; views and contacts are
+// added by the nightly stats-flush (src/lib/stats/flush.ts, audit C1-03); favorites are not
+// flushed yet. Deleted with the listing's purge (retention.ts purgeListing).
 
 export const listingStatsRef = (listingId: string) => db().collection(COLLECTIONS.listingStats).doc(listingId);
 
@@ -18,6 +19,22 @@ export async function getListingStats(listingId: string): Promise<ListingStatsDo
   if (!data) return null;
   const parsed = listingStatsSchema.safeParse(timestampsToDates(data));
   return parsed.success ? parsed.data : null;
+}
+
+/** Views and contacts of each listing that has counters (« Mes annonces »); one read per id. */
+export async function getListingCounts(listingIds: readonly string[]): Promise<Map<string, { views: number; contacts: number }>> {
+  const out = new Map<string, { views: number; contacts: number }>();
+  if (listingIds.length === 0) return out;
+  const snapshots = await db().getAll(...listingIds.map((id) => listingStatsRef(id)), { fieldMask: ["views", "contacts"] });
+  void consume("firestore.reads", listingIds.length);
+  snapshots.forEach((snapshot, index) => {
+    const id = listingIds[index];
+    const views: unknown = snapshot.get("views");
+    const contacts: unknown = snapshot.get("contacts");
+    if (!id || !snapshot.exists) return;
+    out.set(id, { views: Number.isSafeInteger(views) ? (views as number) : 0, contacts: Number.isSafeInteger(contacts) ? (contacts as number) : 0 });
+  });
+  return out;
 }
 
 /** +1 on one counter; creates the document on the first count (transaction keeps the schema whole). */

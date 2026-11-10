@@ -8,10 +8,12 @@ import { promoInputSchema, sectionUpdateSchema, stockUpdateSchema } from "@/lib/
 import { listingPaymentLinkInputSchema } from "@/lib/contracts/seller-payment";
 import { publishesAsPro } from "@/lib/pro/lifecycle";
 import { paymentShown } from "@/lib/pro/seller-payment-rules";
+import { getListingCounts } from "@/lib/db/repositories/listing-stats";
 import { getListing, listOwnerListings } from "@/lib/db/repositories/listings";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { getFlags } from "@/lib/config/runtime";
 import { HttpError, notFound } from "@/lib/http/errors";
+import { logger } from "@/lib/logging/logger";
 import { readJson } from "@/lib/http/json";
 import { json, noContent } from "@/lib/http/route";
 import { assertQuotas, DEPOSIT_QUOTAS } from "@/lib/quota/gate";
@@ -87,7 +89,13 @@ export async function handleMine(request: Request): Promise<Response> {
   if (!bucket.success) throw new HttpError(400, "invalid_body", undefined, { details: [{ path: "status", code: "invalid_value" }] });
   await enforceLimit("listing.owner.read.uid", auth.user.uid);
   const listings = await listOwnerListings(auth.user.uid, bucket.data);
-  await chargeOwnerRead(auth.user.uid, listings.length);
+  // Views and contacts of the online listings (audit C1-03): one more read each, best effort.
+  const counted = bucket.data === "active" ? listings.map((listing) => listing.id) : [];
+  const counts = await getListingCounts(counted).catch((error: unknown) => {
+    logger.warn({ err: (error as Error).message }, "listing counters unavailable");
+    return new Map<string, { views: number; contacts: number }>();
+  });
+  await chargeOwnerRead(auth.user.uid, listings.length + counted.length);
   const now = new Date();
   // A shop's sections, for the « Rayon » picker of its rows (catalogue §5).
   const profile = auth.user.claims.proId ? await getProProfile(auth.user.claims.proId) : null;
@@ -96,7 +104,10 @@ export async function handleMine(request: Request): Promise<Response> {
   // A listing's own payment link needs the shop's « Payer chez le vendeur » shown (catalogue §6).
   const paymentReady = owned !== null && paymentShown(owned.lifecycle, owned.plan, owned.sellerPayment);
   const body: OwnerListingsResponse = {
-    listings: listings.map((listing) => toOwnerSummary(listing, now)),
+    listings: listings.map((listing) => {
+      const stats = counts.get(listing.id);
+      return { ...toOwnerSummary(listing, now), ...(stats ? { stats } : {}) };
+    }),
     salesOpen: (await getFlags()).salesEnabled,
     ...(sections.length > 0 ? { sections } : {}),
     ...(paymentReady ? { paymentReady } : {}),

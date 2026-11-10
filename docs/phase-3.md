@@ -71,7 +71,7 @@ Sans clés R2, le site démarre et refuse les envois de photos (503). Sans `MAP_
 
 À valider par vous (toute déviation demande votre accord) :
 
-- Statistiques des annonces : la tâche de nuit `stats-flush` (§4) et le compteur de vues (`listingStats.views`, §5) sont reportés à une phase ultérieure. En attendant, `phoneReveals` est incrémenté directement dans Firestore à chaque première révélation du numéro (une écriture, bornée par les limites de révélation), et les vues ne sont pas comptées. Deux suites possibles : inscrire ce report dans l'architecture, ou ajouter en phase 6 la tâche de nuit (compteurs Valkey reversés dans Firestore) avec le compteur de vues.
+- Statistiques des annonces : la tâche de nuit `stats-flush` (§4) et le compteur de vues (`listingStats.views`, §5) avaient été reportés (écart accepté le 19 octobre). Fait depuis : `stats-flush` écrit `shopStats` (boutiques) et, depuis le 10 novembre (audit C1-03), ajoute vues et contacts de chaque annonce à `listingStats`, affichés dans « Mes annonces ». `phoneReveals` reste incrémenté directement dans Firestore à chaque première révélation du numéro ; les favoris ne sont pas encore versés.
 
 ## Prompts Cody
 

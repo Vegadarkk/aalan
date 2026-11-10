@@ -16,6 +16,7 @@ import { PATCH as patch } from "@/app/api/listings/[id]/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
 import { listingLifetime } from "@/config/pricing";
 import type { CreateListingResponse } from "@/lib/contracts/listings";
+import { incrementPhoneReveals, listingStatsRef } from "@/lib/db/repositories/listing-stats";
 import { getListing } from "@/lib/db/repositories/listings";
 import { getListingDocument, readReminderCursor } from "@/lib/db/repositories/retention";
 import { getSearchOutbox } from "@/lib/db/repositories/search-outbox";
@@ -149,6 +150,7 @@ describe("retention-purge", () => {
       for (const variant of ["l", "s"] as const) store.seed("media", mediaObjectKey(id, upload, variant), Buffer.from("v"), { contentType: "image/webp" });
     }
     const before = (await getListing(gone.id))!;
+    await incrementPhoneReveals(gone.id, now);
 
     const result = await retentionPurge(now, { store });
     expect(result.listings).toBeGreaterThanOrEqual(1);
@@ -159,6 +161,8 @@ describe("retention-purge", () => {
     // updatedAt: the next incremental backup carries the purge (restore writes the tombstone over older captures).
     expect(tombstone).toEqual({ status: "purged", categoryId: before.categoryId, purgedAt: Timestamp.fromDate(now), version: before.version + 1, updatedAt: Timestamp.fromDate(now) });
     expect(await getListing(gone.id)).toBeNull();
+    // Its counters go with it (audit C1-03).
+    expect((await listingStatsRef(gone.id).get()).exists).toBe(false);
     expect(await getUpload(gone.upload)).toBeNull();
     expect(await getSearchOutbox(gone.id)).toMatchObject({ op: "delete", version: before.version + 1 });
     expect(await auditActions(gone.id)).toContain("listing.purge");

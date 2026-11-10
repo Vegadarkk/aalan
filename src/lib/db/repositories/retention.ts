@@ -4,6 +4,7 @@ import { z } from "@/lib/zod";
 import { db } from "@/lib/firebase/admin";
 import { consume } from "@/lib/quota";
 import { COLLECTIONS, type ListingStatus } from "../schemas";
+import { listingStatsRef } from "./listing-stats";
 import { applyPatch, fromSnapshot, getListingTx, listingRef, updateListingTx, type ListingFieldPatch, type ListingRecord } from "./listings";
 import { enqueueSearchOutboxTx } from "./search-outbox";
 import { timestampsToDates } from "./timestamps";
@@ -159,6 +160,9 @@ export async function purgeListing(id: string, purgeable: (current: ListingRecor
     const tombstone = listingTombstoneSchema.parse({ status: "purged", ...(current.categoryId ? { categoryId: current.categoryId } : {}), purgedAt: now, version: current.version + 1, updatedAt: now });
     tx.set(listingRef(id), { ...tombstone, purgedAt: Timestamp.fromDate(now), updatedAt: Timestamp.fromDate(now) });
     void consume("firestore.writes", 1);
+    // Its counters go with it (audit C1-03); a delete of a missing document is a no-op.
+    tx.delete(listingStatsRef(id));
+    void consume("firestore.deletes", 1);
     enqueueSearchOutboxTx(tx, id, "delete", tombstone.version, now);
     return tombstone;
   });

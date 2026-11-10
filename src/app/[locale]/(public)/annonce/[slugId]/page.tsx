@@ -341,8 +341,8 @@ export default async function ListingPage({ params }: { params: Params }) {
             ) : null}
           </header>
 
-          {/* A view for the shop counters (src/lib/stats): the page is cached, the beacon counts it. */}
-          {contactable && found.proId ? <ViewBeacon scope="listing" id={listing.id} /> : null}
+          {/* A view for the counters (src/lib/stats: listingStats, and the shop's): the page is cached, the beacon counts it. */}
+          {contactable ? <ViewBeacon scope="listing" id={listing.id} /> : null}
           <aside id="contact" aria-label={t("sellerLabel")} className="min-w-0 scroll-mt-24 lg:[grid-area:aside]">
             <div className="flex flex-col gap-6 lg:sticky lg:top-24">
               <SellerCard seller={seller} fallbackName={listing.seller.name} fallbackType={listing.seller.type} locale={locale} storefront={storefront}>

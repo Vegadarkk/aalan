@@ -3117,6 +3117,10 @@
       "emptyTitle": "Walu annonce yemsasan",
       "emptyBody": "Ɛreḍ awalen nniḍen naɣ taggayt nniḍen.",
       "reset": "Kkes arezzu"
+    },
+    "stats": {
+      "counts": "{views, plural, one {# n tiẓri} other {# n tiẓri}} · {contacts, plural, one {# n tbrat} other {# n tbratin}}",
+      "hint": "Ttwasnefnint yal tameddit."
     }
   },
   "Map": {

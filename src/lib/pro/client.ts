@@ -2,7 +2,7 @@ import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiPutFile, uploadToPresi
 import { KYBC_DECLARED_TYPES, MAX_UPLOAD_BYTES, type KybcDeclaredType } from "@/lib/contracts/media";
 import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse } from "@/lib/contracts/catalog";
 import { STOCK_API, type StockImportMode, type StockImportResponse, type StockListResponse } from "@/lib/contracts/stock-import";
-import { PRO_API, type KybcCompleteResponse, type KybcSignInput, type KybcSignResponse, type RentalCheckResponse, type ProAgencyInput, type ProAgencyResponse, type ProHolidayInput, type ProHolidayResponse, type ProRentalInput, type ProRentalResponse, type ProSocialInput, type ProSocialResponse, type ProApplyInput, type ProApplyResponse, type ProMeResponse, type ProShopCardInput, type ProShopCardResponse, type ProLogoResponse } from "@/lib/contracts/pro";
+import { PRO_API, type KybcCompleteResponse, type KybcSignInput, type KybcSignResponse, type RentalCheckResponse, type ProAgencyInput, type ProAgencyResponse, type ProCarrierInput, type ProCarrierResponse, type ProHolidayInput, type ProHolidayResponse, type ProRentalInput, type ProRentalResponse, type ProSocialInput, type ProSocialResponse, type ProApplyInput, type ProApplyResponse, type ProMeResponse, type ProShopCardInput, type ProShopCardResponse, type ProLogoResponse } from "@/lib/contracts/pro";
 
 // Browser side of /api/pro/** (phase 7 design §4): the Pro area state, one KYBC piece end to end
 // (sign, PUT to the presigned URL with progress, complete), the application, the car rental
@@ -15,6 +15,7 @@ export const saveSections = (input: SectionsInput) => apiPut<SectionsResponse>(P
 export const savePins = (input: PinsInput) => apiPut<PinsResponse>(PRO_API.pins, input);
 export const saveRentalAgency = (input: ProRentalInput) => apiPut<ProRentalResponse>(PRO_API.rental, input);
 export const saveHolidayAgency = (input: ProHolidayInput) => apiPut<ProHolidayResponse>(PRO_API.holiday, input);
+export const saveCarrier = (input: ProCarrierInput) => apiPut<ProCarrierResponse>(PRO_API.carrier, input);
 export const saveSocialLinks = (input: ProSocialInput) => apiPut<ProSocialResponse>(PRO_API.social, input);
 export const saveLogo = (file: Blob) => apiPutFile<ProLogoResponse>(PRO_API.logo, file);
 export const removeLogo = () => apiDelete<ProLogoResponse>(PRO_API.logo);

@@ -18,6 +18,7 @@ import { formatMemberSince } from "@/components/listing/seller-card";
 import { DealerStock } from "@/components/pro/dealer-stock";
 import { RentalFleet, type FleetLabels } from "@/components/rental/rental-fleet";
 import { HolidayAgencyCard, RentalAgencyCard, RentalBranches, RentalConditions } from "@/components/rental/rental-storefront";
+import { CarrierCard, CarrierPrices } from "@/components/carriers/carrier-storefront";
 import { SellerInfo } from "@/components/pro/seller-info";
 import { ShopEmblem } from "@/components/pro/shop-emblem";
 import { ShopPracticalInfo } from "@/components/pro/shop-practical-info";
@@ -297,6 +298,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
             <ShopPracticalInfo address={store.address} citySlug={store.citySlug} hours={store.hours} website={store.website} locale={locale} />
             {store.rental ? <RentalAgencyCard rental={store.rental} checkedAt={store.rentalCheckedAt} locale={locale} /> : null}
             {store.holiday ? <HolidayAgencyCard holiday={store.holiday} /> : null}
+            {store.carrier ? <CarrierCard carrier={store.carrier} /> : null}
             <FeeSchedule text={store.feeSchedule} />
             <SocialLinks links={store.social} />
             {store.payment ? <PayAtSeller payment={store.payment} className="rounded-lg border border-border bg-surface p-4" /> : null}
@@ -306,6 +308,7 @@ export default async function StorefrontPage({ params }: { params: Params }) {
 
         {fleet ? <RentalConditions conditions={fleet.conditions} locale={locale} /> : null}
         {store.rental ? <RentalBranches rental={store.rental} locale={locale} /> : null}
+        {store.carrier ? <CarrierPrices carrier={store.carrier} updatedAt={store.carrierUpdatedAt} locale={locale} /> : null}
 
         {vehicles ? <DealerStock stock={vehicles} shop={seller.publicId} /> : null}
 

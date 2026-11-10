@@ -19,7 +19,7 @@ import { db } from "@/lib/firebase/admin";
 import { aggregationReads, consume } from "@/lib/quota";
 import { assertQuotas, PUBLIC_READ_QUOTAS } from "@/lib/quota/gate";
 import { storefrontShown } from "@/lib/pro/lifecycle";
-import { PRO_ID_PATTERN, type OpeningHours, type ProSector, type RentalAgency, type HolidayAgency } from "@/lib/pro/profile-schema";
+import { PRO_ID_PATTERN, type OpeningHours, type ProSector, type RentalAgency, type HolidayAgency, type CarrierSettings } from "@/lib/pro/profile-schema";
 import { sellerReviews } from "@/lib/reviews/seller";
 import { ratingSummary } from "@/lib/reviews/views";
 import { rentalAvailabilityOf } from "./availability";
@@ -410,6 +410,9 @@ export interface PublicStorefront {
   rentalCheckedAt: string | null;
   /** A holiday rental agency's settings (sector "holiday_rental", audit L4-02), null until saved. */
   holiday: HolidayAgency | null;
+  /** A Europe–Morocco carrier's settings and price list (sector "carrier", transporteurs/spec.md §3), null until saved; when its price list last changed. */
+  carrier: CarrierSettings | null;
+  carrierUpdatedAt: string | null;
   /** « Payer chez le vendeur » and the seller information, when the shop has turned them on. */
   payment: PublicShopPayment | null;
   /** The owner's public face and listings, as on /profil. */
@@ -474,6 +477,8 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
     rental: profile.sector === "car_rental" ? (profile.rental ?? null) : null,
     rentalCheckedAt: profile.sector === "car_rental" ? checkedOn(profile) : null,
     holiday: profile.sector === "holiday_rental" ? (profile.holiday ?? null) : null,
+    carrier: profile.sector === "carrier" ? (profile.carrier ?? null) : null,
+    carrierUpdatedAt: profile.sector === "carrier" ? (profile.carrierUpdatedAt?.toISOString() ?? null) : null,
     seller,
     example: profile.example === true,
     sections: profile.sections ?? [],

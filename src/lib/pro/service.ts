@@ -4,7 +4,7 @@ import { listingQuotas, shopLaunchOfferEnd, type LaunchOffer } from "@/config/pr
 import type { AuthContext } from "@/lib/auth/guards";
 import { getAbuseRules, getFlags, getPricing } from "@/lib/config/runtime";
 import type { PinsInput, PinsResponse, SectionsInput, SectionsResponse, ShopSection } from "@/lib/contracts/catalog";
-import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProHolidayInput, ProHolidayResponse, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
+import type { ProAgencyInput, ProAgencyResponse, ProApplyInput, ProCarrierInput, ProCarrierResponse, ProHolidayInput, ProHolidayResponse, ProMeResponse, ProRentalInput, ProRentalResponse, ProShopCard, ProShopCardInput, ProShopCardResponse } from "@/lib/contracts/pro";
 import { cityBySlug } from "@/config/regions";
 import { DEFAULT_BANNER } from "@/config/storefront";
 import { db } from "@/lib/firebase/admin";
@@ -245,6 +245,8 @@ export async function proSelf(auth: AuthContext): Promise<ProMeResponse> {
       sections: profile.sections ?? [],
       rental: profile.rental ?? null,
       holiday: profile.holiday ?? null,
+      carrier: profile.carrier ?? null,
+      carrierUpdatedAt: profile.carrierUpdatedAt?.toISOString() ?? null,
       rentalCheck: profile.rentalCheck ? rentalCheckView(profile.rentalCheck) : null,
       social: socialView(profile.social),
       card: shopCard(profile, user?.badges.phoneVerified ?? false),
@@ -419,6 +421,27 @@ export async function updateHolidayAgency(auth: AuthContext, input: ProHolidayIn
   void consume("firestore.writes", 1);
   if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
   return { holiday: input };
+}
+
+/**
+ * PUT /api/pro/me/carrier (transporteurs/spec.md §3): a carrier's settings and price list, replaced
+ * whole, for a carrier shop only. The Moroccan cities must exist and the note passes the storefront
+ * text screen; `carrierUpdatedAt` moves when the price list changes (the storefront dates it).
+ */
+export async function updateCarrier(auth: AuthContext, input: ProCarrierInput, now = new Date()): Promise<ProCarrierResponse> {
+  const [profile, { prohibited }] = await Promise.all([ownedPublishingShop(auth), getAbuseRules()]);
+  if (profile.sector !== "carrier") throw new HttpError(409, "conflict", "the shop is not a carrier");
+  const unknown = input.maCities.findIndex((slug) => !cityBySlug(slug));
+  if (unknown >= 0) throw new HttpError(400, "invalid_body", "unknown city", { details: [{ path: ["maCities", unknown], code: "invalid" }] });
+  const issue = input.note ? firstStrictIssue(input.note, prohibited) : null;
+  if (issue) throw new HttpError(422, "invalid_text", "carrier settings refused by the text screen", { details: { field: "note", issue } });
+  const tariffChanged = !profile.carrier || JSON.stringify(profile.carrier.tariff) !== JSON.stringify(input.tariff);
+  const updatedAt = tariffChanged ? now : (profile.carrierUpdatedAt ?? now);
+  await proProfileRef(profile.proId).update({ carrier: input, carrierUpdatedAt: Timestamp.fromDate(updatedAt), updatedAt: Timestamp.fromDate(now) });
+  void consume("firestore.reads", 1);
+  void consume("firestore.writes", 1);
+  if (storefrontShown(profile.lifecycle, profile.plan)) revalidateListingPaths({ shopSegment: `${profile.slug}-${profile.proId}` });
+  return { carrier: input, carrierUpdatedAt: updatedAt.toISOString() };
 }
 
 /**

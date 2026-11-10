@@ -10,7 +10,9 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
   accès aux objets, plateforme) : aucune faille critique ni haute. 9 moyennes, 19 basses et 5 notes ;
   15 sont corrigées dans la PR #347 et 3 dans la PR #363, C-4 et C-3 dans la PR #382 et P-3 ensuite,
   selon les choix du propriétaire ; les autres sont justifiées ci-dessous.
-- **HTTP Observatory** : à mesurer sur la production à l'ouverture (`scripts/launch-check.ts`).
+- **HTTP Observatory** : note **A+ (score 140)** sur la production `aalan.ma`, mesurée le 10 novembre
+  2026 par `scripts/launch-check.ts` sur la version candidate `v1.0.0-rc.2` (site fermé, même code et
+  mêmes en-têtes qu'à l'ouverture). `launch-check.ts` la remesure le jour de l'ouverture.
 
 ## 1. Scan ZAP
 
@@ -144,4 +146,5 @@ Procédure : `docs/lancement/securite.md`. Audit du 4 novembre 2026, code de `ma
    `AALAN_STRIPE_SETUP_KEY` du propriétaire), pour que les webhooks reçoivent
    `charge.refunded` et `charge.dispute.created`.
 3. Fait le 5 novembre : second scan ZAP actif du staging, hors déploiements (section 1.1).
-4. HTTP Observatory sur la production à l'ouverture : note A ou A+.
+4. Fait le 10 novembre : HTTP Observatory sur la production (`v1.0.0-rc.2`), note A+ (140) ;
+   `launch-check.ts` la remesure à l'ouverture.

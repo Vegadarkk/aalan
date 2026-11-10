@@ -3127,6 +3127,10 @@
       "emptyTitle": "Aucune annonce ne correspond",
       "emptyBody": "Essayez d'autres mots ou une autre catégorie.",
       "reset": "Effacer la recherche"
+    },
+    "stats": {
+      "counts": "{views, plural, one {# vue} other {# vues}} · {contacts, plural, one {# message} other {# messages}}",
+      "hint": "Mis à jour chaque nuit."
     }
   },
   "Map": {

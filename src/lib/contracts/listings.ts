@@ -296,6 +296,8 @@ export interface OwnerListingSummary {
   paymentLink?: OwnerPaymentLink;
   /** Car rentals only: the blocked periods the availability calendar edits. */
   rental?: RentalAvailability;
+  /** « En ligne » tab: views and contacts flushed each night (listingStats, audit C1-03); absent before the first. */
+  stats?: { views: number; contacts: number };
 }
 
 export interface OwnerListing {

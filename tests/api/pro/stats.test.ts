@@ -6,8 +6,9 @@ import type * as Turnstile from "@/lib/security/turnstile";
 // Shop counters (UX audit of the Pro shops, lot 1; spec §5 "Compteurs") on the emulators: the view
 // beacon counts one view per visitor and day and never the shop's own, contacts and reveals are
 // counted by the routes that make them, stats-flush writes the closed day into shopStats (listing
-// views given to their shop, members' listings left out) and deletes the Valkey hash, and
-// GET /api/pro/me/stats sums 7 and 30 days with the most viewed listings.
+// views given to their shop, members' listings left out) and adds every listing's views and
+// contacts to listingStats (audit C1-03, shown in « Mes annonces ») before deleting the Valkey hash,
+// and GET /api/pro/me/stats sums 7 and 30 days with the most viewed listings.
 
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
 vi.mock("@/lib/search/queue", () => ({ notifySearchIndex: vi.fn(async () => undefined) }));
@@ -19,11 +20,15 @@ vi.mock("@/lib/security/turnstile", async (importOriginal) => ({
 
 import { POST as viewRoute } from "@/app/api/stats/view/route";
 import { GET as statsRoute } from "@/app/api/pro/me/stats/route";
+import { GET as mineRoute } from "@/app/api/listings/mine/route";
 import { POST as revealRoute } from "@/app/api/shops/[proId]/phone/route";
 import { POST as startShopRoute } from "@/app/api/shops/[proId]/conversations/route";
 import { DEFAULT_PRICING } from "@/config/pricing";
+import type { OwnerListingsResponse } from "@/lib/contracts/listings";
 import { MESSAGING_API, STATS_API } from "@/lib/contracts/endpoints";
 import { PRO_API, type ShopStatsResponse } from "@/lib/contracts/pro";
+import { getListingStats, listingStatsRef } from "@/lib/db/repositories/listing-stats";
+import { listingRef } from "@/lib/db/repositories/listings";
 import { proProfileRef, proProfileToFirestore } from "@/lib/db/repositories/pro-profiles";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
@@ -143,8 +148,34 @@ describe("shop counters", () => {
     const totals = { storefrontViews: 2, listingViews: 2, contacts: 2, reveals: 1 };
     expect(read.body).toEqual({ last7: totals, last30: totals, topListings: [{ id: listing.id, title: "Vélo de ville Peugeot", slugId: listing.slugId, views: 2, contacts: 1 }], through: yesterday() });
 
+    // listingStats: every listing's views and contacts, a member's included.
+    expect(await getListingStats(listing.id)).toMatchObject({ views: 2, contacts: 1, favorites: 0, phoneReveals: 0 });
+    expect(await getListingStats(individual.id)).toMatchObject({ views: 1, contacts: 0, favorites: 0, phoneReveals: 0 });
+
     // A second run finds nothing left to write.
     expect((await statsFlush()).days).toEqual([]);
+  });
+
+  it("adds a listing's counts once when a run is repeated, skips purged listings and shows the counts in « Mes annonces »", async () => {
+    const seller = await member();
+    const listing = await seedListing(seller);
+    const purged = await seedListing(seller);
+    await listingRef(purged.id).set({ status: "purged", purgedAt: new Date(), version: 2, updatedAt: new Date() });
+    // A run cut short after its listing batch: the hash still holds the day, with the marker.
+    valkey.hashes.set(STATS_KEYS.day(yesterday()), new Map([[`l:${listing.id}:v`, "3"], [`l:${listing.id}:c`, "2"], [`l:${purged.id}:v`, "4"]]));
+    expect((await statsFlush()).days).toEqual([yesterday()]);
+    expect(await getListingStats(listing.id)).toMatchObject({ views: 3, contacts: 2 });
+    expect((await listingStatsRef(purged.id).get()).exists).toBe(false);
+    valkey.hashes.set(STATS_KEYS.day(yesterday()), new Map([[`l:${listing.id}:v`, "3"], [`l:${listing.id}:c`, "2"], [`x:${listing.id}`, "1"]]));
+    expect((await statsFlush()).days).toEqual([yesterday()]);
+    expect(await getListingStats(listing.id)).toMatchObject({ views: 3, contacts: 2 });
+
+    const mine = await call<OwnerListingsResponse>(mineRoute, "GET", "/api/listings/mine?status=active", { member: seller });
+    expect(mine.status).toBe(200);
+    expect(mine.body.listings.find((row) => row.id === listing.id)?.stats).toEqual({ views: 3, contacts: 2 });
+    // Other tabs read no counters.
+    const drafts = await call<OwnerListingsResponse>(mineRoute, "GET", "/api/listings/mine?status=drafts", { member: seller });
+    expect(drafts.body.listings.every((row) => row.stats === undefined)).toBe(true);
   });
 
   it("answers an account without a shop with pro_not_verified", async () => {

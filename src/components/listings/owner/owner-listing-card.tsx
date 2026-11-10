@@ -147,6 +147,12 @@ export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, bu
             <span>{t("updated", { relative: formatRelativeDays(daysUntil(new Date(listing.updatedAt), now), locale) })}</span>
           )}
           {listing.canRenew ? <span className="font-medium text-structure">{t("expires.renewable")}</span> : null}
+          {/* Nightly totals (listingStats, audit C1-03); the title says they are not live. */}
+          {listing.stats ? (
+            <span className="tabular-nums" title={t("stats.hint")}>
+              {t("stats.counts", listing.stats)}
+            </span>
+          ) : null}
         </div>
         {listing.status === "pending_review" ? <p className="text-xs text-foreground-muted text-pretty">{t("pending.body")}</p> : null}
         {listing.status === "rejected" ? <p className="text-xs text-danger text-pretty">{t("rejected.body")}</p> : null}

@@ -1,0 +1,17 @@
+Copyright (c) 2026 Adark Prime. All rights reserved.
+
+This repository is published for transparency only. No licence is granted:
+no permission is given to use, copy, modify, merge, publish, distribute,
+sublicense or sell this software, the Aalan brand, logos, texts or any other
+part of this repository, in whole or in part, except as allowed by law.
+
+Third-party files keep their own licences, stated next to them (for example
+LICENSE files under .claude/skills/ and .agents/skills/) or in their package
+metadata under node_modules/.
+
+Tous droits réservés. Ce dépôt est publié à titre de transparence : aucune
+licence n'est accordée et aucune réutilisation n'est autorisée, sauf dans les
+cas prévus par la loi. Les fichiers de tiers restent soumis à leur propre
+licence.
+
+Contact: see /.well-known/security.txt on the site.

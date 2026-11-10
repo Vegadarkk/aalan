@@ -3117,6 +3117,10 @@
       "emptyTitle": "لا يوجد إعلان مطابق",
       "emptyBody": "جرّب كلمات أخرى أو فئة أخرى.",
       "reset": "مسح البحث"
+    },
+    "stats": {
+      "counts": "{views, plural, zero {# مشاهدة} one {مشاهدة واحدة} two {مشاهدتان} few {# مشاهدات} many {# مشاهدة} other {# مشاهدة}} · {contacts, plural, zero {# رسالة} one {رسالة واحدة} two {رسالتان} few {# رسائل} many {# رسالة} other {# رسالة}}",
+      "hint": "تُحدَّث كل ليلة."
     }
   },
   "Map": {

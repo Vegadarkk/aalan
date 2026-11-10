@@ -33,6 +33,12 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    ```
    Refusé si le staging ne tourne pas sur le commit du tag, si ses images ne viennent pas de l'archive
    enregistrée par la CI, ou si le commit n'est pas sur `main`. Retour arrière : `rollback --apply`.
+
+   Avant la promotion, si `firestore.rules` ou `firestore.indexes.json` a changé depuis la dernière
+   version (toujours au lancement) : `NODE_USE_ENV_PROXY=1 node scripts/deploy-prod.ts firestore`
+   depuis le poste connecté à Firebase (`firebase login`). Au lancement, il crée entre autres l'index
+   `listings.photoKeys` (PR #367) : sans lui, la recherche des photos en double d'un autre compte
+   échoue et le contrôle des photos tourne sans elle.
 5. **Contrôle de lancement** (lecture seule, sans clé) :
    ```
    NODE_USE_ENV_PROXY=1 node scripts/launch-check.ts --tag=v1.0.0

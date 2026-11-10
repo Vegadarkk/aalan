@@ -63,7 +63,7 @@ const schema = z.object({
   OPENS_AT: optional,
   /** Preview pass through the closed site (src/lib/launch/preview.ts): 32 to 128 letters and digits. */
   PREVIEW_SECRET: optional,
-  /** Aalan's own social accounts on the countdown page: "instagram=aalan.ma tiktok=@aalan.ma" (src/lib/launch/social.ts). */
+  /** Aalan's own social accounts on the countdown page: "instagram=aalan_ma tiktok=@aalan_ma" (src/lib/launch/social.ts). */
   BRAND_SOCIAL_LINKS: optional,
   QUEUE_REDIS_URL: optional,
   RATE_LIMIT_REDIS_URL: optional,

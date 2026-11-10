@@ -41,7 +41,7 @@ le fuseau en vigueur le jour de l'ouverture.
    aperçus.
 3. Prérequis : la règle de cache Cloudflare qui ignore les requêtes portant ce cookie
    (`infra/cloudflare/cache-rules.json`, `node scripts/cloudflare.ts zone --apply`, appliquée le
-   10 nov. 2026 sur joutiya.ma, aalan.ma et a3lan.ma ; `zone --check` le vérifie). Sans elle, une
+   10 nov. 2026 sur les trois zones du projet ; `zone --check` le vérifie). Sans elle, une
    page vue en aperçu pourrait être mise en cache pour le public.
 
 ## Le jour de l'ouverture

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import fr from "../../messages/fr.json";
 import {
   CATEGORY_PAGE_CLIENT_NAMESPACES,
+  CARRIERS_PAGE_CLIENT_NAMESPACES,
   GUIDE_PAGE_CLIENT_NAMESPACES,
   HELP_PAGE_CLIENT_NAMESPACES,
   HOME_PAGE_CLIENT_NAMESPACES,
@@ -103,6 +104,7 @@ const PAGE_PROVIDERS: Provider[] = [
   { name: "STOREFRONT_PAGE_CLIENT_NAMESPACES", list: STOREFRONT_PAGE_CLIENT_NAMESPACES, routes: ["boutique/[shop]/page.tsx"] },
   { name: "PROFILE_PAGE_CLIENT_NAMESPACES", list: PROFILE_PAGE_CLIENT_NAMESPACES, routes: ["profil/[publicId]/page.tsx"] },
   { name: "GUIDE_PAGE_CLIENT_NAMESPACES", list: GUIDE_PAGE_CLIENT_NAMESPACES, routes: ["demarches/page.tsx"] },
+  { name: "CARRIERS_PAGE_CLIENT_NAMESPACES", list: CARRIERS_PAGE_CLIENT_NAMESPACES, routes: ["transporteurs/page.tsx"] },
   // The help centre's layout wraps every page under it.
   { name: "HELP_PAGE_CLIENT_NAMESPACES", list: HELP_PAGE_CLIENT_NAMESPACES, routes: ["aide/"] },
 ];

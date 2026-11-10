@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, CalendarClock, Package, Truck } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "@/i18n/navigation";
 import { textLinkClassName } from "@/components/ui/text-link";
 import { euZoneById, type CarrierCurrency, type CarrierSpace } from "@/config/carriers";
 import { cityBySlug, cityName } from "@/config/regions";
@@ -18,7 +19,7 @@ const PLACES_SHOWN = 12;
 
 const SPACE_VARIANTS: Record<CarrierSpace, "success" | "neutral" | "warning" | "danger"> = { lots: "success", some: "neutral", almost_full: "warning", full: "danger" };
 
-export function DepartureFacts({ departure, from, pricesHref, locale, className }: { departure: PublicDeparture; from: { perKg: number; currency: CarrierCurrency } | null; pricesHref: string | null; locale: Locale; className?: string }) {
+export function DepartureFacts({ departure, from, pricesHref, compareHref = null, locale, className }: { departure: PublicDeparture; from: { perKg: number; currency: CarrierCurrency } | null; pricesHref: string | null; compareHref?: string | null; locale: Locale; className?: string }) {
   const t = useTranslations("ListingPage.departure");
   const labels = useTranslations("Carriers");
   const format = useFormatter();
@@ -84,6 +85,11 @@ export function DepartureFacts({ departure, from, pricesHref, locale, className 
         </div>
       </dl>
       <p className="text-xs text-foreground-muted text-pretty">{t("notice")}</p>
+      {compareHref ? (
+        <Link href={compareHref} data-testid="departure-compare" className={cn("self-start text-sm font-medium text-link", textLinkClassName)}>
+          {t("compare")}
+        </Link>
+      ) : null}
     </section>
   );
 }

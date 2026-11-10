@@ -116,6 +116,9 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
 /** A member's public profile (profil/[publicId]). */
 export const PROFILE_PAGE_CLIENT_NAMESPACES = ["Favorites.button", "ListingCard", "Auth.common", "Auth.errors", "Listing.errors", "Report", "Consent"] as const;
 
+/** Europe–Morocco carriers (/transporteurs): the search form, the results and comparator, the search limits' challenge and errors. */
+export const CARRIERS_PAGE_CLIENT_NAMESPACES = ["CarrierSearch.form", "CarrierSearch.sort", "CarrierSearch.results", "CarrierSearch.compare", "Carriers", "Listing.fields", "Listing.numberInput", "Listing.errors", "SearchPage", "Auth.common", "Auth.errors"] as const;
+
 /** The guide's home (demarches): its search box. */
 export const GUIDE_PAGE_CLIENT_NAMESPACES = ["Guide.search"] as const;
 

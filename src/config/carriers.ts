@@ -362,3 +362,23 @@ export const EU_ZONE_LIST: readonly { id: string; country: EuZoneCountry; name: 
 const ZONE_BY_ID = new Map(EU_ZONE_LIST.map((zone) => [zone.id, zone]));
 export const euZoneById = (id: string) => ZONE_BY_ID.get(id) ?? null;
 export const isEuZone = (id: string) => ZONE_BY_ID.has(id);
+
+/** The client's search on /transporteurs (spec §5). */
+export const CARRIER_SEARCH = {
+  /** Default window: departures from today to this many days ahead. */
+  windowDays: 60,
+  /** Departures a search reads from the index (date order) before pricing and sorting them. */
+  hitsMax: 100,
+  /** Departures compared side by side. */
+  compareMax: 3,
+  /** A route's price guide shows from this many carriers with a list in the same currency (spec §5). */
+  guideMinCarriers: 5,
+  /** The basket's bounds: loose kilograms, and each item's count. */
+  kgMax: 2_000,
+  itemMax: 20,
+  /**
+   * Dirhams per euro for ordering estimates in both currencies by price (never shown, never a
+   * conversion of a price): the order only, each estimate stays in its list's currency.
+   */
+  madPerEurForOrdering: 11,
+} as const;

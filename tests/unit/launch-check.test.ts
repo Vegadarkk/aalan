@@ -5,7 +5,7 @@ import { checkAdsTxt, checkConfig, checkSecurityTxt, checkHeaders, checkHealth, 
 
 // scripts/launch-check.ts (D21): what each public answer must say before the site opens.
 
-const SITE = "https://joutiya.ma";
+const SITE = "https://aalan.ma";
 
 describe("parseLaunchCli", () => {
   it("defaults to the production site with ads off", () => {
@@ -34,7 +34,7 @@ describe("checkHealth", () => {
 });
 
 describe("checkConfig", () => {
-  const config = { env: "prod", siteUrl: SITE, ads: { mode: "off" }, turnstileSiteKey: "0x4AAA", googleClientId: "123.apps.googleusercontent.com", firebase: { projectId: "joutiya-prod" } };
+  const config = { env: "prod", siteUrl: SITE, ads: { mode: "off" }, turnstileSiteKey: "0x4AAA", googleClientId: "123.apps.googleusercontent.com", firebase: { projectId: "aalan-prod" } };
 
   it("passes with the launch values", () => {
     expect(checkConfig(200, config, SITE, "off")).toMatchObject({ ok: true });
@@ -63,7 +63,7 @@ describe("search engine checks", () => {
   it("robots.txt: open, API closed, sitemap of the site", () => {
     expect(checkRobotsTxt(200, robots, SITE)).toMatchObject({ ok: true });
     expect(checkRobotsTxt(200, "User-Agent: *\nDisallow: /\n", SITE).detail).toMatch(/Disallow: \/ \(crawling closed/);
-    expect(checkRobotsTxt(200, robots, "https://aalan.ma").detail).toBe("no Sitemap: https://aalan.ma/sitemap.xml");
+    expect(checkRobotsTxt(200, robots, "https://a3lan.ma").detail).toBe("no Sitemap: https://a3lan.ma/sitemap.xml");
     expect(checkRobotsTxt(404, "", SITE)).toMatchObject({ ok: false });
   });
 
@@ -92,7 +92,7 @@ describe("search engine checks", () => {
 
   it("/fr: indexable, canonical and the fr/ar cluster on the site, no Tarifit", () => {
     expect(checkIndexing(200, new Headers(), home(SITE), SITE)).toMatchObject({ ok: true });
-    expect(checkIndexing(200, new Headers(), home(SITE), "https://aalan.ma").detail).toMatch(/canonical https:\/\/joutiya\.ma\/fr \(expected https:\/\/aalan\.ma\/fr/);
+    expect(checkIndexing(200, new Headers(), home("https://a3lan.ma"), SITE).detail).toMatch(/canonical https:\/\/a3lan\.ma\/fr \(expected https:\/\/aalan\.ma\/fr/);
     expect(checkIndexing(200, new Headers({ "x-robots-tag": "noindex, nofollow" }), home(SITE), SITE).detail).toBe("X-Robots-Tag noindex, nofollow");
     expect(checkIndexing(200, new Headers(), home(SITE, '<meta name="robots" content="noindex"/>'), SITE).detail).toBe("meta robots noindex");
     expect(checkIndexing(200, new Headers(), home(SITE, `<link rel="alternate" hrefLang="rif-Latn" href="${SITE}/rif"/>`), SITE).detail).toBe("Tarifit in the hreflang cluster");

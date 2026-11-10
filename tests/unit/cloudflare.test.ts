@@ -67,6 +67,7 @@ describe("infra/cloudflare", () => {
           { hostname: "www.joutiya.ma", service: "http://web:3000" },
           { hostname: "admin.joutiya.ma", service: "http://web:3000" },
           { hostname: "aalan.ma", service: "http://web:3000" },
+          { hostname: "www.aalan.ma", service: "http://web:3000" },
           { hostname: "admin.aalan.ma", service: "http://web:3000" },
           { hostname: "admin.a3lan.ma", service: "http://web:3000" },
           { hostname: "example.org", service: "http://web:3000" },

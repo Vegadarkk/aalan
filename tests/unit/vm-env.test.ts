@@ -86,9 +86,9 @@ describe("app.env names", () => {
     // search-setup writes it with the keys: alone, it would stop the first start.
     expect(staging.MEILI_URL).toBeUndefined();
     const prod = derivedValues("prod", targets);
-    expect(prod).toMatchObject({ SITE_URL: "https://joutiya.ma", ADMIN_HOST: "admin.joutiya.ma", MEDIA_BASE_URL: "https://media.joutiya.ma" });
+    expect(prod).toMatchObject({ SITE_URL: "https://aalan.ma", ADMIN_HOST: "admin.aalan.ma", MEDIA_BASE_URL: "https://media.aalan.ma" });
     expect(prod.CSP_REPORT_ONLY).toBeUndefined();
-    expect(prod.CF_MEDIA_ZONE_ID).toBe(targets.shared.cloudflare.zoneId);
+    expect(prod.CF_MEDIA_ZONE_ID).toBe(targets.shared.cloudflare.aalanZoneId);
   });
 
   it("derives the media zone from the host, and none outside the project zones", () => {
@@ -131,7 +131,7 @@ describe("planEnv", () => {
     // No production R2 key yet: none of the R2 settings is written (a partial set stops the app).
     expect(prod.values.R2_S3_ENDPOINT).toBeUndefined();
     expect(prod.values.MEDIA_BASE_URL).toBeUndefined();
-    expect(plan("prod", [local()], ["R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]).values.MEDIA_BASE_URL).toBe("https://media.joutiya.ma");
+    expect(plan("prod", [local()], ["R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]).values.MEDIA_BASE_URL).toBe("https://media.aalan.ma");
   });
 
   it("refuses a swapped pair, two different values, a lone R2 key and values app.env cannot hold", () => {

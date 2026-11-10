@@ -51,7 +51,7 @@ describe("stripe-setup plan", () => {
   it("lets the portal switch plans, upgrades invoiced at once and downgrades at period end", () => {
     const params = portalParams("prod", { aalan_essentiel_monthly_mad: "price_em", aalan_essentiel_yearly_mad: "price_ey", aalan_business_monthly_mad: "price_bm", aalan_business_yearly_mad: "price_by" });
     expect(params).toMatchObject({
-      default_return_url: "https://joutiya.ma/fr/pro/abonnement",
+      default_return_url: "https://aalan.ma/fr/pro/abonnement",
       features: {
         customer_update: { enabled: false },
         subscription_cancel: { enabled: true, mode: "at_period_end" },

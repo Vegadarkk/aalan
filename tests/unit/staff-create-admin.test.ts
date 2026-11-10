@@ -69,7 +69,7 @@ describe("create-admin", () => {
 
   it("takes the project and the hosts of staging and prod from infra/targets.json, like the VM does", () => {
     const prodProject = targets.environments.prod.firebase.projectId;
-    expect(resolveSettings({ APP_ENV: "prod" }, targets)).toEqual({ projectId: prodProject, origin: "https://admin.joutiya.ma", emulated: false });
+    expect(resolveSettings({ APP_ENV: "prod" }, targets)).toEqual({ projectId: prodProject, origin: "https://admin.aalan.ma", emulated: false });
     expect(resolveSettings({ APP_ENV: "staging" }, targets)).toEqual({ projectId: targets.environments.staging.firebase.projectId, origin: "https://admin-staging.aalan.ma", emulated: false });
     // Set by hand, the project must still be the recorded one; a wrong value is refused without being printed.
     expect(resolveSettings({ APP_ENV: "prod", FIREBASE_PROJECT_ID: prodProject }, targets).projectId).toBe(prodProject);

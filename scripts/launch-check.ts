@@ -2,7 +2,7 @@
 // and of the launch records, run after `oracle-vm.ts promote --tag=vX.Y.Z` and before the site
 // opens to visitors. Public URLs only (no key, no sign-in), plus files of this repository.
 //
-//   NODE_USE_ENV_PROXY=1 node scripts/launch-check.ts [--tag=vX.Y.Z] [--site=https://joutiya.ma] [--ads=off|test|live] [--rif=noindex|indexable] [--opening=YYYY-MM-DD]
+//   NODE_USE_ENV_PROXY=1 node scripts/launch-check.ts [--tag=vX.Y.Z] [--site=https://aalan.ma] [--ads=off|test|live] [--rif=noindex|indexable] [--opening=YYYY-MM-DD]
 //
 // Automatic checks (exit code 1 when one fails):
 //   - /api/health answers 200 "ok" with the tag's release: production started, so its startup gate
@@ -26,7 +26,7 @@ import { LAUNCH_LEGAL_VERSION, LEGAL_TEXTS_FROZEN, LEGAL_VERSIONS, PROVISIONAL_L
 import { requireEnvProxy } from "./env-proxy.ts";
 import { legalTextHashes, readHashRecord, staleHashes, type HashRecord, type TextHashes } from "./legal-hash.ts";
 
-const USAGE = "usage: scripts/launch-check.ts [--tag=vX.Y.Z] [--site=https://joutiya.ma] [--ads=off|test|live] [--rif=noindex|indexable] [--opening=YYYY-MM-DD]";
+const USAGE = "usage: scripts/launch-check.ts [--tag=vX.Y.Z] [--site=https://aalan.ma] [--ads=off|test|live] [--rif=noindex|indexable] [--opening=YYYY-MM-DD]";
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const RELEASE_TAG = /^v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?$/;
 const ADS_MODES = ["off", "test", "live"] as const;
@@ -58,7 +58,7 @@ export const MANUAL_ITEMS = [
   "Google Auth Platform: the production OAuth app is published (In production), not in Testing",
   "Back office: salesEnabled=false, the Pro launch offer active, no 'Sauvegarde Firestore trop ancienne' alert in the last days",
   "Private anti-abuse values written in prod Firestore config/abuse (node scripts/abuse-config.ts prod <file outside the repo> --apply, or the back office), never in the repository: their committed values are public",
-  "Tarifit catalogue reviewed by a native speaker; only then RIF_INDEXABLE=true in the prod app.env (and --rif=indexable here)",
+  "Tarifit: /rif stays noindex (owner, 2026-11-10: no native review); RIF_INDEXABLE stays unset in the prod app.env",
   "Google Search Console: the site's property verified, /sitemap.xml submitted and read without error (the WAF serves sitemaps to verified bots only, so this check cannot fetch them)",
   "Canonical domain: CANONICAL_ORIGIN (src/config/site.ts) is the domain the site opens on; the Search engines checks fail otherwise",
   "Example listings: in prod only if the owner said go (worker: node dist/worker/seed-demo.mjs --production --apply), each one labelled 'Annonce exemple' and not contactable",
@@ -70,7 +70,7 @@ export const MANUAL_ITEMS = [
 export function parseLaunchCli(argv: readonly string[], now = new Date()): LaunchArgs {
   let tag: string | null = null;
   let opening = now.toISOString().slice(0, 10);
-  let site = "https://joutiya.ma";
+  let site = "https://aalan.ma";
   let ads: AdsMode = "off";
   let rif: RifMode = "noindex";
   for (const arg of argv) {

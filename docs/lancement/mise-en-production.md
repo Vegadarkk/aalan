@@ -43,7 +43,7 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    ```
    NODE_USE_ENV_PROXY=1 node scripts/launch-check.ts --tag=v1.0.0
    ```
-   (options : `--site=https://…` si le site n'ouvre pas sur `joutiya.ma`, `--ads=test|live`,
+   (options : `--site=https://…` si le site n'ouvre pas sur `aalan.ma`, `--ads=test|live`,
    `--rif=indexable`, `--opening=AAAA-MM-JJ`)
    Contrôles automatiques (code de sortie 1 si l'un échoue) :
    - `/api/health` répond `ok` avec la version du tag. La production démarre seulement si ses
@@ -67,8 +67,8 @@ en production sans tag. Pousser un tag et promouvoir la production attendent ton
    Il liste ensuite ce qu'aucune adresse publique ne montre, à confirmer à la main : application
    OAuth de production publiée dans Google Auth Platform, `salesEnabled=false` et offre de lancement
    Pro au back-office, aucune alerte « Sauvegarde Firestore trop ancienne », seuils anti-abus et
-   listes de modération changés (voir ci-dessous), tarifit relu par un locuteur natif (puis
-   `RIF_INDEXABLE=true`), propriété Google Search Console vérifiée et `/sitemap.xml` soumis et lu
+   listes de modération changés (voir ci-dessous), tarifit laissé en `noindex` (pas de relecture
+   native, propriétaire le 10 novembre 2026 : `RIF_INDEXABLE` reste absent), propriété Google Search Console vérifiée et `/sitemap.xml` soumis et lu
    sans erreur (la règle WAF ne sert les sitemaps qu'aux robots vérifiés : le script ne peut pas les
    lire), annonces exemple posées en
    production seulement sur feu vert du propriétaire (`docs/staging-demo.md`), règles Firestore de production déployées, dépôt

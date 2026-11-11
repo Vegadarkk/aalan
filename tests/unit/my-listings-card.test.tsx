@@ -46,10 +46,10 @@ function summary(status: ListingStatus, overrides: Partial<OwnerListingSummary> 
 
 const noop = async () => undefined;
 
-function render(listing: OwnerListingSummary, locale: Locale = "fr", salesOpen = false) {
+function render(listing: OwnerListingSummary, locale: Locale = "fr", optionsOpen = false) {
   return renderToStaticMarkup(
     <NextIntlClientProvider locale={locale} messages={locale === "ar" ? ar : fr} timeZone="Africa/Casablanca">
-      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.aalan.test" onAction={noop} onDelete={noop} now={NOW} salesOpen={salesOpen} />
+      <OwnerListingCard listing={listing} mediaBaseUrl="https://media.aalan.test" onAction={noop} onDelete={noop} now={NOW} optionsOpen={optionsOpen} />
     </NextIntlClientProvider>,
   );
 }

@@ -44,7 +44,7 @@ export interface OptionOffer {
   days: number | null;
   /** Paid with the plan's À la Une allowance instead of credits. */
   coveredByAllowance: boolean;
-  /** Plan credits + balance (or the allowance) cover it and the wallet is not frozen. */
+  /** Plan credits + balance (or the allowance) cover it and the wallet is not frozen; sales closed: plan (gift) credits only. */
   affordable: boolean;
   /** A bump right after a sort is refused until then (the listing is at the top already). */
   availableAt: string | null;
@@ -53,6 +53,13 @@ export interface OptionOffer {
 /** GET /api/listings/{id}/options: what the promote dialog shows. */
 export interface ListingOptionsResponse {
   salesOpen: boolean;
+  /**
+   * Options can be bought now: sales are open, or (sales closed) the wallet holds live gift credits
+   * of a launch place, the only credits spendable then (owner, 2026-11-11).
+   */
+  optionsOpen: boolean;
+  /** Whose wallet pays: the member's own (gift credits of a launch place) or the shop's (plan credits). */
+  account: "personal" | "shop";
   /** Not published, hidden by moderation: nothing can be bought for it. */
   promotable: boolean;
   /** The subcategory has paid options at all (a job seeker's ad has none: `boost_not_allowed`). */
@@ -79,7 +86,7 @@ export const LEDGER_PAGE_SIZE = 20;
 
 export interface LedgerEntryView {
   id: string;
-  reason: "purchase" | "option" | "plan_grant" | "refund" | "refund_reversed" | "withdrawal" | "admin_adjust";
+  reason: "purchase" | "option" | "plan_grant" | "launch_gift" | "refund" | "refund_reversed" | "withdrawal" | "admin_adjust";
   /** Change of the purchased balance. */
   delta: number;
   planCreditsDelta: number;

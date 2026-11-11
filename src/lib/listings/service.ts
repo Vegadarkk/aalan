@@ -1,4 +1,5 @@
 import "server-only";
+import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import { isDeepStrictEqual } from "node:util";
 import { RENTAL_SUBCATEGORY, subcategoryAllowsAds, subcategoryById } from "@/config/categories";
 import { listingLifetime, listingQuotas, withinQuota, type ListingQuotas, type Seller } from "@/config/pricing";
@@ -785,6 +786,8 @@ export async function publish(actor: Actor, request: Request, id: string, option
   const path = `/${seller.user.locale}/annonce/${slugId}`;
   if (to === "published") {
     if (!options.quiet) await notifySeller(updated, seller.user, { template: "listingPublished", path });
+    // An individual's first listing online may take a launch place (owner, 2026-11-11); never throws.
+    if (!updated.proId) await claimLaunchPlace(updated.ownerUid, now);
   }
   else await notifySeller(updated, seller.user, { template: "listingPendingReview", statement: statementOf("hold", screening.flags, await redressAddress()) });
 

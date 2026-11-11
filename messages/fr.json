@@ -5463,7 +5463,9 @@
       "title": "Vendez plus vite",
       "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
       "action": "Mettre en avant"
-    }
+    },
+    "availableGift": "dont {count, plural, one {# crédit offert} other {# crédits offerts}}, dépensés en premier",
+    "giftOnly": "Les achats de crédits ne sont pas encore ouverts : vos crédits offerts paient les options."
   },
   "Wallet": {
     "metaTitle": "Porte-monnaie",
@@ -5493,7 +5495,8 @@
       "refund_reversed": "Remboursement annulé",
       "admin_adjust": "Ajustement par Aalan",
       "option": "Option",
-      "withdrawal": "Rétractation"
+      "withdrawal": "Rétractation",
+      "launch_gift": "Place de lancement : crédits offerts"
     },
     "amount": "{count, plural, one {# crédit} other {# crédits}}",
     "fromPlan": "dont {count, plural, one {# crédit} other {# crédits}} de votre offre",
@@ -5505,7 +5508,10 @@
     "paid": "Paiement reçu. Vos crédits apparaissent ici dans quelques instants.",
     "withdrawLink": "Se rétracter d'un achat de crédits (14 jours)",
     "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
-    "promoteBackAction": "Mettre en avant"
+    "promoteBackAction": "Mettre en avant",
+    "gift": "Crédits offerts",
+    "giftUntil": "Place de lancement, valables jusqu'au {date}, dépensés en premier",
+    "closedGift": "Les achats de crédits ne sont pas encore ouverts sur Aalan. Vos crédits offerts servent déjà à mettre vos annonces en avant."
   },
   "Packs": {
     "metaTitle": "Acheter des crédits",
@@ -6558,7 +6564,7 @@
       "stock": "Les variantes de taille et de couleur, et l'import de votre stock par fichier avec les offres Business et Premium",
       "planning": "Pour les loueurs, le planning de flotte et les demandes par dates"
     },
-    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : les {seats} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement, dès l'ouverture des ventes.",
     "stepsTitle": "Comment ça se passe",
     "steps": {
@@ -6668,11 +6674,12 @@
         "pack": "{amount, number} DH : {credits, number} crédits",
         "packBonus": "{amount, number} DH : {credits, number} crédits + {bonus, number} offerts",
         "cta": "Acheter des crédits"
-      }
+      },
+      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers inscrits, particuliers et boutiques, jusqu'au {until, date, long}. Un particulier reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
     },
     "pros": {
       "title": "Professionnels",
-      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : les {seats, number} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Sans abonnement ni reconduction"

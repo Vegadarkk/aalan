@@ -87,8 +87,10 @@ export default async function PricingPage({ params }: { params: Params }) {
     getPricing(),
     getFlags(),
   ]);
-  // The first `seats` validated shops (owner, 2026-11-05), told while some are left.
+  // The launch places shared by shops and individuals (owner, 2026-11-05 and 2026-11-11), told while some are left.
   const offer = await launchOfferState(pricing.launchOffer);
+  // `grantsUntil` is exclusive: the last day a place is given is the day before.
+  const placesUntil = offer?.grantsUntil ? new Date(Date.parse(offer.grantsUntil) - 1) : null;
   // Texts of the closed sales only while they are closed (zone 6 audit 6-05).
   const salesOpen = flags.salesEnabled;
   const { essentiel, business } = pricing.plans;
@@ -125,6 +127,21 @@ export default async function PricingPage({ params }: { params: Params }) {
 
       <section className="flex flex-col gap-5" aria-labelledby="pricing-individuals">
         <h2 id="pricing-individuals" className="text-2xl font-semibold">{t("individuals.title")}</h2>
+        {offer && placesUntil && offer.individualCredits > 0 ? (
+          <p className="flex items-start gap-2 rounded-lg bg-featured/15 px-4 py-3 text-sm">
+            <Gift className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              {n("individuals.launchPlaces", {
+                seats: offer.seats,
+                until: placesUntil,
+                credits: offer.individualCredits,
+                days: offer.individualDays,
+                phone: offer.individualRequiresPhone ? "yes" : "no",
+              })}
+              {offer.seatsLeft === null ? null : <strong className="font-semibold"> {n("pros.launchOfferSeats", { left: offer.seatsLeft })}</strong>}
+            </span>
+          </p>
+        ) : null}
         <div className="grid gap-5 md:grid-cols-3">
           <Card
             Icon={User}

@@ -175,7 +175,7 @@ export function WalletView() {
           }
         />
       ) : null}
-      {!data.salesOpen ? <ErrorBanner tone="info" title={t("closed")} /> : null}
+      {!data.salesOpen ? <ErrorBanner tone="info" title={wallet.planCredits > 0 && data.account === "personal" ? t("closedGift") : t("closed")} /> : null}
       {wallet.frozen ? <ErrorBanner tone="warning" title={t("frozen")} /> : null}
 
       {/* What can be spent now; the threshold under it in the brand's gold. */}
@@ -198,11 +198,19 @@ export function WalletView() {
             </Button>
           ) : null}
         </div>
-        <dl className={cn("grid gap-4 border-t border-border pt-5", data.account === "shop" && "sm:grid-cols-3")}>
+        <dl className={cn("grid gap-4 border-t border-border pt-5", data.account === "shop" && "sm:grid-cols-3", data.account === "personal" && wallet.planCredits > 0 && "sm:grid-cols-2")}>
           <div className="flex flex-col gap-0.5">
             <dt className="text-sm text-foreground-muted">{t("balance")}</dt>
             <dd className={cn("text-lg font-semibold tabular-nums", wallet.balance < 0 && "text-danger")}>{t("amount", { count: wallet.balance })}</dd>
           </div>
+          {/* A person's pool holds the gift credits of a launch place (owner, 2026-11-11), shown only while live. */}
+          {data.account === "personal" && wallet.planCredits > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-sm text-foreground-muted">{t("gift")}</dt>
+              <dd className="text-lg font-semibold tabular-nums">{t("amount", { count: wallet.planCredits })}</dd>
+              {wallet.planCreditsResetsAt ? <dd className="text-xs text-foreground-muted text-pretty">{t("giftUntil", { date: date(wallet.planCreditsResetsAt) })}</dd> : null}
+            </div>
+          ) : null}
           {/* Plan credits and the À la Une allowance belong to a shop's offer: for a person they were noise (6-22). */}
           {data.account === "shop" ? (
             <div className="flex flex-col gap-0.5">

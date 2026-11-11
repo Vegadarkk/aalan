@@ -1104,7 +1104,7 @@ export const walletSchema = z
   .strict();
 export type WalletDoc = z.infer<typeof walletSchema>;
 
-export const LEDGER_REASONS = ["purchase", "option", "plan_grant", "refund", "refund_reversed", "withdrawal", "admin_adjust"] as const satisfies readonly LedgerReason[];
+export const LEDGER_REASONS = ["purchase", "option", "plan_grant", "launch_gift", "refund", "refund_reversed", "withdrawal", "admin_adjust"] as const satisfies readonly LedgerReason[];
 
 /**
  * wallets/{accountId}/ledger/{entryId}: append-only. Ids are deterministic (idempotency):
@@ -1408,6 +1408,8 @@ export const COLLECTIONS = {
   // Phase 7
   proProfiles: "proProfiles",
   wallets: "wallets",
+  /** launchPlaces/{peppered hash of a phone number}: the number took an individual's launch place (src/lib/payments/launch-place.ts). */
+  launchPlaces: "launchPlaces",
   /** wallets/{accountId}/ledger/{entryId} */
   ledger: "ledger",
   billingAccounts: "billingAccounts",

@@ -39,8 +39,8 @@ interface OwnerListingCardProps {
   onDelete: () => Promise<void>;
   /** An action of this row is running. */
   busy?: boolean;
-  /** Paid options are on sale (config/flags.salesEnabled): a published listing offers "Mettre en avant". */
-  salesOpen?: boolean;
+  /** Paid options can be bought (sales open, or gift credits of a launch place): a published listing offers "Mettre en avant". */
+  optionsOpen?: boolean;
   /** Open "Mettre en avant" at once (back from a credits purchase started in its dialog, 6-03). */
   autoPromote?: boolean;
   now?: Date;
@@ -60,10 +60,10 @@ interface OwnerListingCardProps {
  * One row of "Mes annonces": cover, title, price, city, status, expiry, actions. On phones the
  * primary action takes the full row under the cover (its label is longer than the text column).
  */
-export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, salesOpen = false, autoPromote = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins, onDuplicate }: OwnerListingCardProps) {
+export function OwnerListingCard({ listing, mediaBaseUrl, onAction, onDelete, busy = false, optionsOpen = false, autoPromote = false, now = new Date(), onChanged, sections = [], paymentReady = false, pins, onDuplicate }: OwnerListingCardProps) {
   const t = useTranslations("MyListings");
   // "Mettre en avant" as a visible button of the row, not only in the menu (zone 6 audit 6-04).
-  const promotable = salesOpen && listing.status === "published" && paidOptionsAllowed(listing.subcategoryId);
+  const promotable = optionsOpen && listing.status === "published" && paidOptionsAllowed(listing.subcategoryId);
   const [promote, setPromote] = useState(autoPromote && promotable);
   const menu = useRef<HTMLButtonElement>(null);
   const promoteButton = useRef<HTMLButtonElement>(null);

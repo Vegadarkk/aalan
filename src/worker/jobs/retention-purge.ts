@@ -123,6 +123,8 @@ export interface RetentionResult {
   userBlocks: number;
   /** Deleted or hidden reviews (vitrine-avis §3). */
   reviews: number;
+  /** Phone-number markers of the launch places past their purgeAt (owner, 2026-11-11). */
+  launchPlaces: number;
   failed: number;
   /** The delete budget or the Firestore quota stopped the run before the end. */
   deferred: boolean;
@@ -311,7 +313,7 @@ async function purgeClosedAccounts(state: RunState): Promise<void> {
   result.deferred = true;
 }
 
-async function purgeJournal(collection: JournalCollection, key: "contentOps" | "revealLogs" | "auditLogs", state: RunState): Promise<void> {
+async function purgeJournal(collection: JournalCollection, key: "contentOps" | "revealLogs" | "auditLogs" | "launchPlaces", state: RunState): Promise<void> {
   while (state.budget > 0) {
     const wanted = Math.min(JOURNAL_BATCH, state.budget);
     const deleted = await deleteJournalPastPurge(collection, state.now, wanted);
@@ -573,6 +575,7 @@ export async function retentionPurge(now = new Date(), deps: { store?: ObjectSto
     auditLogs: 0,
     userBlocks: 0,
     reviews: 0,
+    launchPlaces: 0,
     failed: 0,
     deferred: false,
   };
@@ -607,6 +610,8 @@ export async function retentionPurge(now = new Date(), deps: { store?: ObjectSto
   await step("auditLogs", state, () => purgeJournal(COLLECTIONS.auditLogs, "auditLogs", state));
   await step("userBlocks", state, () => purgeUserBlocks(state));
   await step("reviews", state, () => purgeHeld(COLLECTIONS.reviews, "reviews", state, reviewPurgeable));
+  // Phone-number markers of the launch places (src/lib/payments/launch-place.ts), no alert of their own.
+  await step("launchPlaces", state, () => purgeJournal(COLLECTIONS.launchPlaces, "launchPlaces", state));
   // The job completes anyway, so the worker's failed handler never hears of a failed step.
   if (state.failedSteps.length > 0) {
     await alert({

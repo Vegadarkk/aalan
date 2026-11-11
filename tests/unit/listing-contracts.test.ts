@@ -18,7 +18,7 @@ import {
   titleSchema,
   type ListingPatch,
 } from "@/lib/contracts/listings";
-import { LEGACY_PHOTO_VARIANTS, MAX_PHOTOS_INDIVIDUAL, MAX_PHOTOS_PRO, MAX_UPLOAD_BYTES, MEDIA_API, PHOTO_VARIANT_SPECS, listingPhotoSchema, signUploadSchema, uploadIdSchema } from "@/lib/contracts/media";
+import { LEGACY_PHOTO_VARIANTS, MAX_PHOTOS_CONFIGURABLE, MAX_PHOTOS_INDIVIDUAL, MAX_PHOTOS_PRO, MAX_UPLOAD_BYTES, MEDIA_API, PHOTO_VARIANT_SPECS, listingPhotoSchema, signUploadSchema, uploadIdSchema } from "@/lib/contracts/media";
 
 const fullPatch: ListingPatch = {
   categoryId: "vehicules",
@@ -66,7 +66,8 @@ describe("listingPatchSchema", () => {
     expect(listingPatchSchema.safeParse({ location: { regionCode: "13", citySlug: "casablanca" } }).success).toBe(false);
     expect(listingPatchSchema.safeParse({ location: { regionCode: "06", citySlug: "Casablanca" } }).success).toBe(false);
     expect(listingPatchSchema.safeParse({ location: { regionCode: "06", citySlug: "casablanca", geo: { lat: 0, lng: 0 } } }).success).toBe(false);
-    expect(listingPatchSchema.safeParse({ photos: Array.from({ length: MAX_PHOTOS_PRO + 1 }, () => "abcdefghjk") }).success).toBe(false);
+    expect(listingPatchSchema.safeParse({ photos: Array.from({ length: MAX_PHOTOS_CONFIGURABLE + 1 }, () => "abcdefghjk") }).success).toBe(false);
+    expect(listingPatchSchema.safeParse({ photos: Array.from({ length: MAX_PHOTOS_PRO + 1 }, () => "abcdefghjk") }).success).toBe(true);
     expect(listingPatchSchema.safeParse({ photos: ["../etc"] }).success).toBe(false);
     expect(listingPatchSchema.safeParse({ contact: { showPhone: true } }).success).toBe(false);
     expect(listingPatchSchema.safeParse({ attributes: { "Bad Key": 1 } }).success).toBe(false);

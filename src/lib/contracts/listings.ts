@@ -2,7 +2,7 @@ import { z } from "@/lib/zod";
 import { CONDITIONS, categoryById, subcategoryById } from "@/config/categories";
 import { turnstileTokenSchema } from "@/lib/contracts/auth";
 import { listingVariantsSchema, stockSchema, type ListingVariants, type PromoView, type ShopSection } from "@/lib/contracts/catalog";
-import { MAX_PHOTOS_PRO, uploadIdSchema, type ListingPhoto, type UploadRejectReason, type UploadStatus } from "@/lib/contracts/media";
+import { MAX_PHOTOS_CONFIGURABLE, uploadIdSchema, type ListingPhoto, type UploadRejectReason, type UploadStatus } from "@/lib/contracts/media";
 import { LISTING_ID_PATTERN, SLUG_ID_MAX, SLUG_ID_PATTERN } from "@/lib/listings/ids";
 import { DAY_PATTERN, RENTAL_PERIODS_MAX, type RentalPeriod } from "@/lib/listings/rental-availability";
 
@@ -146,7 +146,7 @@ export const listingPatchSchema = z
     isDonation: z.boolean().optional(),
     location: listingLocationInputSchema.optional(),
     /** Ordered upload ids; the server keeps only those that are `ready` and owned. */
-    photos: z.array(uploadIdSchema).max(MAX_PHOTOS_PRO).optional(),
+    photos: z.array(uploadIdSchema).max(MAX_PHOTOS_CONFIGURABLE).optional(),
     contact: listingContactInputSchema.optional(),
     sensitiveDeclaration: z.object({ kind: z.enum(SENSITIVE_DECLARATION_KINDS) }).strict().nullable().optional(),
     /** Pro listings only (catalogue §2); null removes them. With variants the stock is per combination. */

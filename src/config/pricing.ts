@@ -16,6 +16,7 @@ const limit = z.number().int().min(0).nullable();
 export const listingQuotasSchema = z
   .object({
     activeListings: limit,
+    // <= MAX_PHOTOS_CONFIGURABLE (src/lib/contracts/media.ts), the cap of the request schemas.
     photosPerListing: z.number().int().min(1).max(50),
     listingsPerDay: limit,
   })

@@ -58,6 +58,8 @@ export function photosArePrivate(listing: Pick<ListingRecord, "status" | "modera
 /**
  * Photos per listing from the seller type of the listing (D5), read from config/pricing (getPricing)
  * so the limit changes without a deploy; the defaults (DEFAULT_PRICING) when the caller has none.
+ * A Pro gets the `none` plan's limit (no profile read here) while the listing service checks the
+ * shop's plan: keep photosPerListing the same on every Pro plan.
  */
 export function maxPhotosOf(listing: Pick<ListingRecord, "sellerType">, pricing: PricingConfig = DEFAULT_PRICING): number {
   const seller: Seller = listing.sellerType === "pro" ? { type: "pro", plan: "none" } : { type: "individual" };

@@ -51,7 +51,7 @@ async function linkLabels(locale: Locale) {
 export default async function HelpArticlePage({ params }: { params: Params }) {
   const { locale, article } = await load(params);
   setRequestLocale(locale);
-  const [t, label, values] = await Promise.all([getTranslations({ locale, namespace: "Help" }), linkLabels(locale), getLegalConfig().then(helpValues)]);
+  const [t, label, values] = await Promise.all([getTranslations({ locale, namespace: "Help" }), linkLabels(locale), Promise.all([getLegalConfig(), getPricing()]).then(([legal, pricing]) => helpValues(legal, pricing))]);
   const category = helpCategories(locale)[article.category];
   const links = article.links.map((link) => label(link, (help) => helpArticle(locale, help.slug, values).title));
 

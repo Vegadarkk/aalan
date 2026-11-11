@@ -13,6 +13,7 @@ import { RENTAL_SUBCATEGORY, subcategoryById } from "@/config/categories";
 import { SITE_NAME } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { isApiError } from "@/lib/auth/client";
+import { usePublicConfig } from "@/lib/config/client";
 import type { ListingStatus } from "@/lib/contracts/listings";
 import { MAX_PHOTOS_PRO } from "@/lib/contracts/media";
 import type { StockListing } from "@/lib/contracts/stock-import";
@@ -49,8 +50,9 @@ export function PhotosStep({ stock, onDone }: { stock: readonly StockListing[]; 
   const [error, setError] = useState<unknown>(null);
   const match = useMemo(() => matchPhotos(files, targets), [files, targets]);
   const byId = useMemo(() => new Map(targets.map((listing) => [listing.id, listing])), [targets]);
-  // Room left on each listing (20 photos for a Pro): the extra files are left out.
-  const planned = useMemo(() => [...match.byListing].map(([id, list]) => ({ listing: byId.get(id)!, files: list.slice(0, Math.max(0, MAX_PHOTOS_PRO - byId.get(id)!.photoCount)), extra: Math.max(0, list.length - Math.max(0, MAX_PHOTOS_PRO - byId.get(id)!.photoCount)) })), [match, byId]);
+  // Room left on each listing (the Pro limit of config/pricing): the extra files are left out.
+  const maxPhotos = usePublicConfig()?.upload.maxPhotosPro ?? MAX_PHOTOS_PRO;
+  const planned = useMemo(() => [...match.byListing].map(([id, list]) => ({ listing: byId.get(id)!, files: list.slice(0, Math.max(0, maxPhotos - byId.get(id)!.photoCount)), extra: Math.max(0, list.length - Math.max(0, maxPhotos - byId.get(id)!.photoCount)) })), [match, byId, maxPhotos]);
   const total = planned.reduce((sum, item) => sum + item.files.length, 0);
 
   async function run() {
@@ -110,7 +112,7 @@ export function PhotosStep({ stock, onDone }: { stock: readonly StockListing[]; 
                       {listing.ref}
                     </span>
                     <span className="text-foreground-muted">{t("count", { count: list.length })}</span>
-                    {extra > 0 ? <span className="text-warning">{t("extra", { count: extra, max: MAX_PHOTOS_PRO })}</span> : null}
+                    {extra > 0 ? <span className="text-warning">{t("extra", { count: extra, max: maxPhotos })}</span> : null}
                   </li>
                 ))}
               </ul>

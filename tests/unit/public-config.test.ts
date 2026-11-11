@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFAULT_FLAGS } from "@/config/flags";
+import { DEFAULT_PRICING } from "@/config/pricing";
 import { publicConfig, searchMapConfig } from "@/lib/config/public";
 import { parseEnv, resetServerEnv } from "@/lib/env";
 
@@ -59,7 +61,7 @@ describe("publicConfig", () => {
       googleClientId: "123456789-abc.apps.googleusercontent.com",
       sentry: { dsn: DSN, environment: "staging", release: "0123456789ab" },
       mediaBaseUrl: "https://media-staging.joutiya.ma",
-      upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 5 },
+      upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 5, maxPhotosPro: 20 },
       map: { pmtilesUrl: "https://media-staging.joutiya.ma/maps/morocco.pmtiles", attribution: "© OpenStreetMap contributors · Protomaps" },
       // The app secret is set but not the display number or the phone number id: no challenge can start.
       phoneVerification: false,
@@ -71,6 +73,11 @@ describe("publicConfig", () => {
       expect(json).not.toContain(name);
     }
     expect(json).not.toMatch(/NEXT_PUBLIC_/);
+  });
+
+  it("hands the browser the photo limits of config/pricing", () => {
+    const pricing = { ...DEFAULT_PRICING, individual: { ...DEFAULT_PRICING.individual, photosPerListing: 3 } };
+    expect(publicConfig(parseEnv(configured).env, DEFAULT_FLAGS, pricing).upload).toEqual({ maxBytes: 10 * 1024 * 1024, maxPhotos: 3, maxPhotosPro: 20 });
   });
 
   it("hands the ad flags and the AdSense publisher id to the browser (phase 6, D8)", () => {
@@ -94,7 +101,7 @@ describe("publicConfig", () => {
       sentry: null,
       // Development without MEDIA_BASE_URL: photos come from the signed dev storage route (D11).
       mediaBaseUrl: "http://localhost:3000/api/dev/storage/joutiya-dev-media",
-      upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 5 },
+      upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 5, maxPhotosPro: 20 },
       map: null,
       phoneVerification: false,
       ads: { mode: "off", cmpEea: false, client: null, units: { leaderboard: null, halfpage: null, rectangle: null, banner: null } },

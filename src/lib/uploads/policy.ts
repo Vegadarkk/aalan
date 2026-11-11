@@ -1,5 +1,5 @@
 import "server-only";
-import { listingQuotas, type Seller } from "@/config/pricing";
+import { DEFAULT_PRICING, listingQuotas, type PricingConfig, type Seller } from "@/config/pricing";
 import type { ListingStatus } from "@/lib/contracts/listings";
 import { listingPhotoSchema, type UploadStatusResponse } from "@/lib/contracts/media";
 import type { ListingRecord } from "@/lib/db/repositories/listings";
@@ -55,10 +55,15 @@ export function photosArePrivate(listing: Pick<ListingRecord, "status" | "modera
   return listing.status !== "purged" && listing.moderation.hiddenBy !== undefined;
 }
 
-/** Photos per listing from the seller type of the listing (D5: individual 10, Pro 20). */
-export function maxPhotosOf(listing: Pick<ListingRecord, "sellerType">): number {
+/**
+ * Photos per listing from the seller type of the listing (D5), read from config/pricing (getPricing)
+ * so the limit changes without a deploy; the defaults (DEFAULT_PRICING) when the caller has none.
+ * A Pro gets the `none` plan's limit (no profile read here) while the listing service checks the
+ * shop's plan: keep photosPerListing the same on every Pro plan.
+ */
+export function maxPhotosOf(listing: Pick<ListingRecord, "sellerType">, pricing: PricingConfig = DEFAULT_PRICING): number {
   const seller: Seller = listing.sellerType === "pro" ? { type: "pro", plan: "none" } : { type: "individual" };
-  return listingQuotas(seller).photosPerListing;
+  return listingQuotas(seller, pricing).photosPerListing;
 }
 
 /** Public part of an upload document (MEDIA_API answers). `signed` reads as processing. */

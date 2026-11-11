@@ -25,7 +25,7 @@ const config = (phoneVerification: boolean): PublicConfig => ({
   googleClientId: null,
   sentry: null,
   mediaBaseUrl: null,
-  upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 10 },
+  upload: { maxBytes: 10 * 1024 * 1024, maxPhotos: 10, maxPhotosPro: 20 },
   map: null,
   phoneVerification,
   ads: { mode: "off", cmpEea: false, client: null, units: { leaderboard: null, halfpage: null, rectangle: null, banner: null } },

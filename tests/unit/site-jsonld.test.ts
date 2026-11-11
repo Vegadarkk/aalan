@@ -27,5 +27,12 @@ describe("siteJsonLd", () => {
     expect(site?.publisher).toEqual({ "@id": "https://aalan.ma/#organization" });
     expect(org).toMatchObject({ "@type": "Organization", "@id": "https://aalan.ma/#organization", url: "https://aalan.ma", logo: "https://aalan.ma/brand/icon-512.png" });
     expect(org?.alternateName).toEqual(["أعلان", "ⴰⵄⵍⴰⵏ"]);
+    expect(org).not.toHaveProperty("sameAs");
+  });
+
+  it("lists the brand's social profiles as the Organization's sameAs", () => {
+    const withSocials = siteJsonLd({ origin: "https://aalan.ma", locale: "fr", inLanguage: "fr-MA", name: "Aalan", alternateNames: [], description: "d", searchPath: "/recherche", sameAs: ["https://www.instagram.com/aalan_ma", "https://www.tiktok.com/@aalan_ma"] });
+    const organization = (withSocials["@graph"] as Record<string, unknown>[])[1];
+    expect(organization?.sameAs).toEqual(["https://www.instagram.com/aalan_ma", "https://www.tiktok.com/@aalan_ma"]);
   });
 });

@@ -56,6 +56,7 @@ export const NAV_GROUPS: { label: string; items: Item[] }[] = [
       { href: "/parametres/legal", label: "Mentions légales", adminOnly: true },
       { href: "/parametres/paiements", label: "Paiement vendeur", adminOnly: true },
       { href: "/parametres/quotas", label: "Quotas", adminOnly: true },
+      { href: "/parametres/whatsapp", label: "WhatsApp", adminOnly: true },
     ],
   },
 ];

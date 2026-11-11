@@ -42,6 +42,11 @@ export interface CspOptions {
    * from advertisers' own hosts), the enforced policy until reports settle the list.
    */
   ads?: "strict" | "broad";
+  /**
+   * Meta's Facebook Login JS SDK (WhatsApp Embedded Signup): only on the admin page that links
+   * Aalan's WhatsApp number (src/lib/phone-verify/meta-signup.ts).
+   */
+  facebookLogin?: boolean;
 }
 
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
@@ -49,6 +54,9 @@ export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 const GIS_SCRIPT = "https://accounts.google.com/gsi/client";
 const GIS_FRAME = "https://accounts.google.com/gsi/";
 const GIS_STYLE = "https://accounts.google.com/gsi/style";
+/** Facebook JS SDK host and the hosts its login popup bridge frames and calls use. */
+export const FACEBOOK_SDK_ORIGIN = "https://connect.facebook.net";
+const FACEBOOK_HOSTS = ["https://www.facebook.com", "https://web.facebook.com", "https://staticxx.facebook.com", "https://graph.facebook.com"];
 
 // AdSense (phase 6, D10). Only the loader host is documented; the rest is the initial guess that
 // the report-only twin confirms or corrects before the list is fixed.
@@ -118,6 +126,8 @@ export function buildCsp(options: CspOptions): string {
   if (dev) scriptSrc.push("'unsafe-eval'");
   const ads = options.ads;
   if (ads) scriptSrc.push(...ADSENSE_SCRIPT_HOSTS);
+  const facebook = options.facebookLogin ? FACEBOOK_HOSTS : [];
+  if (options.facebookLogin) scriptSrc.push(FACEBOOK_SDK_ORIGIN);
   const adHosts = (hosts: readonly string[]): string[] => (!ads ? [] : ads === "broad" ? [...hosts, "https:"] : [...hosts]);
 
   const media = origin(options.mediaOrigin);
@@ -128,7 +138,7 @@ export function buildCsp(options: CspOptions): string {
     "script-src": scriptSrc,
     // Radix and Sonner set inline style attributes; a nonce cannot cover attributes.
     "style-src": ["'self'", "'unsafe-inline'", GIS_STYLE],
-    "img-src": compact(["'self'", "data:", "blob:", media, tiles, ...adHosts(ADSENSE_IMG_HOSTS)]),
+    "img-src": compact(["'self'", "data:", "blob:", media, tiles, ...adHosts(ADSENSE_IMG_HOSTS), ...facebook]),
     "font-src": ["'self'"],
     "connect-src": compact([
       "'self'",
@@ -139,9 +149,10 @@ export function buildCsp(options: CspOptions): string {
       origin(options.authEmulatorOrigin),
       dev ? "ws:" : undefined,
       ...(ads ? ADSENSE_CONNECT_HOSTS : []),
+      ...facebook,
     ]),
     // Turnstile widget and the Google sign-in button (GIS) render in iframes.
-    "frame-src": ["'self'", TURNSTILE_ORIGIN, GIS_FRAME, ...adHosts(ADSENSE_FRAME_HOSTS)],
+    "frame-src": ["'self'", TURNSTILE_ORIGIN, GIS_FRAME, ...adHosts(ADSENSE_FRAME_HOSTS), ...facebook],
     "worker-src": ["'self'", "blob:"],
     "manifest-src": ["'self'"],
     "media-src": compact(["'self'", media]),

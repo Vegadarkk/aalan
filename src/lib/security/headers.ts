@@ -50,7 +50,16 @@ export const sameOriginResourcePolicy: Header = { key: "Cross-Origin-Resource-Po
 /** JSON API responses never render HTML: deny everything. */
 export const apiContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
-/** COOP: Google sign-in popups need `same-origin-allow-popups` on the public host (§6). */
-export function coopFor(host: "public" | "admin"): string {
-  return host === "admin" ? "same-origin" : "same-origin-allow-popups";
+/**
+ * Admin page linking Aalan's WhatsApp number through Meta's Embedded Signup popup: the only admin
+ * page with Facebook hosts in its CSP and a popup-friendly COOP.
+ */
+export const META_SIGNUP_ADMIN_PATH = "/parametres/whatsapp";
+
+/**
+ * COOP: Google sign-in popups need `same-origin-allow-popups` on the public host (§6), and so does
+ * the Embedded Signup popup on its admin page (`popups`).
+ */
+export function coopFor(host: "public" | "admin", popups = false): string {
+  return host === "admin" && !popups ? "same-origin" : "same-origin-allow-popups";
 }

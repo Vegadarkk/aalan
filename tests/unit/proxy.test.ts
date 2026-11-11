@@ -64,6 +64,23 @@ describe("proxy", () => {
     expect(response.headers.get("x-middleware-request-x-nonce")).toBe(nonce);
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(response.headers.get("cross-origin-opener-policy")).toBe("same-origin");
+    expect(csp).not.toContain("facebook");
+  });
+
+  it("opens Facebook hosts and popups on the WhatsApp linking page only", async () => {
+    const response = await proxy(request("/parametres/whatsapp", "admin.joutiya.ma"));
+    const csp = response.headers.get("content-security-policy") ?? "";
+    expect(directive(csp, "frame-src")).toContain("https://www.facebook.com");
+    expect(directive(csp, "connect-src")).toContain("https://graph.facebook.com");
+    expect(directive(csp, "script-src")).toContain("https://connect.facebook.net");
+    expect(response.headers.get("cross-origin-opener-policy")).toBe("same-origin-allow-popups");
+    for (const path of ["/parametres/whatsapp/x", "/parametres/legal"]) {
+      const other = await proxy(request(path, "admin.joutiya.ma"));
+      expect(other.headers.get("content-security-policy"), path).not.toContain("facebook");
+      expect(other.headers.get("cross-origin-opener-policy"), path).toBe("same-origin");
+    }
+    // Never on the public host.
+    expect((await proxy(member("/fr/compte"))).headers.get("content-security-policy") ?? "").not.toContain("facebook");
   });
 
   it("serves only its own APIs on the admin host", async () => {

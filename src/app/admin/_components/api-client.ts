@@ -17,6 +17,7 @@ export const ADMIN_API = {
   users: "/api/admin/users",
   legal: "/api/admin/legal",
   guideLinks: "/api/admin/guide/links",
+  whatsapp: "/api/admin/whatsapp",
 } as const;
 
 const CSRF_COOKIE = "__Host-csrf";

@@ -56,6 +56,15 @@ describe("buildCsp", () => {
     }
   });
 
+  it("lists Meta's login hosts only when asked (WhatsApp linking page)", () => {
+    expect(buildCsp({ variant: "private", nonce: "abc" })).not.toContain("facebook");
+    const policy = directives(buildCsp({ variant: "private", nonce: "abc", facebookLogin: true }));
+    expect(policy.get("script-src")).toContain("https://connect.facebook.net");
+    for (const name of ["frame-src", "connect-src", "img-src"]) expect(policy.get(name), name).toContain("https://www.facebook.com");
+    expect(policy.get("connect-src")).toContain("https://graph.facebook.com");
+    expect(policy.get("frame-ancestors")).toEqual(["'none'"]);
+  });
+
   it("locks framing, plugins, base and form targets", () => {
     const policy = directives(buildCsp({ variant: "public" }));
     expect(policy.get("frame-ancestors")).toEqual(["'none'"]);

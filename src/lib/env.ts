@@ -139,6 +139,9 @@ const schema = z.object({
   WHATSAPP_VERIFY_TOKEN: optional,
   /** Aalan's WhatsApp number in international format, digits only (wa.me link). */
   WHATSAPP_DISPLAY_NUMBER: optional,
+  /** Meta app id and its Embedded Signup configuration id: admin page linking the WhatsApp number. */
+  META_APP_ID: optional,
+  WHATSAPP_SIGNUP_CONFIG_ID: optional,
   SENTRY_DSN: optional,
   /** age public key of the nightly Firestore backups (D17); the private key stays offline. */
   BACKUP_AGE_RECIPIENT: optional,

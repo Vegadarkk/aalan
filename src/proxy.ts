@@ -11,7 +11,7 @@ import { DEVICE_COOKIE, SESSION_COOKIE, setDeviceCookie } from "@/lib/security/c
 import { buildCsp, createNonce, INLINE_HASH_MARKER, type CspVariant } from "@/lib/security/csp";
 import { PINNED_SCRIPT_HASHES } from "@/lib/security/inline-hashes";
 import { DEVICE_ID_HEADER, newDeviceCookie, readDeviceId } from "@/lib/security/device";
-import { coopFor } from "@/lib/security/headers";
+import { coopFor, META_SIGNUP_ADMIN_PATH } from "@/lib/security/headers";
 import { checkPageLimits, isMeteredPath, pathLocale, tooManyPagesHtml, TOO_MANY_CSP } from "@/lib/rate-limit/proxy-limits";
 import { challengeUrlPath } from "@/lib/security/challenge-path";
 import { mediaBaseUrl } from "@/lib/storage/keys";
@@ -67,12 +67,13 @@ function adsConfigured(): boolean {
   return Boolean(process.env.ADSENSE_CLIENT_ID);
 }
 
-function csp(variant: CspVariant, nonce?: string, scriptHashes?: readonly string[], ads?: "strict" | "broad"): string {
+function csp(variant: CspVariant, nonce?: string, scriptHashes?: readonly string[], ads?: "strict" | "broad", facebookLogin = false): string {
   return buildCsp({
     variant,
     nonce,
     scriptHashes,
     ads,
+    facebookLogin,
     dev: process.env.NODE_ENV === "development",
     mediaOrigin: mediaOrigin(),
     r2Origin: process.env.R2_S3_ENDPOINT,
@@ -89,10 +90,10 @@ function csp(variant: CspVariant, nonce?: string, scriptHashes?: readonly string
  * Headers shared by every page response. `adsTwin`: the strict AdSense policy, sent report-only
  * beside the enforced broad one so the reports fix the host list (D10).
  */
-function decorate(response: NextResponse, host: "public" | "admin", policy: string, adsTwin?: string): NextResponse {
+function decorate(response: NextResponse, host: "public" | "admin", policy: string, adsTwin?: string, popups = false): NextResponse {
   response.headers.set(cspHeaderName(), policy);
   if (adsTwin && cspHeaderName() === "Content-Security-Policy") response.headers.set("Content-Security-Policy-Report-Only", adsTwin);
-  response.headers.set("Cross-Origin-Opener-Policy", coopFor(host));
+  response.headers.set("Cross-Origin-Opener-Policy", coopFor(host, popups));
   response.headers.set("Reporting-Endpoints", 'csp="/api/csp-report"');
   return response;
 }
@@ -202,13 +203,15 @@ function adminHost(request: NextRequest): NextResponse {
   if (pathname.startsWith("/api/")) return ADMIN_HOST_API.test(pathname) ? NextResponse.next() : notFound();
 
   const nonce = createNonce();
-  const policy = csp("private", nonce);
+  // Meta's Embedded Signup (Facebook SDK + login popup) runs on one admin page only.
+  const metaSignup = pathname === META_SIGNUP_ADMIN_PATH;
+  const policy = csp("private", nonce, undefined, undefined, metaSignup);
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", policy);
   const url = request.nextUrl.clone();
   url.pathname = pathname === "/" ? "/admin" : `/admin${pathname}`;
-  return withRobots(decorate(NextResponse.rewrite(url, { request: { headers } }), "admin", policy), "admin", url.pathname);
+  return withRobots(decorate(NextResponse.rewrite(url, { request: { headers } }), "admin", policy, undefined, metaSignup), "admin", url.pathname);
 }
 
 /**

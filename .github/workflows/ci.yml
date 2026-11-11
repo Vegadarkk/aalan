@@ -151,7 +151,15 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      # The runner image already carries Chromium's libraries; the apt packages (mostly fonts) are a
+      # plus. When the Ubuntu mirrors do not resolve (11 Nov 2026, every e2e job failed there before
+      # any test ran), install the browser alone and let the tests decide.
+      - name: Install Chromium
+        run: |
+          if ! npx playwright install --with-deps chromium; then
+            echo "::warning::Ubuntu mirrors unreachable: Chromium installed without its apt packages"
+            npx playwright install chromium
+          fi
       # The web server inherits these (playwright.config.ts): web and dev rebuild route use both keys.
       - name: Search keys
         env:

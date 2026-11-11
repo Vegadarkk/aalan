@@ -167,6 +167,23 @@ def paid_council(prompt, env):
     return out
 
 
+COUNCIL_KEYS = ("GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "NVIDIA_API_KEY",
+                "MISTRAL_API_KEY", "HF_TOKEN", "OPENAI_API_KEY")
+SAFE_VARS = ("PATH", "HOME", "USERPROFILE", "SYSTEMROOT", "TEMP", "TMP", "LANG", "LC_ALL",
+             "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY", "https_proxy", "http_proxy", "no_proxy",
+             "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE")
+
+
+def safe_env(env):
+    """Environnement minimal pour un outil tiers (freellmpool) : jamais les autres secrets de la session."""
+    out = {k: os.environ[k] for k in SAFE_VARS if k in os.environ}
+    for k in COUNCIL_KEYS:
+        v = setting(k, env)
+        if v:
+            out[k] = v
+    return out
+
+
 def run_raw(cmd, timeout=300, env=None):
     """Rend la sortie même en cas de code retour non nul (le panel liste ses échecs)."""
     try:
@@ -267,7 +284,7 @@ def free_council(prompt, env, opinions):
     ok = [r for r in results if r["modele"]]
     if not ok and (shutil.which("freellmpool") or shutil.which("uvx")):  # dernier recours
         base = ["freellmpool"] if shutil.which("freellmpool") else ["uvx", "freellmpool"]
-        rc, text = run_raw(base + ["ask", prompt], timeout=120, env={**os.environ, **env})
+        rc, text = run_raw(base + ["ask", prompt], timeout=120, env=safe_env(env))
         if rc == 0 and text:
             results.append({"fournisseur": "freellmpool", "modele": "auto", "reponse": text})
     return {"avis_obtenus": len([r for r in results if r["modele"]]), "avis": results}

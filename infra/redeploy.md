@@ -14,6 +14,7 @@ Ce qui se perd : les files BullMQ et les compteurs de quotas du jour (`valkey-qu
 
 ## Reconstruire
 
+0. **Place disque** : le quota de stockage bloc du compartiment est de 200 Go et `aalan-vm` (100 Go) avec `spare-micro-1` et `spare-micro-2` (50 Go chacune) l'occupent en entier. `rebuild` crée le nouveau disque de démarrage avant de supprimer l'ancien, il échouerait donc sur le quota : avant tout `rebuild`, supprimer `spare-micro-2` (inutilisée ; `spare-micro-1` porte la sonde et la copie des sauvegardes). Suppression irréversible : elle attend l'accord écrit du propriétaire, demandé à ce moment-là (coordinateur, 11 novembre 2026).
 1. **VM** : `node scripts/oracle-vm.ts rebuild --apply` remplace le disque de démarrage par une image neuve et rejoue le démarrage ; l'instance et sa place A1 restent (après un incident, `--keep-disk` garde l'ancien disque, détaché, comme indice : 200 Go au plus dans le compartiment). Seulement si l'instance n'existe plus : `node scripts/oracle-vm.ts create --apply --retry-minutes=120`. Le démarrage remet l'agent Oracle, les tunnels (jetons relus dans l'API Cloudflare), Docker et les fichiers du dépôt. Suivi : `node scripts/oracle-vm.ts status`. Si une étape échoue, `node scripts/oracle-vm.ts reboot --apply` relance tout le démarrage.
 2. **Accès** : Run Command marche sans rien recréer, le groupe dynamique `joutiya-vm` couvrant toute VM du compartiment `joutiya`. Claude vérifie que l'agent répond.
 3. **Empreinte SSH** : la nouvelle VM a une nouvelle clé d'hôte, lue par `status` sur la console série. Claude met à jour la variable GitHub `VM_SSH_KNOWN_HOSTS`.
@@ -21,7 +22,7 @@ Ce qui se perd : les files BullMQ et les compteurs de quotas du jour (`valkey-qu
 5. **Certificats Google** : pour le staging puis la prod, Claude lance `node scripts/oracle-vm.ts wif <env> --apply` (une clé neuve par conteneur, créée sur la VM), Nav signe les demandes sur le PC2 (`node scripts/google-wif.ts sign`), puis Claude pose les certificats (`wif <env> --certificates=<fichier> --apply`) ; le pool et les comptes de service restent. Web et worker ne démarrent pas sans.
 6. **Staging** : Claude relance le dernier déploiement (GitHub → Actions → *Deploy staging* sur `main`), puis `node scripts/oracle-vm.ts search-setup staging --reindex=<lectures> --apply` : index et clés de recherche neufs, index reconstruit depuis Firestore dans la limite de lectures donnée.
 7. **Production** : Claude promeut la version du staging par Run Command (`node scripts/oracle-vm.ts promote --tag=<dernier tag vX.Y.Z> --apply`, qui vide aussi le cache Cloudflare ; le staging doit tourner sur le commit de ce tag), puis `search-setup prod --reindex=<lectures> --apply`.
-8. **Contrôle** : `https://joutiya.ma/api/health` répond `ok`, et la sonde annonce le rétablissement.
+8. **Contrôle** : `https://aalan.ma/api/health` répond `ok`, et la sonde annonce le rétablissement.
 
 ## Renouvellements
 

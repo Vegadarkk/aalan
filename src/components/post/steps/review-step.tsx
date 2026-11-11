@@ -216,7 +216,7 @@ export function ReviewStep({ onEdit, onPublished, onSaved, onBusy, nonce }: Revi
       ) : null}
 
       {/* The preview: what a buyer sees on the card and at the top of the page. */}
-      <article aria-label={t("review.title")} className="overflow-hidden rounded-lg border border-border bg-surface">
+      <article aria-label={t("review.title")} data-tour="post-preview" className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="relative aspect-[16/9] w-full bg-surface-muted sm:aspect-[21/9]">
           {cover?.previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

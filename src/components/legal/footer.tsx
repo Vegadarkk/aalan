@@ -179,6 +179,11 @@ export function Footer({ publisher, prefetch = true, carriers = false }: { publi
               </Link>
             </li>
             <li>
+              <Link href="/aide/tutoriels" prefetch={linkPrefetch} className={linkClass}>
+                {t("tutorials")}
+              </Link>
+            </li>
+            <li>
               <Link href="/deposer" prefetch={false} className={linkClass}>
                 {t("post")}
               </Link>

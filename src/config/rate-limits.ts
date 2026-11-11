@@ -62,6 +62,9 @@ export const RATE_LIMITS = {
   "staff.login.accountIp": { points: 5, duration: 15 * MINUTE, blockDuration: 15 * MINUTE, policy: "closed", key: "account+ip" },
   // Account settings mutations (display name, password change, account closure).
   "account.mutation.uid": { points: 60, duration: HOUR, policy: "closed", key: "uid" },
+  // Guided tours (a tour finished, skipped or replayed; the settings switch): one small write each.
+  // Open: a Valkey outage must not bring a finished tour back.
+  "tutorials.uid": { points: 60, duration: HOUR, policy: "open", key: "uid" },
   // Account closure (phase 5, L7): idempotent but heavy (listings, conversations, Auth), 5 per hour.
   // Personal data export: up to ~2 000 Firestore reads each (Spark: 50 000 a day), 3 per day.
   "account.close.uid": { points: 5, duration: HOUR, policy: "closed", key: "uid" },

@@ -4,6 +4,7 @@ import { BANNER_KEYS, BIO_MAX, type BannerKey } from "@/config/storefront";
 import { citySlugSchema } from "@/lib/contracts/listings";
 import { PASSWORD_MAX } from "@/lib/contracts/endpoints";
 import { z } from "@/lib/zod";
+import { TOUR_IDS, type TourId } from "@/lib/tours/catalog";
 
 // Account closure and personal data export (phase 5 design D26, lot L7; AF §5 UserPrivate, §6
 // "La clôture passe par l'API", §7 retention table). Client-safe: the settings page and the API
@@ -174,6 +175,8 @@ export interface AccountExport {
     providers: string[];
     consents: { cgu: { version: string; at: string }; transfers: { version: string; at: string } | null; marketing: boolean; marketingConsent: { version: string; at: string } | null };
     notifications: { messagesEmail: boolean };
+    /** Guided tours gone through and the settings switch. */
+    tutorials: { seen: string[]; off: boolean };
     sanctions: { strikeLevel: number; lastAt: string | null; suspendedUntil: string | null };
     reporting: { abusiveUntil: string | null; warnedAt: string | null };
   } | null;
@@ -279,4 +282,23 @@ export interface NotificationSettings {
   /** ISO date of the opt-in in force, null when none. */
   marketingSince: string | null;
   messagesEmail: boolean;
+}
+
+/**
+ * POST /api/account/tutorials (guided tours, owner 2026-11-11): each field optional. `seen` replaces
+ * the list of tours gone through (the browser merges its own list first); `off` is the « Afficher
+ * les tutoriels » switch of the settings.
+ */
+export const tutorialSettingsSchema = z
+  .object({
+    seen: z.array(z.enum(TOUR_IDS)).max(TOUR_IDS.length).optional(),
+    off: z.boolean().optional(),
+  })
+  .strict();
+export type TutorialSettingsInput = z.infer<typeof tutorialSettingsSchema>;
+
+/** GET and POST /api/account/tutorials. */
+export interface TutorialSettings {
+  seen: TourId[];
+  off: boolean;
 }

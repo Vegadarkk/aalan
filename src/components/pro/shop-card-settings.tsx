@@ -125,7 +125,7 @@ export function ShopCardSettings({ shop, onLogo }: { shop: Pick<ProSelfView, "ca
 
   return (
     <section id="fiche-boutique" aria-labelledby="pro-card" data-testid="shop-card-settings" className="flex scroll-mt-24 flex-col gap-5 rounded-lg border border-border bg-surface p-5">
-      <header className="flex flex-col gap-1">
+      <header className="flex flex-col gap-1" data-tour="pro-card">
         <h2 id="pro-card" className="text-lg font-semibold">
           {t("title")}
         </h2>

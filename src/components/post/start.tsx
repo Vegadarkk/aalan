@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { SwitchField } from "@/components/post/controls/switch";
+import { GuidedTour } from "@/components/tours/guided-tour";
 import { Button } from "@/components/ui/button";
 import { KhatamLoader } from "@/components/ui/khatam-loader";
 import type { Subcategory } from "@/config/categories";
@@ -162,8 +163,14 @@ export function WizardStart() {
           {apiMessage(state.failed)}
         </FormMessage>
       ) : null}
-      <SwitchField label={t("giveLabel")} hint={t("giveHint")} checked={giving} onCheckedChange={setGiving} name="don" className="rounded-md border border-border bg-surface px-4 py-3" />
-      <CategoryPicker categoryId={categoryId} subcategoryId={null} isPro={session?.role === "pro"} onCategory={setCategoryId} onSubcategory={(subcategory) => void onSubcategory(subcategory)} />
+      <div data-tour="post-give">
+        <SwitchField label={t("giveLabel")} hint={t("giveHint")} checked={giving} onCheckedChange={setGiving} name="don" className="rounded-md border border-border bg-surface px-4 py-3" />
+      </div>
+      <div data-tour="post-categories">
+        <CategoryPicker categoryId={categoryId} subcategoryId={null} isPro={session?.role === "pro"} onCategory={setCategoryId} onSubcategory={(subcategory) => void onSubcategory(subcategory)} />
+      </div>
+      {/* Guided tour of the posting journey (owner, 2026-11-11): the gift switch, then the categories. */}
+      <GuidedTour id="post-start" />
     </div>
   );
 }

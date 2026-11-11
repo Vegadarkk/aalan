@@ -1954,6 +1954,162 @@ html:has(.launch) {
  * the whole width, headings kept with what follows. A listing prints its first photo only; pages
  * add `print:hidden` for their own screen-only parts and PrintSource for their address.
  */
+/*
+ * Guided tours (src/components/tours/tour-overlay.tsx): the page under a dimmed, blurred veil with
+ * one hole, the element of the step lit in a gold halo, the card beside it. Positions are written by
+ * the overlay's frame loop (transform, size, clip-path); everything else is here.
+ */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+.tour-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: rgb(11 30 31 / 0.5);
+  clip-path: inset(0);
+  animation: tour-fade 320ms var(--ease-door) both;
+  @supports (backdrop-filter: blur(1px)) {
+    background: rgb(11 30 31 / 0.38);
+    backdrop-filter: blur(5px) saturate(0.75);
+  }
+}
+.tour-halo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--color-gold-300),
+    0 0 0 6px rgb(226 184 101 / 0.22),
+    0 0 36px 6px rgb(226 184 101 / 0.35);
+  will-change: transform;
+}
+.tour-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(23rem, calc(100vw - 24px));
+  padding: 1.125rem 1.25rem 1.125rem;
+  border-radius: 1.125rem;
+  background-color: var(--surface);
+  color: var(--foreground);
+  pointer-events: auto;
+  outline: none;
+  opacity: 0;
+  box-shadow:
+    inset 0 3px 0 var(--featured),
+    0 0 0 1px var(--float-edge),
+    0 24px 48px -16px var(--float-shadow);
+  will-change: transform;
+  &[data-ready] {
+    opacity: 1;
+    animation: tour-card-in 340ms var(--ease-door) both;
+  }
+  @media (width < 40rem) {
+    width: calc(100vw - 24px);
+  }
+}
+/* The card's pointer: a turned square sharing the card's face, on the side of the element. */
+.tour-arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background-color: var(--surface);
+  rotate: 45deg;
+  display: none;
+  &[data-side="top"] {
+    display: block;
+    top: -6px;
+    box-shadow: -1px -1px 0 var(--float-edge), inset 2px 2px 0 var(--featured);
+  }
+  &[data-side="bottom"] {
+    display: block;
+    bottom: -6px;
+    box-shadow: 1px 1px 0 var(--float-edge);
+  }
+}
+/* The khatam of the logo's door, still: the tour's mark. */
+.tour-star {
+  position: relative;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-gold-500);
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 17.5%;
+    border: 1.75px solid currentColor;
+    border-radius: 1px;
+  }
+  &::after {
+    transform: rotate(45deg);
+  }
+  [data-theme="dark"] & {
+    color: var(--color-gold-300);
+  }
+}
+/* Progress: one zellige diamond per step, gold up to the current one. */
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  rotate: 45deg;
+  border-radius: 1.5px;
+  background-color: var(--border-strong);
+  transition:
+    background-color 200ms var(--ease-door),
+    scale 200ms var(--ease-door);
+}
+.tour-dot-done {
+  background-color: var(--color-gold-400);
+}
+.tour-dot-current {
+  background-color: var(--color-gold-400);
+  scale: 1.35;
+}
+.tour-text {
+  animation: tour-text-in 260ms var(--ease-door) both;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-halo {
+    animation: tour-breathe 2.4s ease-in-out infinite;
+  }
+}
+@keyframes tour-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tour-card-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 6px;
+  }
+}
+@keyframes tour-text-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+@keyframes tour-breathe {
+  50% {
+    box-shadow:
+      0 0 0 2px var(--color-gold-300),
+      0 0 0 9px rgb(226 184 101 / 0.14),
+      0 0 52px 10px rgb(226 184 101 / 0.42);
+  }
+}
+
 @media print {
   @page {
     size: A4;

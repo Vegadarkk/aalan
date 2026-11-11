@@ -146,6 +146,7 @@
     "trustTitle": "Mentions d ssulṭat",
     "contact": "Ari-d aneɣ",
     "help": "Tasna n tallalt",
+    "tutorials": "Tutoriels guidés",
     "shops": "Tiḥuna",
     "disclaimer": "Aalan teṭṭef annonces n imseqdacen nnes : war d amzenzu, war d amsaɣ, war d aḥric deg uzenzi i xeddmen jar-asen.",
     "copyright": "© {year} {publisher}",
@@ -7220,6 +7221,129 @@
       "hint": "Amsiwel ad d-yerr « Amkan yettwaḥrez » niɣ « Ulac amkan » deg tira, s ssuma s uqarrab ɣef tlistt nnes.",
       "signIn": "Kcem bac ad tessutreḍ amkan ɣer umsiwel-a.",
       "notice": "Ssuma s uqarrab: walu ur yettwaxlaṣ deg {site}. Amsiwel yesbeddad ssuma taneggarut mbeεd taẓayt, qbel ad yeddem asiwel."
+    }
+  },
+  "Tours": {
+    "card": {
+      "step": "Étape {current} sur {total}",
+      "next": "Suivant",
+      "previous": "Étape précédente",
+      "done": "Terminer",
+      "skip": "Passer",
+      "close": "Fermer le tutoriel"
+    },
+    "steps": {
+      "post-give": {
+        "title": "Vous donnez un objet ?",
+        "body": "Activez « Je donne » : votre annonce paraît sans prix, avec la mention « Don »."
+      },
+      "post-categories": {
+        "title": "Choisissez la catégorie",
+        "body": "Touchez la catégorie de votre objet, puis sa sous-catégorie. La suite du formulaire s'adapte à ce choix."
+      },
+      "post-progress": {
+        "title": "Vos étapes",
+        "body": "Suivez ici votre avancement. Vous pouvez revenir à tout moment sur une étape déjà remplie."
+      },
+      "post-actions": {
+        "title": "Avancez à votre rythme",
+        "body": "« Continuer » vérifie l'étape et passe à la suivante. Votre brouillon s'enregistre tout seul : vous le retrouvez dans Mes annonces."
+      },
+      "post-photos": {
+        "title": "Ajoutez vos photos",
+        "body": "La première photo sert de couverture. Faites-les glisser pour changer l'ordre ; le bouton dans leur coin permet de les recadrer ou de les tourner."
+      },
+      "post-preview": {
+        "title": "Relisez votre annonce",
+        "body": "Voici ce que verront les acheteurs. « Modifier » vous ramène à l'étape à corriger."
+      },
+      "post-publish": {
+        "title": "Publiez",
+        "body": "Un clic sur « Publier l'annonce » l'envoie. L'écran suivant vous dit si elle est déjà en ligne ou en cours de vérification."
+      },
+      "pro-eligibility": {
+        "title": "Les prérequis",
+        "body": "Ce qu'il faut avant d'envoyer la demande, avec le lien pour le régler s'il manque quelque chose."
+      },
+      "pro-activity": {
+        "title": "Votre activité",
+        "body": "Boutique, concession, agence immobilière, location… Ce choix adapte la demande, votre vitrine et vos engagements."
+      },
+      "pro-legal": {
+        "title": "Votre entreprise",
+        "body": "Sa forme juridique, puis ses identifiants (ICE, RC…). Notre équipe les vérifie avant d'ouvrir la boutique."
+      },
+      "pro-pieces": {
+        "title": "Les justificatifs",
+        "body": "Ajoutez les pièces demandées, en photo ou en PDF. Elles servent à vérifier votre entreprise."
+      },
+      "pro-submit": {
+        "title": "Envoyez la demande",
+        "body": "Notre équipe l'examine et peut vous appeler. Vous suivez la réponse sur cette page."
+      },
+      "pro-shortcuts": {
+        "title": "Vos raccourcis",
+        "body": "Déposer une annonce, gérer vos annonces, ouvrir votre vitrine : tout part d'ici."
+      },
+      "pro-plan": {
+        "title": "Votre offre",
+        "body": "Votre formule, ce qu'elle comprend et vos factures."
+      },
+      "pro-card": {
+        "title": "Votre fiche boutique",
+        "body": "Logo, présentation, adresse, horaires : ce que les acheteurs voient sur votre vitrine, en plus de vos annonces."
+      },
+      "pro-share": {
+        "title": "Faites connaître la boutique",
+        "body": "Copiez le lien de votre vitrine ou imprimez son QR code pour votre devanture et vos cartes."
+      },
+      "pro-sector": {
+        "title": "Votre secteur",
+        "body": "Une agence immobilière, de location ou un transporteur a une vitrine adaptée à son métier. C'est ici qu'il se choisit."
+      }
+    },
+    "settings": {
+      "title": "Tutoriels guidés",
+      "body": "La première fois que vous ouvrez certains écrans, un tutoriel vous montre où cliquer.",
+      "label": "Afficher les tutoriels",
+      "hint": "Chaque tutoriel ne s'affiche qu'une fois. Coupez-les ici si vous n'en voulez plus.",
+      "on": "Tutoriels activés",
+      "off": "Tutoriels désactivés",
+      "reset": "Revoir tous les tutoriels",
+      "resetDone": "Les tutoriels s'afficheront de nouveau sur les écrans concernés.",
+      "page": "Voir la liste des tutoriels",
+      "loading": "Chargement des tutoriels"
+    },
+    "page": {
+      "metaTitle": "Tutoriels guidés",
+      "metaDescription": "Revoyez pas à pas comment déposer une annonce, ouvrir une boutique Pro ou personnaliser votre vitrine sur Aalan.",
+      "title": "Tutoriels guidés",
+      "lead": "Chaque tutoriel s'ouvre sur l'écran concerné et vous montre où cliquer, étape par étape. Vous pouvez le passer à tout moment.",
+      "start": "Lancer le tutoriel",
+      "stepCount": "{count, plural, one {# étape} other {# étapes}}",
+      "proOnly": "Boutiques vérifiées",
+      "signIn": "Un tutoriel se lance depuis votre compte : connectez-vous si on vous le demande.",
+      "settings": "Les tutoriels se coupent ou se réactivent dans vos paramètres.",
+      "settingsLink": "Ouvrir les paramètres"
+    },
+    "tutorials": {
+      "deposer": {
+        "title": "Déposer une annonce",
+        "body": "De la catégorie à la publication : les étapes, les photos et l'aperçu."
+      },
+      "pro": {
+        "title": "Ouvrir une boutique ou une agence Pro",
+        "body": "Les prérequis, votre activité, les informations de l'entreprise et les justificatifs."
+      },
+      "boutique": {
+        "title": "Personnaliser votre boutique",
+        "body": "Votre fiche, votre offre, le partage de la vitrine et votre secteur."
+      }
+    },
+    "help": {
+      "title": "Tutoriels guidés",
+      "body": "Déposer une annonce, ouvrir une boutique Pro : revoyez pas à pas où cliquer.",
+      "cta": "Voir les tutoriels"
     }
   }
 }

@@ -100,9 +100,11 @@ describe("backup cursors", () => {
     expect(ids).not.toContain(COLLECTIONS.userPrivateDoc);
     // A document id, not a collection: users/{uid}/private/identity goes with the `private` group.
     expect(ids).not.toContain(COLLECTIONS.userIdentityDoc);
+    // Same for users/{uid}/prefs/tutorials, in the `prefs` group.
+    expect(ids).not.toContain(COLLECTIONS.prefsTutorialsDoc);
     // quotaDaily joined COLLECTIONS (typed registry) but stays out of the backup, as docs/backups.md says.
     expect(ids).not.toContain(COLLECTIONS.quotaDaily);
-    const excluded: string[] = [COLLECTIONS.system, COLLECTIONS.userPrivateDoc, COLLECTIONS.userIdentityDoc, COLLECTIONS.quotaDaily];
+    const excluded: string[] = [COLLECTIONS.system, COLLECTIONS.userPrivateDoc, COLLECTIONS.userIdentityDoc, COLLECTIONS.prefsTutorialsDoc, COLLECTIONS.quotaDaily];
     const expected = Object.values(COLLECTIONS).filter((id) => !excluded.includes(id));
     expect([...ids].sort()).toEqual([...expected].sort());
     expect(BACKUP_COLLECTIONS.find((collection) => collection.id === "private")).toEqual({ id: "private", scope: "group", timeField: null });

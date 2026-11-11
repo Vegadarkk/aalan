@@ -273,7 +273,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel, 
 
   return (
     <form ref={formRef} onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-10">
-      <Section title={t("activityTitle")}>
+      <Section title={t("activityTitle")} tour="pro-activity">
         <fieldset className="flex flex-col gap-3" aria-invalid={problems.activity ? true : undefined}>
           <legend className="sr-only">{t("activityTitle")}</legend>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -311,7 +311,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel, 
         <CityCombobox value={draft.city} onSelect={(city) => set({ city })} error={message("city")} required locale={locale} />
       </Section>
 
-      <Section title={t("legalTitle")}>
+      <Section title={t("legalTitle")} tour="pro-legal">
         <fieldset className="flex flex-col gap-3" aria-invalid={problems.form ? true : undefined}>
           <legend className="mb-1.5 text-sm font-medium">
             {t("legalForm")}
@@ -385,7 +385,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel, 
         </Section>
       ) : null}
 
-      <Section title={t("piecesTitle")}>
+      <Section title={t("piecesTitle")} tour="pro-pieces">
         <KybcPieces pieces={pieces} onChange={setPieces} error={message("pieces")} />
       </Section>
 
@@ -400,7 +400,7 @@ export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel, 
       {failure ? <FormMessage error={failure} title={failureText(failure)} /> : null}
 
       <div className="flex justify-end border-t border-border pt-6">
-        <Button type="submit" loading={pending} className="w-full sm:w-auto">
+        <Button type="submit" loading={pending} data-tour="pro-submit" className="w-full sm:w-auto">
           {submitLabel ?? (previous ? t("resubmit") : t("submit"))}
         </Button>
       </div>
@@ -408,9 +408,9 @@ export function ProApplicationForm({ previous, needsPhone, onDone, submitLabel, 
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, tour, children }: { title: string; /** Step of the guided tour pointing here. */ tour?: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-5" data-tour={tour}>
       <h2 className="text-lg font-semibold text-balance">{title}</h2>
       {children}
     </section>

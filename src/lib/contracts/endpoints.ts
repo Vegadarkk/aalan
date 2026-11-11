@@ -41,6 +41,8 @@ export const ACCOUNT_API = {
   avatar: "/api/account/avatar",
   /** GET -> NotificationSettings; POST NotificationSettingsInput -> NotificationSettings (audit B2). */
   notifications: "/api/account/notifications",
+  /** GET -> TutorialSettings; POST TutorialSettingsInput -> TutorialSettings (guided tours). */
+  tutorials: "/api/account/tutorials",
   /**
    * POST EmailChangeInput -> EmailChangeResponse (a confirmation link to the new address, Z1-10);
    * DELETE -> EmailChangeResponse (the pending change cancelled).

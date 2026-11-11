@@ -38,8 +38,18 @@ export interface HelpHit {
   locale?: (typeof LOCALES)[number];
 }
 
+/** A procedure of the admin procedures guide an answer relied on: the link goes to its section. */
+export interface GuideHit {
+  id: string;
+  rubric: string;
+  title: string;
+  /** The procedure's locale when it is not the page's: a question in Arabic on the French pages. */
+  locale?: (typeof LOCALES)[number];
+}
+
 /**
- * `ai`: Claude's answer and the articles it relied on. `search`: the AI is not available (budget
+ * `ai`: Claude's answer, the help articles and the guide procedures it relied on (absent from
+ * answers kept by the tab before the guide joined the assistant). `search`: the AI is not available (budget
  * reached, provider down or not configured): only the help articles matching the question.
  */
-export type AssistantResponse = { mode: "ai"; answer: string; articles: HelpHit[] } | { mode: "search"; articles: HelpHit[] };
+export type AssistantResponse = { mode: "ai"; answer: string; articles: HelpHit[]; procedures?: GuideHit[] } | { mode: "search"; articles: HelpHit[] };

@@ -32,6 +32,14 @@ describe("assistant history", () => {
     expect(decodeTurns(encodeTurns(turns))).toEqual(turns);
   });
 
+  it("keeps the guide procedures of an answer, and refuses one whose link could go elsewhere", () => {
+    const guided: AssistantTurnView = { id: 1, role: "assistant", response: { mode: "ai", answer: "Réponse", articles: [], procedures: [{ id: "visa-france", rubric: "visa", title: "Visa pour la France" }] } };
+    expect(decodeTurns(encodeTurns([question(0), guided]))).toEqual([question(0), guided]);
+    const bad = (procedure: Record<string, unknown>) => JSON.stringify({ v: 1, turns: [question(0), { id: 1, role: "assistant", response: { mode: "ai", answer: "x", articles: [], procedures: [procedure] } }] });
+    expect(decodeTurns(bad({ id: "visa-france", rubric: "../../connexion", title: "x" }))).toEqual([]);
+    expect(decodeTurns(bad({ id: "a#b?c=1", rubric: "visa", title: "x" }))).toEqual([]);
+  });
+
   it("keeps the last turns only, starting with a question", () => {
     const turns = Array.from({ length: 25 }, (_, id) => (id % 2 === 0 ? question(id) : answer(id)));
     const kept = decodeTurns(encodeTurns(turns));

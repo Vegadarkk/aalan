@@ -3,7 +3,7 @@ import { GUIDE_AR } from "./ar";
 import { GUIDE_GENERAL_SOURCES, GUIDE_PROCEDURE_IDS, GUIDE_PROCEDURES, GUIDE_RUBRICS, rubricProcedures, type GuideLocaleContent, type GuideProcedureId, type GuideRubric } from "./catalog";
 import { GUIDE_FR } from "./fr";
 import { GUIDE_RIF } from "./rif";
-import { FOREIGN_OFFICIAL_HOSTS, GUIDE_SOURCE_IDS, GUIDE_SOURCES, isOfficialHost, type GuideSourceId } from "./sources";
+import { FOREIGN_OFFICIAL_HOSTS, GUIDE_SOURCE_IDS, GUIDE_SOURCES, isOfficialHost, sourceAuthority, type GuideSourceId } from "./sources";
 
 // Admin procedures guide loader (design guide-demarches G1-G2): the locale's texts with `{brand}`
 // filled, and the validator the unit tests run (closed host list, no URL in a text, no stray id).
@@ -50,6 +50,31 @@ export function guideRubricPage(locale: Locale, rubric: GuideRubric): GuideRubri
 
 export function guideSourceLabel(locale: Locale, id: GuideSourceId): string {
   return fill(CONTENT[locale].sources[id]);
+}
+
+/** A procedure's title in `locale`, `{brand}` filled (the assistant's links to the guide). */
+export function guideProcedureTitle(locale: Locale, id: GuideProcedureId): string {
+  return fill(CONTENT[locale].procedures[id].title);
+}
+
+export interface GuideCorpusEntry extends GuideProcedure {
+  rubric: GuideRubric;
+  rubricTitle: string;
+  /** Labels of its official links with the authority running each one (never a URL). */
+  links: string[];
+}
+
+/** Every procedure of `locale`, rubric by rubric: the corpus the Assistant Aalan answers from. */
+export function guideCorpus(locale: Locale): GuideCorpusEntry[] {
+  return GUIDE_RUBRICS.flatMap((rubric) => {
+    const page = guideRubricPage(locale, rubric);
+    return page.procedures.map((procedure) => ({
+      ...procedure,
+      rubric,
+      rubricTitle: page.title,
+      links: procedure.sources.map((id) => `${guideSourceLabel(locale, id)} (${sourceAuthority(id)})`),
+    }));
+  });
 }
 
 // ---- Validation (tests/unit/guide-corpus.test.ts).

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { BookOpen, Info, RotateCcw, Send, Sparkles, X } from "lucide-react";
+import { BookOpen, Info, Landmark, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import { useLocale } from "next-intl";
 import { Dialog } from "radix-ui";
 import { formatWait, useApiErrorMessage } from "@/components/auth/form-message";
@@ -15,7 +15,7 @@ import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { useNumbersTranslations } from "@/i18n/numbers";
 import { apiPost, isApiError } from "@/lib/auth/client";
-import type { AssistantResponse, AssistantTurn, HelpHit } from "@/lib/contracts/assistant";
+import type { AssistantResponse, AssistantTurn, GuideHit, HelpHit } from "@/lib/contracts/assistant";
 import { ASSISTANT_API, ASSISTANT_HISTORY_MAX, ASSISTANT_QUESTION_MAX, ASSISTANT_TURN_MAX } from "@/lib/contracts/endpoints";
 import { cn } from "@/lib/utils";
 import { loadTurns, saveTurns, type AssistantTurnView } from "./assistant-history";
@@ -69,6 +69,35 @@ function Sources({ title, articles, onNavigate }: { title?: string; articles: re
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** The guide's procedures an answer relied on, each to its section, under the guide's reminder. */
+function GuideSources({ title, note, procedures, onNavigate }: { title: string; note: string; procedures: readonly GuideHit[]; onNavigate: () => void }) {
+  if (procedures.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1.5" data-testid="assistant-procedures">
+      <p className="text-xs font-medium text-foreground-muted">{title}</p>
+      <ul className="flex flex-col gap-1">
+        {procedures.map((procedure) => (
+          <li key={procedure.id}>
+            <Link
+              href={`/demarches/${procedure.rubric}#procedure-${procedure.id}`}
+              locale={procedure.locale}
+              hrefLang={procedure.locale}
+              onClick={onNavigate}
+              className={cn("flex items-start gap-2 rounded-sm py-1 text-sm font-medium text-link", quietLinkClassName)}
+            >
+              <Landmark className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span lang={procedure.locale} dir={procedure.locale ? "auto" : undefined}>
+                {procedure.title}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-foreground-muted">{note}</p>
     </div>
   );
 }
@@ -242,6 +271,7 @@ export default function AssistantPanel({ open, onOpenChange, returnFocus }: Assi
                     {turn.response.answer}
                   </p>
                   <Sources title={t("sources")} articles={turn.response.articles} onNavigate={leave} />
+                  <GuideSources title={t("procedures")} note={t("guideNote")} procedures={turn.response.procedures ?? []} onNavigate={leave} />
                 </div>
               ) : (
                 <div key={turn.id} className="flex flex-col gap-3 rounded-lg rounded-es-sm border border-warning/40 bg-warning-surface/50 px-3.5 py-3" data-testid="assistant-degraded">

@@ -90,10 +90,18 @@ describe("POST /api/assistant", () => {
         { slug: "eviter-les-arnaques", title: "Éviter les arnaques", summary: expect.any(String) },
         { slug: "signaler-un-contenu", title: "Signaler un contenu", summary: expect.any(String) },
       ],
+      procedures: [],
     });
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(jar.get("__Host-did")).toBeDefined();
     expect(parse).toHaveBeenCalledOnce();
+  });
+
+  it("links the guide procedures an answer relied on, to their rubric", async () => {
+    parse.mockResolvedValueOnce(reply({ answer: "Commencez sur France-Visas.", articles: [], procedures: ["visa-france", "inconnue"] }));
+    const { status, body } = await ask({ locale: "fr", question: "Comment demander un visa pour la France ?" }, new Jar(freshIp()));
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ mode: "ai", procedures: [{ id: "visa-france", rubric: "visa", title: "Visa pour la France : documents et rendez-vous" }] });
   });
 
   it("sends nothing about the signed-in account to Claude", async () => {

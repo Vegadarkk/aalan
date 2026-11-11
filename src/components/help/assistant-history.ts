@@ -1,11 +1,12 @@
 import { LOCALES } from "@/config/site";
+import { isGuideRubric } from "@/content/guide/catalog";
 import type { AssistantResponse } from "@/lib/contracts/assistant";
 import { ASSISTANT_QUESTION_MAX } from "@/lib/contracts/endpoints";
 
 // The Assistant's conversation kept for the tab (audit zone 5 n°17): an article link, a page
 // change or a reload no longer empties it. sessionStorage, so it ends with the tab and never
 // reaches the server or another device; only the turns are kept (questions, answers, article
-// links), never a Turnstile token, a draft or an error. « Recommencer » clears it. Storage can be
+// links, guide procedures), never a Turnstile token, a draft or an error. « Recommencer » clears it. Storage can be
 // missing or throw (private window, blocked site data): the conversation then lives in memory only.
 
 export const ASSISTANT_STORAGE_KEY = "aalan.assistant.v1";
@@ -29,13 +30,27 @@ function isHit(value: unknown): boolean {
   );
 }
 
+/** A guide procedure: a known rubric and a plain id, since both go into the link. */
+function isGuideHit(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    /^[a-z0-9-]{1,60}$/.test(value.id) &&
+    typeof value.rubric === "string" &&
+    isGuideRubric(value.rubric) &&
+    isText(value.title, 300) &&
+    (value.locale === undefined || (LOCALES as readonly unknown[]).includes(value.locale))
+  );
+}
+
 function isTurn(value: unknown): value is AssistantTurnView {
   if (!isRecord(value) || !Number.isInteger(value.id) || (value.id as number) < 0) return false;
   if (value.role === "user") return isText(value.text, ASSISTANT_QUESTION_MAX, 1);
   if (value.role !== "assistant" || !isRecord(value.response)) return false;
-  const { mode, answer, articles } = value.response;
+  const { mode, answer, articles, procedures } = value.response;
   const hits = Array.isArray(articles) && articles.length <= 10 && articles.every(isHit);
-  return hits && (mode === "search" || (mode === "ai" && isText(answer, 5000)));
+  const guide = procedures === undefined || (mode === "ai" && Array.isArray(procedures) && procedures.length <= 10 && procedures.every(isGuideHit));
+  return hits && guide && (mode === "search" || (mode === "ai" && isText(answer, 5000)));
 }
 
 /** The stored form: the last turns only, starting with a question. */

@@ -11,6 +11,11 @@ export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_PHOTOS_INDIVIDUAL = 5;
 export const MAX_PHOTOS_PRO = 20;
 /**
+ * Upper bound of any photo limit config/pricing may set (listingQuotasSchema.photosPerListing):
+ * request schemas cap at this, the live limit is enforced by the listing service and the uploads API.
+ */
+export const MAX_PHOTOS_CONFIGURABLE = 50;
+/**
  * Upload documents one listing may hold at once (attached, in flight, refused ones kept 7 days):
  * this many times its photo limit. Past it, signing answers 409 `upload_limit` (not `photo_limit`:
  * the listing may still have room for photos): the owner removes refused photos (DELETE frees the

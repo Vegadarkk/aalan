@@ -487,7 +487,7 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
     // A price change ends the promotion: its struck-out price no longer holds (catalogue §4).
     if (listing.promo && pricesTouched(fields) && !isDeepStrictEqual(effectivePrices(listing), effectivePrices(applyPatch(listing, fields)))) Object.assign(fields, promoEnd(listing, now));
     const next = applyPatch(listing, fields);
-    const blockers = assessReadiness(next, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified });
+    const blockers = assessReadiness(next, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified, photosPerListing: seller.quotas.photosPerListing });
     if (blockers.length > 0) throw invalidListing(blockers);
     // Kept as is: indexed again when published, its public page refreshed (paused and expired too).
     effects = { search: listing.status === "published" ? "upsert" : null, contentOp: { op: "listing.update", ip: actor.ip }, audit: null, revalidate: hasPublicPage(listing.status), mail: null };
@@ -754,7 +754,7 @@ export async function publish(actor: Actor, request: Request, id: string, option
   const seller = await sellerOf(actor.auth);
   const { uid } = actor.auth.user;
 
-  const blockers = assessReadiness(listing, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified });
+  const blockers = assessReadiness(listing, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified, photosPerListing: seller.quotas.photosPerListing });
   if (blockers.length > 0) throw invalidListing(blockers);
   const screening = await screenFor(listing, seller, now);
   if (screening.blockers.length > 0) throw invalidListing(screening.blockers);
@@ -904,7 +904,7 @@ function approvedByModerator(listing: Pick<ListingDoc, "moderation">): boolean {
 async function renewExpired(actor: Actor, listing: ListingRecord, seller: SellerContext, ctx: TransitionContext): Promise<ListingRecord> {
   const { now } = ctx;
   if (!canRenew(listing, now)) throw new HttpError(409, "conflict", "listing cannot be renewed any more");
-  const blockers = assessReadiness(listing, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified });
+  const blockers = assessReadiness(listing, { seller: seller.seller, phoneVerified: seller.user.badges.phoneVerified, photosPerListing: seller.quotas.photosPerListing });
   if (blockers.length > 0) throw invalidListing(blockers);
   // Before the screening (the seller's other listings): a retry at the quota costs ~3 reads, not ~60.
   await assertWithinQuota(actor.auth.user.uid, seller.quotas);

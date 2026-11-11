@@ -140,7 +140,10 @@ test.describe("welcome threshold", () => {
       )
       .toEqual([{ target: "welcome", duration: 200 }]);
     await expect(welcome(page)).toHaveCount(0, { timeout: 1_500 });
-    await expect(page.locator("#main")).toBeFocused();
+    // Same check as toBeFocused, but a failure says where the focus went and whether the page had it.
+    await expect
+      .poll(() => page.evaluate(() => ({ active: document.activeElement?.id || document.activeElement?.tagName || null, hasFocus: document.hasFocus() })))
+      .toEqual({ active: "main", hasFocus: true });
   });
 
   test("Arabic: right to left, the same screen in Arabic", async ({ page }) => {

@@ -1,6 +1,7 @@
 import "server-only";
 import { DEFAULT_FLAGS, type FlagsConfig } from "@/config/flags";
-import { MAX_PHOTOS_INDIVIDUAL, MAX_UPLOAD_BYTES } from "@/lib/contracts/media";
+import { DEFAULT_PRICING, type PricingConfig } from "@/config/pricing";
+import { MAX_UPLOAD_BYTES } from "@/lib/contracts/media";
 import { serverEnv, type ServerEnv } from "@/lib/env";
 import { isPhoneVerificationConfigured } from "@/lib/phone-verify/config";
 import { mediaBaseUrl } from "@/lib/storage/keys";
@@ -8,8 +9,10 @@ import type { PublicConfig } from "./public-types";
 
 export type { PublicConfig, PublicFirebaseConfig, PublicMapConfig, PublicUploadLimits } from "./public-types";
 
-/** Upload limits shown to the browser; the API enforces the same constants (design §3). */
-const UPLOAD_LIMITS = { maxBytes: MAX_UPLOAD_BYTES, maxPhotos: MAX_PHOTOS_INDIVIDUAL } as const;
+/** Upload limits shown to the browser; the API enforces the same values (design §3, config/pricing). */
+function uploadLimits(pricing: Pick<PricingConfig, "individual" | "pro">): PublicConfig["upload"] {
+  return { maxBytes: MAX_UPLOAD_BYTES, maxPhotos: pricing.individual.photosPerListing, maxPhotosPro: pricing.pro.none.photosPerListing };
+}
 
 /** OSM data (ODbL) through Protomaps: shown on every map (D10). */
 export const MAP_ATTRIBUTION = "© OpenStreetMap contributors · Protomaps";
@@ -24,9 +27,14 @@ export function searchMapConfig(env: ServerEnv = serverEnv()): PublicConfig["map
 
 /**
  * The browser's configuration, built from the server environment at request time; the ad flags
- * come from config/flags (getFlags), the defaults (ads off) when the caller has none.
+ * come from config/flags (getFlags) and the photo limits from config/pricing (getPricing), the
+ * defaults (ads off) when the caller has none.
  */
-export function publicConfig(env: ServerEnv = serverEnv(), flags: Pick<FlagsConfig, "adsMode" | "adsCmpEea"> = DEFAULT_FLAGS): PublicConfig {
+export function publicConfig(
+  env: ServerEnv = serverEnv(),
+  flags: Pick<FlagsConfig, "adsMode" | "adsCmpEea"> = DEFAULT_FLAGS,
+  pricing: Pick<PricingConfig, "individual" | "pro"> = DEFAULT_PRICING,
+): PublicConfig {
   const firebase = env.FIREBASE_PROJECT_ID ? { projectId: env.FIREBASE_PROJECT_ID } : null;
   return {
     env: env.APP_ENV,
@@ -37,7 +45,7 @@ export function publicConfig(env: ServerEnv = serverEnv(), flags: Pick<FlagsConf
     sentry: env.SENTRY_DSN ? { dsn: env.SENTRY_DSN, environment: env.APP_ENV, release: env.RELEASE ?? "dev" } : null,
     // R2 keys and bucket names never leave the server: only the public media host is shared.
     mediaBaseUrl: mediaBaseUrl(env),
-    upload: { ...UPLOAD_LIMITS },
+    upload: uploadLimits(pricing),
     map: searchMapConfig(env),
     phoneVerification: isPhoneVerificationConfigured(env),
     ads: {

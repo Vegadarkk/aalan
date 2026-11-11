@@ -170,6 +170,10 @@ describe("inbox paging", () => {
     expect(selectedConversation(cid(1))).toBe(cid(1));
     expect(selectedConversation(null)).toBeNull();
     expect(selectedConversation("__PAGE__")).toBeNull();
+    expect(selectedConversation('__PAGE__?{"offre":"1"}')).toBeNull();
+    expect(selectedConversation("__DEFAULT__")).toBeNull();
+    // base64url ids may start with "__" (main CI, 11 Nov 2026: such a thread showed the inbox on phones).
+    expect(selectedConversation("__I9DK86nAjnOEsPwUViYP")).toBe("__I9DK86nAjnOEsPwUViYP");
   });
 });
 

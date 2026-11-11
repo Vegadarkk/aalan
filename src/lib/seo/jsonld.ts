@@ -88,6 +88,8 @@ export interface SiteJsonLdInput {
   description: string;
   /** Path of the search page, without the locale prefix. */
   searchPath: string;
+  /** The brand's own social profiles (BRAND_SOCIAL_LINKS), as the Organization's sameAs. */
+  sameAs?: readonly string[];
 }
 
 export function siteJsonLd(input: SiteJsonLdInput): Record<string, unknown> {
@@ -119,6 +121,7 @@ export function siteJsonLd(input: SiteJsonLdInput): Record<string, unknown> {
         alternateName: [...input.alternateNames],
         url: origin,
         logo: `${origin}/brand/icon-512.png`,
+        ...(input.sameAs && input.sameAs.length > 0 ? { sameAs: [...input.sameAs] } : {}),
       },
     ],
   };

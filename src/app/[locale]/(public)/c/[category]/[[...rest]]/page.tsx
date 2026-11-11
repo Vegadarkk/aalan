@@ -10,10 +10,12 @@ import { PageMessages } from "@/components/i18n/page-messages";
 import { JsonLd } from "@/components/listing/json-ld";
 import { FeaturedRow, withoutFeatured } from "@/components/search/featured-row";
 import { ResultsGrid } from "@/components/search/results-grid";
-import { CityLinks, LandingBreadcrumb, LandingLinks, SubcategoryChips, type LandingChip, type LandingCrumb, type LandingLink } from "@/components/seo/landing";
+import { CategoryAbout, CityLinks, LandingBreadcrumb, LandingLinks, SubcategoryChips, type LandingChip, type LandingCrumb, type LandingLink } from "@/components/seo/landing";
 import { Button } from "@/components/ui/button";
 import { carModelById } from "@/config/car-models";
 import { categoryById, type CarBrand } from "@/config/categories";
+import { categoryIntro } from "@/content/seo/category-intros";
+import { rubricForCategory } from "@/content/guide/catalog";
 import { cityBySlug, cityName } from "@/config/regions";
 import { CANONICAL_ORIGIN, SITE_NAME, LOCALE_TAGS, type Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
@@ -174,6 +176,9 @@ export default async function CategoryLandingPage({ params }: { params: Params }
   const cities = target.brand ? [] : cityLinks(counts.cities, target.city).map(({ city, count }) => ({ city, count, href: seoPath({ ...target, city: city.slug }) }));
   const search = { pathname: SEARCH_PATH, query: searchQueryObject(seoSearchParams(target)) };
   const seeLabel = total === 1 ? t("seeOne") : t("seeAll", { count: total });
+  // Top-level category pages only (SEO audit T1): their own text, under the listings.
+  const about = !target.subcategory && !target.city && !target.brand ? categoryIntro(locale, target.category) : null;
+  const guideRubric = about ? rubricForCategory(target.category) : undefined;
 
   return (
     <PageMessages locale={locale} namespaces={CATEGORY_PAGE_CLIENT_NAMESPACES}>
@@ -236,6 +241,8 @@ export default async function CategoryLandingPage({ params }: { params: Params }
         {brandLinks.length > 0 ? <LandingLinks id="landing-brands" links={brandLinks} title={t("brandsTitle", { scope })} /> : null}
 
         {cities.length > 0 ? <CityLinks id="landing-cities" links={cities} locale={locale} title={target.city ? t("nearbyTitle", { scope }) : t("citiesTitle", { scope })} /> : null}
+
+        {about ? <CategoryAbout id="landing-about" intro={about.intro} faq={about.faq} guideHref={guideRubric ? `/demarches/${guideRubric}` : undefined} /> : null}
       </Container>
     </PageMessages>
   );

@@ -314,16 +314,18 @@ describe("proxy before the opening (OPENS_AT)", () => {
     }
   });
 
-  it("sends every other page to the home page, uncached, and keeps the legal texts", async () => {
+  it("sends every other page to the home page, uncached, and keeps the legal texts and the guide", async () => {
     for (const path of ["/fr/annonce/velo-casablanca-abcd2345", "/ar/recherche", "/fr/connexion", "/fr/inscription", "/fr/deposer", "/rif/c/vehicules", "/fr/aide"]) {
       const response = await proxy(signedIn(path));
       expect(response.status, path).toBe(307);
       expect(response.headers.get("location"), path).toBe(`https://${HOST}/${path.split("/")[1]}`);
       expect(response.headers.get("cache-control"), path).toBe("no-store");
     }
-    const legal = await proxy(visitor("/fr/legal/mentions-legales"));
-    expect(legal.status).toBe(200);
-    expect(legal.headers.get("x-middleware-rewrite")).toBeNull();
+    for (const path of ["/fr/legal/mentions-legales", "/ar/demarches", "/fr/demarches/vehicule"]) {
+      const open = await proxy(visitor(path));
+      expect(open.status, path).toBe(200);
+      expect(open.headers.get("x-middleware-rewrite"), path).toBeNull();
+    }
   });
 
   it("closes the public API but health, config, CSP reports, the preview pass and the webhooks", async () => {

@@ -123,3 +123,38 @@ export function LandingLinks({ links, title, id }: { links: readonly LandingLink
     </nav>
   );
 }
+
+/**
+ * Editorial block of a top-level category page (SEO audit T1): the intro, a visible Q/A list (no
+ * FAQPage JSON-LD) and, where the procedures guide has a rubric for it, a link to that rubric.
+ */
+export function CategoryAbout({ id, intro, faq, guideHref }: { id: string; intro: string; faq: readonly { q: string; a: string }[]; guideHref?: string }) {
+  const t = useTranslations("Seo");
+  return (
+    <section aria-labelledby={id} data-testid="category-about" className="flex max-w-3xl flex-col gap-4 border-t border-border pt-8">
+      <h2 id={id} className="text-xl font-semibold">
+        {t("aboutTitle")}
+      </h2>
+      <p className="text-foreground-muted text-pretty">{intro}</p>
+      {faq.length > 0 ? (
+        <>
+          <h3 className="pt-2 text-lg font-semibold">{t("faqTitle")}</h3>
+          <dl className="flex flex-col gap-4">
+            {faq.map((item) => (
+              <div key={item.q} className="flex flex-col gap-1">
+                <dt className="font-medium text-pretty">{item.q}</dt>
+                <dd className="text-foreground-muted text-pretty">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      ) : null}
+      {guideHref ? (
+        <Link href={guideHref} prefetch={false} className={cn("inline-flex min-h-11 items-center gap-1 self-start font-medium sm:min-h-0", quietLinkClassName)}>
+          {t("guideLink")}
+          <ChevronRight className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+        </Link>
+      ) : null}
+    </section>
+  );
+}

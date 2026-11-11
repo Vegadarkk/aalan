@@ -16,6 +16,8 @@ export interface PublicUploadLimits {
   maxBytes: number;
   /** Photos per listing for an individual account. */
   maxPhotos: number;
+  /** Photos per listing for a Pro account. */
+  maxPhotosPro: number;
 }
 
 /** Interactive map of the listing page (D10): unset when no PMTiles archive is configured. */

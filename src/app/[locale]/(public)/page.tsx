@@ -35,6 +35,8 @@ import { searchMapConfig } from "@/lib/config/public";
 import { getFlags } from "@/lib/config/runtime";
 import { alternates } from "@/lib/i18n/metadata";
 import { siteJsonLd } from "@/lib/seo/jsonld";
+import { brandSocialLinks } from "@/lib/launch/social";
+import { serverEnv } from "@/lib/env";
 import { JsonLd } from "@/components/listing/json-ld";
 import { BRAND, CANONICAL_ORIGIN, LOCALE_TAGS } from "@/config/site";
 import { getLegalConfig } from "@/lib/legal/config";
@@ -132,6 +134,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     alternateNames: [BRAND.arabic, BRAND.tifinagh],
     description: meta("description"),
     searchPath: SEARCH_PATH,
+    sameAs: brandSocialLinks(serverEnv().BRAND_SOCIAL_LINKS).links.map((link) => link.href),
   });
 
   return (

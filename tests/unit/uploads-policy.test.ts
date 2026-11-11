@@ -47,6 +47,13 @@ describe("upload policy", () => {
     expect(maxPhotosOf({ sellerType: "pro" })).toBe(MAX_PHOTOS_PRO);
   });
 
+  it("reads the limit from config/pricing when the caller passes it", async () => {
+    const { DEFAULT_PRICING } = await import("@/config/pricing");
+    const pricing = { ...DEFAULT_PRICING, individual: { ...DEFAULT_PRICING.individual, photosPerListing: 3 }, pro: { ...DEFAULT_PRICING.pro, none: { ...DEFAULT_PRICING.pro.none, photosPerListing: 12 } } };
+    expect(maxPhotosOf({ sellerType: "individual" }, pricing)).toBe(3);
+    expect(maxPhotosOf({ sellerType: "pro" }, pricing)).toBe(12);
+  });
+
   it("maps upload documents to the MEDIA_API answer", () => {
     expect(toStatusResponse({ ...base, status: "ready" })).toEqual({ status: "ready", photo: { id: base.id, w: 1600, h: 1200, blurhash: base.blurhash, hash: base.hash } });
     expect(toStatusResponse({ ...base, hash: undefined, status: "ready" })).toEqual({ status: "ready", photo: { id: base.id, w: 1600, h: 1200, blurhash: base.blurhash } });

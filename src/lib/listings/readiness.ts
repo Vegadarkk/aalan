@@ -55,6 +55,8 @@ export type ReadinessCode = (typeof READINESS_CODES)[number];
 export interface SellerFacts {
   seller: Seller;
   phoneVerified: boolean;
+  /** The seller's photo limit from config/pricing (listing service); the default quotas otherwise. */
+  photosPerListing?: number;
 }
 
 type Candidate = Pick<ListingDoc, "title" | "description" | "categoryId" | "subcategoryId" | "attributes" | "condition" | "price" | "isDonation" | "location" | "photos" | "contact"> &
@@ -197,11 +199,11 @@ export function assessReadiness(listing: Candidate, facts: SellerFacts): FieldIs
     issues.push(...catalogueIssues(listing, tree.subcategory, facts.seller));
   }
   issues.push(...locationIssues(listing));
-  const quotas = listingQuotas(facts.seller);
+  const maxPhotos = facts.photosPerListing ?? listingQuotas(facts.seller).photosPerListing;
   // Job ads may go without a photo (a logo is optional); every other listing needs one.
   if (listing.photos.length === 0) {
     if (!tree.subcategory?.photosOptional) issues.push(issue("photos", "photos_required"));
-  } else if (listing.photos.length > quotas.photosPerListing) issues.push(issue("photos", "photos_max"));
+  } else if (listing.photos.length > maxPhotos) issues.push(issue("photos", "photos_max"));
   if (contactMessagingOnly(tree.subcategory)) {
     // Adults-only goods (the buyer's 18+ confirmation is asked there) and job-seeker ads: messaging only.
     if (listing.contact.showPhone) issues.push(issue("contact.showPhone", "messaging_only"));

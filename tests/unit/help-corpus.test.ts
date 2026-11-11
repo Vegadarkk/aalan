@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LEGAL } from "@/config/legal";
+import { DEFAULT_PRICING } from "@/config/pricing";
 import { LOCALES } from "@/config/site";
 import { articleBody, HELP_META, HELP_SLUGS, helpArticles, helpValues, validateHelpCorpus, type HelpLocaleContent } from "@/content/help";
 import { HELP_AR } from "@/content/help/ar";
@@ -45,6 +46,8 @@ describe("help corpus", () => {
     expect(photos?.summary).toContain(`${MAX_PHOTOS_INDIVIDUAL} photos`);
     const deposit = helpArticles("fr", helpValues({ ...DEFAULT_LEGAL, listingTtlDays: 45 })).find((article) => article.slug === "deposer-une-annonce");
     expect(deposit?.summary).toContain("45 jours");
+    const live = helpArticles("fr", helpValues(DEFAULT_LEGAL, { individual: { ...DEFAULT_PRICING.individual, photosPerListing: 3 } })).find((article) => article.slug === "photos-d-une-annonce");
+    expect(live?.summary).toContain("3 photos");
   });
 
   it("holds no address, e-mail or phone number, and promises no phone or WhatsApp contact", () => {

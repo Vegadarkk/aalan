@@ -31,7 +31,7 @@ export function PromoteOffer({ listingId, title, className }: PromoteOfferProps)
     void (async () => {
       try {
         const data = await loadListingOptions(listingId);
-        setOffered(data.salesOpen && data.allowed && data.promotable);
+        setOffered(data.optionsOpen && data.allowed && data.promotable);
       } catch {
         // Not the owner of the shop's wallet, a network error: the page goes on without the offer.
       }

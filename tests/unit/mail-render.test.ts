@@ -77,6 +77,7 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   proApplicationReceived: { displayName: "Nadia", shopName: "Atlas Vélos" },
   proApproved: { displayName: "Nadia", shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30 },
   launchOfferNotice: { displayName: "Nadia", shopName: "Atlas Vélos", plan: "essentiel", kind: "ending", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 0 },
+  launchPlaceGranted: { displayName: "Nadia", credits: 30, expiresAt: "2027-03-12T10:00:00.000Z" },
   passNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "ended", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 2 },
   withdrawalReceipt: { displayName: "Nadia", receipt: "R-20270301-AB12CD", requestedAt: "2027-03-01T10:00:00.000Z", packCredits: 110, removedCredits: 90, refundMinor: 8_200, currency: "MAD", refundBy: "2027-03-15T10:00:00.000Z" },
   sellerPaymentNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "changed", host: "pay.example-bank.ma", activeFrom: "2026-11-02T10:00:00.000Z" },

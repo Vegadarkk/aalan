@@ -4,7 +4,8 @@
 // TTC; amounts are integers.
 //
 // Spending order: the plan's monthly credits first (not cumulative, reset each period), then the
-// purchased balance. À la Une can use the plan's monthly allowance instead of credits (Business).
+// purchased balance. An individual has no plan: the same pool holds the gift credits of a launch
+// place (owner, 2026-11-11), spent first, void after their date, never refunded or withdrawn. À la Une can use the plan's monthly allowance instead of credits (Business).
 // A refund or a chargeback debits the pack's credits even if already spent (all of them, or the
 // share of the price refunded): the balance may go negative, the wallet is then frozen (no option
 // purchase) and the account flagged. A consumer's withdrawal (CGV §6) removes only the pack's
@@ -17,7 +18,7 @@ export interface WalletState {
   featuredAllowance: number;
 }
 
-export type LedgerReason = "purchase" | "option" | "plan_grant" | "refund" | "refund_reversed" | "withdrawal" | "admin_adjust";
+export type LedgerReason = "purchase" | "option" | "plan_grant" | "launch_gift" | "refund" | "refund_reversed" | "withdrawal" | "admin_adjust";
 
 export interface LedgerDraft {
   reason: LedgerReason;
@@ -174,5 +175,18 @@ export function grantPlanPeriod(wallet: WalletState, grant: { credits: number; f
       featuredAllowanceDelta: grant.featured - wallet.featuredAllowance,
       balanceAfter: wallet.balance,
     },
+  };
+}
+
+/**
+ * A launch place of an individual (owner, 2026-11-11): `credits` gift credits join the plan pool
+ * (an individual has no plan, so the pool holds nothing live before), valid until the caller's
+ * `resetsAt`. Out of the purchased balance: no invoice, no refund, no withdrawal.
+ */
+export function grantLaunchGift(wallet: WalletState, credits: number): WalletResult {
+  assertCredits(credits);
+  return {
+    wallet: { ...wallet, planCredits: wallet.planCredits + credits },
+    ledger: { reason: "launch_gift", delta: 0, paidPart: 0, bonusPart: 0, planCreditsDelta: credits, featuredAllowanceDelta: 0, balanceAfter: wallet.balance },
   };
 }

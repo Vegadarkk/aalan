@@ -46,6 +46,7 @@ export type TemplateId =
   | "proValidationWithdrawn"
   // Pro plans (phase 7, lot 4b): the end of the launch offer, notices then downgrade (design D3).
   | "launchOfferNotice"
+  | "launchPlaceGranted"
   | "passNotice"
   // Credit packs (phase 7): acknowledgement of a withdrawal on a durable medium (CGV §6).
   | "withdrawalReceipt"
@@ -199,6 +200,7 @@ export interface TemplateData {
    * the free quota (`freeListings`, null = unlimited) were paused.
    */
   launchOfferNotice: { displayName: string; shopName: string; plan: "essentiel" | "business"; kind: "ending" | "ended"; endsAt: string; freeListings: number | null; paused: number };
+  launchPlaceGranted: { displayName: string; credits: number; expiresAt: string };
   /** Pass Boutique (2026-10-28): notices at J-7 and J-1 (`ending`), then the downgrade (`ended`). */
   passNotice: { displayName: string; shopName: string; kind: "ending" | "ended"; endsAt: string; freeListings: number | null; paused: number };
   /**

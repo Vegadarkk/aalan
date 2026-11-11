@@ -239,6 +239,8 @@ Le site affiche un lien WhatsApp qui prépare un message contenant un code à us
 
 Le code est valable 10 minutes et effacé au plus tard 40 minutes après sa création. L'identifiant technique du message WhatsApp est gardé 24 heures pour éviter de le traiter deux fois.
 
+Pour les places de lancement (CGU §4.5), un numéro ne donne droit qu'à une place. Quand votre numéro en obtient une, nous gardons une empreinte chiffrée de ce numéro, sans lien avec votre compte, jusqu'au 11 juin 2027 (intérêt légitime : éviter qu'une même personne cumule les places).
+
 Votre usage de WhatsApp reste régi par les conditions et la politique de confidentialité de WhatsApp.
 <!--endif-->
 

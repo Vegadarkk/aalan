@@ -5453,7 +5453,9 @@
       "title": "Vendez plus vite",
       "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
       "action": "Mettre en avant"
-    }
+    },
+    "availableGift": "seg-sen {count, plural, one {# n crédit offert} other {# n crédits offerts}}, ad ttwaxedmen d imezwura",
+    "giftOnly": "Mazal war tzemmreḍ ad taɣeḍ crédits : crédits offerts nnec ad xelṣen options."
   },
   "Wallet": {
     "metaTitle": "Tasakkut n idrimen",
@@ -5483,7 +5485,8 @@
       "refund_reversed": "Arrar n idrimen yettwakkes",
       "admin_adjust": "Abeddel zi Aalan",
       "option": "Option",
-      "withdrawal": "Tuɣalin"
+      "withdrawal": "Tuɣalin",
+      "launch_gift": "Place de lancement : crédits offerts"
     },
     "amount": "{count, plural, one {# n crédit} other {# n crédits}}",
     "fromPlan": "seg-sen {count, plural, one {# n crédit} other {# n crédits}} n abonnement nnec",
@@ -5495,7 +5498,10 @@
     "paid": "Adfaɛ yewḍed. Crédits nnec ad d-banen da deg kra n tesdidin.",
     "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)",
     "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
-    "promoteBackAction": "Mettre en avant"
+    "promoteBackAction": "Mettre en avant",
+    "gift": "Crédits offerts",
+    "giftUntil": "Ṣeḥḥan ar {date}, ad ttwaxedmen d imezwura",
+    "closedGift": "Mazal war tzemmreḍ ad taɣeḍ crédits deg Aalan. Crédits offerts nnec ad xedmen zeg ass-a i tannonces nnec."
   },
   "Packs": {
     "metaTitle": "Aɣ crédits",
@@ -6548,7 +6554,7 @@
       "stock": "Inawen n tiddi d yini, d usekcem n stock nnec s ufaylu s tefrayin Business d Premium",
       "planning": "I wid itekran, planning n ṭumubilat d isutar s wussan"
     },
-    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : les {seats} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Taḥanut i yiwen n wayyur? Pass Boutique yerezzem vitrine i {days} n wussan, bla abonnement, zi tarzemt n uzenzi.",
     "stepsTitle": "Mamec ad yeddu",
     "steps": {
@@ -6658,11 +6664,12 @@
         "pack": "{amount, number} DH: {credits, number} n crédits",
         "packBonus": "{amount, number} DH: {credits, number} n crédits + {bonus, number} bla idrimen",
         "cta": "Sseɣ crédits"
-      }
+      },
+      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers inscrits, particuliers et boutiques, jusqu'au {until, date, long}. Un particulier reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
     },
     "pros": {
       "title": "Imhniyen",
-      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : les {seats, number} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Bla abonnement, bla asnulfu s yiman nnes"

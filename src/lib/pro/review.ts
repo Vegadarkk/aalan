@@ -1,6 +1,6 @@
 import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { launchOfferEndFor, launchOfferGrantEnd, launchOfferOpen, listingQuotas } from "@/config/pricing";
+import { launchOfferEndFor, launchOfferGrantEnd, launchPlacesOpen, listingQuotas } from "@/config/pricing";
 import type { StaffContext } from "@/lib/auth/guards";
 import { audit } from "@/lib/audit";
 import { getPricing } from "@/lib/config/runtime";
@@ -200,8 +200,9 @@ export function isEffectsRerun(current: Pick<ProProfileRecord, "kybc" | "lifecyc
 
 export async function decideApplication(staff: StaffContext, proId: string, input: ProDecisionInput, identity: RequestIdentity, now = new Date()): Promise<ProDecisionResponse> {
   const pricing = await getPricing();
-  // The first `seats` validations get the offer, sales open or not (owner, 2026-11-05).
-  const offerOpen = launchOfferOpen(pricing.launchOffer, now);
+  // A first validation takes one of the launch places shared with individuals while some are left and
+  // `grantsUntil` is not reached, sales open or not (owner, 2026-11-05 and 2026-11-11).
+  const offerOpen = launchPlacesOpen(pricing.launchOffer, now);
   const ref = proProfileRef(proId);
 
   const decided = await db().runTransaction(async (tx) => {

@@ -161,7 +161,9 @@ test.describe("messaging", () => {
     // Buyer, nothing yet: the list says so and the thread pane beside it stays neutral (one empty state).
     await buyerPage.goto("/fr/messages");
     await expect(buyerPage.getByRole("heading", { level: 2, name: "Aucune conversation pour l'instant" })).toBeVisible({ timeout: 15_000 });
-    await expect(buyerPage.getByTestId("thread-placeholder")).toHaveAttribute("data-quiet", "1");
+    // Scoped to #main: while React streams the layout's Suspense boundary, a hidden copy of the
+    // pane sits outside it (div[hidden] id="S:n") until the reveal swaps it in.
+    await expect(buyerPage.locator("#main").getByTestId("thread-placeholder")).toHaveAttribute("data-quiet", "1");
     await expect(buyerPage.getByText("Choisissez une conversation")).toHaveCount(0);
 
     // Buyer: the message button opens the first-message dialog (no phone actions on this listing).
@@ -186,7 +188,7 @@ test.describe("messaging", () => {
     // now invites to pick one.
     await sellerPage.goto("/fr/messages");
     await expect(sellerPage.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
-    await expect(sellerPage.getByTestId("thread-placeholder")).toHaveAttribute("data-quiet", "0", { timeout: 15_000 });
+    await expect(sellerPage.locator("#main").getByTestId("thread-placeholder")).toHaveAttribute("data-quiet", "0", { timeout: 15_000 });
     await expect(sellerPage.getByRole("heading", { level: 2, name: "Choisissez une conversation" })).toBeVisible();
     await expect(sellerPage.locator("footer")).toBeVisible();
     const row = sellerPage.getByTestId("conversation-row").filter({ hasText: "Youssef Acheteur" });

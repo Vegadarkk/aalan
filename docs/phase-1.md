@@ -158,7 +158,7 @@ Aucune écriture dans Firestore n'est nécessaire. `scripts/legal-config.ts` ser
 
 ## 11. Alertes
 
-Les alertes partent par e-mail (Resend) et par Telegram (`@Joutiyabot`). Le Worker de sonde `joutiya-uptime-probe` vérifie `https://joutiya.ma` et le staging toutes les 5 minutes, et relaie les alertes de l'application (`/mnt/project-files/joutiya/phase-1/alertes-resend-spec.md`). L'Email Routing de Cloudflare n'est pas utilisé.
+Les alertes partent par e-mail (Resend) et par Telegram (`@Joutiyabot`). Le Worker de sonde `joutiya-uptime-probe` vérifie `https://aalan.ma` et le staging toutes les 5 minutes, et relaie les alertes de l'application (`/mnt/project-files/joutiya/phase-1/alertes-resend-spec.md`). L'Email Routing de Cloudflare n'est pas utilisé.
 
 Prérequis : le domaine `notif.joutiya.ma` vérifié chez Resend, après la bascule DNS (étape 7).
 

@@ -38,6 +38,8 @@ import {
 } from "@/lib/contracts/appointments";
 import { RENTAL_GUESTS_MAX, RENTAL_HISTORY_MAX, RENTAL_PICKUP_MAX, RENTAL_REQUEST_EVENTS, RENTAL_REQUEST_STATUSES, rentalRequestIdSchema } from "@/lib/contracts/rental-requests";
 import { OFFER_EVENTS, OFFER_STATUSES, offerIdSchema } from "@/lib/contracts/offers";
+import { CARRIER_REQUEST_EVENTS, CARRIER_REQUEST_STATUSES, carrierBasketSchema, carrierRequestIdSchema } from "@/lib/contracts/carrier-requests";
+import { CARRIER_CURRENCIES, CARRIER_ITEM_IDS, type CarrierItem } from "@/config/carriers";
 import { REPORT_PRIORITIES, REPORT_REASON_IDS, REPORT_TARGET_TYPES } from "@/config/report-reasons";
 import { PAYMENT_URL_MAX } from "@/config/seller-payments";
 import type { LedgerReason } from "@/lib/payments/wallet";
@@ -755,6 +757,44 @@ export const rentalRequestEventSchema = z
   .strict();
 export type RentalRequestEventDoc = z.infer<typeof rentalRequestEventSchema>;
 
+/** The carrier's price list applied to the basket when the request was sent (an estimate). */
+const carrierEstimateSchema = z
+  .object({
+    total: z.number().int().min(0).max(100_000_000),
+    currency: z.enum(CARRIER_CURRENCIES),
+    onRequest: z.array(z.enum(CARRIER_ITEM_IDS as [CarrierItem, ...CarrierItem[]])).max(CARRIER_ITEM_IDS.length),
+  })
+  .strict();
+
+/** Conversation.carrierRequest: the client's current place request on a carrier's departure (transporteurs/spec.md §5). */
+export const carrierRequestSchema = z
+  .object({
+    id: carrierRequestIdSchema,
+    status: z.enum(CARRIER_REQUEST_STATUSES),
+    /** The departure day when the request was sent. */
+    departOn: rentalDay,
+    basket: carrierBasketSchema,
+    /** Absent when the carrier had no price list at the time. */
+    estimate: carrierEstimateSchema.optional(),
+    createdAt: ts,
+    updatedAt: ts,
+  })
+  .strict();
+export type CarrierRequestDoc = z.infer<typeof carrierRequestSchema>;
+
+/** Message.carrierRequest: the step a place request system message shows. */
+export const carrierRequestEventSchema = z
+  .object({
+    id: carrierRequestIdSchema,
+    event: z.enum(CARRIER_REQUEST_EVENTS),
+    departOn: rentalDay,
+    /** On a request or a change only. */
+    basket: carrierBasketSchema.optional(),
+    estimate: carrierEstimateSchema.optional(),
+  })
+  .strict();
+export type CarrierRequestEventDoc = z.infer<typeof carrierRequestEventSchema>;
+
 const offerAmount = z.number().int().min(1).max(PRICE_MAX);
 
 /** Conversation.offer: the buyer's current price offer and the seller's answer (Carte vivante lot 5). */
@@ -807,6 +847,8 @@ export const conversationSchema = z
         photo: z.object({ id: z.string().min(1).max(64), blurhash: z.string().max(100) }).strict().nullable(),
         /** The listing took price offers when the conversation started (Carte vivante lot 5); absent before. */
         offers: z.boolean().optional(),
+        /** The listing's subcategory shows no price (a carrier's departure, a job request): the thread shows none. */
+        unpriced: z.literal(true).optional(),
       })
       .strict(),
     lastMessage: z.object({ preview: z.string().max(140), senderUid: uid, at: ts, flagged: z.boolean() }).strict(),
@@ -836,6 +878,8 @@ export const conversationSchema = z
     rentalRequest: rentalRequestSchema.optional(),
     /** The requests the renter sent before the current one, newest first, without their place (audit L4-04). */
     rentalHistory: z.array(rentalRequestSchema).max(RENTAL_HISTORY_MAX).optional(),
+    /** The current place request on a carrier's departure (requested, answered or withdrawn); the thread keeps every step. */
+    carrierRequest: carrierRequestSchema.optional(),
     /** The buyer's current price offer (open, answered, withdrawn or expired); the thread keeps every step. */
     offer: offerSchema.optional(),
     /** Due time of the pending offer's expiry (job offer-expiry); absent once answered. */
@@ -863,6 +907,8 @@ export const messageSchema = z
     appointment: appointmentEventSchema.optional(),
     /** Booking request system message: its text is the rentalRequestMarker of the event. */
     rentalRequest: rentalRequestEventSchema.optional(),
+    /** Place request system message: its text is the carrierRequestMarker of the event. */
+    carrierRequest: carrierRequestEventSchema.optional(),
     /** Offer system message: its text is the offerMarker of the event. */
     offer: offerEventSchema.optional(),
     createdAt: ts,

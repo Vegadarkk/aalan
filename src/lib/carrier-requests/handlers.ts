@@ -1,0 +1,34 @@
+import "server-only";
+import { requireUser } from "@/lib/auth/guards";
+import { carrierRequestActionSchema, type CarrierRequestResponse } from "@/lib/contracts/carrier-requests";
+import { cidSchema } from "@/lib/contracts/messaging";
+import { notFound } from "@/lib/http/errors";
+import { readJson } from "@/lib/http/json";
+import { json } from "@/lib/http/route";
+import { MESSAGING_QUOTAS } from "@/lib/messaging/service";
+import { enforceSendLimits } from "@/lib/messaging/send-limits";
+import { assertQuotas } from "@/lib/quota/gate";
+import { assertLimit, consumeLimit } from "@/lib/rate-limit/limiter";
+import { actOnCarrierRequest } from "./service";
+
+// POST /api/conversations/{cid}/carrier-request (transporteurs/spec.md §5): the messaging write
+// path for one place request step, like the booking requests. Members only, revocation checked,
+// Origin + CSRF, a suspended account refused; body, the request limiter (a new request only) then
+// the thread's send limiter, the Firestore write quota gate, then the step.
+
+type Params = Promise<Record<string, string | string[] | undefined>>;
+
+const CARRIER_REQUEST_BODY_MAX = 2 * 1024;
+
+export async function handleCarrierRequest(request: Request, params: Params): Promise<Response> {
+  const auth = await requireUser(request, { mutation: true, checkRevoked: true });
+  const parsed = cidSchema.safeParse((await params).cid);
+  if (!parsed.success) throw notFound();
+  const cid = parsed.data;
+  const action = await readJson(request, carrierRequestActionSchema, CARRIER_REQUEST_BODY_MAX);
+  if (action.action === "request") assertLimit("carrier.request.uid", await consumeLimit("carrier.request.uid", auth.user.uid));
+  await enforceSendLimits(auth.user.uid, cid);
+  await assertQuotas(MESSAGING_QUOTAS);
+  const body: CarrierRequestResponse = await actOnCarrierRequest({ uid: auth.user.uid, claims: auth.user.claims }, cid, action);
+  return json(body, { status: 201 });
+}

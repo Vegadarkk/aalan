@@ -15,6 +15,7 @@ import { LIVE_STREAMS_PER_ACCOUNT } from "@/lib/contracts/endpoints";
 import { appointmentEventOf, type AppointmentEvent } from "@/lib/contracts/appointments";
 import { HIDDEN_MARKER, URL_MARKER, type ConversationView } from "@/lib/contracts/messaging";
 import { rentalRequestEventOf, type RentalRequestEvent } from "@/lib/contracts/rental-requests";
+import { carrierRequestEventOf, type CarrierRequestEvent } from "@/lib/carrier-requests/rules";
 import { offerEventOf, type OfferEvent } from "@/lib/offers/rules";
 import { cn } from "@/lib/utils";
 import { formatRowTime } from "./format";
@@ -36,6 +37,7 @@ export function previewText(
     maskedLink: string;
     appointment?: (event: AppointmentEvent) => string;
     rentalRequest?: (event: RentalRequestEvent) => string;
+    carrierRequest?: (event: CarrierRequestEvent) => string;
     offer?: (event: OfferEvent) => string;
   },
 ): string {
@@ -44,6 +46,8 @@ export function previewText(
   if (step && labels.appointment) return labels.appointment(step);
   const rental = rentalRequestEventOf(preview);
   if (rental && labels.rentalRequest) return labels.rentalRequest(rental);
+  const place = carrierRequestEventOf(preview);
+  if (place && labels.carrierRequest) return labels.carrierRequest(place);
   const offer = offerEventOf(preview);
   if (offer && labels.offer) return labels.offer(offer);
   return preview === HIDDEN_MARKER ? labels.hidden : preview.split(URL_MARKER).join(labels.maskedLink).replace(/\s+/g, " ").trim();
@@ -62,12 +66,14 @@ function ConversationRow({ row, selected, archived, now }: { row: ConversationVi
   const appointment = useTranslations("Appointments.preview");
   const rentalRequest = useTranslations("RentalRequest.preview");
   const offer = useTranslations("Offers.preview");
+  const carrierRequest = useTranslations("CarrierRequest.preview");
   const preview = previewText(row, {
     hidden: t("hidden"),
     maskedLink: t("maskedLink"),
     appointment: (event) => appointment(event),
     // A stay reads « Demande de séjour » (audit L4-06): the conversation's request tells the unit.
     rentalRequest: (event) => rentalRequest(row.rentalRequest?.unit === "night" ? `home.${event}` : event),
+    carrierRequest: (event) => carrierRequest(event),
     offer: (event) => offer(event),
   });
   return (

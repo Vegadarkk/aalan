@@ -183,6 +183,7 @@ export async function startConversation(actor: MessagingActor, input: { listingI
       isDonation: listing.isDonation,
       photo: photo ? { id: photo.id, blurhash: photo.blurhash } : null,
       offers: listingOfferPrice(listing, now) !== null,
+      ...(subcategoryById(listing.subcategoryId ?? "")?.priceMode === "none" ? { unpriced: true as const } : {}),
     },
     lastMessage: lastMessageOf(message),
     unread: { [seller.uid]: 1, [actor.uid]: 0 },

@@ -13,6 +13,8 @@ import { formatRentalDay, fragmentDates } from "@/components/rental/rental-day";
 import { Button } from "@/components/ui/button";
 import { Input, inputClassName } from "@/components/ui/input";
 import { AmountField, amountProblem } from "@/components/offers/amount-field";
+import { BasketFields } from "@/components/carriers/basket";
+import { basketIsEmpty, type CarrierBasket } from "@/lib/carrier-requests/rules";
 import { offerErrorKey } from "@/components/offers/error-keys";
 import { OfferNotice } from "@/components/offers/offer-notice";
 import type { RentalUnit } from "@/config/categories";
@@ -86,9 +88,10 @@ export interface MessageDialogProps {
   /**
    * "visit": a visit request (real estate), with its draft, then the thread on the slots. "rental": a
    * car rental's booking request, or a holiday home's stay (`rentalUnit` night). "offer": a price
-   * offer, with its amount.
+   * offer, with its amount. "carrier": a place request on a carrier's departure, with the basket
+   * (transporteurs/spec.md §5).
    */
-  intent?: "message" | "visit" | "rental" | "offer";
+  intent?: "message" | "visit" | "rental" | "offer" | "carrier";
   /** day: a car rental (pick-up and return, pick-up place); night: a stay (arrival and departure, a note). */
   rentalUnit?: RentalUnit;
   /** The price an offer is measured against (intent "offer"). */
@@ -113,6 +116,9 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
   const offers = useTranslations("Offers.listing");
   const offerDialog = useTranslations("Offers.dialog");
   const offerErrors = useTranslations("Offers.errors");
+  const placeListing = useTranslations("CarrierRequest.listing");
+  const placeBasket = useTranslations("CarrierRequest.basket");
+  const placeErrors = useTranslations("CarrierRequest.errors");
   const generic = useApiErrorMessage();
   const locale = useLocale();
   const router = useRouter();
@@ -120,6 +126,9 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
   const turnstile = useRef<TurnstileHandle>(null);
   const visit = intent === "visit";
   const rental = intent === "rental";
+  const carrier = intent === "carrier";
+  const [basket, setBasket] = useState<CarrierBasket>({ kg: 0, items: {} });
+  const [basketMissing, setBasketMissing] = useState(false);
   const r = <K extends RentalComposeKey>(key: K) => (rentalUnit === "night" ? (`home.${key}` as const) : key);
   const offer = intent === "offer" && offerPrice !== undefined && offerPrice > 0 ? offerPrice : null;
   const [amountText, setAmountText] = useState("");
@@ -142,7 +151,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
     const amount = parsePriceInput(typed);
     return amount === null ? "" : offers("draft", { amount: formatPrice(amount, locale as Locale), title: listingTitle ?? "" });
   };
-  const [text, setText] = useState(() => initialText ?? (visit ? t("visitDraft") : rental ? draft(dates, "") : ""));
+  const [text, setText] = useState(() => initialText ?? (visit ? t("visitDraft") : rental ? draft(dates, "") : carrier ? placeListing("draft") : ""));
   const [token, setToken] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<"empty" | "reserved" | null>(null);
@@ -159,6 +168,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
       if (offerKey) return offerErrors(offerKey);
       if (caught instanceof ApiError && caught.code === "invalid_body") return offerErrors("amount");
     }
+    if (carrier && caught instanceof ApiError && caught.code === "carrier_request_unavailable") return placeErrors("carrier_request_unavailable");
     const key = composeErrorKey(caught);
     if (key === "rate_limited") return t("errors.rate_limited", { wait: formatWait(locale, caught instanceof ApiError ? caught.retryAfter : undefined, t("errors.later")) });
     return key ? t(`errors.${key}`) : generic(caught);
@@ -174,7 +184,9 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
     if (rental && !period) setDatesMissing(true);
     const amountIssue = offer !== null ? amountProblem(amountText, offer) : null;
     setAmountShown(amountIssue);
-    if (found || (adultsOnly && !adult) || (rental && !period) || amountIssue) return;
+    const noBasket = carrier && basketIsEmpty(basket);
+    setBasketMissing(noBasket);
+    if (found || (adultsOnly && !adult) || (rental && !period) || amountIssue || noBasket) return;
     const amount = offer !== null ? parsePriceInput(amountText) : null;
     if (!token) {
       setChallengeMissing(true);
@@ -192,6 +204,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
         ...(adultsOnly ? { adultConfirmed: true as const } : {}),
         ...(period ? { rentalRequest: { ...period, ...(pickup.trim() ? { pickup: pickup.trim() } : {}), ...(stay && guests > 0 ? { guests } : {}) } } : {}),
         ...(amount !== null ? { offer: { amount } } : {}),
+        ...(carrier ? { carrierRequest: { basket: { kg: basket.kg, items: basket.items, ...(basket.pickup ? { pickup: true as const } : {}), ...(basket.delivery ? { delivery: true as const } : {}) } } } : {}),
       });
       const query = threadQuery ?? (visit ? "rdv=visit" : undefined);
       router.push(`/messages/${cid}${query ? `?${query}` : ""}`);
@@ -233,6 +246,10 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                     ? sellerName
                       ? t(r("rentalTitle"), { name: isolate(sellerName) })
                       : t(r("rentalTitleFallback"))
+                    : carrier
+                      ? sellerName
+                        ? placeListing("title", { name: isolate(sellerName) })
+                        : placeListing("titleFallback")
                     : offer !== null
                       ? offerDialog("makeTitle", { name: isolate(sellerName ?? "") })
                       : sellerName
@@ -303,6 +320,21 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
                     }}
                   />
                 </div>
+              </div>
+            ) : null}
+
+            {carrier ? (
+              <div className="flex flex-col gap-2" data-testid="carrier-request-fields">
+                <BasketFields
+                  value={basket}
+                  onChange={(next) => {
+                    setBasket(next);
+                    if (!basketIsEmpty(next)) setBasketMissing(false);
+                  }}
+                />
+                {basketMissing ? <InlineError>{placeBasket("empty")}</InlineError> : null}
+                <p className="text-sm text-foreground-muted text-pretty">{placeListing("hint")}</p>
+                <p className="text-xs text-foreground-muted text-pretty">{placeListing("notice", { site: SITE_NAME })}</p>
               </div>
             ) : null}
 
@@ -412,7 +444,7 @@ export function MessageDialog({ open, onOpenChange, listingId, listingTitle, sel
               </Dialog.Close>
               <Button type="submit" loading={pending}>
                 <Send className="rtl:-scale-x-100" aria-hidden="true" />
-                {rental ? t("rentalSend") : offer !== null ? offerDialog("send") : t("send")}
+                {rental ? t("rentalSend") : carrier ? placeListing("button") : offer !== null ? offerDialog("send") : t("send")}
               </Button>
             </div>
           </form>

@@ -7109,5 +7109,92 @@
       "view": "Ẓer aruḥ",
       "percent": "{value} %"
     }
+  },
+  "CarrierRequest": {
+    "basket": {
+      "title": "Asiwel nnek",
+      "kg": "Ikerḍan d kartun (kg)",
+      "kgHint": "Taẓayt s uqarrab, war tiɣawsiwin i yettwaskern.",
+      "less": "Kkes: {item}",
+      "more": "Rnu: {item}",
+      "moreItems": "Tiɣawsiwin nniḍen",
+      "pickup": "Asmuttes zi uxxam",
+      "delivery": "Asiweḍ ar uxxam",
+      "empty": "Ini-d taẓayt niɣ yiwet n tɣawsa.",
+      "summaryKg": "{kg} kg n ikerḍan",
+      "summaryItem": "{count} × {item}",
+      "summaryPickup": "asmuttes zi uxxam",
+      "summaryDelivery": "asiweḍ ar uxxam"
+    },
+    "card": {
+      "requestedMine": "Tuttra n umkan tettwazen i {name}",
+      "requestedTheirs": "{name} yessuter amkan",
+      "acceptedMine": "Amkan yettwaḥrez i {name}",
+      "acceptedTheirs": "{name} yeḥrez-ak amkan",
+      "departure": "Aruḥ ass n {day}",
+      "estimate": "Ssuma s uqarrab: {total}",
+      "onRequest": "S tuttra: {items}",
+      "noEstimate": "Ulac ssuma s uqarrab: ssuter-t zi umsiwel.",
+      "waiting": "Ttraju tiririt n umsiwel.",
+      "withdraw": "Kkes tuttra",
+      "withdrawnToast": "Tuttra tettwakkes",
+      "accept": "Amkan yettwaḥrez",
+      "decline": "Ulac amkan",
+      "confirmAccept": "Ad teḥreẓ amkan i {name} deg uruḥ-a?",
+      "confirmDecline": "Ad tinniḍ i {name} ulac amkan?",
+      "confirmAcceptButton": "Sentem: amkan yettwaḥrez",
+      "confirmDeclineButton": "Sentem: ulac amkan",
+      "back": "Uɣal",
+      "note": "Awal i umsaɣ (ma texsiḍ)",
+      "notePlaceholderAccept": "Am: asrus tameddit n wass zzat, taẓayt dinni.",
+      "notePlaceholderDecline": "Am: iččur, aruḥ d-iteddun ass n 28.",
+      "acceptedToast": "Amkan yettwaḥrez",
+      "declinedToast": "Tiririt tettwazen",
+      "updateSpace": "Sbeddel amkan i d-yeqqimen",
+      "notice": "Ssuma s uqarrab: walu ur yettwaxlaṣ deg {site}. Amsiwel yesbeddad ssuma taneggarut mbeεd taẓayt, qbel ad yeddem asiwel."
+    },
+    "event": {
+      "requested": {
+        "mine": "Tessutreḍ amkan deg uruḥ n {day}",
+        "theirs": "{name} yessuter amkan deg uruḥ n {day}"
+      },
+      "changed": {
+        "mine": "Tbeddleḍ tuttra n umkan",
+        "theirs": "{name} ibeddel tuttra n umkan"
+      },
+      "accepted": {
+        "mine": "Teḥrezḍ amkan i {name}",
+        "theirs": "{name} yeḥrez-ak amkan deg uruḥ n {day}"
+      },
+      "declined": {
+        "mine": "Terriḍ: ulac amkan",
+        "theirs": "{name} ulac ɣers amkan deg uruḥ-a"
+      },
+      "withdrawn": {
+        "mine": "Tekkseḍ tuttra n umkan",
+        "theirs": "{name} yekkes tuttra n umkan"
+      }
+    },
+    "preview": {
+      "requested": "Tuttra n umkan",
+      "changed": "Tuttra n umkan tettwabeddel",
+      "accepted": "Amkan yettwaḥrez",
+      "declined": "Ulac amkan",
+      "withdrawn": "Tuttra n umkan tettwakkes"
+    },
+    "errors": {
+      "carrier_request_changed": "Tuttra tbeddel: ales asali n umeslay.",
+      "carrier_request_past": "Ass n uruḥ iεedda: tuttra ur tettwaqbal ca.",
+      "carrier_request_unavailable": "Aruḥ-a ur yeqbil ca tuttriwin n umkan."
+    },
+    "listing": {
+      "button": "Ssuter amkan",
+      "title": "Tuttra n umkan ɣer {name}",
+      "titleFallback": "Tuttra n umkan",
+      "draft": "Azul, is ɣur-wen amkan i usiwel-a deg uruḥ-a?",
+      "hint": "Amsiwel ad d-yerr « Amkan yettwaḥrez » niɣ « Ulac amkan » deg tira, s ssuma s uqarrab ɣef tlistt nnes.",
+      "signIn": "Kcem bac ad tessutreḍ amkan ɣer umsiwel-a.",
+      "notice": "Ssuma s uqarrab: walu ur yettwaxlaṣ deg {site}. Amsiwel yesbeddad ssuma taneggarut mbeεd taẓayt, qbel ad yeddem asiwel."
+    }
   }
 }

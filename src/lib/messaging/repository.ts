@@ -151,6 +151,8 @@ export interface NewMessageInput {
   appointment?: MessageDoc["appointment"];
   /** A system message about the conversation's booking request (src/lib/rental-requests). */
   rentalRequest?: MessageDoc["rentalRequest"];
+  /** A system message about the conversation's place request on a departure (src/lib/carrier-requests). */
+  carrierRequest?: MessageDoc["carrierRequest"];
   /** A system message about the conversation's price offer (src/lib/offers). */
   offer?: MessageDoc["offer"];
   now: Date;
@@ -161,10 +163,11 @@ export interface NewMessageInput {
  * an accepted offer, a confirmed appointment or an accepted booking request, whoever sends the step.
  * A one-click decline, a withdrawal or a mere proposal opens no review.
  */
-export function verifiesExchange(input: Pick<NewMessageInput, "senderUid" | "offer" | "appointment" | "rentalRequest">, sellerUid: string): boolean {
+export function verifiesExchange(input: Pick<NewMessageInput, "senderUid" | "offer" | "appointment" | "rentalRequest" | "carrierRequest">, sellerUid: string): boolean {
   if (input.offer) return input.offer.event === "accepted";
   if (input.appointment) return input.appointment.event === "confirmed";
   if (input.rentalRequest) return input.rentalRequest.event === "accepted";
+  if (input.carrierRequest) return input.carrierRequest.event === "accepted";
   return input.senderUid === sellerUid;
 }
 
@@ -175,9 +178,9 @@ export function verifiesExchange(input: Pick<NewMessageInput, "senderUid" | "off
  * appointment, booking request or offer step.
  */
 export type ConversationExtension = (conversation: ConversationRecord) => {
-  fields: Partial<Record<"appointment" | "appointmentRemindAt" | "rentalRequest" | "rentalHistory" | "offer" | "offerExpiresAt", unknown>>;
+  fields: Partial<Record<"appointment" | "appointmentRemindAt" | "rentalRequest" | "rentalHistory" | "carrierRequest" | "offer" | "offerExpiresAt", unknown>>;
   message?: Pick<NewMessageInput, "text"> &
-    (Required<Pick<NewMessageInput, "appointment">> | Required<Pick<NewMessageInput, "rentalRequest">> | Required<Pick<NewMessageInput, "offer">>);
+    (Required<Pick<NewMessageInput, "appointment">> | Required<Pick<NewMessageInput, "rentalRequest">> | Required<Pick<NewMessageInput, "carrierRequest">> | Required<Pick<NewMessageInput, "offer">>);
 };
 
 function messageDoc(conversation: Pick<ConversationDoc, "participants" | "sellerProId">, input: NewMessageInput): MessageDoc {
@@ -185,9 +188,10 @@ function messageDoc(conversation: Pick<ConversationDoc, "participants" | "seller
     senderUid: input.senderUid,
     participants: conversation.participants,
     ...(conversation.sellerProId ? { sellerProId: conversation.sellerProId } : {}),
-    type: input.appointment || input.rentalRequest || input.offer ? "system" : "text",
+    type: input.appointment || input.rentalRequest || input.carrierRequest || input.offer ? "system" : "text",
     ...(input.appointment ? { appointment: input.appointment } : {}),
     ...(input.rentalRequest ? { rentalRequest: input.rentalRequest } : {}),
+    ...(input.carrierRequest ? { carrierRequest: input.carrierRequest } : {}),
     ...(input.offer ? { offer: input.offer } : {}),
     text: input.text,
     ...(input.flags.length > 0 ? { risk: { flags: input.flags, warned: true } } : {}),

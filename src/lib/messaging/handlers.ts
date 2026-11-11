@@ -1,4 +1,5 @@
 import "server-only";
+import { actOnCarrierRequest, requestableDeparture } from "@/lib/carrier-requests/service";
 import { requireUser } from "@/lib/auth/guards";
 import { getAbuseRules } from "@/lib/config/runtime";
 import {
@@ -123,7 +124,9 @@ export async function handleThread(request: Request, params: Params): Promise<Re
  * are checked and the request limiter consumed before Turnstile, the listing read after it, then
  * the message and the request's system step. With a price offer (Carte vivante lot 5): the offer
  * limiters before Turnstile, the listing read and the amount checked against its price after it,
- * then the message (the offer's note) and the offer's system step.
+ * then the message (the offer's note) and the offer's system step. With a place request on a
+ * carrier's departure (transporteurs/spec.md §5): its limiter before Turnstile, the departure
+ * checked after it, then the message and the request's system step (the basket priced).
  */
 export async function handleStart(request: Request): Promise<Response> {
   const auth = await requireUser(request, { mutation: true, checkRevoked: true });
@@ -131,6 +134,7 @@ export async function handleStart(request: Request): Promise<Response> {
   const now = new Date();
   const rental = input.rentalRequest;
   const offer = input.offer;
+  const place = input.carrierRequest;
   if (rental) {
     const problem = rentalRequestProblem(rental, moroccoToday(now));
     if (problem) throw new HttpError(400, "invalid_body", undefined, { details: [{ path: "rentalRequest.from", code: problem }] });
@@ -138,6 +142,7 @@ export async function handleStart(request: Request): Promise<Response> {
     if (rental.pickup) screenPlace(rental.pickup, (await getAbuseRules()).messaging);
     assertLimit("rental.request.uid", await consumeLimit("rental.request.uid", auth.user.uid));
   }
+  if (place) assertLimit("carrier.request.uid", await consumeLimit("carrier.request.uid", auth.user.uid));
   if (offer) {
     assertLimit("offer.uid", await consumeLimit("offer.uid", auth.user.uid));
     assertLimit("offer.thread", await consumeLimit("offer.thread", `${auth.user.uid}:${conversationId(input.listingId, auth.user.uid)}`));
@@ -148,7 +153,9 @@ export async function handleStart(request: Request): Promise<Response> {
   const identity = requestIdentity(request.headers);
   const check = await verifyTurnstile(input.turnstileToken, { action: "message", remoteIp: identity.ip, hostname: new URL(serverEnv().SITE_URL).hostname });
   if (!check.ok) throw new HttpError(403, "turnstile_failed", undefined, { details: { codes: check.codes } });
-  const listing = rental || offer ? await getListing(input.listingId) : null;
+  const listing = rental || offer || place ? await getListing(input.listingId) : null;
+  // A departure that takes no request (past, « Complet », not a departure) refuses before the message.
+  if (place) requestableDeparture(listing, now);
   if (rental) {
     // A stay's nights, checked before the conversation starts.
     const problem = rentalRequestProblem(rental, moroccoToday(now), rentalListingUnit(listing));
@@ -164,6 +171,7 @@ export async function handleStart(request: Request): Promise<Response> {
   const body: StartConversationResponse = await startConversation(actor, { listingId: input.listingId, text: input.text, adultConfirmed: input.adultConfirmed === true }, now);
   // One millisecond later: the request's step reads after the message in the thread.
   if (rental && listing) await actOnRentalRequest(actor, body.cid, requestAction(rental), new Date(now.getTime() + 1), listing);
+  if (place && listing) await actOnCarrierRequest(actor, body.cid, { action: "request", basket: place.basket }, new Date(now.getTime() + 1), listing);
   if (offer && offerPrice !== undefined) await actOnOffer(actor, body.cid, makeAction(offer), new Date(now.getTime() + 1), offerPrice);
   return json(body, { status: 201 });
 }

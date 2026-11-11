@@ -66,6 +66,12 @@ export const LISTING_PAGE_CLIENT_NAMESPACES = [
   "Rental.calendar",
   "Rental.search",
   "RentalRequest.banner",
+  // « Demander une place » on a carrier's departure: the button, the basket and its errors (transporteurs/spec.md §5).
+  "CarrierRequest.listing",
+  "CarrierRequest.basket",
+  "CarrierRequest.errors",
+  "Carriers.items",
+  "Listing.numberInput",
   // The ad slots' consent panel.
   "Consent",
 ] as const;
@@ -109,6 +115,12 @@ export const STOREFRONT_PAGE_CLIENT_NAMESPACES = [
   "Rental.search",
   "RentalRequest.banner",
   "Rental.calendar",
+  // The contact bar's place request dialog (carriers' departures, transporteurs/spec.md §5).
+  "CarrierRequest.listing",
+  "CarrierRequest.basket",
+  "CarrierRequest.errors",
+  "Carriers.items",
+  "Listing.numberInput",
   // The ad slots' consent panel.
   "Consent",
 ] as const;

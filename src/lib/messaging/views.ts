@@ -3,6 +3,7 @@ import { cidSchema, messageIdSchema, type ConversationView, type MessageView } f
 import { appointmentEventView, appointmentView } from "@/lib/appointments/views";
 import { rentalHistoryView, rentalRequestEventView, rentalRequestView } from "@/lib/rental-requests/views";
 import { offerEventView, offerView } from "@/lib/offers/views";
+import { carrierRequestEventView, carrierRequestView } from "@/lib/carrier-requests/views";
 import { counterpartOf, type ConversationRecord, type MessageRecord, type PagePosition } from "./repository";
 
 // What a participant sees of a conversation and its messages (design D2): documents mapped to the
@@ -17,7 +18,7 @@ export function conversationView(conversation: ConversationRecord, uid: string, 
     listingId: conversation.listingId,
     listingSlugId: conversation.listingSlugId,
     subject: conversation.subject ?? "listing",
-    listing: { title: listing.title, price: listing.price, isDonation: listing.isDonation, photo: listing.photo ? { id: listing.photo.id, blurhash: listing.photo.blurhash } : null },
+    listing: { title: listing.title, price: listing.price, isDonation: listing.isDonation, photo: listing.photo ? { id: listing.photo.id, blurhash: listing.photo.blurhash } : null, ...(listing.unpriced ? { unpriced: true as const } : {}) },
     role: buyer ? "buyer" : "seller",
     counterpart: buyer ? { publicId: conversation.sellerPublicId, displayName: conversation.sellerName } : { publicId: conversation.buyerPublicId, displayName: conversation.buyerName },
     lastMessage: { preview: lastMessage.preview, mine: lastMessage.senderUid === uid, at: lastMessage.at.getTime(), flagged: lastMessage.flagged },
@@ -30,6 +31,7 @@ export function conversationView(conversation: ConversationRecord, uid: string, 
     appointment: conversation.appointment ? appointmentView(conversation.appointment, uid) : null,
     rentalRequest: conversation.rentalRequest ? rentalRequestView(conversation.rentalRequest, buyer) : null,
     rentalHistory: rentalHistoryView(conversation.rentalHistory, buyer),
+    carrierRequest: conversation.carrierRequest ? carrierRequestView(conversation.carrierRequest, buyer) : null,
     offer: conversation.offer ? offerView(conversation.offer, buyer, now) : null,
     // Conversations started before offers existed: a priced listing that is no donation (the server decides).
     offersAllowed: listing.offers ?? (listing.price !== null && listing.price > 0 && !listing.isDonation),
@@ -49,6 +51,7 @@ export function messageView(message: MessageRecord, uid: string): MessageView {
     hidden: message.hidden === true,
     ...(message.appointment ? { appointment: appointmentEventView(message.appointment, message.senderUid === uid) } : {}),
     ...(message.rentalRequest ? { rentalRequest: rentalRequestEventView(message.rentalRequest, message.senderUid === uid) } : {}),
+    ...(message.carrierRequest ? { carrierRequest: carrierRequestEventView(message.carrierRequest, message.senderUid === uid) } : {}),
     ...(message.offer ? { offer: offerEventView(message.offer, message.senderUid === uid) } : {}),
     createdAt: message.createdAt.getTime(),
     readAt: message.readAt?.getTime() ?? null,

@@ -175,6 +175,12 @@ export type ErrorCode =
   | "rental_request_past"
   /** A booking request about a listing that is no published car rental (409). */
   | "rental_request_unavailable"
+  /** The place request changed since the caller saw it (answered, withdrawn, replaced; 409). */
+  | "carrier_request_changed"
+  /** The departure day has passed: the carrier can no longer accept (409). */
+  | "carrier_request_past"
+  /** A place request about a listing that is no published departure ahead with room left (409). */
+  | "carrier_request_unavailable"
   /** The price offer changed since the caller saw it (answered, withdrawn, replaced; 409). */
   | "offer_changed"
   /** The offer or counter-offer waited 48 h without an answer (409). */

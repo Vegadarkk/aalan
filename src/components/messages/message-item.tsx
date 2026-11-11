@@ -5,6 +5,7 @@ import { Check, CheckCheck, Clock3, EyeOff, Link2Off, ShieldAlert } from "lucide
 import { useTranslations } from "next-intl";
 import { AppointmentEventItem } from "@/components/appointments/appointment-event";
 import { RentalRequestEventItem } from "@/components/rental/rental-request-event";
+import { CarrierRequestEventItem } from "@/components/carriers/carrier-request-card";
 import { OfferEventItem } from "@/components/offers/offer-event";
 import { Link } from "@/i18n/navigation";
 import { HIDDEN_MARKER, URL_MARKER, type MessageRiskFlag, type MessageView } from "@/lib/contracts/messaging";
@@ -111,6 +112,9 @@ export function MessageItem({ message, time, status, sender, onReport }: Message
   }
   if (message.type === "system" && message.rentalRequest) {
     return <RentalRequestEventItem step={message.rentalRequest} counterpartName={sender} time={time} onReport={report} />;
+  }
+  if (message.type === "system" && message.carrierRequest) {
+    return <CarrierRequestEventItem step={message.carrierRequest} counterpartName={sender} time={time} />;
   }
   if (message.type === "system" && message.offer) {
     return <OfferEventItem step={message.offer} counterpartName={sender} time={time} />;

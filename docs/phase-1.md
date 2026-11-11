@@ -158,7 +158,7 @@ Aucune écriture dans Firestore n'est nécessaire. `scripts/legal-config.ts` ser
 
 ## 11. Alertes
 
-Les alertes partent par e-mail (Resend) et par Telegram (`@Joutiyabot`). Le Worker de sonde `joutiya-uptime-probe` vérifie `https://joutiya.ma` et le staging toutes les 5 minutes, et relaie les alertes de l'application (`/mnt/project-files/joutiya/phase-1/alertes-resend-spec.md`). L'Email Routing de Cloudflare n'est pas utilisé.
+Les alertes partent par e-mail (Resend) et par Telegram (`@Joutiyabot`). Le Worker de sonde `joutiya-uptime-probe` vérifie `https://aalan.ma` et le staging toutes les 5 minutes, et relaie les alertes de l'application (`/mnt/project-files/joutiya/phase-1/alertes-resend-spec.md`). L'Email Routing de Cloudflare n'est pas utilisé.
 
 Prérequis : le domaine `notif.joutiya.ma` vérifié chez Resend, après la bascule DNS (étape 7).
 
@@ -176,7 +176,7 @@ Garde-fous : au plus 100 incidents enregistrés par jour UTC (au-delà, un seul 
    Avant la première promotion, il complète l'`app.env` de la production, comme celui du staging le 29 octobre : carte PMTiles extraite par Run Command sur la VM (`scripts/geo/pmtiles-extract.sh`, build Protomaps du jour), envoyée en `maps/morocco.pmtiles` dans le bucket médias de la production (`Cache-Control: public, max-age=31536000, immutable`), puis `MAP_PMTILES_URL=https://media.joutiya.ma/maps/morocco.pmtiles` et `BACKUP_AGE_RECIPIENT` (la clé publique des sauvegardes, la même que celle du staging) par `oracle-vm.ts env prod`. Contrôle : un `HEAD` de l'URL répond 200 avec cette en-tête de cache, et une requête `Range` depuis `https://joutiya.ma` répond 206 avec l'en-tête CORS.
 2. Claude promeut la version du staging par Run Command (`node scripts/oracle-vm.ts promote --tag=vX.Y.Z --apply`, qui vide ensuite le cache Cloudflare ; tag de release annoté, `docs/lancement/mise-en-production.md`) : seules les images déjà en service en staging peuvent passer, et seulement si elles sont celles du commit du tag, désignées par leur identifiant exact, chargées depuis l'archive que la CI a construite (son empreinte est publiée sur le commit, contrôle « Release images ») et seulement pour un commit de `main`. Retour arrière : `rollback --apply`. La production n'a aucun accès SSH : seul le staging en garde un, pour la CI. Un déploiement, en staging comme en production, n'attend que web et worker : une recherche en panne répond 503 sans faire revenir la version précédente. Un déploiement pendant une tâche de nuit (2 h 30 à 5 h 20 UTC, sauvegarde à 3 h 30) l'interrompt : le worker lui laisse 30 secondes pour finir, puis BullMQ la relance une fois sur le nouveau worker. Le staging se déploie à chaque fusion et s'en remet ainsi ; Claude promeut la production hors de cette plage.
 3. Contrôles de fin de phase :
-   - `https://joutiya.ma/api/health` répond `ok` ;
+   - `https://aalan.ma/api/health` répond `ok` ;
    - un balayage de tous les ports de l'IP publique de la VM n'en trouve aucun ouvert ;
    - securityheaders.com donne au moins la note A ;
    - `https://admin.joutiya.ma` demande la connexion Google d'Access.

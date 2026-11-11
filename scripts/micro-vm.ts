@@ -22,7 +22,7 @@
 //   node scripts/micro-vm.ts reboot [--apply]
 //       soft reboot through the OCI API (pending kernel updates: ocarun cannot reboot).
 //
-// Environment: AALAN_OCI_* (former JOUTIYA_OCI_* as fallback), like scripts/oracle-vm.ts.
+// Environment: AALAN_OCI_* (or their former names), like scripts/oracle-vm.ts.
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";

@@ -2,3 +2,6 @@
 # commits that added them; the lines now carry gitleaks:allow.
 62877d1ec5ba8949051925f70d704e9f59834be6:tests/unit/mail-saved-search-alert.test.ts:generic-api-key:12
 a1a58e0d49c0f7e44ab46717104cee476bef9c4b:tests/unit/mail-render.test.ts:generic-api-key:38
+# Fake R2 key fixture (hex digits in order) in the commit that added tests/unit/micro-vm.test.ts; the
+# test now builds its fake keys at run time.
+25704309357072b262d168a06d9c052ed202b00b:tests/unit/micro-vm.test.ts:generic-api-key:56

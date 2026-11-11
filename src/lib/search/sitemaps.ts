@@ -26,7 +26,8 @@ import { attributeField, SITEMAP_SHARDS, SearchUnavailableError, type EngineQuer
 // Every URL comes in fr and ar, each <url> carrying the whole hreflang cluster (+ x-default), from
 // the same helper as the pages' <head> (alternates()); Tarifit stays out of the cluster.
 // While the site is closed (OPENS_AT ahead, src/lib/launch/gate.ts) every other page 307s to the
-// home page, so the files list only what is served: pages.xml holds home and the legal texts, and
+// home page, so the files list only what is served: pages.xml holds home, the legal texts and the
+// procedures guide (gate.ts OPEN_PAGE_SEGMENTS), and
 // the index names no listing shard (SEO audit T3, 11 Nov 2026). The route's one-hour ISR means the
 // full files appear within the hour after the opening.
 
@@ -164,8 +165,8 @@ async function listingEntries(shard: number): Promise<string[]> {
 // The carriers' activity page joins once their space opens (transporteurs/spec.md lot 5).
 const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.filter((sector) => sector !== "carrier").map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
 
-/** The pages served while closed (gate.ts OPEN_PAGE_SEGMENTS): home and the legal texts. */
-const CLOSED_PATHS = ["", ...LEGAL_PAGES.map((page) => `/legal/${page.slug}`)];
+/** The pages served while closed (gate.ts OPEN_PAGE_SEGMENTS): home, the legal texts and the procedures guide. */
+const CLOSED_PATHS = ["", ...LEGAL_PAGES.map((page) => `/legal/${page.slug}`), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
 
 /** XML of a sitemap file, or null for a 404 (unknown file, empty shard, not production). */
 export async function buildSitemapFile(file: string, env: ServerEnv = serverEnv(), now: Date = new Date()): Promise<string | null> {

@@ -35,10 +35,13 @@ describe("OPENS_AT", () => {
 });
 
 describe("closedDecision", () => {
-  it("renders the home with the countdown, keeps the legal texts and sends the rest home", () => {
+  it("renders the home with the countdown, keeps the legal texts and the guide, and sends the rest home", () => {
     expect(closedDecision("/ar", LOCALES, "fr")).toEqual({ kind: "closed-home", locale: "ar" });
     expect(closedDecision("/fr/", LOCALES, "fr")).toEqual({ kind: "closed-home", locale: "fr" });
     expect(closedDecision("/fr/legal/cgu", LOCALES, "fr")).toEqual({ kind: "pass" });
+    expect(closedDecision("/ar/demarches", LOCALES, "fr")).toEqual({ kind: "pass" });
+    expect(closedDecision("/fr/demarches/vehicule", LOCALES, "fr")).toEqual({ kind: "pass" });
+    expect(closedDecision("/fr/demarchesx", LOCALES, "fr")).toEqual({ kind: "redirect-home", locale: "fr" });
     expect(closedDecision("/rif/annonce/x-abcd", LOCALES, "fr")).toEqual({ kind: "redirect-home", locale: "rif" });
     expect(closedDecision("/en/x", LOCALES, "fr")).toEqual({ kind: "redirect-home", locale: "fr" });
   });

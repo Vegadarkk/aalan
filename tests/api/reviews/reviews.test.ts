@@ -153,6 +153,53 @@ describe("POST /api/reviews", () => {
   });
 });
 
+describe("transport review tags (transporteurs/spec.md §6)", () => {
+  /** The exchange held a place request, as a carrier's departure gives it. */
+  async function placeRequested(cid: string) {
+    const at = Timestamp.now();
+    await db()
+      .collection(COLLECTIONS.conversations)
+      .doc(cid)
+      .update({ carrierRequest: { id: "abcdefghijkl", status: "accepted", departOn: "2026-12-01", basket: { kg: 20, items: {} }, createdAt: at, updatedAt: at } });
+  }
+
+  it("keeps the tags of a transport review, counts them on the carrier and moves them with moderation and deletion", async () => {
+    const { buyer, seller, cid } = await exchange({ ago: 2 * DAY_MS });
+    await placeRequested(cid);
+    expectError(await create(buyer, { cid, rating: 5, text: TEXT, tags: ["price", "price"], exchangeConfirmed: true }), 400, "invalid_body");
+    const created = await create(buyer, { cid, rating: 5, text: TEXT, tags: ["price", "intact"], exchangeConfirmed: true });
+    expect(created.status, JSON.stringify(created.body)).toBe(201);
+    const tagged = async () => (await getUserRecord(seller.uid))!.stats;
+    expect(await tagged()).toMatchObject({ reviewTagged: 1, reviewTags: { price: 1, timing: 0, intact: 1, communication: 0 } });
+    const { publicId } = (await getUserRecord(seller.uid))!;
+    const page = await list(publicId);
+    expect(page.body.reviews[0]).toMatchObject({ rating: 5, tags: ["price", "intact"] });
+    expect((await getPublicProfile(publicId))?.rating.tags).toEqual({ reviews: 1, counts: { price: 1, timing: 0, intact: 1, communication: 0 } });
+
+    await setReviewStatus(created.body.id, "hidden", new Date(), "decision-2");
+    expect(await tagged()).toMatchObject({ ratingCount: 0, reviewTagged: 0, reviewTags: { price: 0, intact: 0 } });
+    await setReviewStatus(created.body.id, "published", new Date());
+    expect(await tagged()).toMatchObject({ reviewTagged: 1, reviewTags: { price: 1, intact: 1 } });
+    expect((await remove(buyer, created.body.id)).status).toBe(204);
+    expect(await tagged()).toMatchObject({ ratingCount: 0, reviewTagged: 0, reviewTags: { price: 0, intact: 0 } });
+  });
+
+  it("counts a transport review with nothing ticked, and drops tags outside a place request", async () => {
+    const transport = await exchange({ ago: 2 * DAY_MS });
+    await placeRequested(transport.cid);
+    expect((await create(transport.buyer, { cid: transport.cid, rating: 2, text: TEXT, exchangeConfirmed: true })).status).toBe(201);
+    expect((await getUserRecord(transport.seller.uid))!.stats).toMatchObject({ reviewTagged: 1, reviewTags: { price: 0 } });
+
+    const plain = await exchange({ ago: 2 * DAY_MS });
+    const created = await create(plain.buyer, { cid: plain.cid, rating: 4, text: TEXT, tags: ["price"], exchangeConfirmed: true });
+    expect(created.status).toBe(201);
+    expect((await db().collection(COLLECTIONS.reviews).doc(created.body.id).get()).data()!.tags).toBeUndefined();
+    const stats = (await getUserRecord(plain.seller.uid))!.stats;
+    expect(stats.reviewTagged).toBeUndefined();
+    expect(stats.reviewTags).toBeUndefined();
+  });
+});
+
 describe("storefront reviews, reply, Mes avis, delete", () => {
   it("lists published reviews without uids, takes one reply from the seller, and the author deletes", async () => {
     const { buyer, seller, cid } = await exchange({ ago: 2 * DAY_MS });

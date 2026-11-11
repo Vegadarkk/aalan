@@ -1,4 +1,5 @@
 import { MessagesSquare } from "lucide-react";
+import { CARRIER_REVIEW_TAGS, CARRIER_TAGS_MIN_REVIEWS } from "@/config/reviews";
 import type { Locale } from "@/config/site";
 import { Link } from "@/i18n/navigation";
 import { useNumbersTranslations } from "@/i18n/numbers";
@@ -42,10 +43,15 @@ export function SellerReviews({
     exchangeOn: t("exchangeOn"),
     reply: t("reply", { name: isolate(sellerName) }),
     formerMember: t("formerMember"),
+    tags: { price: t("tags.price"), timing: t("tags.timing"), intact: t("tags.intact"), communication: t("tags.communication") },
+    tagsLabel: t("tagsLabel"),
     more: t("more"),
     failed: t("failed"),
   };
   const max = Math.max(1, ...rating.histogram);
+  // A carrier's tags as shares of its transport reviews, once there are enough to mean something.
+  const shares = rating.tags && rating.tags.reviews >= CARRIER_TAGS_MIN_REVIEWS ? rating.tags : null;
+  const percent = new Intl.NumberFormat(intlLocale(locale), { style: "percent", maximumFractionDigits: 0 });
 
   return (
     <section id="avis" aria-labelledby="profile-reviews" data-testid="seller-reviews" className="flex scroll-mt-24 flex-col gap-6">
@@ -83,6 +89,27 @@ export function SellerReviews({
                 );
               })}
             </ul>
+            {shares ? (
+              <div className="flex flex-col gap-2 border-t border-border pt-4" data-testid="review-tag-shares">
+                <p className="text-sm font-medium">{t("tagShares", { count: shares.reviews })}</p>
+                <ul className="flex flex-col gap-1.5">
+                  {CARRIER_REVIEW_TAGS.map((tag) => {
+                    const share = shares.counts[tag] / shares.reviews;
+                    return (
+                      <li key={tag} className="flex flex-col gap-1 text-sm">
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span>{t(`tags.${tag}`)}</span>
+                          <span className="font-semibold tabular-nums">{percent.format(share)}</span>
+                        </span>
+                        <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
+                          <span className="block h-full rounded-full bg-success" style={{ width: `${Math.round(share * 100)}%` }} />
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
             <p className="text-xs text-pretty text-foreground-muted">
               {t("verifiedHint")}{" "}
               <Link href="/legal/avis-utilisateurs#verification" prefetch={false} className="relative font-medium text-link underline underline-offset-2 after:absolute after:inset-x-0 after:-inset-y-3">

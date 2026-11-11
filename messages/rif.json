@@ -3684,7 +3684,9 @@
       "pendingTitle": "Tanmmirt, ṛṛay nnec ad yeffeɣ deffir n usenqed",
       "pendingBody": "Yezmer ad yili deg-s isefka n yiman: amsefrez ad t-iɣar zzat n usuffeɣ.",
       "replacedNote": "Ibeddel ṛṛay nnec amezwaru x umzenzu-a.",
-      "viewStorefront": "Ẓer taḥanut"
+      "viewStorefront": "Ẓer taḥanut",
+      "tags": "Min yeddan mliḥ (ma txes)",
+      "tagsHint": "Ɛellem ɣir x min twalaḍ. « Ssuma tettwaḥterm »: ssuma i txelṣeḍ d tin i d-yenna umsiwel deffir lmizan."
     },
     "mine": {
       "title": "Ṛṛay nnec",
@@ -3721,7 +3723,15 @@
       "deleteConfirm": "Kkes",
       "deleted": "Ṛṛay yettwakkes",
       "cancel": "Ssbeṭṭel"
-    }
+    },
+    "tags": {
+      "price": "Ssuma tettwaḥterm",
+      "timing": "Lweqt yettwaḥterm",
+      "intact": "Lkolis yusa d aṣeḥḥi",
+      "communication": "Amsawal yelha"
+    },
+    "tagsLabel": "Min yeddan mliḥ",
+    "tagShares": "Zi {count, plural, one {# n ṛṛay n usiwel} other {# n ṛṛay n usiwel}}"
   },
   "FreeText": {
     "phone_in_text": "Kkes uṭṭun n tilifun: imsaɣen ad dak-arin s tibratin.",

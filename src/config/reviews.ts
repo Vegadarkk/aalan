@@ -19,3 +19,14 @@ export const REVIEWS_PAGE = 10;
 
 /** A deleted or hidden review is purged this long after (legal hold aside). */
 export const REVIEW_PURGE_MONTHS = 12;
+
+/**
+ * What went well with a carrier (transporteurs/spec.md §6), ticked in the review of a conversation
+ * that holds a place request and shown as a share of those reviews on the carrier's storefront.
+ * « Prix respecté » aims straight at price rises on arrival.
+ */
+export const CARRIER_REVIEW_TAGS = ["price", "timing", "intact", "communication"] as const;
+export type CarrierReviewTag = (typeof CARRIER_REVIEW_TAGS)[number];
+
+/** The storefront shows the shares from this many transport reviews: one review is no percentage. */
+export const CARRIER_TAGS_MIN_REVIEWS = 3;

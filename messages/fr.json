@@ -3694,7 +3694,9 @@
       "pendingTitle": "Merci, votre avis sera publié après vérification",
       "pendingBody": "Il contient peut-être des informations personnelles : un modérateur le relit avant sa publication.",
       "replacedNote": "Il remplace votre avis précédent sur ce vendeur.",
-      "viewStorefront": "Voir la vitrine"
+      "viewStorefront": "Voir la vitrine",
+      "tags": "Ce qui s'est bien passé (facultatif)",
+      "tagsHint": "Cochez seulement ce que vous avez constaté. « Prix respecté » : le prix payé est celui annoncé après la pesée."
     },
     "mine": {
       "title": "Mes avis",
@@ -3731,7 +3733,15 @@
       "deleteConfirm": "Supprimer",
       "deleted": "Avis supprimé",
       "cancel": "Annuler"
-    }
+    },
+    "tags": {
+      "price": "Prix respecté",
+      "timing": "Délai tenu",
+      "intact": "Colis intact",
+      "communication": "Bonne communication"
+    },
+    "tagsLabel": "Ce qui s'est bien passé",
+    "tagShares": "Sur {count, plural, one {# avis transport} other {# avis transport}}"
   },
   "FreeText": {
     "phone_in_text": "Retirez le numéro de téléphone : les acheteurs vous contactent par la messagerie.",

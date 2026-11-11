@@ -104,7 +104,7 @@ export async function handleCreateReview(request: Request): Promise<Response> {
   await assertQuotas(REVIEW_QUOTAS);
   // Sensitive data (Russmedia): held for a moderator instead of refused.
   const { sensitive } = await screened(input.text, "text");
-  const review = await createReview({ cid: input.cid, authorUid: user.uid, rating: input.rating, text: input.text, status: sensitive ? "pending" : "published", now: new Date() }).catch(reviewErrorToHttp);
+  const review = await createReview({ cid: input.cid, authorUid: user.uid, rating: input.rating, text: input.text, ...(input.tags ? { tags: input.tags } : {}), status: sensitive ? "pending" : "published", now: new Date() }).catch(reviewErrorToHttp);
   if (review.status === "published") {
     revalidateListingPaths({ publicId: review.targetPublicId });
     await notifyReviewPublished(review, { held: false });

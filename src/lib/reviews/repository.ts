@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { FieldValue, Timestamp, type DocumentSnapshot, type Transaction } from "firebase-admin/firestore";
-import { REVIEW_PURGE_MONTHS } from "@/config/reviews";
+import { CARRIER_REVIEW_TAGS, REVIEW_PURGE_MONTHS, type CarrierReviewTag } from "@/config/reviews";
 import { reviewWindow, type ReviewWindow } from "@/lib/contracts/reviews";
 import { COLLECTIONS, reviewSchema, type ReviewDoc } from "@/lib/db/schemas";
 import { datesToTimestamps, timestampsToDates } from "@/lib/db/repositories/timestamps";
@@ -12,7 +12,8 @@ import { consume } from "@/lib/quota";
 // reviews/{reviewId} (vitrine-avis §2-3) and the seller's rating aggregates on users/{uid}.stats.
 // The server is the only writer. A review is created, deleted, answered or hidden in one
 // transaction that also keeps `ratingCount`, `ratingSum`, `ratingAvg` and `ratingHistogram` of the
-// seller exact (only published reviews count).
+// seller exact (only published reviews count), and for a carrier `reviewTagged` and `reviewTags`
+// (transport reviews and their tags, transporteurs/spec.md §6).
 
 export interface ReviewRecord extends ReviewDoc {
   id: string;
@@ -60,11 +61,19 @@ export function conversationWindow(conversation: ConversationRecord, now: Date):
 
 type Histogram = [number, number, number, number, number];
 
+type TagCounts = Record<CarrierReviewTag, number>;
+
 interface RatingStats {
   ratingCount: number;
   ratingSum: number;
   ratingHistogram: Histogram;
+  /** Published transport reviews, tags ticked or not. */
+  reviewTagged: number;
+  reviewTags: TagCounts;
 }
+
+/** The part of a review the aggregates count. */
+type Counted = Pick<ReviewDoc, "rating" | "tags">;
 
 /** A stored counter, or 0 when absent, negative or not a whole number. */
 const counter = (value: unknown): number => (typeof value === "number" && Number.isInteger(value) && value > 0 ? value : 0);
@@ -81,30 +90,37 @@ export function ratingStatsOf(snapshot: DocumentSnapshot): RatingStats {
   const histogram = (Array.isArray(stored) && stored.length === 5 ? stored.map(counter) : [0, 0, 0, 0, 0]) as Histogram;
   const average = typeof stats?.["ratingAvg"] === "number" ? Math.min(5, Math.max(0, stats["ratingAvg"] as number)) : 0;
   const sum = stats?.["ratingSum"] === undefined ? Math.round(average * count) : counter(stats["ratingSum"]);
-  return { ratingCount: count, ratingSum: sum, ratingHistogram: histogram };
+  const storedTags = stats?.["reviewTags"] as Record<string, unknown> | undefined;
+  const tags = Object.fromEntries(CARRIER_REVIEW_TAGS.map((tag) => [tag, counter(storedTags?.[tag])])) as TagCounts;
+  return { ratingCount: count, ratingSum: sum, ratingHistogram: histogram, reviewTagged: counter(stats?.["reviewTagged"]), reviewTags: tags };
 }
 
-/** The aggregates with one published rating added (delta 1) or removed (delta -1). Pure. */
-export function withRating(current: RatingStats, rating: number, delta: 1 | -1): RatingStats {
+/** The aggregates with one published review added (delta 1) or removed (delta -1); a transport review moves its tags too. Pure. */
+export function withRating(current: RatingStats, review: Counted, delta: 1 | -1): RatingStats {
   const histogram = [...current.ratingHistogram] as Histogram;
-  histogram[rating - 1] = Math.max(0, histogram[rating - 1]! + delta);
-  return { ratingCount: Math.max(0, current.ratingCount + delta), ratingSum: Math.max(0, current.ratingSum + delta * rating), ratingHistogram: histogram };
+  histogram[review.rating - 1] = Math.max(0, histogram[review.rating - 1]! + delta);
+  const next = { ...current, ratingCount: Math.max(0, current.ratingCount + delta), ratingSum: Math.max(0, current.ratingSum + delta * review.rating), ratingHistogram: histogram };
+  if (!review.tags) return next;
+  const tags = { ...current.reviewTags };
+  for (const tag of review.tags) tags[tag] = Math.max(0, tags[tag] + delta);
+  return { ...next, reviewTagged: Math.max(0, current.reviewTagged + delta), reviewTags: tags };
 }
 
-/** Writes the aggregates; the dotted fields of `stats` only. */
-function writeRatings(tx: Transaction, sellerUid: string, stats: RatingStats): void {
+/** Writes the aggregates; the dotted fields of `stats` only. The tag counters only for a member who has or had transport reviews. */
+function writeRatings(tx: Transaction, sellerUid: string, stats: RatingStats, before: RatingStats): void {
   const { ratingCount: count, ratingSum: sum } = stats;
   tx.update(userRef(sellerUid), {
     "stats.ratingCount": count,
     "stats.ratingSum": sum,
     "stats.ratingHistogram": stats.ratingHistogram,
     "stats.ratingAvg": count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+    ...(stats.reviewTagged > 0 || before.reviewTagged > 0 ? { "stats.reviewTagged": stats.reviewTagged, "stats.reviewTags": stats.reviewTags } : {}),
   });
 }
 
-/** Adds (delta 1) or removes (delta -1) one published rating. */
-function applyRating(tx: Transaction, sellerUid: string, current: RatingStats, rating: number, delta: 1 | -1): void {
-  writeRatings(tx, sellerUid, withRating(current, rating, delta));
+/** Adds (delta 1) or removes (delta -1) one published review. */
+function applyRating(tx: Transaction, sellerUid: string, current: RatingStats, review: Counted, delta: 1 | -1): void {
+  writeRatings(tx, sellerUid, withRating(current, review, delta), current);
 }
 
 export interface NewReview {
@@ -112,6 +128,8 @@ export interface NewReview {
   authorUid: string;
   rating: number;
   text: string;
+  /** What went well with a carrier: kept only when the conversation holds a place request. */
+  tags?: CarrierReviewTag[];
   /** "pending": held for a moderator (sensitive data). */
   status: "published" | "pending";
   now: Date;
@@ -151,6 +169,8 @@ export async function createReview(input: NewReview): Promise<ReviewRecord & { r
     if (isPairBlocked(blocksOf([authorBlocks!, sellerBlocks!]), input.authorUid, conversation.sellerUid)) throw new ReviewError("not_allowed");
     const authorPublicId = author!.get("publicId") as string;
     const authorName = author!.get("displayName") as string;
+    // A transport review (transporteurs/spec.md §6): tags only where a place was asked, possibly none ticked.
+    const transport = conversation.carrierRequest !== undefined;
     const doc = reviewSchema.parse({
       conversationId: input.cid,
       listingId: conversation.listingId,
@@ -163,6 +183,7 @@ export async function createReview(input: NewReview): Promise<ReviewRecord & { r
       targetName: conversation.sellerName,
       rating: input.rating,
       text: input.text,
+      ...(transport ? { tags: [...new Set(input.tags ?? [])] } : {}),
       exchangeConfirmed: true,
       verified: true,
       experienceAt: conversation.sellerRepliedAt,
@@ -176,10 +197,10 @@ export async function createReview(input: NewReview): Promise<ReviewRecord & { r
     tx.update(conversationRef(input.cid), { reviewedAt: Timestamp.fromDate(input.now) });
     let stats = ratingStatsOf(seller!);
     const before = stats;
-    if (earlier?.status === "published") stats = withRating(stats, earlier.rating, -1);
-    if (input.status === "published") stats = withRating(stats, input.rating, 1);
+    if (earlier?.status === "published") stats = withRating(stats, earlier, -1);
+    if (input.status === "published") stats = withRating(stats, doc, 1);
     const ratingsMoved = stats !== before;
-    if (ratingsMoved) writeRatings(tx, conversation.sellerUid, stats);
+    if (ratingsMoved) writeRatings(tx, conversation.sellerUid, stats, before);
     return { id, ...doc, replaced: earlier !== null && earlier.status !== "deleted", ratingsMoved };
   });
   void consume("firestore.reads", 6);
@@ -196,7 +217,7 @@ export async function deleteReview(id: string, authorUid: string, now: Date): Pr
     if (review.status === "hidden") throw new ReviewError("state");
     const seller = review.status === "published" ? await tx.get(userRef(review.targetUid)) : null;
     tx.update(reviewRef(id), { status: "deleted", updatedAt: Timestamp.fromDate(now), purgeAt: Timestamp.fromDate(addMonths(now, REVIEW_PURGE_MONTHS)) });
-    if (seller?.exists) applyRating(tx, review.targetUid, ratingStatsOf(seller), review.rating, -1);
+    if (seller?.exists) applyRating(tx, review.targetUid, ratingStatsOf(seller), review, -1);
     return seller?.exists ? 2 : 1;
   });
   void consume("firestore.reads", writes === 2 ? 2 : 1);
@@ -237,7 +258,7 @@ export async function setReviewStatus(id: string, status: "published" | "hidden"
       update.hiddenBy = FieldValue.delete();
     }
     tx.update(reviewRef(id), update);
-    if (seller.exists && (review.status === "published" || status === "published")) applyRating(tx, review.targetUid, ratingStatsOf(seller), review.rating, status === "published" ? 1 : -1);
+    if (seller.exists && (review.status === "published" || status === "published")) applyRating(tx, review.targetUid, ratingStatsOf(seller), review, status === "published" ? 1 : -1);
     return review;
   });
   void consume("firestore.reads", 2);

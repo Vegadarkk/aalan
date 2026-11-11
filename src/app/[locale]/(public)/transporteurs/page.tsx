@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Scale, Truck } from "lucide-react";
+import { BeforeSending } from "@/components/carriers/before-sending";
 import { CarrierSearchForm, CarrierSortSelect } from "@/components/carriers/carrier-search-form";
 import { DepartureResults } from "@/components/carriers/departure-results";
 import { RouteAlertButton, type RouteAlertButtonProps } from "@/components/carriers/route-alert-button";
@@ -166,6 +167,7 @@ export default async function CarriersPage({ params, searchParams }: Props) {
               <DepartureResults cards={outcome.response.departures} basket={basket} />
             </>
           )}
+          <BeforeSending />
           <p className="max-w-prose text-xs text-foreground-muted text-pretty">{t("notice")}</p>
         </div>
       </Container>

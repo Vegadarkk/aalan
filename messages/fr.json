@@ -172,6 +172,7 @@
       "autorites": "Contact autorités (DSA)",
       "interdits": "Objets interdits"
     },
+    "carriers": "Transporteurs Europe–Maroc",
     "guide": "Démarches administratives",
     "pricing": "Tarifs",
     "intro": "Avec {site}, trouvez la bonne affaire près de chez vous : des petites annonces de particuliers et de professionnels partout au Maroc. Voitures, immobilier, location de vacances, emploi, téléphones, meubles, produits du terroir… Déposez une annonce gratuitement pour vendre, louer, donner ou proposer vos services, et échangez en toute sécurité par la messagerie.",
@@ -3615,7 +3616,8 @@
       "deliverEurope": "Livraison en Europe",
       "more": "{names} et {count} autres",
       "notice": "Prix indicatif d'après la grille déclarée par le transporteur, sans paiement sur le site. Le prix final est fixé à la pesée de contrôle, avant la prise en charge de vos colis. Le contrat est conclu avec le transporteur seul.",
-      "compare": "Comparer avec les autres départs de ce trajet"
+      "compare": "Comparer avec les autres départs de ce trajet",
+      "guide": "Avant d'envoyer : douane, objets interdits, assurance."
     }
   },
   "Profile": {
@@ -5343,6 +5345,7 @@
       "title": "Sélection de la boutique"
     },
     "carrier": {
+      "verifiedNote": "Les identifiants professionnels de ce transporteur (immatriculation de l'entreprise, au Maroc ou dans l'Union européenne) ont été vérifiés ; son numéro de licence est déclaré sous sa seule responsabilité. Le transport se conclut directement entre vous et le transporteur : le site n'y est pas partie et ne perçoit rien. Le prix final est fixé à la pesée de contrôle, avant la prise en charge.",
       "cardTitle": "Le transporteur",
       "licence": "Licence n°",
       "licenceDeclared": "Numéro déclaré par le transporteur, sous sa seule responsabilité.",
@@ -7025,6 +7028,14 @@
     "count": "{count, plural, one {# départ} other {# départs}}",
     "guide": "Prix constatés sur ce trajet : de {min} à {max} le kilo chez {count} transporteurs. Un repère, pas un tarif.",
     "notice": "Prix estimés d'après les grilles déclarées par les transporteurs, à titre indicatif : rien n'est payé sur Aalan. Le prix final est fixé à la pesée de contrôle, avant la prise en charge de vos colis. Le transport se conclut directement avec le transporteur.",
+    "before": {
+      "title": "Avant d'envoyer",
+      "content": "Vous êtes responsable du contenu de votre envoi et de sa déclaration en douane.",
+      "customs": "Des droits et taxes marocains peuvent s'ajouter à l'arrivée ; des marchandises destinées à la revente suivent le régime commercial.",
+      "insurance": "La responsabilité du transporteur est plafonnée par la convention CMR, sauf valeur déclarée : pour un objet de valeur, demandez une assurance.",
+      "forbidden": "Jamais de drogue, d'armes, de devises non déclarées, de médicaments sans ordonnance ni de drone sans autorisation.",
+      "guide": "Lire le guide : envoyer un colis par transporteur"
+    },
     "empty": {
       "soonTitle": "Premiers départs bientôt",
       "soonBody": "Les transporteurs publient leurs départs ici à l'ouverture de l'espace. Revenez avant votre envoi, ou faites passer le mot au transporteur avec qui vous voyagez.",

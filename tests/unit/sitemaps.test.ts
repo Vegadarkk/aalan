@@ -5,7 +5,7 @@ import { cityBySlug } from "@/config/regions";
 import { parseEnv, resetServerEnv, type ServerEnv } from "@/lib/env";
 import { resetSearchEngine, setSearchEngineForTests } from "@/lib/search/engine";
 import { MemoryEngine } from "@/lib/search/memory";
-import { buildSitemapFile, escapeXml, parseSitemapFile, SITEMAP_LISTINGS_MAX, urlEntries } from "@/lib/search/sitemaps";
+import { buildSitemapFile, escapeXml, fixedPaths, parseSitemapFile, SITEMAP_LISTINGS_MAX, urlEntries } from "@/lib/search/sitemaps";
 import { SITEMAP_SHARDS, sitemapShardOf, type SearchDocument } from "@/lib/search/types";
 import { GET } from "@/app/sitemaps/[file]/route";
 
@@ -166,6 +166,12 @@ describe("buildSitemapFile", () => {
     // real listings, the empty ones too.
     expect(paths.sort()).toEqual(["", ...CATEGORIES.map((category) => `/c/${category.id}`), "/c/vehicules/casablanca", "/c/vehicules/voitures", "/c/vehicules/voitures/casablanca", "/c/vehicules/voitures/renault", "/boutiques", "/boutiques/activite/boutiques", "/boutiques/activite/concessions-automobiles", "/boutiques/activite/agences-immobilieres", "/boutiques/activite/location-voitures", "/boutiques/activite/location-saisonniere", "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`), "/professionnels"].sort());
     expect(xml.match(/<url>/g)).toHaveLength(paths.length * 2);
+  });
+
+  it("adds the carriers' search and directory activity only once their space opens", () => {
+    expect(fixedPaths(false)).not.toContain("/transporteurs");
+    expect(fixedPaths(false)).not.toContain("/boutiques/activite/transporteurs");
+    expect(fixedPaths(true)).toEqual([...fixedPaths(false), "/transporteurs", "/boutiques/activite/transporteurs"]);
   });
 });
 

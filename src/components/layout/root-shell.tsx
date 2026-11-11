@@ -6,6 +6,7 @@ import { CguNotice } from "@/components/legal/cgu-notice";
 import { Footer } from "@/components/legal/footer";
 import type { PublicConfig } from "@/lib/config/public-types";
 import type { SessionSummary } from "@/lib/contracts/auth";
+import { getFlags } from "@/lib/config/runtime";
 import { getLegalConfig } from "@/lib/legal/config";
 import { pickMessages } from "@/i18n/client-messages";
 import { readex, ruqaa, tarifitFallback } from "@/lib/fonts";
@@ -37,7 +38,7 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
   const t = await getTranslations({ locale, namespace: "Nav" });
   const messages = clientNamespaces ? pickMessages(await getMessages({ locale }), clientNamespaces) : undefined;
   // Live config/legal (cached 5 minutes); it reads no request data, so (public) stays static (ISR).
-  const { companyName } = await getLegalConfig();
+  const [{ companyName }, { carriersEnabled }] = await Promise.all([getLegalConfig(), getFlags()]);
   const dir = isRtl(locale) ? "rtl" : "ltr";
   return (
     <html lang={LOCALE_TAGS[locale]} dir={dir} className={`${readex.variable} ${tarifitFallback.variable} ${ruqaa.variable}`} suppressHydrationWarning>
@@ -68,7 +69,7 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
             {/* Under the private root layout every footer link leads to the other root layout, a full
                 page load that never reads a prefetch: none there (about 470 KB of RSC on the sign-up
                 page once the footer showed, audit zone 8 perf 5). */}
-            <Footer publisher={companyName} prefetch={config === undefined} />
+            <Footer publisher={companyName} prefetch={config === undefined} carriers={carriersEnabled} />
           </Providers>
         </NextIntlClientProvider>
       </body>

@@ -401,6 +401,16 @@ Une annonce pour un objet interdit est bloquée ou mise en vérification au dép
 
 **Signaler une offre.** Signalez une offre frauduleuse ou discriminatoire avec le bouton « Signaler » de l'annonce (§9).
 
+### 7.13 Transport de colis {#annonces-13}
+
+**Réservé aux transporteurs vérifiés.** Les départs de la rubrique « Départs Europe–Maroc » sont publiés par des comptes Pro de l'activité « Transporteur », immatriculés au Maroc ou dans l'Union européenne et vérifiés comme tout professionnel (§4.4). En choisissant cette activité, le transporteur s'engage à détenir les autorisations de transport et l'assurance requises, à respecter les règles de douane et de transport des marchandises dangereuses, et à facturer le prix de sa grille, hors écart de poids constaté à la pesée.
+
+**Informations déclarées.** Le numéro de licence (affiché « déclaré »), la grille de prix, les trajets, les dates et la place restante sont déclarés par le transporteur, sous sa seule responsabilité. {brand} ne les vérifie pas. Une information inexacte engage la seule responsabilité du transporteur, y compris envers {brand} (§6.1 et §19.1).
+
+**Un prix estimé, pas un devis.** Le prix que {brand} calcule à partir de la grille d'un transporteur est une estimation, donnée à titre indicatif. Le transporteur fixe le prix final après une pesée de contrôle, avant la prise en charge. Une demande de place envoyée par la messagerie n'est qu'une demande : le contrat de transport se conclut directement entre le client et le transporteur. Aucun paiement, acompte ni commission ne passe par {brand} (§15.2).
+
+**Le contenu de l'envoi.** Le client répond seul du contenu de son envoi et de sa déclaration en douane ; des droits et taxes peuvent s'ajouter à l'arrivée. Les objets interdits par la loi ou par la liste des [objets interdits](/legal/objets-interdits) ne peuvent pas être confiés à un transporteur rencontré sur {brand}, et le transporteur peut refuser tout objet. En cas de perte ou d'avarie, sa responsabilité suit le contrat de transport et la convention relative au contrat de transport international de marchandises par route (CMR), sauf valeur déclarée.
+
 ## 8. Modération des contenus {#moderation}
 
 ### 8.1 Principes {#moderation-1}

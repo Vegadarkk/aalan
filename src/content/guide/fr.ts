@@ -28,7 +28,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     },
     mre: {
       title: "Marocains du monde (MRE)",
-      summary: "Services consulaires, immatriculation, retour définitif, procuration.",
+      summary: "Services consulaires, immatriculation, retour définitif, procuration, envoi de colis.",
       intro: "Depuis l'étranger, la plupart des démarches passent par le consulat de votre pays de résidence et par les services en ligne du ministère chargé des Marocains résidant à l'étranger.",
     },
     "pro-cooperative": {
@@ -165,6 +165,14 @@ export const GUIDE_FR: GuideLocaleContent = {
     "mre-retour": {
       title: "Retour définitif au Maroc",
       body: ["Un retour définitif ouvre droit à certaines facilités, notamment pour le déménagement et le véhicule, sous conditions détaillées par le consulat."],
+    },
+    "mre-colis": {
+      title: "Envoyer un colis par transporteur",
+      body: [
+        "Un transporteur en fourgon relie l'Europe et le Maroc. Sur {brand}, le prix affiché est une estimation tirée de sa grille : il fixe le prix final après une pesée de contrôle, avant de prendre votre colis. Demandez-le par écrit et gardez le reçu ou la lettre de voiture.",
+        "Vous restez responsable du contenu de votre envoi et de sa déclaration en douane. Des droits et taxes peuvent s'ajouter à l'arrivée, et des marchandises destinées à la revente relèvent du régime commercial : la douane (ADII) en fixe les règles. N'envoyez jamais de drogue, d'armes, de devises non déclarées, de médicaments sans ordonnance ni de drone sans autorisation.",
+        "En cas de perte ou d'avarie, la responsabilité du transporteur est plafonnée par la convention CMR, sauf valeur déclarée : pour un objet de valeur, demandez-lui une assurance.",
+      ],
     },
     "mre-procuration": {
       title: "Procuration pour vendre ou acheter un bien",
@@ -345,6 +353,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     ancfcc: "Conservation foncière (ANCFCC)",
     "ancfcc-tarifs": "Tarifs de la conservation foncière",
     "mre-accueil": "Ministère des Marocains résidant à l'étranger",
+    adii: "Administration des douanes et impôts indirects",
     "mre-consulaire": "Prestations consulaires en ligne",
     "mre-justice": "Services administratifs et judiciaires en ligne",
     "consulat-trouver": "Trouver son consulat",

@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { ConsentLink } from "@/components/consent/consent-link";
 import { Link } from "@/i18n/navigation";
+import { CARRIERS_PATH } from "@/lib/carriers/search-params";
 import { LEGAL_PAGES } from "@/config/legal-pages";
 import { Container } from "@/components/layout/container";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
@@ -34,7 +35,7 @@ const linkClass = cn(
  * only; the ~150 links of the whole plan load from a static JSON when the band is about to show,
  * and phones fold it (audit zone 8, perf 6: footer-directory-view.tsx).
  */
-export function Footer({ publisher, prefetch = true }: { publisher: string; prefetch?: boolean }) {
+export function Footer({ publisher, prefetch = true, carriers = false }: { publisher: string; prefetch?: boolean; /** The carriers space is open (`carriersEnabled`): its search is linked. */ carriers?: boolean }) {
   const t = useTranslations("Footer");
   const names = useTranslations("Categories");
   type CategoryKey = Parameters<typeof names>[0];
@@ -147,6 +148,13 @@ export function Footer({ publisher, prefetch = true }: { publisher: string; pref
                 {t("shopGuide")}
               </Link>
             </li>
+            {carriers ? (
+              <li>
+                <Link href={CARRIERS_PATH} prefetch={linkPrefetch} className={linkClass} data-testid="footer-carriers">
+                  {t("carriers")}
+                </Link>
+              </li>
+            ) : null}
             <li>
               <Link href="/demarches" prefetch={linkPrefetch} className={linkClass}>
                 {t("guide")}

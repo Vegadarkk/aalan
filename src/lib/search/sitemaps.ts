@@ -1,6 +1,8 @@
 import "server-only";
 import { CATEGORIES } from "@/config/categories";
 import { GUIDE_RUBRICS } from "@/content/guide/catalog";
+import { CARRIERS_PATH } from "@/lib/carriers/search-params";
+import { getFlags } from "@/lib/config/runtime";
 import { CANONICAL_ORIGIN, HREFLANG_LOCALES } from "@/config/site";
 import { serverEnv, type ServerEnv } from "@/lib/env";
 import { alternates } from "@/lib/i18n/metadata";
@@ -155,8 +157,12 @@ async function listingEntries(shard: number): Promise<string[]> {
 }
 
 /** Always indexable: the public Pro page, the directory of shops and its activities, the admin procedures guide (guide-demarches G1) and its rubrics. */
-// The carriers' activity page joins once their space opens (transporteurs/spec.md lot 5).
 const FIXED_PATHS = [PRO_LANDING_PATH, DIRECTORY_PATH, ...PRO_SECTORS.filter((sector) => sector !== "carrier").map((sector) => directoryPath({ sector })), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)];
+
+/** The fixed pages, with the carriers' search and their activity in the directory once their space opens (`carriersEnabled`, transporteurs/spec.md). */
+export function fixedPaths(carriersOpen: boolean): string[] {
+  return carriersOpen ? [...FIXED_PATHS, CARRIERS_PATH, directoryPath({ sector: "carrier" })] : FIXED_PATHS;
+}
 
 /** XML of a sitemap file, or null for a 404 (unknown file, empty shard, not production). */
 export async function buildSitemapFile(file: string, env: ServerEnv = serverEnv()): Promise<string | null> {
@@ -167,7 +173,7 @@ export async function buildSitemapFile(file: string, env: ServerEnv = serverEnv(
     case "index":
       return sitemapIndex(["pages.xml", ...(await listingShards()).map((shard) => `listings-${shard}.xml`)]);
     case "pages":
-      return urlset([...urlEntries(""), ...FIXED_PATHS.flatMap((path) => urlEntries(path)), ...(await indexableLandingPaths()).flatMap((path) => urlEntries(path))]);
+      return urlset([...urlEntries(""), ...fixedPaths((await getFlags()).carriersEnabled).flatMap((path) => urlEntries(path)), ...(await indexableLandingPaths()).flatMap((path) => urlEntries(path))]);
     case "listings": {
       const entries = await listingEntries(parsed.shard);
       return entries.length > 0 ? urlset(entries) : null;

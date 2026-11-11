@@ -9,6 +9,7 @@ import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import type { PublicDeparture } from "@/lib/listings/public";
 import { cn } from "@/lib/utils";
+import { PARCEL_GUIDE_HREF } from "./before-sending";
 
 // A carrier's departure on its listing page (transporteurs/spec.md §3, §5): the price from the
 // carrier's price list (a departure has none of its own), the dates, the room left and the places
@@ -84,7 +85,12 @@ export function DepartureFacts({ departure, from, pricesHref, compareHref = null
           <dd className="text-foreground-muted text-pretty">{list(toMorocco ? cities : zones)}</dd>
         </div>
       </dl>
-      <p className="text-xs text-foreground-muted text-pretty">{t("notice")}</p>
+      <p className="text-xs text-foreground-muted text-pretty">
+        {t("notice")}{" "}
+        <Link href={PARCEL_GUIDE_HREF} prefetch={false} data-testid="departure-guide" className={cn("font-medium text-link", textLinkClassName)}>
+          {t("guide")}
+        </Link>
+      </p>
       {compareHref ? (
         <Link href={compareHref} data-testid="departure-compare" className={cn("self-start text-sm font-medium text-link", textLinkClassName)}>
           {t("compare")}

@@ -180,7 +180,7 @@ export function isTransientError(error: unknown): boolean {
   return error instanceof TypeError && /^(fetch failed|terminated)$/.test(error.message);
 }
 
-class Oci {
+export class Oci {
   private readonly credentials: OciCredentials;
   readonly apply: boolean;
   constructor(credentials: OciCredentials, apply: boolean) {
@@ -375,7 +375,7 @@ export function pickImage(images: Image[], arch: "aarch64" | "x86_64" = "aarch64
 }
 
 const alive = (resource: Resource): boolean => !["TERMINATED", "TERMINATING", "DELETED"].includes(resource.lifecycleState);
-const query = (params: Record<string, string>): string => `?${new URLSearchParams(params).toString()}`;
+export const query = (params: Record<string, string>): string => `?${new URLSearchParams(params).toString()}`;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function findOne<T extends Resource>(oci: Oci, path: string, params: Record<string, string>, name: string): Promise<T | undefined> {
@@ -811,7 +811,7 @@ const COMMAND_DONE = ["SUCCEEDED", "FAILED", "TIMED_OUT", "CANCELED"];
  * Sends one command and waits for it; throws unless it exits 0. Returns its last 1 KB of output.
  * A read-only command (it changes nothing on the VM) also runs in a dry run.
  */
-async function runCommand(oci: Oci, compartmentId: string, instanceId: string, displayName: string, text: string, timeoutSeconds = 900, readOnly = false): Promise<string> {
+export async function runCommand(oci: Oci, compartmentId: string, instanceId: string, displayName: string, text: string, timeoutSeconds = 900, readOnly = false): Promise<string> {
   const shown = { displayName, bytes: Buffer.byteLength(text), sha256: createHash("sha256").update(text).digest("hex") };
   const body = {
     compartmentId,
@@ -1410,7 +1410,7 @@ async function reboot(oci: Oci, compartmentId: string): Promise<void> {
   if (oci.apply) console.log("reboot requested: follow it with `node scripts/oracle-vm.ts status`");
 }
 
-function credentialsFromEnv(): OciCredentials {
+export function credentialsFromEnv(): OciCredentials {
   return {
     tenancy: requireOwnerVar("OCI_TENANCY"),
     user: requireOwnerVar("OCI_USER"),

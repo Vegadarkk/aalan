@@ -68,14 +68,15 @@ describe("proxy", () => {
   });
 
   it("opens Facebook hosts and popups on the WhatsApp linking page only", async () => {
-    const response = await proxy(request("/parametres/whatsapp", "admin.joutiya.ma"));
+    vi.stubEnv("ADMIN_HOST", "admin.aalan.ma");
+    const response = await proxy(request("/parametres/whatsapp", "admin.aalan.ma"));
     const csp = response.headers.get("content-security-policy") ?? "";
     expect(directive(csp, "frame-src")).toContain("https://www.facebook.com");
     expect(directive(csp, "connect-src")).toContain("https://graph.facebook.com");
     expect(directive(csp, "script-src")).toContain("https://connect.facebook.net");
     expect(response.headers.get("cross-origin-opener-policy")).toBe("same-origin-allow-popups");
     for (const path of ["/parametres/whatsapp/x", "/parametres/legal"]) {
-      const other = await proxy(request(path, "admin.joutiya.ma"));
+      const other = await proxy(request(path, "admin.aalan.ma"));
       expect(other.headers.get("content-security-policy"), path).not.toContain("facebook");
       expect(other.headers.get("cross-origin-opener-policy"), path).toBe("same-origin");
     }

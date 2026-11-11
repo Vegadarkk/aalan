@@ -47,6 +47,8 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
   const stopDust = useRef<() => void>(() => undefined);
   const stopGlints = useRef<() => void>(() => undefined);
   const [done, setDone] = useState(false);
+  /** finish(true) moved focus to #main: checked again once the dialog is gone. */
+  const focusOnDone = useRef(false);
 
   const lit = useCallback(() => {
     window.clearTimeout(litTimer.current);
@@ -65,9 +67,19 @@ export function WelcomeDialog({ labelledBy, children }: { labelledBy: string; ch
     // the dialog. A focused element that stops being rendered gets Chromium's focus fixup, which can
     // land after #main took the focus and silently drop it (no blur): the page then has no focus.
     if (focus) focusMain();
+    focusOnDone.current = focus;
     document.documentElement.removeAttribute(WELCOME_ATTRIBUTE);
     setDone(true);
   }, []);
+
+  // Once the dialog is unmounted: if the page lost the focus on the way (body holds it, main CI on
+  // 11 Nov 2026 and PR #285), #main takes it again. Never taken from an element the visitor chose.
+  useEffect(() => {
+    if (!done || !focusOnDone.current) return;
+    focusOnDone.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) focusMain();
+  }, [done]);
 
   const open = useCallback(() => {
     const element = root.current;

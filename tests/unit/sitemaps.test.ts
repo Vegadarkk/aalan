@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CATEGORIES, subcategoryById } from "@/config/categories";
+import { LEGAL_PAGES } from "@/config/legal-pages";
 import { GUIDE_RUBRICS } from "@/content/guide";
 import { cityBySlug } from "@/config/regions";
 import { parseEnv, resetServerEnv, type ServerEnv } from "@/lib/env";
@@ -166,6 +167,27 @@ describe("buildSitemapFile", () => {
     // real listings, the empty ones too.
     expect(paths.sort()).toEqual(["", ...CATEGORIES.map((category) => `/c/${category.id}`), "/c/vehicules/casablanca", "/c/vehicules/voitures", "/c/vehicules/voitures/casablanca", "/c/vehicules/voitures/renault", "/boutiques", "/boutiques/activite/boutiques", "/boutiques/activite/concessions-automobiles", "/boutiques/activite/agences-immobilieres", "/boutiques/activite/location-voitures", "/boutiques/activite/location-saisonniere", "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`), "/professionnels"].sort());
     expect(xml.match(/<url>/g)).toHaveLength(paths.length * 2);
+  });
+});
+
+describe("buildSitemapFile while the site is closed", () => {
+  const CLOSED = { ...PROD, OPENS_AT: "2027-01-12T10:00:00+01:00" } as ServerEnv;
+  const before = new Date("2026-11-11T00:00:00Z");
+
+  it("lists only home, the legal texts and the procedures guide, and no listing shard", async () => {
+    await engine.upsert([doc("a2345678", "voitures", "casablanca")]);
+    const index = (await buildSitemapFile("index.xml", CLOSED, before)) ?? "";
+    expect([...index.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])).toEqual(["https://aalan.ma/sitemaps/pages.xml"]);
+    const pages = (await buildSitemapFile("pages.xml", CLOSED, before)) ?? "";
+    const paths = [...pages.matchAll(/<loc>https:\/\/aalan\.ma\/fr([^<]*)<\/loc>/g)].map((match) => match[1]);
+    expect(paths).toEqual(["", ...LEGAL_PAGES.map((page) => `/legal/${page.slug}`), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)]);
+    await expect(buildSitemapFile(`listings-${sitemapShardOf("a2345678")}.xml`, CLOSED, before)).resolves.toBeNull();
+  });
+
+  it("serves the full files once the opening instant has passed", async () => {
+    await engine.upsert([doc("a2345678", "voitures", "casablanca")]);
+    const index = (await buildSitemapFile("index.xml", CLOSED, new Date("2027-01-12T09:00:00Z"))) ?? "";
+    expect(index).toContain(`listings-${sitemapShardOf("a2345678")}.xml`);
   });
 });
 

@@ -12,6 +12,7 @@ import { Container } from "@/components/layout/container";
 import { quietLinkClassName } from "@/components/ui/text-link";
 import { localeParams, pageLocale } from "@/i18n/params";
 import { alternates } from "@/lib/i18n/metadata";
+import { getPricing } from "@/lib/config/runtime";
 import { getLegalConfig } from "@/lib/legal/config";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ async function load(params: Params) {
   const { locale: raw, slug } = await params;
   const locale = pageLocale(raw);
   if (!isHelpSlug(slug)) notFound();
-  return { locale, article: helpArticle(locale, slug, helpValues(await getLegalConfig())) };
+  return { locale, article: helpArticle(locale, slug, helpValues(await getLegalConfig(), await getPricing())) };
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {

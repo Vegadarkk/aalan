@@ -1,10 +1,11 @@
 import type { LegalConfig } from "@/config/legal";
+import { DEFAULT_PRICING, type PricingConfig } from "@/config/pricing";
 import { LEGAL_PAGES } from "@/config/legal-pages";
 import { LOCALES, type Locale } from "@/config/site";
 import { APPEAL_SLA_DAYS } from "@/lib/contracts/appeals";
 import { MESSAGE_TEXT_MAX } from "@/lib/contracts/endpoints";
 import { MAX_DRAFTS } from "@/lib/contracts/listings";
-import { MAX_PHOTOS_INDIVIDUAL, MAX_UPLOAD_BYTES } from "@/lib/contracts/media";
+import { MAX_UPLOAD_BYTES } from "@/lib/contracts/media";
 import { SAVED_SEARCHES_MAX } from "@/lib/contracts/search";
 import { DRAFT_PURGE_DAYS, RENEW_WINDOW_DAYS } from "@/lib/listings/lifecycle";
 import { HELP_CATEGORIES, HELP_META, HELP_SLUGS, type HelpBlock, type HelpCategory, type HelpLink, type HelpLocaleContent, type HelpSlug } from "./catalog";
@@ -20,13 +21,13 @@ export * from "./catalog";
 
 const CONTENT: Readonly<Record<Locale, HelpLocaleContent>> = { fr: HELP_FR, ar: HELP_AR, rif: HELP_RIF };
 
-/** Values of the `{name}` placeholders: the code's own limits and config/legal's listing lifetime. */
+/** Values of the `{name}` placeholders: the code's own limits, config/pricing's photo limit and config/legal's listing lifetime. */
 export type HelpValues = Readonly<Record<string, string>>;
 
-export function helpValues(legal: Pick<LegalConfig, "listingTtlDays">): HelpValues {
+export function helpValues(legal: Pick<LegalConfig, "listingTtlDays">, pricing: Pick<PricingConfig, "individual"> = DEFAULT_PRICING): HelpValues {
   return {
     ttlDays: String(legal.listingTtlDays),
-    maxPhotos: String(MAX_PHOTOS_INDIVIDUAL),
+    maxPhotos: String(pricing.individual.photosPerListing),
     photoMb: String(Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))),
     maxDrafts: String(MAX_DRAFTS),
     draftPurgeDays: String(DRAFT_PURGE_DAYS),

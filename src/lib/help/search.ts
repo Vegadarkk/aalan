@@ -3,6 +3,7 @@ import { articleBody, helpArticles, helpValues, type HelpArticle, type HelpValue
 import { LOCALES, type Locale } from "@/config/site";
 import type { HelpHit } from "@/lib/contracts/assistant";
 import { serverEnv } from "@/lib/env";
+import { getPricing } from "@/lib/config/runtime";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
 import { MeiliEngine } from "@/lib/search/meili";
@@ -51,7 +52,7 @@ export function helpDocuments(values: HelpValues): HelpIndexDocument[] {
 
 /** The locale's articles with config/legal's values (5-minute cache). */
 export async function loadHelpArticles(locale: Locale): Promise<HelpArticle[]> {
-  return helpArticles(locale, helpValues(await getLegalConfig()));
+  return helpArticles(locale, helpValues(await getLegalConfig(), await getPricing()));
 }
 
 function helpEngine(): MeiliEngine | null {
@@ -97,6 +98,6 @@ export async function searchHelp(locale: Locale, query: string, limit = 4, artic
 /** Replaces the `help` index with the current corpus; false when Meilisearch is not configured. */
 export async function syncHelpIndex(engine: MeiliEngine | null = helpEngine()): Promise<boolean> {
   if (!engine) return false;
-  await engine.replaceAll({ ...HELP_INDEX_SETTINGS }, helpDocuments(helpValues(await getLegalConfig())));
+  await engine.replaceAll({ ...HELP_INDEX_SETTINGS }, helpDocuments(helpValues(await getLegalConfig(), await getPricing())));
   return true;
 }

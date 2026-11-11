@@ -1,6 +1,7 @@
 import "server-only";
 import { DEFAULT_AI, type AiConfig } from "@/config/ai";
 import { MAX_UPLOAD_BYTES, PHOTO_VARIANTS, type ListingPhoto, type UploadRejectReason, type UploadStatusResponse } from "@/lib/contracts/media";
+import { getPricing } from "@/lib/config/runtime";
 import { getListing, type ListingRecord } from "@/lib/db/repositories/listings";
 import { recordModerationDecision } from "@/lib/db/repositories/moderation-decisions";
 import { getUpload, markUploadReady, transitionUpload, type UploadRecord } from "@/lib/db/repositories/uploads";
@@ -175,7 +176,7 @@ async function run(upload: UploadRecord, ctx: Context): Promise<UploadStatusResp
 }
 
 async function publish(upload: UploadRecord, listing: ListingRecord, processed: ProcessedImage, checks: UploadRecord["checks"], ctx: Context): Promise<UploadStatusResponse | null> {
-  const maxPhotos = maxPhotosOf(listing);
+  const maxPhotos = maxPhotosOf(listing, await getPricing());
   const attachable = AUTO_ATTACH_STATUSES.includes(listing.status) || listing.photos.some((photo) => photo.id === upload.id);
   // A full live listing cannot take it either: refused before anything is stored.
   if (!attachable && listing.photos.length >= maxPhotos) return reject(upload, "quota", ctx, { checks });

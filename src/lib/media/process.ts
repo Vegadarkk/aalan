@@ -28,7 +28,12 @@ export interface ProcessedImage {
 const DECODABLE_FORMATS: ReadonlySet<string> = new Set(["jpeg", "png", "webp"]);
 const BLURHASH_SIZE = 32;
 const BLURHASH_COMPONENTS = { x: 4, y: 3 } as const;
-const WEBP_EFFORT = 4;
+/**
+ * libwebp encoder settings of every variant: effort 6 (slowest, smallest: ~0.9 s per photo for the
+ * three variants on one x86 core, async in the worker), sharp-YUV chroma subsampling (sharper colour
+ * edges) and the photo preset.
+ */
+const WEBP_OPTIONS = { effort: 6, smartSubsample: true, preset: "photo" } as const;
 
 /** sharp failures mapped to reject reasons; anything unknown is a decode failure. */
 export function toMediaError(error: unknown): MediaError {
@@ -64,12 +69,12 @@ export async function processImage(input: Buffer): Promise<ProcessedImage> {
       .rotate()
       .flatten({ background: "#ffffff" })
       .resize({ width: PHOTO_VARIANT_SPECS.l.maxEdge, height: PHOTO_VARIANT_SPECS.l.maxEdge, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: PHOTO_VARIANT_SPECS.l.quality, effort: WEBP_EFFORT })
+      .webp({ ...WEBP_OPTIONS, quality: PHOTO_VARIANT_SPECS.l.quality })
       .toBuffer({ resolveWithObject: true });
     const fromLarge = (variant: "m" | "s") =>
       openImage(large.data)
         .resize({ width: PHOTO_VARIANT_SPECS[variant].maxEdge, height: PHOTO_VARIANT_SPECS[variant].maxEdge, fit: "inside", withoutEnlargement: true })
-        .webp({ quality: PHOTO_VARIANT_SPECS[variant].quality, effort: WEBP_EFFORT })
+        .webp({ ...WEBP_OPTIONS, quality: PHOTO_VARIANT_SPECS[variant].quality })
         .toBuffer();
     const medium = await fromLarge("m");
     const small = await fromLarge("s");

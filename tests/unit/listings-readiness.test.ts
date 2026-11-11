@@ -216,6 +216,8 @@ describe("assessReadiness", () => {
     expect(codes(ready({ photos: eleven })).get("photos")).toEqual(["photos_max"]);
     expect(codes(ready({ photos: eleven }), PRO).has("photos")).toBe(false);
     expect(codes(ready({ photos: eleven.slice(0, 5) })).has("photos")).toBe(false);
+    // The listing service passes the live limit of config/pricing.
+    expect(codes(ready({ photos: eleven.slice(0, 4) }), { ...INDIVIDUAL, photosPerListing: 3 }).get("photos")).toEqual(["photos_max"]);
   });
 
   it("ties showPhone and WhatsApp to a verified number", () => {

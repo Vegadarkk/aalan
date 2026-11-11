@@ -1,5 +1,6 @@
 import "server-only";
 import { requireOwner, type AuthContext } from "@/lib/auth/guards";
+import { getPricing } from "@/lib/config/runtime";
 import {
   PHOTO_VARIANTS,
   UPLOAD_URL_TTL_SECONDS,
@@ -103,12 +104,13 @@ export async function signUpload(uploader: Uploader, input: SignUploadInput, now
   if (!PHOTO_TARGET_STATUSES.includes(listing.status)) throw notFound();
   // Every upload document of the listing is read by the owner's view: their number is capped
   // (refused ones stay 7 days unless removed), one aggregation read.
-  if ((await countUploadsByTarget(listing.id)) >= UPLOADS_PER_PHOTO_SLOT * maxPhotosOf(listing)) throw new HttpError(409, "upload_limit", "too many uploads on this listing");
+  const maxPhotos = maxPhotosOf(listing, await getPricing());
+  if ((await countUploadsByTarget(listing.id)) >= UPLOADS_PER_PHOTO_SLOT * maxPhotos) throw new HttpError(409, "upload_limit", "too many uploads on this listing");
   const attached = new Set(listing.photos.map((photo) => photo.id));
   const inFlight = (await listUploadsByTarget(listing.id, ["signed", "processing"])).filter(
     (upload) => !attached.has(upload.id) && (upload.status === "processing" || now.getTime() - upload.createdAt.getTime() < SIGNED_HOLD_MS),
   );
-  if (attached.size + inFlight.length >= maxPhotosOf(listing)) throw new HttpError(409, "photo_limit");
+  if (attached.size + inFlight.length >= maxPhotos) throw new HttpError(409, "photo_limit");
 
   // Points = declared bytes; the pipeline refuses an object larger than declared.
   await enforceLimit("upload.bytes.uid", uid, input.declaredSize);

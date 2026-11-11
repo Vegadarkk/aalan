@@ -90,7 +90,7 @@ describe("infra/micro scripts", () => {
       [now - 20, "www", "000", "0", "fail"],
     ];
     writeFileSync(join(root, "aalan/data/probe", `${day}.tsv`), rows.map((row) => row.join("\t")).join("\n") + "\n");
-    const run = spawnSync("bash", [scripts("report.sh")], { encoding: "utf8", env: { ...process.env, TLS_HOST: "" } });
+    const run = spawnSync("bash", [scripts("report.sh")], { encoding: "utf8", env: { ...process.env, TLS_HOST: "", APT_UPDATES: "" } });
     const verdict = run.stdout.trim().split("\n").at(-1) ?? "";
     expect(verdict).toMatch(/^verdict ALERT /);
     expect(verdict).toContain("site-failing:www");

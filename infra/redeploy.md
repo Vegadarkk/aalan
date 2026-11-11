@@ -21,7 +21,7 @@ Ce qui se perd : les files BullMQ et les compteurs de quotas du jour (`valkey-qu
 5. **Certificats Google** : pour le staging puis la prod, Claude lance `node scripts/oracle-vm.ts wif <env> --apply` (une clé neuve par conteneur, créée sur la VM), Nav signe les demandes sur le PC2 (`node scripts/google-wif.ts sign`), puis Claude pose les certificats (`wif <env> --certificates=<fichier> --apply`) ; le pool et les comptes de service restent. Web et worker ne démarrent pas sans.
 6. **Staging** : Claude relance le dernier déploiement (GitHub → Actions → *Deploy staging* sur `main`), puis `node scripts/oracle-vm.ts search-setup staging --reindex=<lectures> --apply` : index et clés de recherche neufs, index reconstruit depuis Firestore dans la limite de lectures donnée.
 7. **Production** : Claude promeut la version du staging par Run Command (`node scripts/oracle-vm.ts promote --tag=<dernier tag vX.Y.Z> --apply`, qui vide aussi le cache Cloudflare ; le staging doit tourner sur le commit de ce tag), puis `search-setup prod --reindex=<lectures> --apply`.
-8. **Contrôle** : `https://joutiya.ma/api/health` répond `ok`, et la sonde annonce le rétablissement.
+8. **Contrôle** : `https://aalan.ma/api/health` répond `ok`, et la sonde annonce le rétablissement.
 
 ## Renouvellements
 

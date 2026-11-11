@@ -17,7 +17,7 @@
     // key dedicated to this Worker. No Email Routing: @joutiya.ma mail lives at Hostinger.
     "ALERT_EMAIL_FROM": "Joutiya alertes <alertes@notif.joutiya.ma>",
     // Health endpoints probed every 5 minutes. Staging sits behind Access: service token headers.
-    "PROBE_TARGETS": "[{\"name\":\"production\",\"url\":\"https://joutiya.ma/api/health\"},{\"name\":\"staging\",\"url\":\"https://staging.aalan.ma/api/health\",\"access\":true}]"
+    "PROBE_TARGETS": "[{\"name\":\"production\",\"url\":\"https://aalan.ma/api/health\"},{\"name\":\"staging\",\"url\":\"https://staging.aalan.ma/api/health\",\"access\":true}]"
   }
   // Secrets (wrangler secret put): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_EMAIL_TO,
   // RESEND_API_KEY (sending access limited to notif.joutiya.ma; pipe it with `printf %s`, a trailing

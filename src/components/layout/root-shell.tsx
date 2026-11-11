@@ -56,7 +56,7 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
         </a>
         <NextIntlClientProvider messages={messages}>
           <Providers dir={dir} config={config} initialSession={initialSession}>
-            <SiteHeader locale={locale} />
+            <SiteHeader locale={locale} carriers={carriersEnabled} />
             <CguNotice />
             {/* A floor under short pages (an invoice or two, an empty state): the tall footer starts near
                 the bottom of the screen instead of right under the content (owner, 2026-11-04), about

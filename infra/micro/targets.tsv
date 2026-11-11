@@ -1,0 +1,6 @@
+# Probed every minute by probe.sh from spare-micro-1 (Oracle, outside Cloudflare Workers and aalan-vm).
+# name<TAB>url<TAB>expected HTTP code<TAB>text the body must contain ("-": none)
+health	https://aalan.ma/api/health	200	"status":"ok"
+guide	https://aalan.ma/fr/demarches	200	-
+www	https://www.aalan.ma/	301	-
+admin	https://admin.aalan.ma/	302	-

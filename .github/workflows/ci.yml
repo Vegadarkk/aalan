@@ -101,7 +101,7 @@ jobs:
           npm run test:search
           node scripts/bench-search.ts --docs 20000 --requests 300 --concurrency 4
       - name: VM scripts
-        run: shellcheck infra/vm/*.sh
+        run: shellcheck infra/vm/*.sh infra/micro/*.sh
       - name: Compose projects
         run: |
           for env in staging prod; do

@@ -13,9 +13,14 @@ import { MessagesProvider } from "./messages-provider";
 // `data-shell="app"`: below lg the site footer steps aside (footer.tsx), an application screen has
 // no 25 links under its composer (UX audit, finding 9).
 
+// A conversation id is 22 base64url characters (src/lib/messaging/ids.ts), so about one in 4,096
+// starts with "__": matching its exact shape, not a "__" prefix, keeps those threads openable below
+// lg while Next's internal segments ("__PAGE__", "__PAGE__?…", "__DEFAULT__") still read as none.
+const CID = /^[A-Za-z0-9_-]{22}$/;
+
 /** The open conversation id from the child segment, null on /messages itself. */
 export function selectedConversation(segment: string | null): string | null {
-  return segment && !segment.startsWith("__") ? segment : null;
+  return segment && CID.test(segment) ? segment : null;
 }
 
 export function MessagesShell({ children }: { children: ReactNode }) {

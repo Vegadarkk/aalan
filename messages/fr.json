@@ -7119,5 +7119,92 @@
       "view": "Voir le départ",
       "percent": "{value} %"
     }
+  },
+  "CarrierRequest": {
+    "basket": {
+      "title": "Votre envoi",
+      "kg": "Colis et cartons (kg)",
+      "kgHint": "Poids approximatif, hors objets listés.",
+      "less": "Retirer : {item}",
+      "more": "Ajouter : {item}",
+      "moreItems": "Plus d'objets",
+      "pickup": "Collecte à domicile",
+      "delivery": "Livraison à domicile",
+      "empty": "Indiquez un poids ou au moins un objet.",
+      "summaryKg": "{kg} kg de colis",
+      "summaryItem": "{count} × {item}",
+      "summaryPickup": "collecte à domicile",
+      "summaryDelivery": "livraison à domicile"
+    },
+    "card": {
+      "requestedMine": "Demande de place envoyée à {name}",
+      "requestedTheirs": "{name} demande une place",
+      "acceptedMine": "Place réservée pour {name}",
+      "acceptedTheirs": "{name} vous réserve une place",
+      "departure": "Départ le {day}",
+      "estimate": "Prix estimé : {total}",
+      "onRequest": "Sur devis : {items}",
+      "noEstimate": "Pas de prix estimé : demandez-le au transporteur.",
+      "waiting": "En attente de la réponse du transporteur.",
+      "withdraw": "Retirer la demande",
+      "withdrawnToast": "Demande retirée",
+      "accept": "Place réservée",
+      "decline": "Pas de place",
+      "confirmAccept": "Réserver une place à {name} pour ce départ ?",
+      "confirmDecline": "Répondre à {name} qu'il n'y a pas de place ?",
+      "confirmAcceptButton": "Confirmer : place réservée",
+      "confirmDeclineButton": "Confirmer : pas de place",
+      "back": "Retour",
+      "note": "Un mot pour le client (facultatif)",
+      "notePlaceholderAccept": "Ex. : dépôt la veille au soir, pesée sur place.",
+      "notePlaceholderDecline": "Ex. : complet, prochain départ le 28.",
+      "acceptedToast": "Place réservée",
+      "declinedToast": "Réponse envoyée",
+      "updateSpace": "Mettre à jour la place restante",
+      "notice": "Prix indicatif : rien ne se paie sur {site}. Le transporteur fixe le prix final après la pesée de contrôle, avant la prise en charge."
+    },
+    "event": {
+      "requested": {
+        "mine": "Vous avez demandé une place pour le départ du {day}",
+        "theirs": "{name} demande une place pour le départ du {day}"
+      },
+      "changed": {
+        "mine": "Vous avez modifié votre demande de place",
+        "theirs": "{name} a modifié sa demande de place"
+      },
+      "accepted": {
+        "mine": "Vous avez réservé une place à {name}",
+        "theirs": "{name} vous a réservé une place pour le départ du {day}"
+      },
+      "declined": {
+        "mine": "Vous avez répondu : pas de place",
+        "theirs": "{name} n'a pas de place pour ce départ"
+      },
+      "withdrawn": {
+        "mine": "Vous avez retiré votre demande de place",
+        "theirs": "{name} a retiré sa demande de place"
+      }
+    },
+    "preview": {
+      "requested": "Demande de place",
+      "changed": "Demande de place modifiée",
+      "accepted": "Place réservée",
+      "declined": "Pas de place",
+      "withdrawn": "Demande de place retirée"
+    },
+    "errors": {
+      "carrier_request_changed": "La demande a changé entre-temps : rechargez la conversation.",
+      "carrier_request_past": "Le jour du départ est passé : la demande ne peut plus être acceptée.",
+      "carrier_request_unavailable": "Ce départ ne prend plus de demande de place."
+    },
+    "listing": {
+      "button": "Demander une place",
+      "title": "Demande de place à {name}",
+      "titleFallback": "Demande de place",
+      "draft": "Bonjour, avez-vous de la place pour cet envoi sur ce départ ?",
+      "hint": "Le transporteur répond « Place réservée » ou « Pas de place » dans la messagerie, avec un prix estimé d'après sa grille.",
+      "signIn": "Connectez-vous pour demander une place à ce transporteur.",
+      "notice": "Prix indicatif : rien ne se paie sur {site}. Le transporteur fixe le prix final après la pesée de contrôle, avant la prise en charge."
+    }
   }
 }

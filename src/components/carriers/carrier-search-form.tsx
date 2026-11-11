@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { Minus, Package, Plus, Search, X } from "lucide-react";
+import { Package, Plus, Search, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { FIRST_ITEMS, MORE_ITEMS, Stepper } from "@/components/carriers/basket-stepper";
 import { CityCombobox } from "@/components/post/city-combobox";
 import { ChipRadioGroup } from "@/components/post/controls/chips";
 import { IntegerBox } from "@/components/post/controls/integer-box";
@@ -11,7 +12,7 @@ import { SwitchField } from "@/components/post/controls/switch";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { CARRIER_DIRECTIONS, CARRIER_ITEM_IDS, CARRIER_SEARCH, EU_ZONE_COUNTRIES, EU_ZONE_LIST, type CarrierDirection, type CarrierItem, type EuZoneCountry } from "@/config/carriers";
+import { CARRIER_DIRECTIONS, CARRIER_SEARCH, EU_ZONE_COUNTRIES, EU_ZONE_LIST, type CarrierDirection, type CarrierItem, type EuZoneCountry } from "@/config/carriers";
 import { cityBySlug, cityName } from "@/config/regions";
 import type { Locale } from "@/config/site";
 import { useRouter } from "@/i18n/navigation";
@@ -21,10 +22,6 @@ import { cn } from "@/lib/utils";
 // The search of /transporteurs (transporteurs/spec.md §5): the route (direction, EU country or
 // zone, Moroccan city), the period and the client's basket. Submitting navigates: the page renders
 // the results on the server from the query string.
-
-/** Items offered first in the basket; the rest of the catalogue opens below. */
-const FIRST_ITEMS = ["suitcase", "box-m", "big-bag", "e-scooter", "bicycle", "tv-large"] as const satisfies readonly CarrierItem[];
-const MORE_ITEMS = CARRIER_ITEM_IDS.filter((item) => !(FIRST_ITEMS as readonly string[]).includes(item));
 
 export function CarrierSearchForm({ params, period, searched = false, className }: { params: CarrierSearchParams; period: { from: string; to: string }; searched?: boolean; className?: string }) {
   const t = useTranslations("CarrierSearch.form");
@@ -160,7 +157,7 @@ export function CarrierSearchForm({ params, period, searched = false, className 
               {[...FIRST_ITEMS, ...(more ? MORE_ITEMS : [])].map((item) => (
                 <li key={item} className="flex min-h-12 items-center justify-between gap-3 py-1.5">
                   <span className="text-sm">{labels(`items.${item}`)}</span>
-                  <Stepper item={labels(`items.${item}`)} value={count(item)} onChange={(value) => setCount(item, value)} />
+                  <Stepper item={labels(`items.${item}`)} value={count(item)} onChange={(value) => setCount(item, value)} less={t("less", { item: labels(`items.${item}`) })} more={t("more", { item: labels(`items.${item}`) })} />
                 </li>
               ))}
             </ul>
@@ -182,23 +179,6 @@ export function CarrierSearchForm({ params, period, searched = false, className 
         </Button>
       </form>
     </>
-  );
-}
-
-function Stepper({ item, value, onChange }: { item: string; value: number; onChange: (value: number) => void }) {
-  const t = useTranslations("CarrierSearch.form");
-  return (
-    <span className="inline-flex items-center gap-1" role="group" aria-label={item}>
-      <Button type="button" variant="outline" size="icon" aria-label={t("less", { item })} disabled={value <= 0} onClick={() => onChange(value - 1)} className="size-10">
-        <Minus aria-hidden="true" className="size-4" />
-      </Button>
-      <output aria-live="polite" className="w-8 text-center font-semibold tabular-nums">
-        {value}
-      </output>
-      <Button type="button" variant="outline" size="icon" aria-label={t("more", { item })} disabled={value >= CARRIER_SEARCH.itemMax} onClick={() => onChange(value + 1)} className="size-10">
-        <Plus aria-hidden="true" className="size-4" />
-      </Button>
-    </span>
   );
 }
 

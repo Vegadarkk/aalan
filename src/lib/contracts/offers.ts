@@ -1,3 +1,4 @@
+import { carrierRequestInputSchema } from "@/lib/contracts/carrier-requests";
 import { z } from "@/lib/zod";
 import { stripFormatCharacters } from "@/lib/contracts/messaging";
 import { startConversationRequestSchema } from "@/lib/contracts/rental-requests";
@@ -34,11 +35,11 @@ export const offerNoteSchema = z.preprocess(
 export const offerInputSchema = z.object({ amount: amountSchema }).strict();
 export type OfferInput = z.infer<typeof offerInputSchema>;
 
-/** POST /api/conversations with a booking request (car rental) or an offer, never both. */
+/** POST /api/conversations with a booking request (car rental), an offer or a place request (carrier departure), one at most. */
 export const startConversationOfferSchema = startConversationRequestSchema
-  .extend({ offer: offerInputSchema.optional() })
+  .extend({ offer: offerInputSchema.optional(), carrierRequest: carrierRequestInputSchema.optional() })
   .strict()
-  .refine((input) => !(input.offer && input.rentalRequest), { message: "one_request", path: ["offer"] });
+  .refine((input) => [input.offer, input.rentalRequest, input.carrierRequest].filter(Boolean).length <= 1, { message: "one_request", path: ["offer"] });
 export type StartConversationWithOffer = z.infer<typeof startConversationOfferSchema>;
 
 export const offerActionSchema = z.discriminatedUnion("action", [

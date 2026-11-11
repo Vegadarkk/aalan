@@ -1,4 +1,5 @@
 import { offerCardShown } from "@/components/offers/offer-card";
+import { carrierRequestOpen } from "@/lib/carrier-requests/rules";
 import { isActive } from "@/lib/appointments/rules";
 import type { AppointmentKind, Slot } from "@/lib/contracts/appointments";
 import type { ConversationView, MessagesPage, MessageView } from "@/lib/contracts/messaging";
@@ -154,14 +155,15 @@ export interface SettledPins {
  * appointment. A card that waits for an answer, a rental request and its history never fold (the
  * full card asks for the answer); null with nothing settled pinned.
  */
-export function settledPins(conversation: Pick<ConversationView, "offer" | "appointment" | "rentalRequest" | "rentalHistory">, now: number): SettledPins | null {
-  const { offer, appointment, rentalRequest, rentalHistory } = conversation;
+export function settledPins(conversation: Pick<ConversationView, "offer" | "appointment" | "rentalRequest" | "rentalHistory" | "carrierRequest">, now: number): SettledPins | null {
+  const { offer, appointment, rentalRequest, rentalHistory, carrierRequest } = conversation;
   const offerShown = offer && offerCardShown(offer, now) ? offer : null;
   const appointmentShown = appointment && isActive(appointment, now) ? appointment : null;
   const offerSettled = offerShown?.status === "accepted" ? offerShown : null;
   const appointmentSettled = appointmentShown?.status === "confirmed" && appointmentShown.chosen ? { kind: appointmentShown.kind, slot: appointmentShown.chosen } : null;
   if (!offerSettled && !appointmentSettled) return null;
-  const rentalShown = Boolean(rentalRequest && rentalRequestOpen(rentalRequest, moroccoToday(now))) || (rentalHistory?.length ?? 0) > 0;
+  const rentalShown =
+    Boolean(rentalRequest && rentalRequestOpen(rentalRequest, moroccoToday(now))) || (rentalHistory?.length ?? 0) > 0 || Boolean(carrierRequest && carrierRequestOpen(carrierRequest, moroccoToday(now)));
   return {
     offer: offerSettled ? offerFinalAmount(offerSettled) : null,
     appointment: appointmentSettled,

@@ -94,6 +94,8 @@ export const MESSAGING_API = {
   appointment: (cid: string) => `/api/conversations/${cid}/appointment`,
   /** POST RentalRequestAction -> 201 RentalRequestResponse (contracts/rental-requests.ts). */
   rentalRequest: (cid: string) => `/api/conversations/${cid}/rental-request`,
+  /** POST CarrierRequestAction -> 201 CarrierRequestResponse (contracts/carrier-requests.ts). */
+  carrierRequest: (cid: string) => `/api/conversations/${cid}/carrier-request`,
   /** POST { text, turnstileToken }: first message to a shop from its storefront (UX audit lot 1). */
   shopConversation: (proId: string) => `/api/shops/${encodeURIComponent(proId)}/conversations`,
   /** POST { turnstileToken? } -> PhoneRevealResponse: the shop's verified number. */

@@ -4,6 +4,7 @@ import { MESSAGE_TEXT_MAX } from "@/lib/contracts/endpoints";
 import { listingIdSchema } from "@/lib/contracts/listings";
 import type { AppointmentEventView, AppointmentView } from "@/lib/contracts/appointments";
 import type { RentalRequestEventView, RentalRequestView } from "@/lib/contracts/rental-requests";
+import type { CarrierRequestEventView, CarrierRequestView } from "@/lib/contracts/carrier-requests";
 import type { OfferEventView, OfferView } from "@/lib/contracts/offers";
 
 // Messaging contracts shared by the browser and the route handlers (design D1-D7). Messages are plain
@@ -117,7 +118,8 @@ export interface ConversationView {
   listingSlugId: string;
   /** "shop": with a shop from its storefront, about no listing (UX audit of the Pro shops, lot 1). */
   subject: "listing" | "shop";
-  listing: { title: string; price: number | null; isDonation: boolean; photo: { id: string; blurhash: string } | null };
+  /** `unpriced`: the listing's subcategory shows no price (a carrier's departure). */
+  listing: { title: string; price: number | null; isDonation: boolean; photo: { id: string; blurhash: string } | null; unpriced?: true };
   role: "buyer" | "seller";
   counterpart: { publicId: string; displayName: string };
   lastMessage: { preview: string; mine: boolean; at: number; flagged: boolean };
@@ -134,6 +136,8 @@ export interface ConversationView {
   rentalRequest?: RentalRequestView | null;
   /** The requests sent before the current one, newest first (audit L4-04). */
   rentalHistory?: RentalRequestView[];
+  /** The current place request on a carrier's departure (src/lib/contracts/carrier-requests.ts); null when none. */
+  carrierRequest?: CarrierRequestView | null;
   /** The buyer's current price offer (src/lib/contracts/offers.ts); null when none. */
   offer?: OfferView | null;
   /** The listing took price offers when the conversation started (the buyer's « Faire une offre »). */
@@ -153,6 +157,7 @@ export interface MessageView {
   /** Appointment system message: the step it shows. */
   appointment?: AppointmentEventView;
   rentalRequest?: RentalRequestEventView;
+  carrierRequest?: CarrierRequestEventView;
   offer?: OfferEventView;
   createdAt: number;
   readAt: number | null;

@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { RentalRequestCard, RentalRequestHistory } from "@/components/rental/rental-request-card";
+import { CarrierRequestCard } from "@/components/carriers/carrier-request-card";
 import { OfferCard, offerCardShown } from "@/components/offers/offer-card";
 import type { OfferDialogProps } from "@/components/offers/offer-dialog";
 import type { AppointmentDialogProps } from "@/components/appointments/appointment-dialog";
@@ -25,6 +26,7 @@ import { APPOINTMENT_KINDS, type AppointmentKind, type AppointmentResponse } fro
 import { URL_MARKER, type ConversationView, type MessageView } from "@/lib/contracts/messaging";
 import { isActive } from "@/lib/appointments/rules";
 import type { RentalRequestResponse } from "@/lib/contracts/rental-requests";
+import type { CarrierRequestResponse } from "@/lib/contracts/carrier-requests";
 import { offerFinalAmount, type OfferResponse } from "@/lib/contracts/offers";
 import { offerPending } from "@/lib/offers/rules";
 import { isolate } from "@/lib/i18n/bidi";
@@ -465,6 +467,12 @@ export function ThreadView({ cid }: { cid: string }) {
     if (view.kind === "ready") putRow(view.data.conversation);
     void fetchNewer();
   }
+  function onCarrierRequest(response: CarrierRequestResponse) {
+    updateData((data) => ({ ...data, conversation: { ...data.conversation, carrierRequest: response.carrierRequest } }));
+    const view = current.current;
+    if (view.kind === "ready") putRow(view.data.conversation);
+    void fetchNewer();
+  }
   function onOffer(response: OfferResponse) {
     updateData((data) => ({ ...data, conversation: { ...data.conversation, offer: response.offer } }));
     const view = current.current;
@@ -537,7 +545,7 @@ export function ThreadView({ cid }: { cid: string }) {
   // A message to a shop itself (no listing): its storefront, and no price.
   const shop = conversation.subject === "shop";
   const listingHref = getPathname({ href: shop ? `/boutique/${conversation.listingSlugId}` : `/annonce/${conversation.listingSlugId}`, locale });
-  const price = shop ? null : conversation.listing.isDonation ? card("donation") : conversation.listing.price === null ? card("toDiscuss") : formatPrice(conversation.listing.price, locale);
+  const price = shop || conversation.listing.unpriced ? null : conversation.listing.isDonation ? card("donation") : conversation.listing.price === null ? card("toDiscuss") : formatPrice(conversation.listing.price, locale);
   const mine = lastMineStatus(data.messages);
   const pending = prunePending(view.pending, data.messages);
   const labels = { today: t("today"), yesterday: t("yesterday") };
@@ -639,6 +647,9 @@ export function ThreadView({ cid }: { cid: string }) {
           />
         ) : null}
         {conversation.rentalHistory && conversation.rentalHistory.length > 0 ? <RentalRequestHistory history={conversation.rentalHistory} now={now} /> : null}
+        {conversation.carrierRequest ? (
+          <CarrierRequestCard key={conversation.carrierRequest.id} cid={cid} request={conversation.carrierRequest} counterpartName={name} writable={writable} now={now} onChange={onCarrierRequest} onNote={send} />
+        ) : null}
 
         {conversation.offer ? (
           <div id={`${pinsId}-offer`} className={cn("flex flex-col", pins && pins.offer !== null && folded)}>

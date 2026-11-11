@@ -3,7 +3,7 @@
 import { useEffect, useEffectEvent, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, MessagesSquare, PencilLine, Phone, RotateCw, Settings2, TrendingUp } from "lucide-react";
+import { BedDouble, CalendarClock, CalendarRange, CarFront, HandCoins, LogIn, MessageCircle, MessageSquare, MessagesSquare, PencilLine, Phone, RotateCw, Settings2, TrendingUp, Truck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { InlineError } from "@/components/feedback/inline-error";
 import { loadWithRetry } from "@/components/layout/chunk-retry";
@@ -107,6 +107,12 @@ export interface ContactBarProps {
    */
   rental?: RentalUnit;
   /**
+   * A carrier's departure (transporteurs/spec.md §5): "Demander une place" always opens the
+   * first-message dialog with the basket (an existing conversation takes the request too); the
+   * carrier answers on the request's card in the thread.
+   */
+  departure?: boolean;
+  /**
    * A price offer is possible (Carte vivante lot 5): "Faire une offre" writes the first message with
    * the amount, or opens the existing conversation on the offer dialog (`?offre=1`). The price is
    * the one the amount is checked against (promo included).
@@ -122,12 +128,12 @@ export interface ContactBarProps {
   promotable?: boolean;
 }
 
-export type ComposeIntent = "message" | "visit" | "test_drive" | "rental" | "offer";
+export type ComposeIntent = "message" | "visit" | "test_drive" | "rental" | "offer" | "carrier";
 
 /** The conversation page, opened on the slots of a visit or a test drive, or on the offer dialog. */
 export function threadHref(cid: string, intent: ComposeIntent): string {
   if (intent === "offer") return `/messages/${cid}?offre=1`;
-  return intent === "message" || intent === "rental" ? `/messages/${cid}` : `/messages/${cid}?rdv=${intent}`;
+  return intent === "message" || intent === "rental" || intent === "carrier" ? `/messages/${cid}` : `/messages/${cid}?rdv=${intent}`;
 }
 
 type Phone = PhoneRevealResponse["phone"];
@@ -184,10 +190,11 @@ function BarSpacer({ tall = false }: { tall?: boolean }) {
   return mounted ? createPortal(<div aria-hidden="true" data-testid="contact-bar-spacer" className={cn(tall ? "h-36" : "h-24", "lg:hidden")} />, document.body) : null;
 }
 
-export function ContactBar({ listingId, slugId, sellerPublicId, editHref, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, offer = null, shop = false, promotable = false }: ContactBarProps) {
+export function ContactBar({ listingId, slugId, sellerPublicId, editHref, sellerName, listingTitle, showPhone, whatsapp, adultsOnly = false, visit = false, testDrive = false, rental, departure = false, offer = null, shop = false, promotable = false }: ContactBarProps) {
   const t = useTranslations("ListingPage.contact");
   const stay = rental === "night";
   const offers = useTranslations("Offers.listing");
+  const place = useTranslations("CarrierRequest.listing");
   const locale = useLocale();
   const { status, session } = useSession();
   const hintId = useId();
@@ -207,7 +214,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
    * The listing's own action beside "Message" in the phone bar (owner's choice, 30 Oct 2026, UX
    * journeys 8): the dates of a rental, a visit, a test drive or an offer, the first that applies.
    */
-  const barIntent: Exclude<ComposeIntent, "message"> | null = rental ? "rental" : visit ? "visit" : testDrive ? "test_drive" : offer ? "offer" : null;
+  const barIntent: Exclude<ComposeIntent, "message"> | null = rental ? "rental" : departure ? "carrier" : visit ? "visit" : testDrive ? "test_drive" : offer ? "offer" : null;
 
   async function reveal(turnstileToken?: string) {
     if (state.kind === "loading") return;
@@ -238,7 +245,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
     const step = await messageStep(listingId, shop ? { loadSession, findListingConversation: findShopConversation } : undefined);
     if (step.kind === "signin") {
       setCompose("signin");
-    } else if (step.kind === "thread" && next !== "rental") {
+    } else if (step.kind === "thread" && next !== "rental" && next !== "carrier") {
       // Another root layout (private pages): a document load either way. The button spins until then.
       window.location.assign(getPathname({ href: threadHref(step.cid, next), locale }));
     } else {
@@ -276,7 +283,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
     const pending = pendingContact(window.location.hash);
     if (!pending) return;
     clearPendingContact();
-    const offered: Record<ComposeIntent, boolean> = { message: true, rental: Boolean(rental), visit, test_drive: testDrive, offer: offer !== null };
+    const offered: Record<ComposeIntent, boolean> = { message: true, rental: Boolean(rental), carrier: departure, visit, test_drive: testDrive, offer: offer !== null };
     const wanted = (Object.keys(offered) as ComposeIntent[]).find((candidate) => candidate === pending && offered[candidate]);
     if (!wanted) return;
     if (wanted === "rental") {
@@ -447,8 +454,8 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
         data-intent={barIntent}
         className="min-w-0 flex-1 px-3"
       >
-        {barIntent === "rental" ? stay ? <BedDouble aria-hidden="true" /> : <CalendarRange aria-hidden="true" /> : barIntent === "test_drive" ? <CarFront aria-hidden="true" /> : <HandCoins aria-hidden="true" />}
-        {barIntent === "rental" ? t(stay ? "home.rentalShort" : "rentalShort") : barIntent === "test_drive" ? t("testDriveShort") : offers("makeShort")}
+        {barIntent === "rental" ? stay ? <BedDouble aria-hidden="true" /> : <CalendarRange aria-hidden="true" /> : barIntent === "carrier" ? <Truck aria-hidden="true" /> : barIntent === "test_drive" ? <CarFront aria-hidden="true" /> : <HandCoins aria-hidden="true" />}
+        {barIntent === "rental" ? t(stay ? "home.rentalShort" : "rentalShort") : barIntent === "carrier" ? place("button") : barIntent === "test_drive" ? t("testDriveShort") : offers("makeShort")}
       </Button>
     ) : null;
 
@@ -471,7 +478,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
         <RevealChallenge failed={state.failed} onToken={(token) => void reveal(token)} />
       ) : null
     ) : compose === "signin" ? (
-      signIn(intent === "visit" ? t("signInVisit") : intent === "rental" ? t(stay ? "home.signInRental" : "signInRental") : intent === "offer" ? offers("signIn") : t("signInMessage"), intent)
+      signIn(intent === "visit" ? t("signInVisit") : intent === "rental" ? t(stay ? "home.signInRental" : "signInRental") : intent === "offer" ? offers("signIn") : intent === "carrier" ? place("signIn") : t("signInMessage"), intent)
     ) : state.kind === "signin" ? (
       signIn(t("signInBody"))
     ) : state.kind === "error" ? (
@@ -516,6 +523,23 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
             {t(stay ? "home.rental" : "rental")}
           </Button>
           <p className="text-xs text-foreground-muted text-pretty">{t(stay ? "home.rentalHint" : "rentalHint")}</p>
+        </div>
+      ) : null}
+      {departure ? (
+        <div className="mt-3 flex flex-col gap-1.5">
+          <Button
+            type="button"
+            variant="structure"
+            onClick={() => void openComposer("carrier")}
+            loading={compose === "checking" && intent === "carrier"}
+            aria-haspopup="dialog"
+            data-testid="carrier-request-button"
+            className="w-full"
+          >
+            <Truck aria-hidden="true" />
+            {place("button")}
+          </Button>
+          <p className="text-xs text-foreground-muted text-pretty">{place("hint")}</p>
         </div>
       ) : null}
       {offer ? (
@@ -564,7 +588,7 @@ export function ContactBar({ listingId, slugId, sellerPublicId, editHref, seller
         <MessageDialog
           // A fresh form per intent (the visit request comes with its own draft) and per picked combination.
           key={`${intent}:${variant ?? ""}:${intent === "rental" ? datesKey : ""}`}
-          intent={intent === "visit" || intent === "rental" || intent === "offer" ? intent : "message"}
+          intent={intent === "visit" || intent === "rental" || intent === "offer" || intent === "carrier" ? intent : "message"}
           offerPrice={offer?.price}
           rentalUnit={rental}
           open={compose === "open"}

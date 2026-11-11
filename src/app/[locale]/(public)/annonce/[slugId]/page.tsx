@@ -374,6 +374,7 @@ export default async function ListingPage({ params }: { params: Params }) {
                     visit={realEstate && !datedRental(listing.subcategoryId)}
                     testDrive={listing.seller.type === "pro" && VEHICLE_SALE_SUBCATEGORIES.includes(listing.subcategoryId)}
                     rental={datedRental(listing.subcategoryId)?.unit}
+                    departure={listing.departure ? listing.departure.space !== "full" : false}
                     offer={offer}
                     promotable={flags.salesEnabled && listing.state === "published" && paidOptionsAllowed(listing.subcategoryId)}
                   />

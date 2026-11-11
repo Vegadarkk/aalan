@@ -260,7 +260,7 @@ export const RATE_LIMITS = {
   // Every send costs 2-3 writes of the shared 20 000/day Firestore quota (audit D1a-01): besides the
   // burst above, 120 per hour and 400 per day per account, and 60 per hour per account and thread
   // (key `${uid}:${cid}`), checked together (messaging/send-limits.ts) before the quota gate, by every
-  // thread write: messages and the offer, appointment and rental-request steps.
+  // thread write: messages and the offer, appointment, rental-request and carrier-request steps.
   "message.send.hour.uid": { points: 120, duration: HOUR, policy: "open", key: "uid" },
   "message.send.day.uid": { points: 400, duration: DAY, policy: "open", key: "uid" },
   "message.send.thread": { points: 60, duration: HOUR, policy: "open", key: "uid+cid" },
@@ -268,6 +268,8 @@ export const RATE_LIMITS = {
   "appointment.uid": { points: 30, duration: HOUR, policy: "open", key: "uid" },
   // Car rental booking requests (rental pack §6): 20 new requests a day per renter, on top of the send limiters.
   "rental.request.uid": { points: 20, duration: DAY, policy: "open", key: "uid" },
+  // Place requests on carriers' departures (transporteurs/spec.md §5): 20 new requests a day per client, on top of the send limiters.
+  "carrier.request.uid": { points: 20, duration: DAY, policy: "open", key: "uid" },
   // Price offers in messaging (Carte vivante lot 5): 20 new offers a day per buyer, and 5 offers or
   // counter-offers per conversation and participant in 24 h, on top of the send limiters.
   "offer.uid": { points: 20, duration: DAY, policy: "open", key: "uid" },

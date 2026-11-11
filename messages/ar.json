@@ -7109,5 +7109,92 @@
       "view": "عرض الرحلة",
       "percent": "{value} %"
     }
+  },
+  "CarrierRequest": {
+    "basket": {
+      "title": "إرساليتك",
+      "kg": "طرود وكراتين (كلغ)",
+      "kgHint": "وزن تقريبي، دون الأغراض المذكورة.",
+      "less": "إزالة: {item}",
+      "more": "إضافة: {item}",
+      "moreItems": "أغراض أخرى",
+      "pickup": "الاستلام من المنزل",
+      "delivery": "التوصيل إلى المنزل",
+      "empty": "أدخل وزنًا أو غرضًا واحدًا على الأقل.",
+      "summaryKg": "{kg} كلغ من الطرود",
+      "summaryItem": "{count} × {item}",
+      "summaryPickup": "الاستلام من المنزل",
+      "summaryDelivery": "التوصيل إلى المنزل"
+    },
+    "card": {
+      "requestedMine": "أُرسل طلب المكان إلى {name}",
+      "requestedTheirs": "{name} يطلب مكانًا",
+      "acceptedMine": "تم حجز مكان لـ{name}",
+      "acceptedTheirs": "{name} حجز لك مكانًا",
+      "departure": "الانطلاق يوم {day}",
+      "estimate": "الثمن التقديري: {total}",
+      "onRequest": "حسب الطلب: {items}",
+      "noEstimate": "لا يوجد ثمن تقديري: اطلبه من الناقل.",
+      "waiting": "في انتظار رد الناقل.",
+      "withdraw": "سحب الطلب",
+      "withdrawnToast": "تم سحب الطلب",
+      "accept": "تم حجز المكان",
+      "decline": "لا يوجد مكان",
+      "confirmAccept": "هل تحجز مكانًا لـ{name} في هذه الرحلة؟",
+      "confirmDecline": "هل تجيب {name} بأنه لا يوجد مكان؟",
+      "confirmAcceptButton": "تأكيد: تم حجز المكان",
+      "confirmDeclineButton": "تأكيد: لا يوجد مكان",
+      "back": "رجوع",
+      "note": "كلمة للزبون (اختياري)",
+      "notePlaceholderAccept": "مثال: الإيداع مساء اليوم السابق، والوزن في عين المكان.",
+      "notePlaceholderDecline": "مثال: ممتلئ، الرحلة القادمة يوم 28.",
+      "acceptedToast": "تم حجز المكان",
+      "declinedToast": "تم إرسال الرد",
+      "updateSpace": "تحديث المكان المتبقي",
+      "notice": "ثمن تقديري: لا يُدفع أي شيء على {site}. يحدد الناقل الثمن النهائي بعد الوزن قبل استلام الإرسالية."
+    },
+    "event": {
+      "requested": {
+        "mine": "طلبت مكانًا في رحلة يوم {day}",
+        "theirs": "{name} يطلب مكانًا في رحلة يوم {day}"
+      },
+      "changed": {
+        "mine": "عدّلت طلب المكان",
+        "theirs": "{name} عدّل طلب المكان"
+      },
+      "accepted": {
+        "mine": "حجزت مكانًا لـ{name}",
+        "theirs": "{name} حجز لك مكانًا في رحلة يوم {day}"
+      },
+      "declined": {
+        "mine": "أجبت: لا يوجد مكان",
+        "theirs": "لا يوجد مكان لدى {name} في هذه الرحلة"
+      },
+      "withdrawn": {
+        "mine": "سحبت طلب المكان",
+        "theirs": "{name} سحب طلب المكان"
+      }
+    },
+    "preview": {
+      "requested": "طلب مكان",
+      "changed": "تعديل طلب المكان",
+      "accepted": "تم حجز المكان",
+      "declined": "لا يوجد مكان",
+      "withdrawn": "سحب طلب المكان"
+    },
+    "errors": {
+      "carrier_request_changed": "تغيّر الطلب في الأثناء: أعد تحميل المحادثة.",
+      "carrier_request_past": "مضى يوم الانطلاق: لم يعد ممكنًا قبول الطلب.",
+      "carrier_request_unavailable": "هذه الرحلة لم تعد تقبل طلبات المكان."
+    },
+    "listing": {
+      "button": "اطلب مكانًا",
+      "title": "طلب مكان لدى {name}",
+      "titleFallback": "طلب مكان",
+      "draft": "السلام عليكم، هل لديكم مكان لهذه الإرسالية في هذه الرحلة؟",
+      "hint": "يجيب الناقل «تم حجز المكان» أو «لا يوجد مكان» في المراسلة، مع ثمن تقديري حسب لائحة أثمنته.",
+      "signIn": "سجّل الدخول لطلب مكان لدى هذا الناقل.",
+      "notice": "ثمن تقديري: لا يُدفع أي شيء على {site}. يحدد الناقل الثمن النهائي بعد الوزن قبل استلام الإرسالية."
+    }
   }
 }

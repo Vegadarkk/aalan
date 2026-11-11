@@ -1,4 +1,5 @@
 import "server-only";
+import { readTutorials } from "./tutorials";
 import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { LOCALES, type Locale } from "@/config/site";
 import { requireCsrf, requireUser } from "@/lib/auth/guards";
@@ -293,6 +294,7 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
   void consume("firestore.reads", 3);
   const user = parse(userSchema, userSnap);
   const account = parse(userPrivateSchema, accountSnap);
+  const tutorials = await readTutorials(uid);
   const proId = user?.proId && PRO_ID_PATTERN.test(user.proId) ? user.proId : null;
   let pro: AccountExport["pro"] = null;
   if (proId) {
@@ -406,6 +408,7 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
               : null,
           },
           notifications: { messagesEmail: account.notifications?.messagesEmail ?? true },
+          tutorials,
           sanctions: { strikeLevel: account.strikes.level, lastAt: iso(account.strikes.lastAt), suspendedUntil: iso(account.strikes.suspendedUntil) },
           reporting: { abusiveUntil: iso(account.reporter.abusiveUntil), warnedAt: iso(account.reporter.warnedAt) },
         }

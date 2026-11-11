@@ -54,10 +54,10 @@ export interface BackupCollection {
 export const NIGHTLY_MAX_DOCS = 200;
 
 type CollectionId = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
-/** `account` and `identity` are document ids (of `private`), `system` holds the cursors themselves, `quotaDaily` is rebuilt by the app. */
+/** `account`, `identity` and `tutorials` are document ids (of `private`, `prefs`), `system` holds the cursors themselves, `quotaDaily` is rebuilt by the app. */
 type BackedUpId = Exclude<
   CollectionId,
-  typeof COLLECTIONS.userPrivateDoc | typeof COLLECTIONS.userIdentityDoc | typeof COLLECTIONS.system | typeof COLLECTIONS.quotaDaily
+  typeof COLLECTIONS.userPrivateDoc | typeof COLLECTIONS.userIdentityDoc | typeof COLLECTIONS.prefsTutorialsDoc | typeof COLLECTIONS.system | typeof COLLECTIONS.quotaDaily
 >;
 
 /**
@@ -87,6 +87,8 @@ const TABLE: Record<BackedUpId, Omit<BackupCollection, "id">> = {
   moderationDecisions: { scope: "root", timeField: "createdAt" },
   favorites: { scope: "group", timeField: "createdAt" },
   savedSearches: { scope: "group", timeField: "updatedAt" },
+  // users/{uid}/prefs (guided tours): a few small documents, rolling full only (no index to deploy).
+  prefs: { scope: "group", timeField: null },
   proProfiles: { scope: "root", timeField: "updatedAt" },
   // Phase 5: messages and their evidence are subcollections of conversations/{cid}.
   conversations: { scope: "root", timeField: "updatedAt" },

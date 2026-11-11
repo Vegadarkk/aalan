@@ -7,6 +7,7 @@ import { FormMessage, useApiErrorMessage } from "@/components/auth/form-message"
 import { StatusPanel } from "@/components/auth/status-panel";
 import { ErrorBanner } from "@/components/feedback/error-banner";
 import { Badge } from "@/components/ui/badge";
+import { GuidedTour } from "@/components/tours/guided-tour";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { textLinkClassName } from "@/components/ui/text-link";
@@ -133,7 +134,7 @@ function Application({ me, previous, revalidation = false, onReload }: { me: Pro
         <Intro launchOffer={me.launchOffer} />
       )}
       {accountActive ? (
-        <section className="flex flex-col gap-4" aria-labelledby="pro-eligibility">
+        <section className="flex flex-col gap-4" aria-labelledby="pro-eligibility" data-tour="pro-eligibility">
           <h2 id="pro-eligibility" className="text-lg font-semibold">
             {t("eligibility.title")}
           </h2>
@@ -161,6 +162,8 @@ function Application({ me, previous, revalidation = false, onReload }: { me: Pro
       ) : (
         <ErrorBanner tone="danger" title={t("eligibility.inactive")} />
       )}
+      {/* Guided tour of the application (owner, 2026-11-11), once the form is there. */}
+      {eligible ? <GuidedTour id="pro-apply" /> : null}
       {eligible ? <ProApplicationForm previous={previous} needsPhone={byCall} onDone={onReload} carriersOpen={me.carriersOpen} {...(revalidation ? { submitLabel: t("revalidation.submit") } : {})} /> : null}
     </div>
   );
@@ -334,7 +337,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       ) : null}
 
       {/* The actions first (journey review 2026-10-29): they sat under the plan, the quotas and the settings. */}
-      <section className="flex flex-col gap-3" aria-labelledby="pro-shortcuts">
+      <section className="flex flex-col gap-3" aria-labelledby="pro-shortcuts" data-tour="pro-shortcuts">
         <h2 id="pro-shortcuts" className="text-lg font-semibold">
           {t("shortcuts")}
         </h2>
@@ -402,7 +405,7 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
 
       {suspended ? null : (
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5" aria-labelledby="pro-plan">
+          <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5" aria-labelledby="pro-plan" data-tour="pro-plan">
             <h2 id="pro-plan" className="text-sm font-medium text-foreground-muted">
               {t("plan")}
             </h2>
@@ -452,6 +455,8 @@ function Dashboard({ me, shop, lifecycle }: { me: ProMeResponse; shop: ProSelfVi
       {suspended ? null : <AgencySettings shop={shop} carriersOpen={me.carriersOpen} />}
       {canPublish ? <SocialLinksSettings shop={shop} /> : null}
       {canPublish && shop.sector !== "car_rental" && shop.sector !== "holiday_rental" ? <SectionsSettings shop={shop} /> : null}
+      {/* Guided tour of the shop's settings (owner, 2026-11-11). */}
+      {canPublish && !suspended ? <GuidedTour id="pro-shop" /> : null}
 
     </div>
   );

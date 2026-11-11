@@ -25,6 +25,7 @@ import { AccountClosedView, CloseAccountSection, DataSection } from "@/component
 import { ProStorefrontNotice, StorefrontSection } from "@/components/account/storefront-section";
 import { NotificationsSection } from "@/components/account/notifications-section";
 import { EmailSection } from "@/components/account/email-section";
+import { TutorialsSection } from "@/components/tours/tutorials-section";
 import { ExamplesSwitch } from "@/components/examples/examples-controls";
 import type { CloseAccountResponse } from "@/lib/contracts/account";
 
@@ -78,6 +79,7 @@ export function SettingsView() {
           <VerificationSection session={session} />
           <MethodsSection session={session} />
           <NotificationsSection />
+          <TutorialsSection />
           <DataSection />
           <CloseAccountSection onClosed={setClosed} />
         </div>

@@ -27,6 +27,7 @@ import { requestIdentity } from "@/lib/rate-limit/keys";
 import { notifySearchIndex } from "@/lib/search/queue";
 import { clearSessionCookies } from "@/lib/security/cookies";
 import { deleteAllFavorites, deleteAllSavedSearches, markAccountClosed, readBillingState, readClosureAccount } from "./repository";
+import { deleteTutorials } from "./tutorials";
 import { removeAvatarQuietly } from "./avatar";
 import { CLOSURE_LISTING_STATUSES, closureBlocker, closurePurgeAt, isRecentSignIn } from "./rules";
 
@@ -168,6 +169,7 @@ export async function closeAccount(uid: string, options: { now?: Date; ip?: stri
   const conversations = await closeAccountConversations(uid, now);
   const favorites = await deleteFavorites(uid);
   const savedSearches = await deleteAllSavedSearches(uid);
+  await deleteTutorials(uid);
   await anonymizeReviews(uid, now);
 
   await audit({

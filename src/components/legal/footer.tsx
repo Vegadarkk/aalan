@@ -171,6 +171,11 @@ export function Footer({ publisher, prefetch = true }: { publisher: string; pref
               </Link>
             </li>
             <li>
+              <Link href="/aide/tutoriels" prefetch={linkPrefetch} className={linkClass}>
+                {t("tutorials")}
+              </Link>
+            </li>
+            <li>
               <Link href="/deposer" prefetch={false} className={linkClass}>
                 {t("post")}
               </Link>

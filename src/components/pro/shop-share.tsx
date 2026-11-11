@@ -71,7 +71,7 @@ export function ShopShare({ storefront }: { storefront: string }) {
   }
 
   return (
-    <section aria-labelledby="pro-share" data-testid="shop-share" className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5 sm:flex-row sm:items-start sm:gap-6">
+    <section aria-labelledby="pro-share" data-testid="shop-share" data-tour="pro-share" className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5 sm:flex-row sm:items-start sm:gap-6">
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <header className="flex flex-col gap-1">
           <h2 id="pro-share" className="text-lg font-semibold">

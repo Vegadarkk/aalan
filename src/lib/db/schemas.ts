@@ -667,6 +667,20 @@ export type FavoriteSnapshot = z.infer<typeof favoriteSnapshotSchema>;
 export const favoriteSchema = z.object({ createdAt: ts, listingSnapshot: favoriteSnapshotSchema }).strict();
 export type FavoriteDoc = z.infer<typeof favoriteSchema>;
 
+/**
+ * users/{uid}/prefs/tutorials: the guided tours a member went through, and the settings switch
+ * (owner, 2026-11-11). Kept out of the strict private document so an older image that does not
+ * know it still reads the account (rollback). Deleted with the account at its closure.
+ */
+export const tutorialPrefsSchema = z
+  .object({
+    seen: z.array(z.string().min(1).max(40)).max(50),
+    off: z.boolean(),
+    updatedAt: ts,
+  })
+  .strict();
+export type TutorialPrefsDoc = z.infer<typeof tutorialPrefsSchema>;
+
 /** users/{uid}/savedSearches/{id}: 10 at most; alerts are daily e-mails, never instant (no reverse search). */
 export const savedSearchSchema = z
   .object({
@@ -1388,6 +1402,9 @@ export const COLLECTIONS = {
   // Phase 4 (subcollections of users/{uid})
   favorites: "favorites",
   savedSearches: "savedSearches",
+  /** users/{uid}/prefs/{name}: small per-member preferences outside the private document (tutorials). */
+  prefs: "prefs",
+  prefsTutorialsDoc: "tutorials",
   // Phase 7
   proProfiles: "proProfiles",
   wallets: "wallets",

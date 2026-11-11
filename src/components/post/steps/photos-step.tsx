@@ -29,6 +29,7 @@ export function PhotosStep({ onNext }: { onNext: () => void }) {
     <form id={STEP_FORM_ID} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       <p className="text-sm text-foreground-muted">{t("hint", { max: maxPhotos })}</p>
       {blocker ? <ErrorBanner title={blocker.message && blocker.code === "unknown" ? blocker.message : message(blocker.code, { max: maxPhotos })} /> : null}
+      <div data-tour="post-photos">
       <PhotoUploader
         photos={photos}
         maxPhotos={maxPhotos}
@@ -44,6 +45,7 @@ export function PhotosStep({ onNext }: { onNext: () => void }) {
         notices={photoNotices}
         onDismissNotices={dismissPhotoNotices}
       />
+      </div>
     </form>
   );
 }

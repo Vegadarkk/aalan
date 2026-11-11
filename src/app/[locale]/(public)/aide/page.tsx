@@ -33,9 +33,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function HelpHome({ params }: { params: Params }) {
   const locale = pageLocale((await params).locale);
   setRequestLocale(locale);
-  const [t, guide, count, articles] = await Promise.all([
+  const [t, guide, tours, count, articles] = await Promise.all([
     getTranslations({ locale, namespace: "Help" }),
     getTranslations({ locale, namespace: "Guide" }),
+    getTranslations({ locale, namespace: "Tours.help" }),
     // Prints a number: Tarifit pages format it as French (no Intl data for "rif").
     getNumbersTranslations({ locale, namespace: "Help" }),
     loadHelpArticles(locale),
@@ -99,6 +100,18 @@ export default async function HelpHome({ params }: { params: Params }) {
               </div>
             </section>
           </HelpSearch>
+          {/* Guided tours (owner, 2026-11-11): each one replayed on its own screen. */}
+          <section aria-labelledby="help-tours" className="mt-12 flex flex-col gap-4 border-s-2 border-featured ps-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <div className="flex flex-col gap-1">
+              <h2 id="help-tours" className="text-xl font-semibold">
+                {tours("title")}
+              </h2>
+              <p className="max-w-xl text-pretty text-foreground-muted">{tours("body")}</p>
+            </div>
+            <Link href="/aide/tutoriels" className={cn("w-fit shrink-0 font-medium text-link", textLinkClassName)}>
+              {tours("cta")}
+            </Link>
+          </section>
           {/* Admin procedures guide (guide-demarches G1): official links by visitor profile. */}
           <aside aria-labelledby="help-guide" className="arch mt-12 flex flex-col gap-3 border-t-4 border-featured bg-surface-brand px-6 pt-10 pb-6 sm:px-8">
             <h2 id="help-guide" className="text-xl font-semibold">

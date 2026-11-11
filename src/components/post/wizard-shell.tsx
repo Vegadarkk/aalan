@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, CircleDot, CloudOff } from "lucide-react";
 import { KhatamLoader } from "@/components/ui/khatam-loader";
 import { useTranslations } from "next-intl";
+import { GuidedTour } from "@/components/tours/guided-tour";
 import { Button } from "@/components/ui/button";
 import { isApiError } from "@/lib/auth/client";
 import type { WizardStep } from "@/lib/contracts/listings";
@@ -65,7 +66,7 @@ export function WizardShell({ step, title, lead, steps, stepLabels, states, reac
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-start lg:gap-12">
-      <div className="lg:sticky lg:top-24">
+      <div className="lg:sticky lg:top-24" data-tour="post-progress">
         <StepProgress current={step} steps={steps} labels={stepLabels} states={states} onSelect={onSelect} reachable={reachable} />
       </div>
 
@@ -78,8 +79,12 @@ export function WizardShell({ step, title, lead, steps, stepLabels, states, reac
         </header>
 
         <div className="flex flex-col gap-6">{children}</div>
+        {/* Guided tours (owner, 2026-11-11): the frame on the first step opened, then the photos and the review. */}
+        {step === "apercu" ? <GuidedTour key="review" id="post-review" /> : <GuidedTour key="frame" id="post-wizard" />}
+        {step === "photos" ? <GuidedTour id="post-photos" /> : null}
 
         <div
+          data-tour="post-actions"
           className={cn(
             "sticky bottom-0 z-30 -mx-4 mt-2 flex flex-col gap-2 border-t border-border bg-surface/95 px-4 pt-3 backdrop-blur supports-[backdrop-filter]:bg-surface/85",
             "pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:backdrop-blur-none",
@@ -96,7 +101,7 @@ export function WizardShell({ step, title, lead, steps, stepLabels, states, reac
               <span />
             )}
             {nextLabel !== null ? (
-              <Button type="submit" form={STEP_FORM_ID} disabled={nextDisabled} loading={nextLoading} className="min-w-36 flex-1 sm:flex-none">
+              <Button type="submit" form={STEP_FORM_ID} disabled={nextDisabled} loading={nextLoading} data-tour={step === "apercu" ? "post-publish" : undefined} className="min-w-36 flex-1 sm:flex-none">
                 {nextLabel ?? t("next")}
                 <ArrowRight className="rtl:-scale-x-100" aria-hidden="true" />
               </Button>

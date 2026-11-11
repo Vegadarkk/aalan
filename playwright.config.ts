@@ -17,9 +17,22 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : {},
-    // A device that already went through the welcome threshold (design C7): the other specs test
-    // the page itself; tests/e2e/welcome.spec.ts starts from an empty device.
-    storageState: { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: "welcome", value: "seen" }, { name: "door", value: "opened" }] }] },
+    // A device that already went through the welcome threshold (design C7) and turned the guided
+    // tours off: the other specs test the page itself; tests/e2e/welcome.spec.ts and
+    // tests/e2e/tours.spec.ts start from an empty device.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: baseURL,
+          localStorage: [
+            { name: "welcome", value: "seen" },
+            { name: "door", value: "opened" },
+            { name: "tours", value: '{"seen":[],"off":true}' },
+          ],
+        },
+      ],
+    },
   },
   // Desktop runs every spec; the phone runs only the tests tagged @mobile (home, listing page,
   // search, posting wizard, accessibility scan), so CI time grows by those tests alone.

@@ -75,7 +75,7 @@ export function AgencySettings({ shop, carriersOpen = false }: { shop: Pick<ProS
 
   return (
     <section aria-labelledby="pro-agency" data-testid="agency-settings" className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-5">
-      <header className="flex flex-col gap-1">
+      <header className="flex flex-col gap-1" data-tour="pro-sector">
         <h2 id="pro-agency" className="text-lg font-semibold">
           {t("title")}
         </h2>

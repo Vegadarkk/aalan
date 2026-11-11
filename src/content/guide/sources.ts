@@ -184,34 +184,34 @@ export const GUIDE_SOURCES = {
   "acaps-reclamation": source("https://reclamation-assurance.acaps.ma/", ["fr", "ar"], false, "2026-10-30"),
   // Military service
   tajnid: source("https://www.tajnid.ma/", ["fr", "ar"], false, "2026-10-30"),
-  // Visas (owner, 2026-11-11). Read on 11 Nov 2026 unless confirmed is false: france-visas.gouv.fr,
-  // the US pages and consulat.ma refuse automated clients, acces-maroc.ma renders in the browser only.
+  // Visas (owner, 2026-11-11). Read on 11 Nov 2026, by a person in a browser where the site refuses
+  // automated clients (france-visas.gouv.fr, the US pages, consulat.ma, acces-maroc.ma).
   "schengen-demande": source("https://home-affairs.ec.europa.eu/policies/schengen/visa-policy/applying-schengen-visa_en", ["en"], true, "2026-11-11"),
-  "france-visas": source("https://france-visas.gouv.fr/", ["fr", "en", "es"], false, "2026-11-11"),
-  "france-visa-maroc": source("https://ma.diplomatie.gouv.fr/fr/demander-un-visa", ["fr"], true, "2026-11-11"),
+  "france-visas": source("https://france-visas.gouv.fr/fr/maroc", ["fr", "en", "es", "ar"], true, "2026-11-11"),
+  "france-visa-maroc": source("https://ma.diplomatie.gouv.fr/fr/demander-un-visa", ["fr", "ar"], true, "2026-11-11"),
   "espagne-visa-rabat": source("https://www.exteriores.gob.es/Consulados/rabat/es/ServiciosConsulares/Paginas/Procedimiento-de-solicitudes-de-visado.aspx", ["es"], true, "2026-11-11"),
   "uk-check-visa": source("https://www.gov.uk/check-uk-visa", ["en"], true, "2026-11-11"),
   "uk-standard-visitor": source("https://www.gov.uk/standard-visitor", ["en"], true, "2026-11-11"),
-  "us-visas-maroc": source("https://ma.usembassy.gov/visas/", ["en"], false, "2026-11-11"),
-  "us-visitor": source("https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html", ["en"], false, "2026-11-11"),
+  "us-visas-maroc": source("https://ma.usembassy.gov/visas/", ["en", "fr", "ar"], true, "2026-11-11"),
+  "us-visitor": source("https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html", ["en"], true, "2026-11-11"),
   "canada-visite": source("https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada.html", ["en", "fr"], true, "2026-11-11"),
   "canada-ave": source("https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/eligibility/eta-x.html", ["en", "fr"], true, "2026-11-11"),
-  "maroc-evisa": source("https://www.acces-maroc.ma/", ["fr", "en"], false, "2026-11-11"),
+  "maroc-evisa": source("https://www.acces-maroc.ma/", ["fr", "ar", "en"], true, "2026-11-11"),
   // Hajj: the ministry portal (under maintenance on 11 Nov 2026; it announces each season's registration).
   habous: source("https://www.habous.gov.ma/", ["ar", "fr"], true, "2026-11-11"),
-  // Driving licence: the NARSA exam page (read) links the services portal (blocks automated clients).
+  // Driving licence: the NARSA exam page (read) links the services portal, unreachable from outside
+  // Morocco on 11 Nov 2026 like the electoral lists and the equivalences platform (confirmed: false).
   "narsa-examen": source("https://www.narsa-securiteroutiere.ma/fr/examen-du-permis-de-conduire/", ["fr", "ar"], true, "2026-11-11"),
   "narsa-permis-premier": source("https://khadamatnarsa.ma/fr/services/obtention-de-mon-permis-de-conduire-1ere-fois", ["fr"], false, "2026-11-11"),
   "narsa-permis-duplicata": source("https://khadamatnarsa.ma/fr/services/duplicata-de-mon-permis-de-conduire", ["fr"], false, "2026-11-11"),
   equivalence: source("https://equivalence.men.gov.ma/", ["fr"], false, "2026-11-11"),
   "listes-electorales": source("https://www.listeselectorales.ma/fr/", ["fr", "ar"], false, "2026-11-11"),
-  // Consular pages found by official search on 11 Nov 2026 (consulat.ma refuses automated clients);
-  // the English page addresses until a person reads the French ones.
-  "consulat-mariage-adoulaire": source("https://www.consulat.ma/en/establishment-act-marriage-adoulairebetrothed-consular-services", ["en", "fr", "ar"], false, "2026-11-11"),
-  "consulat-mariage-civil": source("https://www.consulat.ma/en/registration-civil-marriage-consular-services", ["en", "fr", "ar"], false, "2026-11-11"),
-  "consulat-succession": source("https://www.consulat.ma/en/beneficiaries-residing-morocco-or-country-other-deceaseds-residence", ["en", "fr", "ar"], false, "2026-11-11"),
-  "consulat-certificat-vie": source("https://www.consulat.ma/en/individual-or-collective-life-certificate-or-family-registration-form", ["en", "fr", "ar"], false, "2026-11-11"),
-  "consulat-dispense-visa": source("https://www.consulat.ma/fr/liste-des-pays-dont-les-ressortissants-sont-dispenses-du-visa-dentree-au-maroc", ["fr", "ar"], false, "2026-11-11"),
+  // Consular pages, read in a browser on 11 Nov 2026 (consulat.ma refuses automated clients).
+  "consulat-mariage-adoulaire": source("https://www.consulat.ma/fr/etablissement-dun-acte-de-mariage-adoulaire-aupres-des-services-consulaires", ["fr", "ar", "en"], true, "2026-11-11"),
+  "consulat-mariage-civil": source("https://www.consulat.ma/fr/enregistrement-du-mariage-civil-aupres-des-services-consulaires", ["fr", "ar", "en"], true, "2026-11-11"),
+  "consulat-succession": source("https://www.consulat.ma/fr/ayants-droits-vivant-au-maroc-ou-dans-un-pays-autre-que-celui-de-residence-du-defunt", ["fr", "ar", "en"], true, "2026-11-11"),
+  "consulat-certificat-vie": source("https://www.consulat.ma/fr/certificat-de-vie-individuel-ou-collectif-ou-fiche-familiale-detat-civil", ["fr", "ar", "en"], true, "2026-11-11"),
+  "consulat-dispense-visa": source("https://www.consulat.ma/fr/liste-des-pays-dont-les-ressortissants-sont-dispenses-du-visa-dentree-au-maroc", ["fr", "ar", "en"], true, "2026-11-11"),
 } as const satisfies Record<string, GuideSource>;
 export type GuideSourceId = keyof typeof GUIDE_SOURCES;
 export const GUIDE_SOURCE_IDS = Object.keys(GUIDE_SOURCES) as GuideSourceId[];

@@ -349,7 +349,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
       title: "Visa n Fransa: lwraq d rendez-vous",
       body: [
         "Asuter n visa n Fransa ittwaga deg France-Visas, tasna tarmit n lḥukuma tafransist. Amɛiwen-s yeqqar-ak amezwaru ma teḥwajeḍ visa, lwraq d ssuma; mbeɛd ad tegeḍ compte d ad tɛemmreḍ asuter deg internet.",
-        "Mbeɛd ad tawiḍ lmelf ɣer centre n visa nnec, s rendez-vous: France-Visas yeqqar-ak mani. Asuter yettwaḍfar deg internet ar ad yeḥtem consulat. I leqraya, ɛeddi amezwaru s Campus France (Inelmaden).",
+        "Mbeɛd ad tawiḍ lmelf, s rendez-vous, ɣer yiwen zeg centres TLS deg Lmeɣrib (Agadir, Casablanca, Fès, Marrakech, Oujda, Rbaṭ, Ṭanja); consulats n Fransa deg Casablanca d Rbaṭ i yettḥettimen. Asuter yettwaḍfar deg internet ar ad yeḥtem consulat. I leqraya, ɛeddi amezwaru s Campus France (Inelmaden).",
       ],
       prepare: ["Passeport iḥeyyan", "Lwraq i d-yenna umɛiwen n France-Visas"],
     },
@@ -370,7 +370,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     "visa-etats-unis": {
       title: "Visa n Mirikan: DS-160 d umeslay",
       body: [
-        "I usafar niɣ tmeẓla, asuter n visa yettebda s tferkit DS-160 deg internet, mbeɛd ameslay deg consulat s rendez-vous. Tasna n lbaṣaḍur n Mirikan deg Lmeɣrib tessefhem tiwriwin.",
+        "I usafar niɣ tmeẓla, asuter n visa yettebda s tferkit DS-160 deg internet, mbeɛd ameslay deg consulat n Mirikan deg Casablanca s rendez-vous. Tasna n lbaṣaḍur n Mirikan deg Lmeɣrib tessefhem tiwriwin.",
         "Ɣir consulat i yettḥettimen: ḥader isiten i yettaren idrimen bac ad ɛemmren tferkit.",
       ],
     },
@@ -384,7 +384,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     "entrer-au-maroc": {
       title: "Ad tased ɣer Lmeɣrib: e-visa d tmura s war visa",
       body: [
-        "Aṭas n tmura dadfen ɣer Lmeɣrib s war visa i yiwen n usafar awezlan: lwizara n Ccuʔun Lxarijiya tessuffeɣ tabdart. I wiyaḍ, e-visa tettwasuter deg tasna tarmit Accès Maroc, i yesseqdacen amezwaru ma tzemmreḍ; niɣ asuter ɣer consulat n Lmeɣrib.",
+        "Aṭas n tmura dadfen ɣer Lmeɣrib s war visa i yiwen n usafar awezlan: lwizara n Ccuʔun Lxarijiya tessuffeɣ tabdart. I wiyaḍ, e-visa tettwasuter deg tasna tarmit Accès Maroc, i yesseqdacen amezwaru ma tzemmreḍ s tmurt nnec, passeport d ca n visa nniḍen iḥeyyan (Schengen, Ingliz, Mirikan, Kanada…); niɣ asuter ɣer consulat n Lmeɣrib. Kra n tmura s war visa ḥwajen AEVM (asireg n usafar) deg tasna-nni: tabdart tarmit teqqar-it.",
         "Aqrib i yesɛan tamurt tamerrukit, ula ma ilul deg berra, izemmer ad isuter lwraq-s ɣer consulat (Tamagit). Ajewwaj abarrani yettḍfar ccruṭ n tmurt-s.",
         "Bac ad yeqqim ugar n wakud i yettwasirgen, abarrani yessuter takarḍa n tilin (carte d'immatriculation) ɣer DGSN.",
       ],
@@ -503,7 +503,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     "acaps-reclamation": "Ccekwa x tsharikt n ttamin (ACAPS)",
     tajnid: "Tasna n service militaire",
     "schengen-demande": "Asuter n visa Schengen (Commission européenne)",
-    "france-visas": "France-Visas, tasna tarmit n visa n Fransa",
+    "france-visas": "France-Visas: asuter n visa zeg Lmeɣrib",
     "france-visa-maroc": "Asuter n visa (consulats n Fransa deg Lmeɣrib)",
     "espagne-visa-rabat": "Isutar n visa (consulat n Sbanya deg Rbaṭ)",
     "uk-check-visa": "Ma tḥwajeḍ visa i Ingliz",

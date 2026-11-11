@@ -351,7 +351,7 @@ export const GUIDE_FR: GuideLocaleContent = {
       title: "Visa pour la France : documents et rendez-vous",
       body: [
         "La demande de visa pour la France se fait sur France-Visas, le portail officiel du gouvernement français. Son assistant indique d'abord si un visa est nécessaire, les documents à joindre et le tarif ; vous créez ensuite un compte et remplissez la demande en ligne.",
-        "Vous déposez ensuite le dossier au centre de visas dont vous dépendez, sur rendez-vous : France-Visas indique à qui vous adresser. La demande se suit en ligne jusqu'à la décision du consulat. Pour des études, passez d'abord par Campus France (rubrique Étudiants).",
+        "Vous déposez ensuite le dossier, sur rendez-vous, dans l'un des centres TLS du Maroc (Agadir, Casablanca, Fès, Marrakech, Oujda, Rabat, Tanger) ; les consulats généraux de France à Casablanca et à Rabat décident. La demande se suit en ligne jusqu'à la décision du consulat. Pour des études, passez d'abord par Campus France (rubrique Étudiants).",
       ],
       prepare: ["Un passeport en cours de validité", "Les justificatifs indiqués par l'assistant de France-Visas"],
     },
@@ -372,7 +372,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     "visa-etats-unis": {
       title: "Visa pour les États-Unis : formulaire DS-160 et entretien",
       body: [
-        "Pour un voyage de tourisme ou de visite, la demande de visa commence par le formulaire en ligne DS-160, puis un entretien au consulat, sur rendez-vous. La page de l'ambassade des États-Unis au Maroc décrit les étapes et la prise de rendez-vous.",
+        "Pour un voyage de tourisme ou de visite, la demande de visa commence par le formulaire en ligne DS-160, puis un entretien au consulat des États-Unis à Casablanca, sur rendez-vous. La page de l'ambassade des États-Unis au Maroc décrit les étapes et la prise de rendez-vous.",
         "Seul le consulat décide de la délivrance du visa : méfiez-vous des sites qui proposent de remplir le formulaire contre paiement.",
       ],
     },
@@ -386,7 +386,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     "entrer-au-maroc": {
       title: "Venir au Maroc : e-visa et pays exemptés",
       body: [
-        "Les ressortissants de nombreux pays entrent au Maroc sans visa pour un court séjour : le ministère des Affaires étrangères publie la liste. Pour les autres, le visa électronique (e-visa) se demande en ligne sur la plateforme officielle Accès Maroc, qui vérifie d'abord votre admissibilité ; sinon, la demande se fait au consulat du Maroc.",
+        "Les ressortissants de nombreux pays entrent au Maroc sans visa pour un court séjour : le ministère des Affaires étrangères publie la liste. Pour les autres, le visa électronique (e-visa) se demande en ligne sur la plateforme officielle Accès Maroc, qui vérifie d'abord votre admissibilité selon votre nationalité, votre passeport et un éventuel autre visa valide (Schengen, Royaume-Uni, États-Unis, Canada…) ; sinon, la demande se fait au consulat du Maroc. Certains ressortissants dispensés de visa doivent obtenir une autorisation électronique de voyage (AEVM) sur la même plateforme : la liste officielle l'indique.",
         "Un proche de nationalité marocaine, même né à l'étranger, peut demander ses papiers marocains au consulat (rubrique Identité). Un conjoint de nationalité étrangère suit les règles de sa propre nationalité.",
         "Pour rester plus longtemps que la durée autorisée, un étranger demande une carte de séjour (carte d'immatriculation) auprès des services de la DGSN.",
       ],
@@ -505,7 +505,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     "acaps-reclamation": "Déposer une réclamation contre un assureur (ACAPS)",
     tajnid: "Portail du service militaire",
     "schengen-demande": "Demander un visa Schengen (Commission européenne)",
-    "france-visas": "France-Visas, portail officiel des visas pour la France",
+    "france-visas": "France-Visas : demander un visa depuis le Maroc",
     "france-visa-maroc": "Demander un visa (consulats de France au Maroc)",
     "espagne-visa-rabat": "Demandes de visa (consulat général d'Espagne à Rabat)",
     "uk-check-visa": "Vérifier s'il vous faut un visa pour le Royaume-Uni",

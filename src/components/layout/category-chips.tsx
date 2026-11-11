@@ -1,6 +1,6 @@
 "use client";
 
-import { ScrollText, ShoppingBag, type LucideIcon } from "lucide-react";
+import { ScrollText, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
 import { RailScroller } from "@/components/home/rail-scroller";
 import { Link, usePathname } from "@/i18n/navigation";
 import { DIRECTORY_PATH } from "@/lib/search/shortcuts";
@@ -19,6 +19,7 @@ import { showsCategoryRow } from "./shell-paths";
 // drag also scrolls it, and the two doors stand after it, fixed, always in view. Each link is a
 // 44 px target around a 36 px chip. Labels come from the server (the Categories catalog stays out of
 // the browser). Left out of the focused flows, the home page and the search page (shell-paths.ts).
+// Once the carriers space opens, « Transporteurs » stands after « Boutiques » (owner, 11 Nov 2026).
 
 export interface CategoryChip {
   id: string;
@@ -31,6 +32,8 @@ export interface CategoryChipsProps {
   label: string;
   shops: string;
   guide: string;
+  /** « Transporteurs » and its path (from the server: the search module stays out of the browser), only while the carriers space is open. */
+  carriers?: { label: string; href: string };
   previous: string;
   next: string;
 }
@@ -41,7 +44,7 @@ const chip = cn(
 );
 const currentChip = "bg-structure text-structure-foreground shadow-[0_6px_14px_-8px_var(--float-shadow)] dark:bg-bab-600";
 
-export function CategoryChips({ items, label, shops, guide, previous, next }: CategoryChipsProps) {
+export function CategoryChips({ items, label, shops, guide, carriers, previous, next }: CategoryChipsProps) {
   const pathname = usePathname();
   if (!showsCategoryRow(pathname)) return null;
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -59,6 +62,7 @@ export function CategoryChips({ items, label, shops, guide, previous, next }: Ca
     <>
       {divider}
       {door(DIRECTORY_PATH, ShoppingBag, shops)}
+      {carriers ? door(carriers.href, Truck, carriers.label) : null}
       {door("/demarches", ScrollText, guide)}
     </>
   );
@@ -88,6 +92,7 @@ export function CategoryChips({ items, label, shops, guide, previous, next }: Ca
           >
             <li data-testid="category-doors" className="flex shrink-0 snap-start items-center gap-1.5 lg:hidden">
               {door(DIRECTORY_PATH, ShoppingBag, shops)}
+              {carriers ? door(carriers.href, Truck, carriers.label) : null}
               {divider}
             </li>
             {items.map((item) => {

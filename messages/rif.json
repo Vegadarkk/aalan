@@ -16,6 +16,7 @@
     "searchSubmit": "Rzu",
     "signIn": "Kcem",
     "guide": "Lewraq",
+    "carriers": "Imsiwlen",
     "shops": "Tiḥuna",
     "shopsHint": "Tiḥuna d agences yettwasneqden",
     "previousCategories": "Tiggayin yezrin",
@@ -162,6 +163,7 @@
       "autorites": "Amsawal n ssulṭat (DSA)",
       "interdits": "Tiɣawsiwin yettwagedlen"
     },
+    "carriers": "Imsiwlen Urupa–Lmeɣrib",
     "guide": "Lewraq n lidara",
     "pricing": "Ssumat",
     "intro": "S {site}, af lhemza ɣer tama nnec : annonces n imdanen d Pro deg marra Lmeɣrib. Ṭumubilat, lɛeqqar, akra i lɛuṭla, axeddim, tilifunat, lmeɛdat n uxxam, tiɣawsiwin n tmurt… Ssuffeɣ annonce bla idrimen ḥima ad tzenzeḍ, ad tekreḍ, ad tefkeḍ niɣ ad tessekneḍ lxedmat nnec, d mmeslay s laman s tebratin.",
@@ -3605,7 +3607,8 @@
       "deliverEurope": "Asiweḍ deg Urupa",
       "more": "{names} d {count} nniḍen",
       "notice": "Lpri ad yeqqen ɣer lpri yenna-t umsiwel, war ttxelleṣeḍ walu deg site. Lpri aneggaru yettwaxḍa mara ttwazznen ikemmusen nnec, qbel ad ten-yawi. Lɛeqd yettili jar-ak d umsiwel kan.",
-      "compare": "Qaren d iruḥen nniḍen n webrid-a"
+      "compare": "Qaren d iruḥen nniḍen n webrid-a",
+      "guide": "Uqbel ad tceyyεeḍ: ddiwana, tiɣawsiwin yettwaḥeḍren, assurance."
     }
   },
   "Profile": {
@@ -5336,6 +5339,7 @@
       "title": "Astay n tfrent"
     },
     "carrier": {
+      "verifiedNote": "Iselkimen n tmesmuni n umsiwel-a (ajjel n tmesmuni deg Lmeɣrib niɣ deg Urupa) ttwasneqden; uṭṭun n licence nnes yenna-t netta x tamsulit nnes. Asiweḍ itteggen gar-ak d umsiwel: asmel ur yelli deg-s ur yettaɣ walu. Ssuma taneggarut tettwaggen deg lmizan, uqbel ad yaweḍ lkolis.",
       "cardTitle": "Amsiwel",
       "licence": "Turagt uṭṭun",
       "licenceDeclared": "Uṭṭun yenna-t umsiwel, ɣef tmesṭult nnes waḥdes.",
@@ -7018,6 +7022,14 @@
     "count": "{count, plural, one {# n uruḥ} other {# n iruḥen}}",
     "guide": "Lpri i nwala deg webrid-a: zeg {min} ar {max} i lkilu ɣer {count} n imsiwlen. D asmel, mači d lpri.",
     "notice": "Lpri ad yeqqen ɣer lpri nnan imsiwlen, war ttxelleṣeḍ walu deg Aalan. Lpri aneggaru yettwaxḍa mara ttwazznen ikemmusen nnec, qbel ad ten-yawi umsiwel. Asiwel yettili jar-ak d umsiwel kan.",
+    "before": {
+      "title": "Uqbel ad tceyyεeḍ",
+      "content": "Kecc i yettwasqsan x min yellan deg lkolis nnec d tsriḥt nnes ɣer ddiwana.",
+      "customs": "Zemmren ad rnun yiḥeqqen d tbadiyin n Lmeɣrib deg tiwḍi; ssalaε i tzenzit ttilint deg rrejim n tjara.",
+      "insurance": "Tamsulit n umsiwel teqqen ɣer lεetba n CMR, ɣir ma tenniḍ azal: i tɣawsa yesεan azal, ssuter assurance.",
+      "forbidden": "Ur ttceyyiε ca n lmexdirat, n leslaḥ, n yidrimen ur tettwasreḥen, n dwa bla ordonnance niɣ n drone bla tsriḥt.",
+      "guide": "Ɣer lguide: ceyyeε lkolis s umsiwel"
+    },
     "empty": {
       "soonTitle": "Iruḥen imezwura qrib",
       "soonBody": "Imsiwlen ad d-ssufɣen iruḥen nsen dagi mara yettwalli umkan-a. Ales-d qbel asiwel nnec, niɣ ini-as i umsiwel nnec.",

@@ -150,13 +150,15 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   const hidden = listedCount - listings.length;
   const agency = store.sector === "real_estate";
   const holidayAgency = store.sector === "holiday_rental";
+  // A carrier may be registered in the EU: its note names no ICE (transporteurs/spec.md §8).
+  const carrier = store.sector === "carrier";
   const counts = agency && seller.publishedCount > 0 ? await shopSubcategoryCounts(seller.publicId, "immobilier") : null;
   // The presentation in the page's language when the shop wrote it (UX audit lot 1), else the other one.
   const about = locale === "ar" ? store.descriptionAr || store.description : store.description || store.descriptionAr;
   const label = agency ? t("agency.label") : rentalAgency ? t("rental.label") : holidayAgency ? t("holiday.label") : t("label");
   const aside = (
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted p-4 text-sm text-foreground-muted">
-      <p className="text-pretty">{store.example ? t("example.note") : agency ? t("agency.verifiedNote") : rentalAgency ? t("rental.verifiedNote") : holidayAgency ? t("holiday.verifiedNote") : t("verifiedNote")}</p>
+      <p className="text-pretty">{store.example ? t("example.note") : agency ? t("agency.verifiedNote") : rentalAgency ? t("rental.verifiedNote") : holidayAgency ? t("holiday.verifiedNote") : carrier ? t("carrier.verifiedNote") : t("verifiedNote")}</p>
       {/* "Signaler" within reach (DSA art. 16(1), Phase 6 review), out of the header (UX audit B2): it opens
           the form itself (zone 3 audit P3-6), like the button at the bottom of the page. */}
       <ReportButton

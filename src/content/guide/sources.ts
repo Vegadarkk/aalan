@@ -23,6 +23,7 @@ export const OFFICIAL_HOSTS = {
   "www.narsa-securiteroutiere.ma": "NARSA",
   "www.ancfcc.gov.ma": "ANCFCC",
   "www.mre.gov.ma": "Ministère des MRE",
+  "www.douane.gov.ma": "Douane (ADII)",
   "www.consulat.ma": "Affaires étrangères",
   "casierjudiciaire.justice.gov.ma": "Ministère de la Justice",
   "nationalitemarocaine.justice.gov.ma": "Ministère de la Justice",
@@ -105,6 +106,8 @@ export const GUIDE_SOURCES = {
   "mre-accueil": source("https://www.mre.gov.ma/fr", ["fr", "ar", "en"]),
   "mre-consulaire": source("https://www.mre.gov.ma/fr/e-services/guide-des-prestations-consulaires-en-ligne", ["fr"]),
   "mre-justice": source("https://www.mre.gov.ma/fr/e-services/services-administratifs-et-judiciaires-en-ligne", ["fr"]),
+  // Customs (ADII): its site refuses automated clients (11 Nov 2026); the checker unhides it once it answers.
+  adii: source("https://www.douane.gov.ma/", ["fr", "ar"], false, "2026-11-11"),
   "consulat-trouver": source("https://www.consulat.ma/fr/trouver-un-consulat", ["fr", "ar"]),
   "consulat-immatriculation": source("https://www.consulat.ma/fr/attestation-dimmatriculation-consulaire", ["fr", "ar"]),
   "consulat-retour": source("https://www.consulat.ma/fr/le-retour-definitif-au-maroc", ["fr", "ar"]),

@@ -139,6 +139,17 @@ describe("SiteHeader", () => {
     expect(body).toContain(`<button type="button" aria-label="${fr.Nav.nextCategories}" data-testid="rail-next"`);
     expect(body.indexOf('data-testid="rail-arrows"')).toBeLessThan(body.lastIndexOf('data-testid="category-doors"'));
     expect(body.indexOf("</ul>")).toBeLessThan(body.indexOf('data-testid="rail-arrows"'));
+    expect(body).not.toContain('href="/fr/transporteurs"');
+  });
+
+  it("adds « Transporteurs » after « Boutiques » once the carriers space is open", () => {
+    const html = render(<SiteHeader locale="fr" carriers />);
+    const body = /data-testid="category-chips">([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? "";
+    expect(body.match(/href="\/fr\/transporteurs"/g)).toHaveLength(2);
+    expect(body).toContain("lucide-truck");
+    expect(body).toContain(fr.Nav.carriers);
+    expect(body.indexOf('href="/fr/boutiques"')).toBeLessThan(body.indexOf('href="/fr/transporteurs"'));
+    expect(body.indexOf('href="/fr/transporteurs"')).toBeLessThan(body.indexOf('href="/fr/c/'));
   });
 
   it("stands 'Louer' (the car and the house, a menu) and 'Espace Pro' beside 'Vendre' from lg, compact until xl", () => {

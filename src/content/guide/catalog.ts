@@ -44,6 +44,8 @@ export const GUIDE_PROCEDURES = {
   "mre-immatriculation": { rubric: "mre", sources: ["consulat-immatriculation", "consulat-trouver"] },
   "mre-retour": { rubric: "mre", sources: ["consulat-retour"] },
   "mre-procuration": { rubric: "mre", sources: ["consulat-procuration"] },
+  // Parcels by van with a carrier of the site (transporteurs/spec.md §8).
+  "mre-colis": { rubric: "mre", sources: ["adii", "mre-accueil"] },
   // Companies and cooperatives
   "pro-societe": { rubric: "pro-cooperative", sources: ["ompic-creation", "ompic-rcc"] },
   "pro-ice": { rubric: "pro-cooperative", sources: ["ompic-ice"] },

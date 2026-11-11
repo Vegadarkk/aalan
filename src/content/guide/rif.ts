@@ -28,7 +28,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     },
     mre: {
       title: "Imeɣriben n umaḍal (MRE)",
-      summary: "Consulat, ajjel, tuɣalin, procuration.",
+      summary: "Consulat, ajjel, tuɣalin, procuration, lkolis.",
       intro: "Zeg berra, aṭas n tiwriwin ttɛeddayen x consulat n tmurt nnec d isenfaren n lwizara n MRE deg internet.",
     },
     "pro-cooperative": {
@@ -165,6 +165,14 @@ export const GUIDE_RIF: GuideLocaleContent = {
     "mre-retour": {
       title: "Tuɣalin ɣer Lmeɣrib i lebda",
       body: ["Tuɣalin i lebda tettak kra n tsehlin, i tɣawsiwin nnec d tmubilt, s tiwtilin n consulat."],
+    },
+    "mre-colis": {
+      title: "Ceyyeε lkolis s umsiwel",
+      body: [
+        "Amsiwel s lfourgon iqqen Urupa d Lmeɣrib. Deg {brand}, ssuma i d-yettbanen d tin s uqarrab zi lgrille nnes: netta ad yegg ssuma taneggarut deffir lmizan, uqbel ad yaweḍ lkolis nnec. Ssuter-tt s tira d ḥḍe lwesl.",
+        "Kecc i yettwasqsan x min yellan deg lkolis nnec d tsriḥt nnes ɣer ddiwana. Zemmren ad rnun yiḥeqqen d tbadiyin deg tiwḍi, d ssalaε i tzenzit ttilint deg rrejim n tjara: ddiwana (ADII) d netta i yeggen lqawaεed. Ur ttceyyiε ca n lmexdirat, n leslaḥ, n yidrimen ur tettwasreḥen, n dwa bla ordonnance niɣ n drone bla tsriḥt.",
+        "Ma yeḍḍeε niɣ yerrez lkolis, tamsulit n umsiwel teqqen ɣer lεetba n CMR, ɣir ma tenniḍ azal nnes: i tɣawsa yesεan azal, ssuter assurance.",
+      ],
     },
     "mre-procuration": {
       title: "Procuration ḥima ad tzenzeḍ niɣ ad taɣeḍ axxam",
@@ -343,6 +351,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     ancfcc: "Conservation foncière (ANCFCC)",
     "ancfcc-tarifs": "Ixxuṣen n conservation foncière",
     "mre-accueil": "Lwizara n MRE",
+    adii: "Ddiwana (ADII)",
     "mre-consulaire": "Isenfaren n consulat deg internet",
     "mre-justice": "Isenfaren n tedbelt d lɛadala",
     "consulat-trouver": "Af-d consulat nnec",

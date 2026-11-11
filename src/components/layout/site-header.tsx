@@ -5,6 +5,7 @@ import { DoorMark } from "@/components/feedback/door-mark";
 import { CATEGORIES } from "@/config/categories";
 import { SITE_NAME } from "@/config/site";
 import { Link } from "@/i18n/navigation";
+import { CARRIERS_PATH } from "@/lib/carriers/search-params";
 import { CategoryChips } from "./category-chips";
 import { Container } from "./container";
 import { FloatingActions } from "./floating-actions";
@@ -30,7 +31,7 @@ import { AssistantBubble } from "@/components/help/assistant-bubble";
 // menus. The header and its category row run to max-w-7xl, 88rem from xl, wider than the page's
 // max-w-6xl, so the search pill keeps its room beside the six pieces (its place segment waits for xl).
 
-export function SiteHeader({ locale }: { locale: string }) {
+export function SiteHeader({ locale, carriers = false }: { locale: string; /** The carriers space is open (`carriersEnabled`): « Transporteurs » joins the doors. */ carriers?: boolean }) {
   const t = useTranslations("Nav");
   const names = useTranslations("Categories");
   type CategoryKey = Parameters<typeof names>[0];
@@ -69,7 +70,7 @@ export function SiteHeader({ locale }: { locale: string }) {
           </div>
         </Container>
       </header>
-      <CategoryChips items={chips} label={t("categories")} shops={t("shops")} guide={t("guide")} previous={t("previousCategories")} next={t("nextCategories")} />
+      <CategoryChips items={chips} label={t("categories")} shops={t("shops")} guide={t("guide")} {...(carriers ? { carriers: { label: t("carriers"), href: CARRIERS_PATH } } : {})} previous={t("previousCategories")} next={t("nextCategories")} />
       <FloatingActions label={t("floating")}>
         <SellFab label={t("post")} text={t("sell")} />
         <AssistantBubble />

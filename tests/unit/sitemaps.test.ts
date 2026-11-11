@@ -174,13 +174,13 @@ describe("buildSitemapFile while the site is closed", () => {
   const CLOSED = { ...PROD, OPENS_AT: "2027-01-12T10:00:00+01:00" } as ServerEnv;
   const before = new Date("2026-11-11T00:00:00Z");
 
-  it("lists only home and the legal texts, and no listing shard", async () => {
+  it("lists only home, the legal texts and the procedures guide, and no listing shard", async () => {
     await engine.upsert([doc("a2345678", "voitures", "casablanca")]);
     const index = (await buildSitemapFile("index.xml", CLOSED, before)) ?? "";
     expect([...index.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])).toEqual(["https://aalan.ma/sitemaps/pages.xml"]);
     const pages = (await buildSitemapFile("pages.xml", CLOSED, before)) ?? "";
     const paths = [...pages.matchAll(/<loc>https:\/\/aalan\.ma\/fr([^<]*)<\/loc>/g)].map((match) => match[1]);
-    expect(paths).toEqual(["", ...LEGAL_PAGES.map((page) => `/legal/${page.slug}`)]);
+    expect(paths).toEqual(["", ...LEGAL_PAGES.map((page) => `/legal/${page.slug}`), "/demarches", ...GUIDE_RUBRICS.map((rubric) => `/demarches/${rubric}`)]);
     await expect(buildSitemapFile(`listings-${sitemapShardOf("a2345678")}.xml`, CLOSED, before)).resolves.toBeNull();
   });
 

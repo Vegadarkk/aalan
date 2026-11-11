@@ -130,8 +130,8 @@ const NO_STORE = "no-store";
 
 /**
  * Pre-opening gate (src/lib/launch/gate.ts): null when the request goes on as usual. Closed (before
- * OPENS_AT, no preview pass): /{locale} is rendered by the countdown page, the legal texts pass,
- * any other page goes to /{locale} (307, never cached) and the public API answers 503. The
+ * OPENS_AT, no preview pass): /{locale} is rendered by the countdown page, the legal texts and
+ * the procedures guide pass, any other page goes to /{locale} (307, never cached) and the public API answers 503. The
  * countdown page itself is only reached by that rewrite: asked for directly, it is the home page.
  */
 function launchGate(request: NextRequest, routed: NextResponse | null): NextResponse | null {

@@ -1,8 +1,9 @@
 // Pre-opening gate (owner, 5 Nov 2026): production goes online about ten days before the site
 // opens, while the social-media campaign runs. Until OPENS_AT the site is closed: the home page of
 // each locale shows the welcome door, shut, with a countdown (src/app/[locale]/(closed)/ouverture);
-// every other page goes to it, except the legal texts; the public API answers 503, except health,
-// runtime config, CSP reports, the preview pass and the providers' webhooks. No sign-up, no listing
+// every other page goes to it, except the legal texts and the procedures guide; the public API
+// answers 503, except health, runtime config, CSP reports, the preview pass and the providers'
+// webhooks. No sign-up, no listing
 // (owner's card: "Non, tout fermé"). The admin host is never gated. Unset or past OPENS_AT: open.
 // A preview pass (src/lib/launch/preview.ts) lets the team through before the opening.
 // Pure and environment-free: imported by the proxy, the closed page and the tests.
@@ -34,8 +35,12 @@ export function isClosed(opensAt: Date | null, now: Date = new Date()): boolean 
   return opensAt !== null && now.getTime() < opensAt.getTime();
 }
 
-/** Page segments still served while closed: the legal texts (mentions, CGU, privacy, cookies). */
-const OPEN_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["legal"]);
+/**
+ * Page segments still served while closed: the legal texts (mentions, CGU, privacy, cookies) and
+ * the admin procedures guide, its rubrics included (owner, 11 Nov 2026: the guide opens before the
+ * site so search engines index it early; sign-up, listings and the API stay closed).
+ */
+export const OPEN_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["legal", "demarches"]);
 
 /**
  * Public API paths still served while closed: health (uptime probe), the browser's config, CSP

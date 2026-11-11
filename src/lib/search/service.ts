@@ -133,6 +133,10 @@ export function buildFilter(input: SearchParams, now: Date): FilterExpr | undefi
   const dates = activeRentalDates(params, now);
   const rental = datedRental(params.subcategory);
   if (dates && rental) parts.push(rentalDatesFilter(dates, rental));
+  // Carrier departures (route alerts): the zone or country served in Europe, the city in Morocco.
+  if (params.route?.zone) parts.push(eq("depZones", params.route.zone));
+  else if (params.route?.country) parts.push(eq("depCountries", params.route.country));
+  if (params.route?.city) parts.push(eq("depCities", params.route.city));
   return and(parts);
 }
 

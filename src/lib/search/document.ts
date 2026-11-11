@@ -1,5 +1,6 @@
 import "server-only";
 import { carModelOf } from "@/config/car-models";
+import { euZoneById } from "@/config/carriers";
 import { criterionById, subcategoryById } from "@/config/categories";
 import { cityBySlug, regionByCode } from "@/config/regions";
 import { availableValues, isSoldOut, isVariantCriterion, priceRange, promoSummary } from "@/lib/contracts/catalog";
@@ -9,7 +10,7 @@ import type { ListingDoc } from "@/lib/db/schemas";
 import { exampleSearchTitles } from "@/lib/demo/localized";
 import ar from "../../../messages/ar.json";
 import fr from "../../../messages/fr.json";
-import { blockedDays, freshUntil, moroccoToday } from "@/lib/listings/rental-availability";
+import { blockedDays, dayNumber, freshUntil, moroccoToday } from "@/lib/listings/rental-availability";
 import { foldDigits } from "./normalize";
 import { searchPhotoOf } from "./photo";
 import { districtKey } from "./params";
@@ -149,6 +150,29 @@ function promoFields(listing: Pick<ListingDoc, "promo">): Partial<SearchDocument
   return { promoStartsAt: promo.startsAt.getTime(), promoEndsAt: promo.endsAt.getTime(), promoKind: promo.kind, promoPercent: summary.percent, promoPrice: summary.price, promoReference: summary.reference ?? 0 };
 }
 
+/** The index fields of a carrier's departure: filters (day, zones, countries, cities, room) and its card. */
+function departureFields(departure: NonNullable<ListingRecord["departure"]>): Pick<SearchDocument, "depOn" | "depZones" | "depCountries" | "depCities" | "depSpace" | "departure"> {
+  return {
+    depOn: dayNumber(departure.departOn),
+    depZones: [...departure.euZones],
+    depCountries: [...new Set(departure.euZones.map((id) => id.slice(0, 2)))],
+    depCities: [...departure.maCities],
+    depSpace: departure.space,
+    departure: {
+      direction: departure.direction,
+      departOn: departure.departOn,
+      depositBy: departure.depositBy,
+      arriveFrom: departure.arriveFrom,
+      arriveTo: departure.arriveTo,
+      euZones: [...departure.euZones],
+      maCities: [...departure.maCities],
+      space: departure.space,
+      ...(departure.spaceKg !== undefined ? { spaceKg: departure.spaceKg } : {}),
+      spaceUpdatedAt: departure.spaceUpdatedAt.getTime(),
+    },
+  };
+}
+
 export function toSearchDocument(listing: ListingRecord, now: Date = new Date()): SearchDocument | null {
   if (!isIndexable(listing)) return null;
   const { slugId, categoryId, subcategoryId, location } = listing;
@@ -204,6 +228,12 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
   const price = range?.min;
   // Car rentals (rental pack §4): blocked days from today on, and the end of the fresh window.
   const rentalDays = listing.rental ? blockedDays(listing.rental.unavailable, moroccoToday(now)) : [];
+  // Carriers' departures (transporteurs/spec.md §5): the tour's places are searchable words too.
+  const departure = listing.departure;
+  if (departure) {
+    for (const id of departure.euZones) attrsText.push(euZoneById(id)?.name ?? "");
+    for (const slug of departure.maCities) attrsText.push(cityBySlug(slug)?.nameFr ?? "", cityBySlug(slug)?.nameAr ?? "");
+  }
 
   return {
     id: listing.id,
@@ -238,6 +268,7 @@ export function toSearchDocument(listing: ListingRecord, now: Date = new Date())
     ...(listing.example ? { isExample: true as const } : {}),
     ...(rentalDays.length ? { rentUnavailableDays: rentalDays } : {}),
     ...(listing.rental ? { rentFreshUntil: freshUntil(listing.rental.updatedAt) } : {}),
+    ...(departure ? departureFields(departure) : {}),
     ...(isSoldOut(listing) ? { soldOut: true as const } : {}),
     ...(range && range.max > range.min ? { priceFrom: true as const } : {}),
     ...promoFields(listing),

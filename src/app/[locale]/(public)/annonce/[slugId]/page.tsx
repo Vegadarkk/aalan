@@ -61,6 +61,7 @@ import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { PrintSource } from "@/components/print/print-source";
 import { DepartureFacts } from "@/components/carriers/departure-facts";
+import { carrierSearchPath } from "@/lib/carriers/search-params";
 
 // Public listing page (design D1, D10, D14, §5, §8): ISR, rendered on the first visit and kept 5
 // minutes (lifecycle transitions revalidate it at once). No loading.tsx above it: notFound() and the
@@ -312,6 +313,7 @@ export default async function ListingPage({ params }: { params: Params }) {
                 departure={listing.departure}
                 from={storefront?.carrierFrom ?? null}
                 pricesHref={storefront ? `${storefrontPath(locale, storefront.segment)}#carrier-prices` : null}
+                compareHref={flags.carriersEnabled ? carrierSearchPath({ direction: listing.departure.direction, city: listing.departure.maCities[0], sort: "date" }) : null}
                 locale={locale}
                 className="self-stretch sm:max-w-xl"
               />

@@ -1,3 +1,4 @@
+import type { CarrierDirection, CarrierSpace } from "@/config/carriers";
 import type { Condition } from "@/config/categories";
 import type { CardFacts } from "@/lib/listings/card-facts";
 import type { CardPromo, PromoKind } from "@/lib/contracts/catalog-core";
@@ -91,11 +92,35 @@ export interface SearchDocument {
   /** Lowest promotional price and its struck-out price (0: none, a listing younger than 30 days). */
   promoPrice?: number;
   promoReference?: number;
+  /** Carrier's departure (transporteurs/spec.md §5): its day number (days since 1970-01-01). */
+  depOn?: number;
+  /** Departure: EU zones of the tour, their countries, and the Moroccan cities. */
+  depZones?: string[];
+  depCountries?: string[];
+  depCities?: string[];
+  /** Departure: room left (« Complet » leaves the default results of /transporteurs). */
+  depSpace?: CarrierSpace;
+  /** Departure: what its card on /transporteurs shows (read back, never searched). */
+  departure?: SearchDeparture;
   /** Rounded city (later district) centroid. */
   _geo: { lat: number; lng: number };
   version: number;
   /** Flattened criteria: `a_<criterion id with "_" for "-">` (see `attributeField`). */
   [attribute: `a_${string}`]: string | string[] | number | boolean | undefined;
+}
+
+/** A departure's facts in the index (its card on /transporteurs); `spaceUpdatedAt` in epoch ms. */
+export interface SearchDeparture {
+  direction: CarrierDirection;
+  departOn: string;
+  depositBy: string;
+  arriveFrom: string;
+  arriveTo: string;
+  euZones: string[];
+  maCities: string[];
+  space: CarrierSpace;
+  spaceKg?: number;
+  spaceUpdatedAt: number;
 }
 
 /** Meilisearch field of a criterion: `car-brand` -> `a_car_brand`. */
@@ -178,7 +203,7 @@ export type FilterExpr =
   | { field: string; op: "exists" }
   | { geoRadius: { lat: number; lng: number; meters: number } };
 
-export type SortSpec = { field: "sortAt" | "price" | "promoPercent"; dir: "asc" | "desc" } | { geoPoint: { lat: number; lng: number }; dir: "asc" };
+export type SortSpec = { field: "sortAt" | "price" | "promoPercent" | "depOn"; dir: "asc" | "desc" } | { geoPoint: { lat: number; lng: number }; dir: "asc" };
 
 export interface EngineQuery {
   /** Normalized text (src/lib/search/normalize.ts); "" = browse. */

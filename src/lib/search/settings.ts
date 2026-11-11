@@ -30,10 +30,14 @@ const EQUALITY_BASE = [
   "condition",
   "sitemapShard",
   "rentUnavailableDays",
+  "depZones",
+  "depCountries",
+  "depCities",
+  "depSpace",
 ] as const;
 
 /** Numeric fields that also take `<`, `<=`, `>`, `>=`. */
-const COMPARISON_BASE = ["price", "sortAt", "featuredUntil", "rentFreshUntil", "promoStartsAt", "promoEndsAt"] as const;
+const COMPARISON_BASE = ["price", "sortAt", "featuredUntil", "rentFreshUntil", "promoStartsAt", "promoEndsAt", "depOn"] as const;
 
 // Form criteria and the search-only derived ones (`a_car_model`).
 const criteria = [...Object.values(CRITERIA), ...Object.values(DERIVED_CRITERIA)];
@@ -58,7 +62,7 @@ export function filterKind(field: string): FilterKind | undefined {
   return FILTER_KINDS.get(field);
 }
 
-export const SORTABLE_ATTRIBUTES = ["sortAt", "price", "_geo", "promoPercent"] as const;
+export const SORTABLE_ATTRIBUTES = ["sortAt", "price", "_geo", "promoPercent", "depOn"] as const;
 
 /**
  * D4: "sort" right after "words", so a date or price sort orders the matching listings and relevance

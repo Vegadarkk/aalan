@@ -1,4 +1,5 @@
-import { CONDITIONS, categoryById, datedRental, criterionById, searchCriteria, subcategoryById, type Condition, type RentalUnit } from "@/config/categories";
+import { EU_ZONE_COUNTRIES, euZoneById, type EuZoneCountry } from "@/config/carriers";
+import { CONDITIONS, DEPARTURE_SUBCATEGORY, categoryById, datedRental, criterionById, searchCriteria, subcategoryById, type Condition, type RentalUnit } from "@/config/categories";
 import { carModelById } from "@/config/car-models";
 import { cityBySlug, MOROCCO_BBOX, regionByCode } from "@/config/regions";
 import { DAY_PATTERN, RENTAL_SEARCH_DAYS_MAX, dayNumber } from "@/lib/listings/rental-availability";
@@ -112,10 +113,24 @@ export interface SearchParams {
    * past or beyond 180 days is ignored by the search service, not by the parser (no clock here).
    */
   dates?: RentalDates;
+  /**
+   * Carrier departures only (transporteurs/spec.md §5, route alerts): the European zone (implies
+   * its country) or country, and the Moroccan city served. The direction is the
+   * `departure-direction` criterion.
+   */
+  route?: DepartureRoute;
   /** Absent = default: relevance with a query, recent without. */
   sort?: SearchSort;
   /** 1-based; absent = 1. */
   page?: number;
+}
+
+export interface DepartureRoute {
+  country?: EuZoneCountry;
+  /** EU zone id (`FR-59`...). */
+  zone?: string;
+  /** Moroccan city slug. */
+  city?: string;
 }
 
 export interface RentalDates {
@@ -258,6 +273,14 @@ export function parseSearchParams(source: Source): SearchParams {
   if (conditions.length) params.conditions = conditions;
   const dates = validDates(read(source, k.rentFrom), read(source, k.rentTo));
   if (dates) params.dates = dates;
+  const route: DepartureRoute = {};
+  const routeCountry = read(source, k.routeCountry)?.toUpperCase();
+  if (routeCountry && (EU_ZONE_COUNTRIES as readonly string[]).includes(routeCountry)) route.country = routeCountry as EuZoneCountry;
+  const routeZone = read(source, k.routeZone);
+  if (routeZone && euZoneById(routeZone)) route.zone = routeZone;
+  const routeCity = read(source, k.routeCity);
+  if (routeCity && ID.test(routeCity)) route.city = routeCity;
+  if (Object.keys(route).length) params.route = route;
   const sortParam = read(source, k.sort);
   const sort = SEARCH_SORTS.find((value) => SORT_PARAM[value] === sortParam);
   if (sort) params.sort = sort;
@@ -379,10 +402,29 @@ export function canonicalSearchParams(input: SearchParams): SearchParams {
     if (dates) params.dates = dates;
     else delete params.dates;
   }
+  if (params.route) {
+    const route = params.subcategory === DEPARTURE_SUBCATEGORY ? canonicalRoute(params.route) : undefined;
+    if (route) params.route = route;
+    else delete params.route;
+  }
   if (params.sort === "distance" && !params.city && !params.zone) delete params.sort;
   if (params.sort && params.sort === defaultSort(params)) delete params.sort;
   if (params.page !== undefined && (params.page <= 1 || params.page > SEARCH_MAX_PAGE)) delete params.page;
   return params;
+}
+
+/** A zone implies its country; unknown values are dropped. Undefined when nothing is left. */
+function canonicalRoute(input: DepartureRoute): DepartureRoute | undefined {
+  const route: DepartureRoute = {};
+  const zone = input.zone ? euZoneById(input.zone) : null;
+  if (zone) {
+    route.country = zone.country;
+    route.zone = zone.id;
+  } else if (input.country && (EU_ZONE_COUNTRIES as readonly string[]).includes(input.country)) {
+    route.country = input.country;
+  }
+  if (input.city && cityBySlug(input.city)) route.city = input.city;
+  return Object.keys(route).length ? route : undefined;
 }
 
 /** Relevance when the visitor typed words, newest first otherwise (Leboncoin's default); car rentals by dates: cheapest day first. */
@@ -433,6 +475,9 @@ export function searchParamsToQuery(input: SearchParams): URLSearchParams {
     query.set(k.rentFrom, params.dates.from);
     query.set(k.rentTo, params.dates.to);
   }
+  if (params.route?.country) query.set(k.routeCountry, params.route.country);
+  if (params.route?.zone) query.set(k.routeZone, params.route.zone);
+  if (params.route?.city) query.set(k.routeCity, params.route.city);
   if (params.sort) query.set(k.sort, SORT_PARAM[params.sort]);
   if (params.page) query.set(k.page, String(params.page));
   return query;
@@ -506,6 +551,14 @@ export const storedSearchParamsSchema = z
       )
       .optional(),
     dates: z.object({ from: z.string().regex(DAY_PATTERN), to: z.string().regex(DAY_PATTERN) }).strict().optional(),
+    route: z
+      .object({
+        country: z.enum(EU_ZONE_COUNTRIES as [EuZoneCountry, ...EuZoneCountry[]]).optional(),
+        zone: z.string().min(2).max(16).optional(),
+        city: z.string().regex(ID).max(64).optional(),
+      })
+      .strict()
+      .optional(),
     sort: z.enum(SEARCH_SORTS).optional(),
   })
   .strict();

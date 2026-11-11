@@ -153,13 +153,15 @@ jobs:
       - run: npm run build
       # The runner image already carries Chromium's libraries; the apt packages (mostly fonts) are a
       # plus. When the Ubuntu mirrors do not resolve (11 Nov 2026, every e2e job failed there before
-      # any test ran), install the browser alone and let the tests decide.
+      # any test ran, and apt's retries alone took 10 of the job's 20 minutes), install the browser
+      # alone and let the tests decide.
       - name: Install Chromium
         run: |
-          if ! npx playwright install --with-deps chromium; then
-            echo "::warning::Ubuntu mirrors unreachable: Chromium installed without its apt packages"
-            npx playwright install chromium
+          if getent hosts archive.ubuntu.com > /dev/null && timeout 300 npx playwright install --with-deps chromium; then
+            exit 0
           fi
+          echo "::warning::Ubuntu mirrors unreachable: Chromium installed without its apt packages"
+          npx playwright install chromium
       # The web server inherits these (playwright.config.ts): web and dev rebuild route use both keys.
       - name: Search keys
         env:

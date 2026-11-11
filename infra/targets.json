@@ -132,8 +132,8 @@
         "private": "aalan-prod-private"
       },
       "whatsapp": {
-        "wabaId": null,
-        "phoneNumberId": null
+        "wabaId": "3901303640007287",
+        "phoneNumberId": "1411980928670818"
       },
       "cloudflare": {
         "tunnelId": "91426433-7a77-46cb-b3ca-ff68067a2007",

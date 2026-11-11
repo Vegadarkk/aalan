@@ -6,9 +6,19 @@ import type { GuideLocaleContent } from "./catalog";
 
 export const GUIDE_RIF: GuideLocaleContent = {
   rubrics: {
+    visa: {
+      title: "Visa d usafar",
+      summary: "Visa Schengen, Fransa, Sbanya, Ingliz, Mirikan, Kanada: lwraq d rendez-vous. Ad tased ɣer Lmeɣrib: e-visa.",
+      intro: "Visa tettwasutar ɣer tmurt ɣer ttedduḍ, deg isiten-s urmiden: wala {brand} wala ḥed n wesmsar ur zemmren ad tt-awin deg umkan nnec. Da ad tafeḍ mani ad tebdiḍ i tmura i yettwasutren ugar, d amek ad yased ubarrani niɣ aqrib nnec ɣer Lmeɣrib.",
+    },
+    hajj: {
+      title: "Lḥajj",
+      summary: "Ajjel deg tqaraɛt n lḥajj ɣer lwizara n Lḥubus: ccruṭ d wakud n ujjel.",
+      intro: "Lwizara n Lḥubus d Ccuʔun Lislamiya tessegda kul aseggwas ajjel n lḥajj d tqaraɛt. Ur tettak ca n idrimen i ḥed i ak-yennan ad ak-yaf amkan: ɛeddi ɣir s tasna n lwizara.",
+    },
     etudiant: {
       title: "Inelmaden",
-      summary: "Orientation mbeɛd bac, tiwsa n leqraya, axxam n tesdawit, asurif n tdawit, leqraya deg Fransa.",
+      summary: "Orientation mbeɛd bac, tiwsa n leqraya, axxam n tesdawit, asurif n tdawit, leqraya deg Fransa, équivalence.",
       intro: "ONOUSC d lwizara n uselmed unnig i yessegden tiwsa n inelmaden. Isutar ttwagen-d deg internet, deg wakud i yettwarzmen kul aseggwas: ḍfer imezgura i d-ttffɣen.",
     },
     "auto-entrepreneur": {
@@ -18,7 +28,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     },
     vehicule: {
       title: "Ad tzenzeḍ niɣ ad taɣeḍ tamubilt",
-      summary: "Mutation n tkarḍa tazegzawt, vignette, permis, tamubilt n MRE.",
+      summary: "Mutation n tkarḍa tazegzawt, vignette, permis (examen, duplicata, abeddel), tamubilt n MRE.",
       intro: "Tazenzit n tmubilt war tekmil s tsura: abeddel n bab nnes (mutation) yettwag deg NARSA, d timbre yettwaxelleṣ deg DGI. Alami tettwag mutation, amzenzu yeqqim d bab n tmubilt deg idlisen.",
     },
     immobilier: {
@@ -28,7 +38,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     },
     mre: {
       title: "Imeɣriben n umaḍal (MRE)",
-      summary: "Consulat, ajjel, tuɣalin, procuration, lkolis.",
+      summary: "Consulat, ajjel, zzwaj, lwert, tuɣalin, procuration, lkolis.",
       intro: "Zeg berra, aṭas n tiwriwin ttɛeddayen x consulat n tmurt nnec d isenfaren n lwizara n MRE deg internet.",
     },
     "pro-cooperative": {
@@ -38,7 +48,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     },
     identite: {
       title: "Tamagit d leḥala madaniya",
-      summary: "CNIE, passeport, rasm n tlalit, casier judiciaire, tamurt (nationalité), service militaire.",
+      summary: "CNIE, passeport, rasm n tlalit, casier judiciaire, tamurt (nationalité), service militaire, lwaʔiḥ n lintixabat.",
       intro: "Deg Lmeɣrib, CNIE d passeport ttwagen ɣer DGSN, d rasm n tlalit ɣer leḥala madaniya n tjmaɛt. Zeg berra, consulat ad yegg aya.",
     },
     sante: {
@@ -48,7 +58,7 @@ export const GUIDE_RIF: GuideLocaleContent = {
     },
     retraite: {
       title: "Retrite",
-      summary: "Retrite n CNSS, CMR niɣ RCAR, d retrite tamarnut (CIMR).",
+      summary: "Retrite n CNSS, CMR niɣ RCAR, retrite tamarnut (CIMR), certificat de vie deg berra.",
       intro: "Asenduq n retrite nnec yeqqen ɣer bab n lexdma: CNSS i tmesxedmin tusligin, CMR i imuwaḍḍfen d iɛeskriyen, RCAR i imxeddmen s lɛaqd d aṭas n tmesxedmin n dawla. Retrite tamarnut (CIMR) tzemmer ad d-tarni.",
     },
     "aides-sociales": {
@@ -326,6 +336,104 @@ export const GUIDE_RIF: GuideLocaleContent = {
         "Service militaire yeqqen ɣer iḥenjiren d tḥenjirin zeg 19 ar 25 n iseggwasen. Deg kul tamesrudt n uḥessab, wid yeqqnen ɣer-s ttarun takarḍa deg internet, umbeɛd ttawin-d convocation ma yexs. Dispense d report ttwasbeyyanen deg tesna taɣelnawt.",
       ],
     },
+    "visa-schengen": {
+      title: "Visa Schengen: mani tamurt d amek",
+      body: [
+        "Imerrukiyen ḥwajen visa i yiwen n usafar awezlan deg Schengen (ar 90 n wussan deg 180 n wussan). Yiwet n visa tessaweḍ i maṛṛa tamnaḍt, maca asuter ittwaga ɣer consulat n tmurt tamezwarut nnec: tin deg ad teqqimeḍ ugar, niɣ, ma qqen wakud, tin ɣer ad tadfeḍ amezwaru.",
+        "Kul consulat yettak lmelf i yiwen n centre n visa. Ur tettak ca n idrimen i usmsar i yettzenzan rendez-vous niɣ i yeqqaren ad ak-yaf visa: ɣir consulat i yettḥettimen, d maṛṛa tiwriwin ttwagent deg isiten urmiden.",
+        "Deg lḥedd, anagraw n Urupa n udaf d tuffɣa (EES) yettaru tidbuɛin nnec d tewlaft: ssenwel akud ugar deg tikkelt tamezwarut.",
+      ],
+      prepare: ["Passeport iḥeyyan", "Lwraq n usafar nnec: tabdart tamaqqrant deg tasna n consulat"],
+    },
+    "visa-france": {
+      title: "Visa n Fransa: lwraq d rendez-vous",
+      body: [
+        "Asuter n visa n Fransa ittwaga deg France-Visas, tasna tarmit n lḥukuma tafransist. Amɛiwen-s yeqqar-ak amezwaru ma teḥwajeḍ visa, lwraq d ssuma; mbeɛd ad tegeḍ compte d ad tɛemmreḍ asuter deg internet.",
+        "Mbeɛd ad tawiḍ lmelf ɣer centre n visa nnec, s rendez-vous: France-Visas yeqqar-ak mani. Asuter yettwaḍfar deg internet ar ad yeḥtem consulat. I leqraya, ɛeddi amezwaru s Campus France (Inelmaden).",
+      ],
+      prepare: ["Passeport iḥeyyan", "Lwraq i d-yenna umɛiwen n France-Visas"],
+    },
+    "visa-espagne": {
+      title: "Visa n Sbanya: lwraq d rendez-vous",
+      body: [
+        "Kul consulat n Sbanya deg Lmeɣrib yettawi ɣir isutar n wid i ɣer yeffeɣ passeport deg tamnaḍt-s. Tasna tarmit n consulat n Sbanya deg Rbaṭ, s tsbanyulit, tessefhem tiwriwin.",
+        "S lḥala nnec (visa tamezwarut, visa Schengen zik, leqraya), rendez-vous ittwaṭṭef deg usit n BLS i yexteṛ consulat. Ḥader isiten ifelsen d wid yettzenzan rendez-vous: bdu dima zeg tasna tarmit n consulat.",
+      ],
+    },
+    "visa-royaume-uni": {
+      title: "Visa n Ingliz (amerzu)",
+      body: [
+        "S tmurt nnec, tḥwajeḍ visa, ETA niɣ walu i Ingliz: allal armi n lḥukuma tanglizit yeqqar-ak-t s kra n isteqsiyen.",
+        "Visa n umerzu (Standard Visitor) i usafar d tmeẓla n twacult; ttwasuter deg internet qbel usafar. Ingliz ur illi deg Schengen: visa Schengen ur ak-tettak ad tadfeḍ.",
+      ],
+    },
+    "visa-etats-unis": {
+      title: "Visa n Mirikan: DS-160 d umeslay",
+      body: [
+        "I usafar niɣ tmeẓla, asuter n visa yettebda s tferkit DS-160 deg internet, mbeɛd ameslay deg consulat s rendez-vous. Tasna n lbaṣaḍur n Mirikan deg Lmeɣrib tessefhem tiwriwin.",
+        "Ɣir consulat i yettḥettimen: ḥader isiten i yettaren idrimen bac ad ɛemmren tferkit.",
+      ],
+    },
+    "visa-canada": {
+      title: "Visa n Kanada: visa n umerzu niɣ eTA",
+      body: [
+        "Imerrukiyen ḥwajen visa n umerzu i Kanada. eTA tessaweḍ ɣir ma tusiḍ s ṭṭiyara d tesɛiḍ visa n Kanada deg 10 n iseggusa ineggura, niɣ visa n Mirikan iḥeyyan.",
+        "Asuter deg internet; isteqsiyen n lḥukuma n Kanada qqaren-ak min tḥwajeḍ.",
+      ],
+    },
+    "entrer-au-maroc": {
+      title: "Ad tased ɣer Lmeɣrib: e-visa d tmura s war visa",
+      body: [
+        "Aṭas n tmura dadfen ɣer Lmeɣrib s war visa i yiwen n usafar awezlan: lwizara n Ccuʔun Lxarijiya tessuffeɣ tabdart. I wiyaḍ, e-visa tettwasuter deg tasna tarmit Accès Maroc, i yesseqdacen amezwaru ma tzemmreḍ; niɣ asuter ɣer consulat n Lmeɣrib.",
+        "Aqrib i yesɛan tamurt tamerrukit, ula ma ilul deg berra, izemmer ad isuter lwraq-s ɣer consulat (Tamagit). Ajewwaj abarrani yettḍfar ccruṭ n tmurt-s.",
+        "Bac ad yeqqim ugar n wakud i yettwasirgen, abarrani yessuter takarḍa n tilin (carte d'immatriculation) ɣer DGSN.",
+      ],
+    },
+    "hajj-inscription": {
+      title: "Ajjel deg tqaraɛt n lḥajj",
+      body: [
+        "Lwizara tessuffeɣ kul aseggwas akud n ujjel deg internet d ccruṭ, am leɛmer d war ma tgiḍ lḥajj deg iseggusa ineggura. Mbeɛd ajjel ittwasbedd ɣer ssulṭa n tmnaḍt, d taqaraɛt tettextiṛ lḥujjaj.",
+        "Agences n usafar i yesɛan rruxṣa ttaken ula d nitni imukan: ssenqed rruxṣa-nsen ɣer lwizara qbel ma txelṣeḍ.",
+      ],
+    },
+    "permis-conduire": {
+      title: "Permis: asuter, examen, duplicata",
+      body: [
+        "Permis yettwawi mbeɛd tamsirt tanaẓarit d tanaḍurt, d yiwen n examen. Leɛmer yeqqen ɣer ṣṣenf: 18 n iseggusa i permis B. Examen anaẓari ittwaga deg centre n NARSA, s tɣuri (convocation) d tkarḍa n tmagit taɣbalut; examen n tnaḍurt yettas-d mbeɛd.",
+        "Permis iruḥen, yettwakeren niɣ yerẓen ittbeddel s duplicata, deg tasna n isenfaren n NARSA.",
+      ],
+    },
+    "equivalence-diplomes": {
+      title: "Équivalence n diplôme n berra",
+      body: [
+        "Diplôme n berra yeḥwaj aṭas n tikkal équivalence bac ad tɣareḍ, ad tgeḍ concours niɣ ad txedmeḍ deg lwaḍifa lɛumumiya deg Lmeɣrib. Asuter deg internet, s compte nnec, deg tasna tarmit n équivalences i yeqqaren lwraq.",
+      ],
+      prepare: ["Diplômes nnec d relevés n nnqaṭ, s scanner"],
+    },
+    "mre-mariage": {
+      title: "Zzwaj niɣ tira n zzwaj deg berra",
+      body: [
+        "Deg berra, rasm n zzwaj ɛend leɛdul izemmer ad yettwaru deg consulat s leɛdul n consulat; deg kra n tiwriwin, am zzwaj s ubarrani, yessefk usireg n lqaḍi n twacult. Zzwaj aɣerfan (civil) deg berra ittwaru deg lḥala lmadaniya tamerrukit s consulat.",
+      ],
+    },
+    "mre-succession": {
+      title: "Lwert n yiwen n uqrib yemmuten",
+      body: [
+        "Rasm n lwert (iraṯa) yettaru-t leɛdul. Zeg berra, consulat izemmer ad iɛawen deg tseftit n lwert, s procuration d rasm n lwert aɣbalu: tasna tarmit teqqar mani consulat s umkan n tmettant d win n lwerrata.",
+      ],
+    },
+    "certificat-vie": {
+      title: "Certificat de vie i retrite (deg berra)",
+      body: [
+        "Tiseddukla n retrite ssuturent kul mkul zeg imeqqranen i yeddren deg berra ad sbeyynen d akken ddren. Consulat yettak certificat de vie, n yiwen niɣ n twacult: amsuter yettas s yiman-s d tkarḍa n tmagit.",
+      ],
+    },
+    "listes-electorales": {
+      title: "Ajjel deg lwaʔiḥ n lintixabat",
+      body: [
+        "Bac ad tfernuḍ, yessefk ad tiliḍ tjjeleḍ deg lwaʔiḥ n lintixabat. Ajjel ittwaga deg wakud n lmurajaɛa i d-yettffɣen kul aseggwas, deg tasna tarmit niɣ ɣer lidara; imerrukiyen n berra zemmren ula d nitni ad jjelen. Tasna tettak-ak ad tessenqeḍ ajjel nnec.",
+      ],
+    },
   },
   sources: {
     "idarati-entreprises": "Isenfaren i tisharikin (Idarati)",
@@ -394,5 +502,27 @@ export const GUIDE_RIF: GuideLocaleContent = {
     acaps: "ACAPS (aḥeḍḍar n ttamin)",
     "acaps-reclamation": "Ccekwa x tsharikt n ttamin (ACAPS)",
     tajnid: "Tasna n service militaire",
+    "schengen-demande": "Asuter n visa Schengen (Commission européenne)",
+    "france-visas": "France-Visas, tasna tarmit n visa n Fransa",
+    "france-visa-maroc": "Asuter n visa (consulats n Fransa deg Lmeɣrib)",
+    "espagne-visa-rabat": "Isutar n visa (consulat n Sbanya deg Rbaṭ)",
+    "uk-check-visa": "Ma tḥwajeḍ visa i Ingliz",
+    "uk-standard-visitor": "Visa n umerzu (Standard Visitor)",
+    "us-visas-maroc": "Visas (lbaṣaḍur n Mirikan deg Lmeɣrib)",
+    "us-visitor": "Visa n umerzu (Département d'État)",
+    "canada-visite": "Tameẓla n Kanada",
+    "canada-ave": "eTA i wid yesɛan visa (ccruṭ)",
+    "maroc-evisa": "Accès Maroc, tasna tarmit n e-visa",
+    "consulat-dispense-visa": "Tmura s war visa i Lmeɣrib",
+    habous: "Lwizara n Lḥubus d Ccuʔun Lislamiya",
+    "narsa-examen": "Examen n permis (NARSA)",
+    "narsa-permis-premier": "Permis amezwaru",
+    "narsa-permis-duplicata": "Duplicata n permis",
+    equivalence: "Tasna n équivalences n diplômes",
+    "consulat-mariage-adoulaire": "Rasm n zzwaj ɛend leɛdul (consulat)",
+    "consulat-mariage-civil": "Tira n zzwaj civil (consulat)",
+    "consulat-succession": "Tseftit n lwert (consulat)",
+    "consulat-certificat-vie": "Certificat de vie (consulat)",
+    "listes-electorales": "Tasna n lwaʔiḥ n lintixabat",
   },
 };

@@ -6,7 +6,7 @@ import type { GuideSourceId } from "./sources";
 // Texts may hold `{brand}` (SITE_NAME). They never quote a fee, a delay or a URL: the official page
 // states them and may change them at any time. Client-safe.
 
-export const GUIDE_RUBRICS = ["identite", "sante", "aides-sociales", "retraite", "eau-electricite", "assurances", "etudiant", "vehicule", "immobilier", "mre", "auto-entrepreneur", "pro-cooperative"] as const;
+export const GUIDE_RUBRICS = ["identite", "visa", "hajj", "sante", "aides-sociales", "retraite", "eau-electricite", "assurances", "etudiant", "vehicule", "immobilier", "mre", "auto-entrepreneur", "pro-cooperative"] as const;
 export type GuideRubric = (typeof GUIDE_RUBRICS)[number];
 
 export interface GuideProcedureMeta {
@@ -23,6 +23,7 @@ export const GUIDE_PROCEDURES = {
   "massar": { rubric: "etudiant", sources: ["massar"] },
   "orientation-postbac": { rubric: "etudiant", sources: ["cursussup", "cpge"] },
   "etudes-france": { rubric: "etudiant", sources: ["campusfrance-procedures", "parcoursup"] },
+  "equivalence-diplomes": { rubric: "etudiant", sources: ["equivalence"] },
   // Auto-entrepreneurs
   "ae-inscription": { rubric: "auto-entrepreneur", sources: ["ae-portail"] },
   "ae-impots": { rubric: "auto-entrepreneur", sources: ["dgi-teleservices"] },
@@ -31,6 +32,7 @@ export const GUIDE_PROCEDURES = {
   // Vehicles
   "vehicule-mutation": { rubric: "vehicule", sources: ["narsa-mutation", "dgi-teleservices"] },
   "vehicule-vignette": { rubric: "vehicule", sources: ["dgi-teleservices"] },
+  "permis-conduire": { rubric: "vehicule", sources: ["narsa-examen", "narsa-permis-premier", "narsa-permis-duplicata"] },
   "vehicule-permis": { rubric: "vehicule", sources: ["narsa-permis"] },
   "vehicule-mre": { rubric: "vehicule", sources: ["consulat-voiture"] },
   // Property
@@ -44,6 +46,8 @@ export const GUIDE_PROCEDURES = {
   "mre-immatriculation": { rubric: "mre", sources: ["consulat-immatriculation", "consulat-trouver"] },
   "mre-retour": { rubric: "mre", sources: ["consulat-retour"] },
   "mre-procuration": { rubric: "mre", sources: ["consulat-procuration"] },
+  "mre-mariage": { rubric: "mre", sources: ["consulat-mariage-adoulaire", "consulat-mariage-civil"] },
+  "mre-succession": { rubric: "mre", sources: ["consulat-succession"] },
   // Parcels by van with a carrier of the site (transporteurs/spec.md §8).
   "mre-colis": { rubric: "mre", sources: ["adii", "mre-accueil"] },
   // Companies and cooperatives
@@ -59,6 +63,17 @@ export const GUIDE_PROCEDURES = {
   "id-casier": { rubric: "identite", sources: ["casier", "consulat-casier"] },
   "id-nationalite": { rubric: "identite", sources: ["nationalite"] },
   "id-service-militaire": { rubric: "identite", sources: ["tajnid"] },
+  "listes-electorales": { rubric: "identite", sources: ["listes-electorales"] },
+  // Visas (owner, 2026-11-11): Moroccans travelling abroad, then foreigners and family coming to Morocco.
+  "visa-schengen": { rubric: "visa", sources: ["schengen-demande"] },
+  "visa-france": { rubric: "visa", sources: ["france-visas", "france-visa-maroc"] },
+  "visa-espagne": { rubric: "visa", sources: ["espagne-visa-rabat"] },
+  "visa-royaume-uni": { rubric: "visa", sources: ["uk-check-visa", "uk-standard-visitor"] },
+  "visa-etats-unis": { rubric: "visa", sources: ["us-visas-maroc", "us-visitor"] },
+  "visa-canada": { rubric: "visa", sources: ["canada-visite", "canada-ave"] },
+  "entrer-au-maroc": { rubric: "visa", sources: ["maroc-evisa", "consulat-dispense-visa", "consulat-trouver"] },
+  // Hajj registration (Ministry of Habous and Islamic Affairs).
+  "hajj-inscription": { rubric: "hajj", sources: ["habous"] },
   // Health cover (AMO)
   "amo-salaries": { rubric: "sante", sources: ["cnss"] },
   "amo-tadamon": { rubric: "sante", sources: ["rsu", "cnss"] },
@@ -67,6 +82,7 @@ export const GUIDE_PROCEDURES = {
   "retraite-cnss": { rubric: "retraite", sources: ["cnss"] },
   "retraite-public": { rubric: "retraite", sources: ["cmr", "rcar-affiliation"] },
   "retraite-complementaire": { rubric: "retraite", sources: ["cimr-pension"] },
+  "certificat-vie": { rubric: "retraite", sources: ["consulat-certificat-vie"] },
   // Social aid (RSU)
   "rsu-inscription": { rubric: "aides-sociales", sources: ["rnp", "rsu"] },
   "aide-sociale-directe": { rubric: "aides-sociales", sources: ["asd"] },

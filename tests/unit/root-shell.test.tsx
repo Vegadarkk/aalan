@@ -11,7 +11,7 @@ const getLegalConfig = vi.hoisted(() => vi.fn(async () => ({ companyName: "SociÃ
 vi.mock("@/lib/legal/config", () => ({ getLegalConfig }));
 vi.mock("@/lib/fonts", () => ({ readex: { variable: "font-readex" }, tarifitFallback: { variable: "font-tarifit" }, ruqaa: { variable: "font-ruqaa" } }));
 vi.mock("@/components/layout/providers", () => ({ Providers: ({ children }: { children: ReactNode }) => children }));
-vi.mock("@/components/layout/site-header", () => ({ SiteHeader: () => <header /> }));
+vi.mock("@/components/layout/site-header", () => ({ SiteHeader: ({ assistantFrom }: { assistantFrom?: string | null }) => <header data-assistant-from={assistantFrom ?? "none"} /> }));
 vi.mock("@/components/legal/cgu-notice", () => ({ CguNotice: () => null }));
 vi.mock("@/components/legal/footer", () => ({
   Footer: ({ publisher, prefetch }: { publisher: string; prefetch?: boolean }) => <footer data-publisher={publisher} data-prefetch={String(prefetch)} />,
@@ -26,6 +26,7 @@ vi.mock("next-intl/server", () => ({
 }));
 
 const { RootShell } = await import("@/components/layout/root-shell");
+const { resetServerEnv } = await import("@/lib/env");
 
 describe("RootShell", () => {
   it("renders the footer with the live config/legal trade name", async () => {
@@ -39,5 +40,19 @@ describe("RootShell", () => {
     const config = {} as NonNullable<Parameters<typeof RootShell>[0]["config"]>;
     const html = renderToStaticMarkup(await RootShell({ locale: "fr", nonce: "n", config, children: <p>page</p> }));
     expect(html).toContain('data-prefetch="false"');
+  });
+
+  it("holds the Assistant's bubble until the opening while the site is closed (its API answers 503)", async () => {
+    vi.stubEnv("OPENS_AT", "2999-01-01T10:00:00+00:00");
+    resetServerEnv();
+    try {
+      expect(renderToStaticMarkup(await RootShell({ locale: "fr", children: null }))).toContain('data-assistant-from="2999-01-01T10:00:00.000Z"');
+      vi.stubEnv("OPENS_AT", "2020-01-01T10:00:00+00:00");
+      resetServerEnv();
+      expect(renderToStaticMarkup(await RootShell({ locale: "fr", children: null }))).toContain('data-assistant-from="none"');
+    } finally {
+      vi.unstubAllEnvs();
+      resetServerEnv();
+    }
   });
 });

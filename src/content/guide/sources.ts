@@ -52,11 +52,40 @@ export const OFFICIAL_HOSTS = {
   // Foreign official hosts (FOREIGN_OFFICIAL_HOSTS): studies in France, asked for by the owner.
   "www.maroc.campusfrance.org": "Campus France (État français)",
   "www.parcoursup.gouv.fr": "Parcoursup (État français)",
+  // Moroccan e-visa platform (Ministry of Foreign Affairs).
+  "www.acces-maroc.ma": "Affaires étrangères (e-visa)",
+  "khadamatnarsa.ma": "NARSA (services en ligne)",
+  "equivalence.men.gov.ma": "Ministère de l'Éducation nationale",
+  "www.listeselectorales.ma": "Ministère de l'Intérieur",
+  "www.habous.gov.ma": "Ministère des Habous",
+  // Foreign official hosts (FOREIGN_OFFICIAL_HOSTS): visas for travel abroad, asked for by the owner.
+  "france-visas.gouv.fr": "France-Visas (État français)",
+  "ma.diplomatie.gouv.fr": "Ambassade de France au Maroc",
+  "www.exteriores.gob.es": "Consulats d'Espagne au Maroc",
+  "home-affairs.ec.europa.eu": "Commission européenne",
+  "www.gov.uk": "Gouvernement britannique",
+  "ma.usembassy.gov": "Ambassade des États-Unis au Maroc",
+  "travel.state.gov": "Département d'État américain",
+  "www.canada.ca": "Gouvernement du Canada",
 } as const;
 export type OfficialHost = keyof typeof OFFICIAL_HOSTS;
 
-/** The only hosts outside .ma the guide may link to (owner, 2026-10-30: studies in France). */
-export const FOREIGN_OFFICIAL_HOSTS: ReadonlySet<string> = new Set(["www.maroc.campusfrance.org", "www.parcoursup.gouv.fr"]);
+/**
+ * The only hosts outside .ma the guide may link to (owner, 2026-10-30: studies in France; 2026-11-11:
+ * visas). Governments and their embassies only: never a visa centre operator, an agency or a form filler.
+ */
+export const FOREIGN_OFFICIAL_HOSTS: ReadonlySet<string> = new Set([
+  "www.maroc.campusfrance.org",
+  "www.parcoursup.gouv.fr",
+  "france-visas.gouv.fr",
+  "ma.diplomatie.gouv.fr",
+  "www.exteriores.gob.es",
+  "home-affairs.ec.europa.eu",
+  "www.gov.uk",
+  "ma.usembassy.gov",
+  "travel.state.gov",
+  "www.canada.ca",
+]);
 
 /** Languages a page is offered in (badges next to the link). */
 export const PAGE_LANGS = ["fr", "ar", "en", "es"] as const;
@@ -155,6 +184,34 @@ export const GUIDE_SOURCES = {
   "acaps-reclamation": source("https://reclamation-assurance.acaps.ma/", ["fr", "ar"], false, "2026-10-30"),
   // Military service
   tajnid: source("https://www.tajnid.ma/", ["fr", "ar"], false, "2026-10-30"),
+  // Visas (owner, 2026-11-11). Read on 11 Nov 2026 unless confirmed is false: france-visas.gouv.fr,
+  // the US pages and consulat.ma refuse automated clients, acces-maroc.ma renders in the browser only.
+  "schengen-demande": source("https://home-affairs.ec.europa.eu/policies/schengen/visa-policy/applying-schengen-visa_en", ["en"], true, "2026-11-11"),
+  "france-visas": source("https://france-visas.gouv.fr/", ["fr", "en", "es"], false, "2026-11-11"),
+  "france-visa-maroc": source("https://ma.diplomatie.gouv.fr/fr/demander-un-visa", ["fr"], true, "2026-11-11"),
+  "espagne-visa-rabat": source("https://www.exteriores.gob.es/Consulados/rabat/es/ServiciosConsulares/Paginas/Procedimiento-de-solicitudes-de-visado.aspx", ["es"], true, "2026-11-11"),
+  "uk-check-visa": source("https://www.gov.uk/check-uk-visa", ["en"], true, "2026-11-11"),
+  "uk-standard-visitor": source("https://www.gov.uk/standard-visitor", ["en"], true, "2026-11-11"),
+  "us-visas-maroc": source("https://ma.usembassy.gov/visas/", ["en"], false, "2026-11-11"),
+  "us-visitor": source("https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html", ["en"], false, "2026-11-11"),
+  "canada-visite": source("https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada.html", ["en", "fr"], true, "2026-11-11"),
+  "canada-ave": source("https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/eligibility/eta-x.html", ["en", "fr"], true, "2026-11-11"),
+  "maroc-evisa": source("https://www.acces-maroc.ma/", ["fr", "en"], false, "2026-11-11"),
+  // Hajj: the ministry portal (under maintenance on 11 Nov 2026; it announces each season's registration).
+  habous: source("https://www.habous.gov.ma/", ["ar", "fr"], true, "2026-11-11"),
+  // Driving licence: the NARSA exam page (read) links the services portal (blocks automated clients).
+  "narsa-examen": source("https://www.narsa-securiteroutiere.ma/fr/examen-du-permis-de-conduire/", ["fr", "ar"], true, "2026-11-11"),
+  "narsa-permis-premier": source("https://khadamatnarsa.ma/fr/services/obtention-de-mon-permis-de-conduire-1ere-fois", ["fr"], false, "2026-11-11"),
+  "narsa-permis-duplicata": source("https://khadamatnarsa.ma/fr/services/duplicata-de-mon-permis-de-conduire", ["fr"], false, "2026-11-11"),
+  equivalence: source("https://equivalence.men.gov.ma/", ["fr"], false, "2026-11-11"),
+  "listes-electorales": source("https://www.listeselectorales.ma/fr/", ["fr", "ar"], false, "2026-11-11"),
+  // Consular pages found by official search on 11 Nov 2026 (consulat.ma refuses automated clients);
+  // the English page addresses until a person reads the French ones.
+  "consulat-mariage-adoulaire": source("https://www.consulat.ma/en/establishment-act-marriage-adoulairebetrothed-consular-services", ["en", "fr", "ar"], false, "2026-11-11"),
+  "consulat-mariage-civil": source("https://www.consulat.ma/en/registration-civil-marriage-consular-services", ["en", "fr", "ar"], false, "2026-11-11"),
+  "consulat-succession": source("https://www.consulat.ma/en/beneficiaries-residing-morocco-or-country-other-deceaseds-residence", ["en", "fr", "ar"], false, "2026-11-11"),
+  "consulat-certificat-vie": source("https://www.consulat.ma/en/individual-or-collective-life-certificate-or-family-registration-form", ["en", "fr", "ar"], false, "2026-11-11"),
+  "consulat-dispense-visa": source("https://www.consulat.ma/fr/liste-des-pays-dont-les-ressortissants-sont-dispenses-du-visa-dentree-au-maroc", ["fr", "ar"], false, "2026-11-11"),
 } as const satisfies Record<string, GuideSource>;
 export type GuideSourceId = keyof typeof GUIDE_SOURCES;
 export const GUIDE_SOURCE_IDS = Object.keys(GUIDE_SOURCES) as GuideSourceId[];

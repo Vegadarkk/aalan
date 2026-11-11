@@ -1,4 +1,4 @@
-import { REVIEW_REPLY_MAX, REVIEW_TEXT_MAX, REVIEW_TEXT_MIN } from "@/config/reviews";
+import { CARRIER_REVIEW_TAGS, REVIEW_REPLY_MAX, REVIEW_TEXT_MAX, REVIEW_TEXT_MIN } from "@/config/reviews";
 import { cidSchema, stripFormatCharacters } from "@/lib/contracts/messaging";
 import { z } from "@/lib/zod";
 
@@ -23,6 +23,12 @@ export const reviewInputSchema = z
     cid: cidSchema,
     rating: z.number().int().min(1).max(5),
     text: textSchema(REVIEW_TEXT_MIN, REVIEW_TEXT_MAX),
+    /** What went well with a carrier; kept only when the conversation held a place request. */
+    tags: z
+      .array(z.enum(CARRIER_REVIEW_TAGS))
+      .max(CARRIER_REVIEW_TAGS.length)
+      .refine((tags) => new Set(tags).size === tags.length, { message: "duplicate_tags" })
+      .optional(),
     /** "Nous avons conclu un échange ou une rencontre": the author's own statement. */
     exchangeConfirmed: z.literal(true),
   })

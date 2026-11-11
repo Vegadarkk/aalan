@@ -90,6 +90,12 @@ describe("rating summary and cursor", () => {
     });
   });
 
+  it("gives a carrier's transport reviews and their tags, never more ticks than reviews", () => {
+    const stats = { activeListings: 0, responseRate: 0, medianReplyMin: 0, ratingCount: 5, ratingSum: 22, ratingHistogram: [0, 0, 1, 1, 3], reviewTagged: 4, reviewTags: { price: 3, intact: 4, communication: 9 } };
+    expect(ratingSummary(stats).tags).toEqual({ reviews: 4, counts: { price: 3, timing: 0, intact: 4, communication: 4 } });
+    expect(ratingSummary({ ...stats, reviewTagged: 0 }).tags).toBeUndefined();
+  });
+
   it("round-trips the position and refuses anything else", () => {
     const position = { at: new Date(T0), id: "A".repeat(22) };
     expect(decodeReviewCursor(encodeReviewCursor(position))).toEqual(position);
@@ -100,20 +106,30 @@ describe("rating summary and cursor", () => {
 });
 
 describe("ratingStatsOf", async () => {
-  const { ratingStatsOf } = await import("@/lib/reviews/repository");
+  const { ratingStatsOf, withRating } = await import("@/lib/reviews/repository");
+  const NO_TAGS = { reviewTagged: 0, reviewTags: { price: 0, timing: 0, intact: 0, communication: 0 } };
   const snapshot = (stats: unknown) => ({ get: (field: string) => (field === "stats" ? stats : undefined) }) as unknown as Parameters<typeof ratingStatsOf>[0];
 
   it("keeps the ratings when another stats counter is out of range (staging, 28 Oct)", () => {
     const stats = { activeListings: -1, responseRate: 0.9, medianReplyMin: 12, ratingCount: 40, ratingSum: 184, ratingAvg: 4.6, ratingHistogram: [0, 1, 2, 9, 28] };
-    expect(ratingStatsOf(snapshot(stats))).toEqual({ ratingCount: 40, ratingSum: 184, ratingHistogram: [0, 1, 2, 9, 28] });
+    expect(ratingStatsOf(snapshot(stats))).toEqual({ ratingCount: 40, ratingSum: 184, ratingHistogram: [0, 1, 2, 9, 28], ...NO_TAGS });
   });
 
   it("starts at zero before the first review and reads a negative counter as zero", () => {
-    expect(ratingStatsOf(snapshot(undefined))).toEqual({ ratingCount: 0, ratingSum: 0, ratingHistogram: [0, 0, 0, 0, 0] });
-    expect(ratingStatsOf(snapshot({ ratingCount: -2, ratingHistogram: [1, -1, 0, 0, 0] }))).toEqual({ ratingCount: 0, ratingSum: 0, ratingHistogram: [1, 0, 0, 0, 0] });
+    expect(ratingStatsOf(snapshot(undefined))).toEqual({ ratingCount: 0, ratingSum: 0, ratingHistogram: [0, 0, 0, 0, 0], ...NO_TAGS });
+    expect(ratingStatsOf(snapshot({ ratingCount: -2, ratingHistogram: [1, -1, 0, 0, 0] }))).toEqual({ ratingCount: 0, ratingSum: 0, ratingHistogram: [1, 0, 0, 0, 0], ...NO_TAGS });
   });
 
   it("derives the sum from the average for an account from before ratingSum", () => {
     expect(ratingStatsOf(snapshot({ ratingCount: 4, ratingAvg: 4.5 })).ratingSum).toBe(18);
+  });
+
+  it("counts a transport review and its tags in and out; another review leaves them alone", () => {
+    const start = ratingStatsOf(snapshot({ ratingCount: 1, ratingSum: 5, ratingHistogram: [0, 0, 0, 0, 1], reviewTagged: 1, reviewTags: { price: 1 } }));
+    const added = withRating(start, { rating: 4, tags: ["price", "intact"] }, 1);
+    expect(added).toMatchObject({ ratingCount: 2, ratingSum: 9, reviewTagged: 2, reviewTags: { price: 2, timing: 0, intact: 1, communication: 0 } });
+    expect(withRating(added, { rating: 3, tags: [] }, 1)).toMatchObject({ ratingCount: 3, reviewTagged: 3, reviewTags: { price: 2, intact: 1 } });
+    expect(withRating(added, { rating: 3 }, 1)).toMatchObject({ ratingCount: 3, reviewTagged: 2 });
+    expect(withRating(added, { rating: 4, tags: ["price", "intact"] }, -1)).toEqual(start);
   });
 });

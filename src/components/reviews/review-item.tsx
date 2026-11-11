@@ -1,5 +1,6 @@
-import { BadgeCheck, CornerDownRight } from "lucide-react";
+import { BadgeCheck, Check, CornerDownRight } from "lucide-react";
 import { ReportButton } from "@/components/report/report-button";
+import type { CarrierReviewTag } from "@/config/reviews";
 import type { Locale } from "@/config/site";
 import type { ReviewView } from "@/lib/contracts/reviews";
 import { intlLocale } from "@/lib/listings/client/format";
@@ -26,6 +27,9 @@ export interface ReviewItemLabels {
   reply: string;
   /** The author closed the account: the name is gone. */
   formerMember: string;
+  /** A carrier's review tags (transporteurs/spec.md §6) and the list's name for screen readers. */
+  tags: Record<CarrierReviewTag, string>;
+  tagsLabel: string;
 }
 
 export function formatReviewDate(at: number, locale: Locale): string {
@@ -70,6 +74,16 @@ export function ReviewItem({ review, labels, locale, report, className }: { revi
           {labels.exchangeOn} <time dateTime={new Date(review.experienceAt).toISOString()}>{formatReviewDate(review.experienceAt, locale)}</time>
         </span>
       </p>
+      {review.tags && review.tags.length > 0 ? (
+        <ul aria-label={labels.tagsLabel} className="flex flex-wrap gap-1.5" data-testid="review-tags">
+          {review.tags.map((tag) => (
+            <li key={tag} className="inline-flex items-center gap-1 rounded-full bg-success-surface px-2.5 py-0.5 text-xs font-medium text-success">
+              <Check aria-hidden="true" className="size-3.5 shrink-0" />
+              {labels.tags[tag]}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <p dir="auto" className="whitespace-pre-line text-pretty break-words">
         {review.text}
       </p>

@@ -1,4 +1,4 @@
-import { REVIEW_OPEN_DELAY_MS, REVIEW_WINDOW_MS } from "@/config/reviews";
+import { REVIEW_OPEN_DELAY_MS, REVIEW_WINDOW_MS, type CarrierReviewTag } from "@/config/reviews";
 
 // Verified reviews (vitrine-avis §2), shared by the browser and the route handlers. A review is
 // written from a conversation by its buyer and shown on the seller's storefront. No zod here: the
@@ -52,6 +52,8 @@ export interface ReviewView {
   /** Epoch ms: the date of the exchange (the seller's first reply). */
   experienceAt: number;
   reply: { text: string; at: number } | null;
+  /** A transport review: the tags its author ticked. */
+  tags?: CarrierReviewTag[];
 }
 
 export interface RatingSummary {
@@ -60,6 +62,8 @@ export interface RatingSummary {
   average: number | null;
   /** Counts of 1 to 5 stars, index 0 = 1 star. */
   histogram: [number, number, number, number, number];
+  /** A carrier's published transport reviews and, of those, how many ticked each tag (transporteurs/spec.md §6). */
+  tags?: { reviews: number; counts: Record<CarrierReviewTag, number> };
 }
 
 export interface ReviewPage {
@@ -72,6 +76,8 @@ export interface ReviewInput {
   cid: string;
   rating: number;
   text: string;
+  /** What went well with a carrier: sent only from a conversation that holds a place request. */
+  tags?: CarrierReviewTag[];
   /** "Nous avons conclu un échange ou une rencontre": the author's own statement. */
   exchangeConfirmed: true;
 }

@@ -8,7 +8,7 @@ import { FormMessage } from "@/components/auth/form-message";
 import { InlineError } from "@/components/feedback/inline-error";
 import { Button } from "@/components/ui/button";
 import { inputClassName } from "@/components/ui/input";
-import { REVIEW_TEXT_MAX, REVIEW_TEXT_MIN } from "@/config/reviews";
+import { CARRIER_REVIEW_TAGS, REVIEW_TEXT_MAX, REVIEW_TEXT_MIN, type CarrierReviewTag } from "@/config/reviews";
 import { Link } from "@/i18n/navigation";
 import { isApiError } from "@/lib/auth/client";
 import type { ReviewCreated } from "@/lib/contracts/reviews";
@@ -21,12 +21,15 @@ import { useReturnFocus } from "@/components/ui/return-focus";
 // The buyer's review of a conversation (vitrine-avis §2), loaded on demand from the thread: a note
 // from 1 to 5, a text of 20 to 1 000 characters screened as it is typed (the API screens it
 // again), and the buyer's own statement that an exchange or a meeting took place. A text with
-// sensitive data is held for a moderator instead of published.
+// sensitive data is held for a moderator instead of published. A conversation that held a place
+// request (a carrier's departure) adds what went well, all optional (transporteurs/spec.md §6).
 
 export interface ReviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cid: string;
+  /** The conversation held a place request: the carrier's tags are offered. */
+  transport?: boolean;
   sellerName: string;
   sellerPublicId: string;
   listingTitle: string;
@@ -40,17 +43,19 @@ export function textLength(text: string): number {
   return [...text.trim()].length;
 }
 
-export function ReviewDialog({ open, onOpenChange, cid, sellerName, sellerPublicId, listingTitle, onDone }: ReviewDialogProps) {
+export function ReviewDialog({ open, onOpenChange, cid, transport = false, sellerName, sellerPublicId, listingTitle, onDone }: ReviewDialogProps) {
   // No Dialog.Trigger: the focus goes back to the opening button on close (audit zone 8, 5.2-1).
   const returnFocusOnClose = useReturnFocus(open);
   const t = useTranslations("Reviews.dialog");
   const stars = useTranslations("Reviews");
+  const tagLabels = useTranslations("Reviews.tags");
   const issues = useTranslations("FreeText");
   const id = useId();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [tags, setTags] = useState<CarrierReviewTag[]>([]);
   const [problems, setProblems] = useState<Problems>({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -75,7 +80,7 @@ export function ReviewDialog({ open, onOpenChange, cid, sellerName, sellerPublic
     setPending(true);
     setError(undefined);
     try {
-      const result = await submitReview({ cid, rating, text: text.trim(), exchangeConfirmed: true });
+      const result = await submitReview({ cid, rating, text: text.trim(), ...(transport ? { tags } : {}), exchangeConfirmed: true });
       setCreated(result);
       onDone(result);
     } catch (failure) {
@@ -178,6 +183,31 @@ export function ReviewDialog({ open, onOpenChange, cid, sellerName, sellerPublic
                   </div>
                   {problems.rating && rating < 1 ? <InlineError id={`${id}-rating-error`}>{t("problems.rating")}</InlineError> : null}
                 </fieldset>
+
+                {transport ? (
+                  <fieldset className="flex flex-col gap-2" data-testid="review-tags">
+                    <legend className="mb-1 text-sm font-medium">{t("tags")}</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {CARRIER_REVIEW_TAGS.map((tag) => {
+                        const on = tags.includes(tag);
+                        return (
+                          <label
+                            key={tag}
+                            className={cn(
+                              "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+                              on ? "border-success bg-success-surface text-success" : "border-border-strong text-foreground hover:bg-surface-muted",
+                            )}
+                          >
+                            <input type="checkbox" className="sr-only" checked={on} onChange={(event) => setTags((current) => (event.target.checked ? [...current, tag] : current.filter((other) => other !== tag)))} />
+                            <CircleCheck aria-hidden="true" className={cn("size-4 shrink-0", on ? "opacity-100" : "opacity-40")} />
+                            {tagLabels(tag)}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-pretty text-foreground-muted">{t("tagsHint")}</p>
+                  </fieldset>
+                ) : null}
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${id}-text`} className="text-sm font-medium">

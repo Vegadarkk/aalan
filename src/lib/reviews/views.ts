@@ -1,3 +1,4 @@
+import { CARRIER_REVIEW_TAGS, type CarrierReviewTag } from "@/config/reviews";
 import type { RatingSummary, ReviewView } from "@/lib/contracts/reviews";
 import { reviewIdSchema } from "@/lib/contracts/review-schemas";
 import type { UserRecord } from "@/lib/db/repositories/profiles";
@@ -16,6 +17,7 @@ export function reviewView(review: ReviewRecord): ReviewView {
     createdAt: review.createdAt.getTime(),
     experienceAt: review.experienceAt.getTime(),
     reply: review.reply ? { text: review.reply.text, at: review.reply.at.getTime() } : null,
+    ...(review.tags ? { tags: [...review.tags] } : {}),
   };
 }
 
@@ -25,7 +27,9 @@ export function ratingSummary(stats: UserRecord["stats"]): RatingSummary {
   const histogram = stats.ratingHistogram ? ([...stats.ratingHistogram] as RatingSummary["histogram"]) : ([0, 0, 0, 0, 0] as RatingSummary["histogram"]);
   if (count <= 0) return { count: 0, average: null, histogram };
   const sum = stats.ratingSum ?? (stats.ratingAvg ?? 0) * count;
-  return { count, average: Math.round((sum / count) * 10) / 10, histogram };
+  const tagged = stats.reviewTagged ?? 0;
+  const tags = tagged > 0 ? { tags: { reviews: tagged, counts: Object.fromEntries(CARRIER_REVIEW_TAGS.map((tag) => [tag, Math.min(tagged, stats.reviewTags?.[tag] ?? 0)])) as Record<CarrierReviewTag, number> } } : {};
+  return { count, average: Math.round((sum / count) * 10) / 10, histogram, ...tags };
 }
 
 /** base64url("{epoch ms}.{review id}"). */

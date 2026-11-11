@@ -1,7 +1,7 @@
 import { z } from "@/lib/zod";
 import { CONDITIONS } from "@/config/categories";
 import { LOCALES } from "@/config/site";
-import { REVIEW_REPLY_MAX, REVIEW_STATUSES, REVIEW_TEXT_MAX } from "@/config/reviews";
+import { CARRIER_REVIEW_TAGS, REVIEW_REPLY_MAX, REVIEW_STATUSES, REVIEW_TEXT_MAX } from "@/config/reviews";
 import { BANNER_KEYS, BIO_MAX } from "@/config/storefront";
 import {
   DESCRIPTION_MAX,
@@ -98,6 +98,10 @@ export const userSchema = z
         ratingSum: z.number().int().min(0).optional(),
         /** Published ratings by stars, index 0 = 1 star (storefront bars). */
         ratingHistogram: z.array(z.number().int().min(0)).length(5).optional(),
+        /** Published transport reviews (a place request in the conversation), tags ticked or not (transporteurs/spec.md §6). */
+        reviewTagged: z.number().int().min(0).optional(),
+        /** Of those, how many ticked each tag: the storefront shows the shares. */
+        reviewTags: z.partialRecord(z.enum(CARRIER_REVIEW_TAGS), z.number().int().min(0)).optional(),
       })
       .strict(),
     status: userStatusSchema,
@@ -1330,6 +1334,12 @@ export const reviewSchema = z
     targetName: z.string().max(80),
     rating: z.number().int().min(1).max(5),
     text: z.string().min(1).max(REVIEW_TEXT_MAX),
+    /** A transport review (the conversation held a place request): what went well, possibly nothing. Absent otherwise. */
+    tags: z
+      .array(z.enum(CARRIER_REVIEW_TAGS))
+      .max(CARRIER_REVIEW_TAGS.length)
+      .refine((tags) => new Set(tags).size === tags.length)
+      .optional(),
     exchangeConfirmed: z.literal(true),
     verified: z.literal(true),
     /** The seller's first reply: the date of the exchange shown with the review (D111-17 C. conso). */

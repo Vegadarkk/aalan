@@ -91,6 +91,7 @@ export function ReviewPrompt({ conversation, onReviewed }: { conversation: Conve
             if (!open && created) onReviewed(created);
           }}
           cid={conversation.cid}
+          transport={conversation.carrierRequest !== null}
           sellerName={conversation.counterpart.displayName}
           sellerPublicId={conversation.counterpart.publicId}
           listingTitle={conversation.listing.title}

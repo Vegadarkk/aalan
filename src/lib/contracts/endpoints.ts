@@ -175,3 +175,11 @@ export const SELLER_PAYMENT_API = {
 export const STATS_API = {
   view: "/api/stats/view",
 } as const;
+
+/** The opening list (newsletter of the launch, owner 2026-11-12): sign-up with double opt-in. */
+export const NEWSLETTER_API = {
+  subscribe: "/api/newsletter/subscribe",
+  confirm: "/api/newsletter/confirm",
+  /** RFC 8058 one-click (`?t=`) and the door page's button (`{ token }`). */
+  unsubscribe: "/api/newsletter/unsubscribe",
+} as const;

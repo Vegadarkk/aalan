@@ -10,6 +10,9 @@ const SITE = "https://staging.joutiya.ma";
 const ACTION = "https://staging.joutiya.ma/fr/action?mode=verifyEmail&oobCode=abc-123";
 const ADDRESS = "6 rue d'Armaillé, 75017 Paris";
 
+/** The opening list's e-mails (door layout, its own tests below): no name, the site's static images. */
+const DOOR_TEMPLATES: ReadonlySet<TemplateId> = new Set(["newsletterConfirm"]);
+
 const DATA: { [T in TemplateId]: TemplateData[T] } = {
   verifyEmail: { displayName: "Nadia", actionUrl: ACTION },
   resetPassword: { displayName: "Nadia", actionUrl: ACTION },
@@ -78,6 +81,7 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   proApproved: { displayName: "Nadia", shopName: "Atlas Vélos", launchOffer: true, noticeDays: 30 },
   launchOfferNotice: { displayName: "Nadia", shopName: "Atlas Vélos", plan: "essentiel", kind: "ending", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 0 },
   launchPlaceGranted: { displayName: "Nadia", credits: 30, expiresAt: "2027-03-12T10:00:00.000Z" },
+  newsletterConfirm: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" },
   passNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "ended", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 2 },
   withdrawalReceipt: { displayName: "Nadia", receipt: "R-20270301-AB12CD", requestedAt: "2027-03-01T10:00:00.000Z", packCredits: 110, removedCredits: 90, refundMinor: 8_200, currency: "MAD", refundBy: "2027-03-15T10:00:00.000Z" },
   sellerPaymentNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "changed", host: "pay.example-bank.ma", activeFrom: "2026-11-02T10:00:00.000Z" },
@@ -143,7 +147,8 @@ describe("renderMail", () => {
           expect(body).toContain(ADDRESS);
           expect(body).toContain("Adark Prime");
           expect(body).toContain(SITE);
-          expect(body).toContain("Nadia");
+          // The opening list knows no name (owner, 2026-11-12): only an address.
+          if (!DOOR_TEMPLATES.has(template)) expect(body).toContain("Nadia");
           expect(body).not.toMatch(/undefined|\[object Object\]|NaN/);
         }
         // Raw URL in the text version, attribute-escaped ("&amp;") in the HTML.
@@ -154,8 +159,11 @@ describe("renderMail", () => {
         }
         // Every mail carries exactly one primary button whose href is repeated as raw text.
         expect(rendered.html.match(/<a href=/g)?.length).toBeGreaterThanOrEqual(2);
+        expect(rendered.html).not.toMatch(/<script|<style/);
+        expect(rendered.html).not.toContain("http://");
+        if (DOOR_TEMPLATES.has(template)) return;
         expect(rendered.html).toContain("max-width:560px");
-        expect(rendered.html).not.toMatch(/<img|<script|<style/);
+        expect(rendered.html).not.toMatch(/<img/);
         expect(rendered.html).not.toContain("http://");
         if (locale === "ar") {
           expect(rendered.html).toContain('<html lang="ar" dir="rtl">');
@@ -254,5 +262,30 @@ describe("helpers", () => {
     expect(isTemplateMail({ ...mail("verifyEmail", "fr"), locale: "en" })).toBe(false);
     expect(isTemplateMail({ ...mail("verifyEmail", "fr"), to: "nobody" })).toBe(false);
     expect(isTemplateMail(null)).toBe(false);
+  });
+});
+
+describe("newsletterConfirm (opening list)", () => {
+  beforeAll(() => resetServerEnv());
+
+  it("names the opening, links the signed confirmation twice and loads only the site's static images", () => {
+    const rendered = renderMail({ template: "newsletterConfirm", locale: "fr", to: "nadia@example.com", data: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" } });
+    expect(rendered.subject).toBe("Confirmez votre inscription à Aalan");
+    expect(rendered.text).toContain("12 décembre 2026 à 10:00 (heure du Maroc)");
+    // The button and the raw link under it (href twice, the text once).
+    expect(rendered.html.match(/fr#confirmer=abc\.def/g)).toHaveLength(3);
+    const images = [...rendered.html.matchAll(/<img src="([^"]+)"/g)].map((match) => match[1]);
+    expect(images).toEqual([`${SITE}/mail/aalan-logo-dark.png`, `${SITE}/mail/door-closed.png`]);
+    expect(rendered.html).not.toMatch(/<img[^>]*alt=""/);
+  });
+
+  it("speaks of the launch e-mails without a date once the site is open", () => {
+    const rendered = renderMail({ template: "newsletterConfirm", locale: "ar", to: "nadia@example.com", data: { confirmUrl: `${SITE}/ar#confirmer=abc.def`, expiresAt: "2026-12-14T09:30:00.000Z", opensAt: null } });
+    expect(rendered.text).toContain("لتصلك رسائل إطلاق أعلان");
+    expect(rendered.html).toContain('<html lang="ar" dir="rtl">');
+    // The brand in Arabic script (Z1-17): the logo image carries the Latin wordmark.
+    expect(rendered.text).not.toContain("Aalan");
+    expect(rendered.html).not.toContain("Aalan");
+    expect(rendered.text).toContain("\u2068Adark Prime");
   });
 });

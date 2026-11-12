@@ -1410,6 +1410,8 @@ export const COLLECTIONS = {
   wallets: "wallets",
   /** launchPlaces/{peppered hash of a phone number}: the number took an individual's launch place (src/lib/payments/launch-place.ts). */
   launchPlaces: "launchPlaces",
+  /** newsletter/{peppered hash of the normalized e-mail}: a confirmed address of the opening list (src/lib/newsletter). */
+  newsletter: "newsletter",
   /** wallets/{accountId}/ledger/{entryId} */
   ledger: "ledger",
   billingAccounts: "billingAccounts",

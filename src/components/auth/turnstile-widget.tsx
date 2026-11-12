@@ -69,18 +69,21 @@ interface TurnstileWidgetProps {
    * check is unchanged, and a submission without a token is refused as before.
    */
   defer?: boolean;
+  /** Forces the widget's theme (the countdown page is always night); else the site's theme. */
+  theme?: "light" | "dark";
   className?: string;
 }
 
 export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(function TurnstileWidget(
-  { action, cData, nonce, onToken, error, defer = false, className },
+  { action, cData, nonce, onToken, error, defer = false, theme, className },
   ref,
 ) {
   const config = usePublicConfig();
   // undefined: configuration still loading (public pages); null: no key configured.
   const siteKey = config ? config.turnstileSiteKey : undefined;
   const locale = useLocale();
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme: siteTheme } = useTheme();
+  const resolvedTheme = theme ?? siteTheme;
   const t = useTranslations("Auth.common");
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | undefined>(undefined);

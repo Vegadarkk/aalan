@@ -43,9 +43,17 @@ export function staticSecurityHeaders(): Header[] {
  * CORP same-origin on every path but the development storage route, which sets its own: its media
  * bucket stands in for media.aalan.ma (no CORP, read by the admin host too). A next.config header
  * wins over the one a route returns, hence the exclusion rather than an override in the route.
+ * The e-mails' images (public/mail) are excluded too: a webmail shows them from its own origin.
  */
-export const SAME_ORIGIN_RESOURCE_SOURCE = "/((?!api/dev/storage/).*)";
+export const SAME_ORIGIN_RESOURCE_SOURCE = "/((?!api/dev/storage/|mail/).*)";
 export const sameOriginResourcePolicy: Header = { key: "Cross-Origin-Resource-Policy", value: "same-origin" };
+
+/** The e-mails' static images (src/lib/mail/templates/door-layout.ts): embeddable anywhere, cached a day. */
+export const MAIL_IMAGES_SOURCE = "/mail/:path*";
+export const mailImageHeaders: Header[] = [
+  { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+  { key: "Cache-Control", value: "public, max-age=86400" },
+];
 
 /** JSON API responses never render HTML: deny everything. */
 export const apiContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";

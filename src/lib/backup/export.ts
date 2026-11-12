@@ -104,6 +104,8 @@ const TABLE: Record<BackedUpId, Omit<BackupCollection, "id">> = {
   ledger: { scope: "group", timeField: null },
   // Launch places by phone number (owner, 2026-11-11): only `at`, rolling full only.
   launchPlaces: { scope: "root", timeField: null },
+  // Opening list (owner, 2026-11-12): confirmed addresses only, written once (`confirmedAt`): rolling full only.
+  newsletter: { scope: "root", timeField: null },
   billingAccounts: { scope: "root", timeField: "updatedAt" },
   orders: { scope: "root", timeField: "updatedAt" },
   billingEvents: { scope: "root", timeField: null },

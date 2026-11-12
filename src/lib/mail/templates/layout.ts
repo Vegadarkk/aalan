@@ -52,6 +52,11 @@ export function setMailPublisher(legal?: Partial<Pick<LegalConfig, "companyName"
   currentPublisher = mailPublisher(legal);
 }
 
+/** Footer identity of the mails being rendered now (setMailPublisher), for the other layouts. */
+export function currentMailPublisher(): MailPublisher {
+  return currentPublisher;
+}
+
 /** Contact address of the current publisher (config/legal `email`, else the default). */
 export function mailContact(): string {
   return currentPublisher.email ?? DEFAULT_LEGAL.email;
@@ -222,11 +227,11 @@ function sectionText(section: MailSection): string[] {
  * algorithm neither reorders it nor pulls the Arabic punctuation into it (audit Z1-17): a `dir="ltr"`
  * span in HTML (isolating by default), FSI/PDI marks in the text part. French copy is left as is.
  */
-function ltrHtml(value: string, rtl: boolean): string {
+export function ltrHtml(value: string, rtl: boolean): string {
   return rtl ? `<span dir="ltr">${escapeHtml(value)}</span>` : escapeHtml(value);
 }
 
-function ltrText(value: string, rtl: boolean): string {
+export function ltrText(value: string, rtl: boolean): string {
   return rtl ? `\u2068${value}\u2069` : value;
 }
 

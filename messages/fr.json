@@ -128,7 +128,33 @@
     "seconds": "Secondes",
     "opening": "La porte s'ouvre…",
     "follow": "Suivez-nous pour ne rien manquer",
-    "legal": "Informations légales"
+    "legal": "Informations légales",
+    "newsletter": {
+      "title": "Soyez prévenu de l'ouverture",
+      "intro": "Trois e-mails, pas un de plus : un avant-goût, les places de lancement la veille, puis l'ouverture.",
+      "emailLabel": "Votre adresse e-mail",
+      "placeholder": "vous@exemple.com",
+      "submit": "M'inscrire",
+      "consent": "En vous inscrivant, vous acceptez de recevoir ces e-mails. Désinscription en un clic.",
+      "privacy": "Politique de confidentialité",
+      "sent": "Vérifiez votre boîte mail : cliquez sur le lien reçu pour confirmer votre inscription.",
+      "sentHint": "Rien reçu dans quelques minutes ? Regardez dans les indésirables.",
+      "confirming": "Confirmation de votre inscription…",
+      "confirmed": "Inscription confirmée. On vous écrit avant l'ouverture.",
+      "confirmFailed": "Ce lien a expiré ou n'est plus valable. Inscrivez-vous de nouveau ci-dessous.",
+      "unsubscribeQuestion": "Ne plus recevoir les e-mails du lancement ?",
+      "unsubscribeButton": "Me désinscrire",
+      "unsubscribed": "C'est fait : vous ne recevrez plus nos e-mails.",
+      "unsubscribeFailed": "Ce lien n'est pas valable.",
+      "errors": {
+        "invalid": "Saisissez une adresse e-mail valide, par exemple nom@exemple.com.",
+        "disposable": "Les adresses jetables ne sont pas acceptées : utilisez votre adresse habituelle.",
+        "robot": "La vérification anti-robot n'a pas abouti. Attendez qu'elle se termine, puis réessayez.",
+        "rateLimited": "Trop d'essais depuis votre connexion. Réessayez dans une heure.",
+        "network": "Pas de connexion. Vérifiez votre réseau, puis réessayez.",
+        "generic": "L'inscription n'a pas abouti. Réessayez dans quelques minutes."
+      }
+    }
   },
   "Search": {
     "bar": {

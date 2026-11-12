@@ -44,10 +44,11 @@ export const OPEN_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["legal", "demarc
 
 /**
  * Public API paths still served while closed: health (uptime probe), the browser's config, CSP
- * reports, the preview pass, the providers' webhooks (Stripe, RevenueCat, mail, WhatsApp) and the
- * sign-out (a session from before the gate can always end).
+ * reports, the preview pass, the providers' webhooks (Stripe, RevenueCat, mail, WhatsApp), the
+ * sign-out (a session from before the gate can always end) and the opening list (owner, 12 Nov
+ * 2026: the door takes e-mail sign-ups, src/lib/newsletter).
  */
-const OPEN_API = /^\/api\/(?:health|config|csp-report|preview|auth\/logout|webhooks\/[a-z]+)\/?$/;
+const OPEN_API = /^\/api\/(?:health|config|csp-report|preview|auth\/logout|webhooks\/[a-z]+|newsletter\/(?:subscribe|confirm|unsubscribe))\/?$/;
 
 export type ClosedDecision =
   /** Served as is. */

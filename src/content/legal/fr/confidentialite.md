@@ -244,6 +244,14 @@ Pour les places de lancement (CGU §4.5), un numéro ne donne droit qu'à une pl
 Votre usage de WhatsApp reste régi par les conditions et la politique de confidentialité de WhatsApp.
 <!--endif-->
 
+### 3.14 La liste d'ouverture {#finalites-14}
+
+Avant l'ouverture du site, vous pouvez laisser votre adresse e-mail sur la page d'accueil pour être prévenu. Nous vous envoyons d'abord un e-mail avec un lien de confirmation, valable 48 heures. Tant que vous n'avez pas cliqué, nous ne gardons pas votre adresse : elle figure seulement dans le lien, signé pour qu'on ne puisse pas le modifier.
+
+Une fois confirmée, nous gardons votre adresse, la langue de la page et la date de confirmation, rien d'autre. Elles servent uniquement aux trois e-mails du lancement : un avant-goût, l'annonce des places de lancement la veille, puis l'ouverture. Base légale : votre consentement. Chaque e-mail contient un lien de désinscription en un clic, qui efface votre adresse.
+
+Votre adresse est effacée au plus tard 30 jours après l'ouverture du site. Elle n'est ni vendue ni transmise, sauf à notre prestataire d'envoi d'e-mails (§6.2).
+
 ## 4. Contrôle des annonces et modération, avec l'aide d'une IA {#controle}
 
 {brand} n'exerce pas de surveillance générale des contenus. Elle contrôle les annonces avant leur publication, comme l'exige la protection des données, et agit sur les contenus qui lui sont signalés.
@@ -312,6 +320,7 @@ Si une annonce contient des données qui vous concernent sans votre accord, util
 | Factures et pièces comptables | 10 ans | Obligation légale (article L123-22 du Code de commerce) |
 | Journal d'audit (actions du personnel et décisions) | 5 ans | Preuve |
 | Journaux techniques | 30 jours ; 90 jours pour les rapports d'erreur (Sentry) | Sécurité |
+| Liste d'ouverture : adresse e-mail, langue, date de confirmation | Jusqu'à la désinscription, et au plus tard 30 jours après l'ouverture du site | Les e-mails du lancement |
 
 ### 5.2 Autres durées {#durees-2}
 

@@ -16,7 +16,8 @@ import { db } from "@/lib/firebase/admin";
 import { deliverMail } from "@/lib/mail/deliver";
 import type { TemplateMail } from "@/lib/mail/types";
 import { confirmToken, subscriberId, unsubscribeToken } from "@/lib/newsletter/token";
-import { resetRateLimiters } from "@/lib/rate-limit/limiter";
+import { RATE_LIMITS } from "@/config/rate-limits";
+import { consumeLimit, resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { call, expectError, type ErrorBody } from "../favorites/helpers";
 
 const subscribe = (body: unknown, options: { origin?: string | null; ip?: string } = {}) => call<ErrorBody & { status?: string }>(subscribeRoute.POST, "POST", "/api/newsletter/subscribe", { body, ...options });
@@ -43,6 +44,8 @@ describe("POST /api/newsletter/subscribe", () => {
     expect(rest).toHaveLength(0);
     expect(mail?.to).toBe("nadia.sub@example.com");
     expect(mail?.locale).toBe("ar");
+    // Dropped rather than deferred when the provider quota is degraded: never ahead of other mail.
+    expect(mail?.priority).toBe("bulk");
     expect(mail?.data.confirmUrl).toMatch(/^http:\/\/localhost:3000\/ar#confirmer=[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/);
     expect((await subscriberDoc("nadia.sub@example.com")).exists).toBe(false);
   });
@@ -63,6 +66,22 @@ describe("POST /api/newsletter/subscribe", () => {
     vi.mocked(deliverMail).mockClear();
     expect((await subscribe({ email, locale: "fr", turnstileToken: "dev" })).status).toBe(202);
     expect(confirmMails()).toHaveLength(0);
+  });
+});
+
+describe("opening-list mail budget", () => {
+  it("caps the confirmation mails per source per day, then for all senders, with the same answer", async () => {
+    // A source with one mail left of its day: one more mail, then none (the hourly limit is not reached).
+    await consumeLimit("newsletter.subscribe.ip.day", "10.97.1.1", RATE_LIMITS["newsletter.subscribe.ip.day"].points - 1);
+    for (const i of [1, 2, 3]) expect((await subscribe({ email: `day-${i}@example.com`, locale: "fr", turnstileToken: "dev" }, { ip: "10.97.1.1" })).status).toBe(202);
+    expect(confirmMails().map((mail) => mail.to)).toEqual(["day-1@example.com"]);
+
+    // The global daily cap, whatever the source.
+    resetRateLimiters();
+    vi.mocked(deliverMail).mockClear();
+    await consumeLimit("newsletter.subscribe.global", "newsletter", RATE_LIMITS["newsletter.subscribe.global"].points - 1);
+    for (const i of [1, 2, 3]) expect((await subscribe({ email: `all-${i}@example.com`, locale: "fr", turnstileToken: "dev" }, { ip: `10.96.0.${i}` })).status).toBe(202);
+    expect(confirmMails().map((mail) => mail.to)).toEqual(["all-1@example.com"]);
   });
 });
 

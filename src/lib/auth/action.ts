@@ -16,7 +16,7 @@ import { pepperedHash, safeEqual } from "@/lib/security/hash";
 import { userByEmail, withCodeErrors } from "./accounts";
 import { activateMember } from "./activation";
 import { anonymous, beginAnonymous, finish, respond, type AnonymousFlow } from "./anonymous";
-import { passwordGate, recordFailure, verifyPassword } from "./login";
+import { acceptAttempt, passwordGate, recordFailure, verifyPassword } from "./login";
 import { signedIn } from "./respond";
 import { sessionSummary } from "./summary";
 
@@ -78,6 +78,7 @@ async function checkAccountPassword(flow: AnonymousFlow, request: Request, uid: 
     await recordFailure(keys, attempt);
     throw new HttpError(401, "invalid_credentials");
   }
+  await acceptAttempt(keys);
   return true;
 }
 

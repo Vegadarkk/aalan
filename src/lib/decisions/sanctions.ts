@@ -1,8 +1,10 @@
 import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { listingLifetime } from "@/config/pricing";
+import { enqueueAiTask } from "@/lib/ai/queue";
+import { alert } from "@/lib/alert";
 import { audit } from "@/lib/audit";
-import { getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingFieldPatch, type ListingRecord } from "@/lib/db/repositories/listings";
+import { getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingFieldPatch, type ListingRecord, type OwnerListingFilter } from "@/lib/db/repositories/listings";
 import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
 import { auth, db } from "@/lib/firebase/admin";
 import { getClaims, setClaims } from "@/lib/firebase/claims";
@@ -22,8 +24,10 @@ import { privateFromSnapshot, privateRef, suspensionFromSnapshot, suspensionRef,
 // removed for a ban, one transaction each, search outbox + fast lane, ISR revalidation).
 // lift-suspensions and the appeal reversals undo them.
 
-/** Listings one sanction touches at most (an individual has 20 active ones; Pro plans more). */
+/** Listings one round of an account walk reads (an individual has 20 active ones; Pro plans more). */
 export const SANCTION_LISTINGS_MAX = 200;
+/** Rounds an account walk takes at most (4,000 listings); what is left then is alerted. */
+export const SANCTION_LISTING_ROUNDS = 20;
 const BAN_STATUSES = ["published", "paused", "pending_review"] as const;
 
 export type Undo = () => Promise<void>;
@@ -112,6 +116,24 @@ async function changeListing(id: string, compute: (listing: ListingRecord) => Li
   });
 }
 
+/**
+ * Listings back online after a pause (suspension, Pro revalidation): content edited while paused had
+ * the rule screen only (audit C-1), so the agent screens the committed version (the transition
+ * bumps it by one) unless a moderator approved it. The agent skips content it already screened
+ * (same input hash): an unchanged listing costs no model call. Never throws.
+ */
+export async function screenResumedListings(changes: readonly ChangedListing[]): Promise<void> {
+  for (const { listing, search } of changes) {
+    // `search` is set exactly when the listing went back to published (an expired one is not public).
+    if (!search || listing.moderation.state === "human_ok") continue;
+    try {
+      await enqueueAiTask("listing_screen", { type: "listing", id: listing.id }, { version: listing.version + 1 });
+    } catch (error) {
+      logger.warn({ listingId: listing.id, err: (error as Error).message }, "decisions: screening request after a resume failed");
+    }
+  }
+}
+
 /** Search fast lane and ISR revalidation after listing changes (never throws). */
 export async function afterListingChanges(changes: readonly ChangedListing[], publicId?: string): Promise<void> {
   try {
@@ -139,6 +161,40 @@ export async function changeListings(listings: readonly ListingRecord[], compute
   return changes;
 }
 
+/**
+ * Every listing of an account in `statuses` (and `only`), changed in rounds of
+ * SANCTION_LISTINGS_MAX: each round reads what is left (a changed listing leaves the query) until a
+ * short read, a round that changes nothing, or SANCTION_LISTING_ROUNDS. A listing still matching
+ * after the walk (a failed change, more than the rounds hold) is alerted to staff: a sanction must
+ * never leave part of an account online unnoticed.
+ */
+export async function walkOwnerListings(
+  uid: string,
+  statuses: readonly ListingRecord["status"][],
+  only: OwnerListingFilter,
+  compute: (listing: ListingRecord) => ListingChange | null,
+  now: Date,
+  label: string,
+): Promise<ChangedListing[]> {
+  const changed: ChangedListing[] = [];
+  for (let round = 0; round < SANCTION_LISTING_ROUNDS; round += 1) {
+    const listings = await listOwnerListingsByStatus(uid, statuses, SANCTION_LISTINGS_MAX, only);
+    const changes = await changeListings(listings, compute, now, label);
+    changed.push(...changes);
+    if (listings.length < SANCTION_LISTINGS_MAX || changes.length === 0) break;
+  }
+  const left = await listOwnerListingsByStatus(uid, statuses, 1, only);
+  if (left.length > 0) {
+    logger.error({ uid, label, changed: changed.length }, "decisions: account walk left listings unchanged");
+    await alert({
+      severity: "P1",
+      title: `Annonces non traitées après une mesure sur un compte (${label}, ${uid})`,
+      body: `L'étape « ${label} » a traité ${changed.length} annonce(s) du compte ${uid}, mais il en reste au moins une dans l'état ${statuses.join("/")}. Relancer la mesure ou traiter les annonces restantes depuis l'administration.`,
+    }).catch((error: unknown) => logger.error({ uid, err: (error as Error).message }, "decisions: incomplete walk alert failed"));
+  }
+  return changed;
+}
+
 /** `hiddenBy` dropped when the report that hid the listing is closed by the account decision (a user target's reports). */
 function moderationAfter(listing: ListingRecord, clearHiddenFor: ReadonlySet<string> | undefined): ListingRecord["moderation"] {
   const hiddenBy = listing.moderation.hiddenBy;
@@ -153,9 +209,10 @@ function moderationAfter(listing: ListingRecord, clearHiddenFor: ReadonlySet<str
  */
 export async function pauseListingsForSuspension(uid: string, now: Date, clearHiddenFor?: ReadonlySet<string>): Promise<string[]> {
   const life = await lifetime();
-  const listings = await listOwnerListingsByStatus(uid, ["published"], SANCTION_LISTINGS_MAX);
-  const changes = await changeListings(
-    listings,
+  const changes = await walkOwnerListings(
+    uid,
+    ["published"],
+    {},
     (listing) => {
       if (listing.status !== "published") return null;
       const { patch } = transition(listing, "paused", { now, lifetime: life, pausedReason: "moderation" });
@@ -170,9 +227,10 @@ export async function pauseListingsForSuspension(uid: string, now: Date, clearHi
 /** End of a suspension: listings paused by moderation come back, published if not expired, else expired (renewable). */
 export async function resumeModerationPaused(uid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
-  const listings = (await listOwnerListingsByStatus(uid, ["paused"], SANCTION_LISTINGS_MAX)).filter((listing) => listing.pausedReason === "moderation");
-  const changes = await changeListings(
-    listings,
+  const changes = await walkOwnerListings(
+    uid,
+    ["paused"],
+    { pausedReason: "moderation" },
     (listing) => {
       if (listing.status !== "paused" || listing.pausedReason !== "moderation") return null;
       const live = listing.expiresAt !== undefined && listing.expiresAt.getTime() > now.getTime();
@@ -186,15 +244,17 @@ export async function resumeModerationPaused(uid: string, now: Date): Promise<st
     now,
     "suspension resume",
   );
+  await screenResumedListings(changes);
   return changes.map((change) => change.listing.id);
 }
 
 /** Ban (D14): published, paused and held listings are removed (decision per account); marked with the ban decision for a reversal. */
 export async function removeListingsForBan(uid: string, decisionId: string, actorUid: string, now: Date, clearHiddenFor?: ReadonlySet<string>): Promise<string[]> {
   const life = await lifetime();
-  const listings = await listOwnerListingsByStatus(uid, [...BAN_STATUSES], SANCTION_LISTINGS_MAX);
-  const changes = await changeListings(
-    listings,
+  const changes = await walkOwnerListings(
+    uid,
+    BAN_STATUSES,
+    {},
     (listing) => {
       if (!(BAN_STATUSES as readonly string[]).includes(listing.status)) return null;
       const { patch, effects } = transition(listing, "removed", { now, lifetime: life });
@@ -225,9 +285,10 @@ export function unremovePatch(listing: ListingRecord, now: Date, life: Lifetime)
 /** Ban reversed: the listings this ban removed come back. */
 export async function restoreBannedListings(uid: string, banDecisionId: string, actorUid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
-  const listings = (await listOwnerListingsByStatus(uid, ["removed"], SANCTION_LISTINGS_MAX)).filter((listing) => listing.moderation.lastDecisionId === banDecisionId);
-  const changes = await changeListings(
-    listings,
+  const changes = await walkOwnerListings(
+    uid,
+    ["removed"],
+    { lastDecisionId: banDecisionId },
     (listing) => {
       if (listing.status !== "removed" || listing.moderation.lastDecisionId !== banDecisionId) return null;
       const change = unremovePatch(listing, now, life);

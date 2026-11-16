@@ -44,3 +44,16 @@ describe("findContacts", () => {
     expect(findContacts(text)).toEqual([]);
   });
 });
+
+describe("findContacts on obfuscated spellings", () => {
+  it.each([
+    ["an e-mail split by a zero-width space", "vendeur​@gmail​.com", "email"],
+    ["a link split by a zero-width joiner", "wa‍.me/212612345678", "url"],
+    ["a bare domain split by a soft hyphen", "boutique-exemple­.ma", "url"],
+    ["a fullwidth domain", "ｂｏｕｔｉｑｕｅ．ｃｏｍ", "url"],
+  ] as const)("finds %s", (_label, text, kind) => {
+    const found = findContacts(text);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toEqual({ kind, raw: text });
+  });
+});

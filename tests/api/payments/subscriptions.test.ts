@@ -100,6 +100,7 @@ import type { ProProfileDoc } from "@/lib/pro/profile-schema";
 import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { csrfToken } from "@/lib/security/csrf";
 import { reconcileBilling } from "@/lib/payments/reconcile";
+import { syncShopSubscription } from "@/lib/payments/subscriptions";
 import { proPlansNightly } from "@/worker/jobs/pro-plans";
 import { DAY_MS, api, member, readyPatch, seedReadyUpload, type ErrorBody, type Member } from "../listings/helpers";
 
@@ -467,6 +468,64 @@ describe("subscription sync", () => {
     const resumed = await api(resume, "POST", `/api/listings/${listingId}/resume`, { member: owner, body: {} });
     expect(resumed.status).toBe(200);
     expect(await getListing(listingId)).toMatchObject({ status: "published" });
+  });
+
+  it("grants a plan switch late in a period the prorated difference, never a second full month", async () => {
+    const owner = await member();
+    const proId = await shop(owner);
+    const accountId = `pro_${proId}`;
+    const appUserId = await appUserOf(owner, proId, "essentiel");
+    // A monthly period with one day left of thirty.
+    const periodStart = new Date(Date.now() - 29 * DAY_MS);
+    const period = { periodStart, periodEnd: new Date(periodStart.getTime() + 30 * DAY_MS) };
+    store.subscriptions = [rcSubscription({ ...period, entitlements: ["essentiel"] })];
+    await rcDeliver("INITIAL_PURCHASE", appUserId);
+    expect(await getWallet(accountId)).toMatchObject({ planCredits: 30, allowances: { featured: 0 } });
+
+    // Up to Business on the last day: (100 - 30) x 1/30 credits, (4 - 0) x 1/30 featured, rounded down.
+    store.subscriptions = [rcSubscription({ ...period, entitlements: ["business"] })];
+    await rcDeliver("PRODUCT_CHANGE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "business", planSource: "subscription" });
+    expect(await getWallet(accountId)).toMatchObject({ planCredits: 32, allowances: { featured: 0 } });
+
+    // Down and up again within the period: nothing more.
+    store.subscriptions = [rcSubscription({ ...period, entitlements: ["essentiel"] })];
+    await rcDeliver("PRODUCT_CHANGE", appUserId);
+    store.subscriptions = [rcSubscription({ ...period, entitlements: ["business"] })];
+    await rcDeliver("PRODUCT_CHANGE", appUserId);
+    expect((await getWallet(accountId))?.planCredits).toBe(32);
+
+    // The next period carries Business's full grant.
+    const renewed = { periodStart: period.periodEnd, periodEnd: new Date(period.periodEnd.getTime() + 30 * DAY_MS) };
+    store.subscriptions = [rcSubscription({ ...renewed, entitlements: ["business"] })];
+    await rcDeliver("RENEWAL", appUserId);
+    expect(await getWallet(accountId)).toMatchObject({ planCredits: 100, allowances: { featured: 4 } });
+  });
+
+  it("ends the plan of a subscription that expired while the shop was under revalidation, once the shop is validated again", async () => {
+    const owner = await member();
+    const proId = await shop(owner);
+    const accountId = `pro_${proId}`;
+    const appUserId = await appUserOf(owner, proId);
+    store.subscriptions = [rcSubscription()];
+    await rcDeliver("INITIAL_PURCHASE", appUserId);
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "active", plan: "business", planSource: "subscription" });
+
+    // The validation is withdrawn, then RevenueCat drops the subscription: recorded, the shop waits.
+    const active = (await getProProfile(proId))!;
+    const { proId: _id, ...doc } = active;
+    await proProfileRef(proId).set(proProfileToFirestore({ ...doc, lifecycle: "revalidation_required", revalidationFrom: "active" }));
+    store.subscriptions = [];
+    await rcDeliver("EXPIRATION", appUserId);
+    expect((await getSubscription(accountId))?.status).toBe("expired");
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "revalidation_required", plan: "business" });
+
+    // Validated again (the review restores the former state, then syncs): the expiry applies now.
+    await proProfileRef(proId).set(proProfileToFirestore({ ...doc, lifecycle: "active" }));
+    expect(await syncShopSubscription(accountId)).toBe("updated");
+    expect(await getProProfile(proId)).toMatchObject({ lifecycle: "downgraded", plan: "none", planSource: "none", quotas: DEFAULT_PRICING.pro.none });
+    // Nothing left to apply: a later sync changes nothing.
+    expect(await syncShopSubscription(accountId)).toBe("no_subscription");
   });
 
   it("alerts on a Stripe subscription of an unknown customer and ignores a pack's checkout", async () => {

@@ -1,10 +1,12 @@
 import { findPhoneNumbersInText, parsePhoneNumberFromString } from "libphonenumber-js/max";
 import type { PhoneMatch } from "@/lib/moderation/types";
+import { foldForDetection, inputSpan } from "./fold";
 
 // Phone numbers written in a listing text (architecture §7 step 3: blocked, « Utilisez le bouton
 // Voir le numéro »). libphonenumber (region MA, same "max" metadata as src/lib/phone/normalize.ts)
 // runs on a de-obfuscated copy of the text, then a regex catches the Moroccan shapes it misses.
-// Pure, client-safe (usable for inline wizard hints).
+// Both run on the folded text (fold.ts: format characters removed, NFKC), and `raw` is the span as
+// written. Pure, client-safe (usable for inline wizard hints).
 //
 // De-obfuscation keeps the string length so spans map back to the original text:
 //   Arabic-Indic digits -> ASCII, "o"/"O" standing for a zero -> "0", separators libphonenumber
@@ -19,7 +21,7 @@ const EXTRA_SEPARATORS = /[/_*|•·]/g;
 /** dd/mm/yyyy, dd.mm.yy...: not when more digit groups follow (that is a dotted phone number). */
 const DATE = /(?<![\d/.-])\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}(?![/.-]?\d)/g;
 /** Moroccan shapes: +212 / 00212 / 212 then 5-7 + 8 digits, or 0 + 5-7 + 8 digits; single separators between digits. */
-const MOROCCAN_SHAPE = /(?<!\d)(?:(?:\+|00)?\s?212[\s.-]?\(?0?\)?[\s.-]?[5-7](?:[\s.-]?\d){8}|0[5-7](?:[\s.-]?\d){8})(?!\d)/g;
+const MOROCCAN_SHAPE = /(?<!\d)(?:(?:\+|00)?\s?212[\s.,;:-]?\(?0?\)?[\s.,;:-]?[5-7](?:[\s.,;:-]?\d){8}|0[5-7](?:[\s.,;:-]?\d){8})(?!\d)/g;
 
 interface Span {
   start: number;
@@ -63,8 +65,11 @@ function moroccanE164(digits: string): string | undefined {
  * Phone numbers found in a free text, deduplicated (by E.164, else by digits), in text order.
  * `raw` is the text as written (for highlighting in the wizard), `e164` when the number parses.
  */
-export function findPhoneNumbers(text: string): PhoneMatch[] {
-  if (!text || !/\d|[٠-٩۰-۹]/.test(text)) return [];
+export function findPhoneNumbers(input: string): PhoneMatch[] {
+  if (!input) return [];
+  const folded = foldForDetection(input);
+  const text = folded.text;
+  if (!/\d|[٠-٩۰-۹]/.test(text)) return [];
   const clean = deobfuscatePhoneText(text);
   const dates = spans(text, DATE);
   const found: { span: Span; match: PhoneMatch }[] = [];
@@ -72,8 +77,9 @@ export function findPhoneNumbers(text: string): PhoneMatch[] {
   const add = (span: Span, e164: string | undefined) => {
     if (dates.some((date) => overlaps(date, span))) return;
     if (found.some((entry) => overlaps(entry.span, span))) return;
-    const raw = text.slice(span.start, span.end);
-    const key = e164 ?? digitsOf(raw);
+    const written = inputSpan(folded, span.start, span.end);
+    const raw = input.slice(written.start, written.end);
+    const key = e164 ?? digitsOf(text.slice(span.start, span.end));
     if (seen.has(key)) return;
     seen.add(key);
     found.push({ span, match: e164 ? { raw, e164 } : { raw } });

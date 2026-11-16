@@ -179,6 +179,28 @@ export function grantPlanPeriod(wallet: WalletState, grant: { credits: number; f
 }
 
 /**
+ * A plan switch inside a period that already had its grant (abuse audit: a late switch paid at a
+ * prorated price): `extra` joins what is left of the period's plan credits and featured allowance,
+ * instead of resetting them to the new plan's full grant.
+ */
+export function grantPlanSwitch(wallet: WalletState, extra: { credits: number; featured: number }): WalletResult {
+  assertCredits(extra.credits);
+  assertCredits(extra.featured);
+  return {
+    wallet: { ...wallet, planCredits: wallet.planCredits + extra.credits, featuredAllowance: wallet.featuredAllowance + extra.featured },
+    ledger: {
+      reason: "plan_grant",
+      delta: 0,
+      paidPart: 0,
+      bonusPart: 0,
+      planCreditsDelta: extra.credits,
+      featuredAllowanceDelta: extra.featured,
+      balanceAfter: wallet.balance,
+    },
+  };
+}
+
+/**
  * A launch place of an individual (owner, 2026-11-11): `credits` gift credits join the plan pool
  * (an individual has no plan, so the pool holds nothing live before), valid until the caller's
  * `resetsAt`. Out of the purchased balance: no invoice, no refund, no withdrawal.

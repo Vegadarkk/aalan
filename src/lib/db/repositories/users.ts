@@ -280,6 +280,32 @@ export async function deleteAccountDocumentsIfPending(uid: string): Promise<bool
 }
 
 /**
+ * Deletes a never-activated account holding the normalized e-mail under another exact address,
+ * when `yields(holderEmail)` says it gives way to the sign-up of `email` (see
+ * src/lib/auth/pending-variant.ts): its documents and index entry, in one transaction (Auth record
+ * deleted by the caller). False when the holder is activated, holds this very address, does not
+ * yield, or changed meanwhile.
+ */
+export async function releasePendingVariant(uid: string, email: string, yields: (holderEmail: string) => boolean): Promise<boolean> {
+  const exact = email.trim().toLowerCase();
+  return db().runTransaction(async (tx) => {
+    const [user, account] = await Promise.all([tx.get(userRef(uid)), tx.get(privateRef(uid))]);
+    void consume("firestore.reads", 2);
+    if (!user.exists || user.get("activation") !== "pending" || !account.exists) return false;
+    const holderEmail = String(account.get("email"));
+    if (holderEmail === exact || !yields(holderEmail)) return false;
+    const hash: unknown = account.get("emailNormHash");
+    const index = typeof hash === "string" && hash ? await tx.get(emailRef(hash)) : null;
+    if (index) void consume("firestore.reads", 1);
+    if (index?.exists && String(index.get("uid")) === uid) tx.delete(index.ref);
+    tx.delete(privateRef(uid));
+    tx.delete(userRef(uid));
+    void consume("firestore.writes", 3);
+    return true;
+  });
+}
+
+/**
  * Deletes the documents of an account (Auth record deleted by the caller), in one transaction:
  * the e-mail index entry goes only while it still points at this uid, so a re-registration of the
  * address that landed in between keeps its own entry (same rule as deleteAccountDocumentsIfPending).

@@ -1,7 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { setGoogleVerifierForTests, type GoogleIdentity } from "@/lib/auth/google";
 import { findUidByEmail, getUser, getUserPrivate } from "@/lib/db/repositories/users";
-import { auth } from "@/lib/firebase/admin";
+import { COLLECTIONS } from "@/lib/db/schemas";
+import { auth, db } from "@/lib/firebase/admin";
 import { setClaims } from "@/lib/firebase/claims";
 import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { DEVICE_COOKIE } from "@/lib/security/cookies";
@@ -214,6 +215,8 @@ describe("POST /api/auth/google", () => {
     const email = uniqueEmail("gt");
     expect((await call(signup, "/api/auth/signup", { jar: new Jar(), body: { email, password: PASSWORD, displayName: "Tag Owner", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
     const owner = (await findUidByEmail(email))!;
+    // An activated account keeps its address against every variant.
+    await db().collection(COLLECTIONS.users).doc(owner).update({ activation: "done" });
     const variant = email.replace("@", "+google@");
     const refused = await call<ErrorBody>(google, GOOGLE, { jar: new Jar(), body: body({ email: variant }) });
     expect(refused.status).toBe(409);
@@ -222,6 +225,20 @@ describe("POST /api/auth/google", () => {
     expect(withConsents.status).toBe(409);
     expect((await auth().getUser(owner)).providerData.map((p) => p.providerId)).toEqual(["password"]);
     expect((await auth().getUser(owner)).emailVerified).toBe(false);
+  });
+
+  it("opens its own account over a never-verified sign-up of a variant (Google proved the address), never merging into it", async () => {
+    const email = uniqueEmail("gp");
+    const squatted = email.replace("@", "+squat@");
+    expect((await call(signup, "/api/auth/signup", { jar: new Jar(), body: { email: squatted, password: PASSWORD, displayName: "Squatter", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
+    const pending = (await findUidByEmail(email))!;
+    const created = await call<SignedInBody>(google, GOOGLE, { jar: new Jar(), body: body({ email }, { consents: CONSENTS, turnstileToken: "t" }) });
+    expect(created.status).toBe(200);
+    expect(created.body.status).toBe("signed_in");
+    expect(created.body.session.uid).not.toBe(pending);
+    expect(await findUidByEmail(email)).toBe(created.body.session.uid);
+    expect(await getUser(pending)).toBeNull();
+    await expect(auth().getUser(pending)).rejects.toMatchObject({ code: "auth/user-not-found" });
   });
 
   it("counts a needs_consent pass in the sign-up limits (3 per day per device)", async () => {

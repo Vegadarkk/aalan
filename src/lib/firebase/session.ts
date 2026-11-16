@@ -67,15 +67,39 @@ export async function createSessionForUid(uid: string): Promise<MintedSession> {
 }
 
 export interface VerifySessionOptions {
-  /** Looks the account up (disabled, revoked): sensitive routes and every staff request (§6). */
+  /**
+   * Looks the account up (disabled, revoked, rights changed): sensitive routes and every staff
+   * request (§6).
+   */
   checkRevoked?: boolean;
+}
+
+/** The claims that carry rights; a session must hold the account's current values (claims.ts). */
+const RIGHTS = ["role", "proId", "proRole", "st"] as const;
+
+/**
+ * One lookup of the account in place of the SDK's revocation check: disabled, and revoked
+ * (auth_time before the whole-second floor, as the SDK compares), and also a session whose rights
+ * differ from the account's current claims. The floor alone misses a session minted in the same
+ * second as a claims change (setClaims revokes, but the floor is truncated to the second): it would
+ * keep the old role, Pro grant or missing suspension.
+ */
+async function stillValid(decoded: DecodedIdToken): Promise<boolean> {
+  const record = await auth().getUser(decoded.uid);
+  if (record.disabled) return false;
+  const validSince = record.tokensValidAfterTime ? Math.floor(new Date(record.tokensValidAfterTime).getTime() / 1000) : 0;
+  if (decoded.auth_time < validSince) return false;
+  const current = readClaims(record.customClaims ?? {});
+  const frozen = readClaims(decoded as unknown as Record<string, unknown>);
+  return RIGHTS.every((key) => current[key] === frozen[key]);
 }
 
 /** The person behind a session cookie, or null when it is absent, forged, expired or revoked. */
 export async function verifySession(cookie: string | undefined, options: VerifySessionOptions = {}): Promise<SessionUser | null> {
   if (!cookie || cookie.length > 4096) return null;
   try {
-    const decoded = await auth().verifySessionCookie(cookie, options.checkRevoked === true);
+    const decoded = await auth().verifySessionCookie(cookie, false);
+    if (options.checkRevoked === true && !(await stillValid(decoded))) return null;
     return toUser(decoded);
   } catch (error) {
     const code = (error as { code?: string }).code ?? "";

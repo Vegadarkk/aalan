@@ -15,7 +15,7 @@ import type { ProProfileDoc } from "@/lib/pro/profile-schema";
 import { pauseListingsOverQuota } from "@/lib/pro/quota";
 import { BillingRetryError, expectedEnvironment } from "./billing-common";
 import { listCustomerSubscriptions, RevenueCatApiError, type RevenueCatSubscription } from "./revenuecat-api";
-import { grantPlanPeriod } from "./wallet";
+import { grantPlanPeriod, grantPlanSwitch } from "./wallet";
 
 // Pro subscriptions (phase 7 design §7). Stripe bills, RevenueCat is the source of truth: every
 // event that may change a shop's plan (a RevenueCat subscription event, a Stripe webhook) ends in
@@ -56,6 +56,18 @@ export function grantSlot(periodStart: Date, periodEnd: Date | null, interval: P
   while (months < 11 && addMonthsUtc(periodStart, months + 1).getTime() <= now.getTime()) months += 1;
   const end = addMonthsUtc(periodStart, months + 1);
   return { start: addMonthsUtc(periodStart, months), end: periodEnd && periodEnd.getTime() < end.getTime() ? periodEnd : end };
+}
+
+/**
+ * The grant of a plan switch inside a slot that already had the former plan's grant: the positive
+ * difference between the two plans, for the share of the slot left (rounded down). A switch is
+ * priced by the time left (Stripe prorates it), so the allowance follows the same share; a switch
+ * down grants nothing (the higher plan was paid for this slot).
+ */
+export function switchGrant(from: { credits: number; featured: number }, to: { credits: number; featured: number }, slot: { start: Date; end: Date }, now: Date): { credits: number; featured: number } {
+  const length = slot.end.getTime() - slot.start.getTime();
+  const share = length > 0 ? Math.min(1, Math.max(0, (slot.end.getTime() - now.getTime()) / length)) : 0;
+  return { credits: Math.floor(Math.max(0, to.credits - from.credits) * share), featured: Math.floor(Math.max(0, to.featured - from.featured) * share) };
 }
 
 export function subscriptionStatusOf(subscription: Pick<RevenueCatSubscription, "status" | "givesAccess" | "willRenew">): SubscriptionStatus {
@@ -152,7 +164,15 @@ export async function syncShopSubscription(accountId: string, deps: SyncDeps = {
     const profile = await getProProfile(proId, tx);
     const before = await getSubscriptionTx(tx, accountId);
     if (!profile) return { outcome: "no_shop" as const };
-    if (!chosen && (!before || before.status === "expired")) return { outcome: "no_subscription" as const };
+    if (!chosen && (!before || before.status === "expired")) {
+      // An expiry that came while the shop could not change state (a revalidation, a suspension)
+      // was recorded on the subscription only: the plan it paid for ends now.
+      const event = before ? lifecycleEventFor(profile, "expired", before.plan, now) : null;
+      if (!event) return { outcome: "no_subscription" as const };
+      const updated = profileAfter(profile, transition(profile, event, { now, graceDays: pricing.graceDays }).patch, pricing, now);
+      tx.set(proProfileRef(proId), proProfileToFirestore(updated));
+      return { outcome: "updated" as const, event, ownerUid: profile.ownerUid, quotas: updated.quotas, lifecycle: updated.lifecycle };
+    }
     const trialing = chosen !== null && isTrialing(chosen.subscription);
 
     let next: SubscriptionDoc;
@@ -194,7 +214,12 @@ export async function syncShopSubscription(accountId: string, deps: SyncDeps = {
 
     if (slot && entryId && !granted) {
       const grant = { credits: pricing.plans[next.plan].credits, featured: pricing.plans[next.plan].featured };
-      const { wallet: state, ledger } = grantPlanPeriod(walletStateAt(wallet, now), grant);
+      // The same subscription already had this slot's grant for another plan: a switch, granted
+      // the prorated difference on top of what is left (never a second full month).
+      const switched = before !== null && before.rcSubscriptionId === next.rcSubscriptionId && before.plan !== next.plan && before.grantedSlotStart?.getTime() === slot.start.getTime();
+      const { wallet: state, ledger } = switched
+        ? grantPlanSwitch(walletStateAt(wallet, now), switchGrant(pricing.plans[before.plan], grant, slot, now))
+        : grantPlanPeriod(walletStateAt(wallet, now), grant);
       recordWalletOperationTx(tx, accountId, entryId, { before: wallet, state, ledger, entry: { refs: { subscriptionId: next.rcSubscriptionId }, actorUid: "system", at: now }, now, resetsAt: slot.end });
       next = { ...next, grantedSlotStart: slot.start };
     }

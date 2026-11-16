@@ -31,6 +31,7 @@ import { sectorCommitmentScope } from "./commitments";
 import { PRO_SECTORS, type ProProfileDoc, type ProSector } from "./profile-schema";
 import { rentalCheckReview } from "./rental-check";
 import { resumeRevalidationPaused } from "./revalidation";
+import { syncShopSubscription } from "@/lib/payments/subscriptions";
 
 // KYBC review of the back office (phase 7 design §4): the queue of submitted applications, one
 // application's review, and the moderator's decision. The decision is one transaction that
@@ -255,6 +256,9 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     // Validated again after a withdrawal (P2-10): the listings paused for it and the storefront come back.
     if (revalidation) {
       await resumeRevalidationPaused(uid, now);
+      // A subscription that ended during the revalidation was recorded without touching the shop:
+      // the sync applies it now (downgrade, listings over the free quota paused).
+      await syncShopSubscription(`pro_${proId}`).catch((error: unknown) => logger.error({ proId, err: (error as Error).message }, "revalidation subscription sync failed"));
       revalidateListingPaths({ shopSegment: storefrontSegment(decided.next.slug, proId) });
       resetDirectoryShopsCache();
     }

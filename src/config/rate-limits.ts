@@ -14,7 +14,7 @@ export interface RateLimitDefinition {
   blockDuration?: number;
   policy: FailPolicy;
   /** What the key is made of, for the audit of this table. */
-  key: "device" | "ip" | "ip48" | "uid" | "email" | "account+ip" | "account" | "phone" | "uid+cid";
+  key: "device" | "ip" | "ip48" | "uid" | "email" | "account+ip" | "account" | "phone" | "uid+cid" | "global";
 }
 
 const MINUTE = 60;
@@ -258,6 +258,11 @@ export const RATE_LIMITS = {
   "newsletter.subscribe.ip": { points: 10, duration: HOUR, policy: "closed", key: "ip" },
   "newsletter.subscribe.email": { points: 3, duration: DAY, policy: "closed", key: "email" },
   "newsletter.subscribe.email.burst": { points: 1, duration: 10 * MINUTE, policy: "closed", key: "email" },
+  // The list's own mail budget, well under the shared daily allowance (resend.daily counts 80): per
+  // source and per IPv6 /48 per day, then one daily cap for all senders. Spent: same answer, no mail.
+  "newsletter.subscribe.ip.day": { points: 20, duration: DAY, policy: "closed", key: "ip" },
+  "newsletter.subscribe.ip48.day": { points: 30, duration: DAY, policy: "closed", key: "ip48" },
+  "newsletter.subscribe.global": { points: 30, duration: DAY, policy: "closed", key: "global" },
   "newsletter.token.ip": { points: 60, duration: HOUR, policy: "open", key: "ip" },
   // Provider webhooks (/api/webhooks/*, security review D-1): checked before the body is read, so
   // a sender of junk-signed bodies is cut off before any buffering or HMAC. 120 per minute per IP

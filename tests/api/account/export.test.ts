@@ -180,6 +180,13 @@ describe("GET /api/account/export: the file", () => {
     await aboutMe.set(reportDoc(other, { type: "user", id: me.uid, ownerUid: me.uid }, { explanation: "Signalement du voisin, confidentiel." }));
     const decision = db().collection(COLLECTIONS.moderationDecisions).doc();
     await decision.set(decisionDoc(me.uid, { type: "listing", id: mine.id }, { appeal: { status: "open", by: "affected", text: "Mon annonce est conforme.", openedAt: at(), reviewer: "reviewer-staff-only" } }));
+    // Decisions the member was never told of: a dismissed notice, and a removal under an authority
+    // order that forbids informing it (no notifiedAt).
+    const dismissed = db().collection(COLLECTIONS.moderationDecisions).doc();
+    await dismissed.set(decisionDoc(me.uid, { type: "listing", id: mine.id }, { action: "no_action", facts: "Note du modérateur non communiquée." }));
+    const silentOrder = db().collection(COLLECTIONS.moderationDecisions).doc();
+    const { notifiedAt: _notified, ...unnotified } = decisionDoc(me.uid, { type: "listing", id: sold.id }, { action: "remove", origin: "authority_order", facts: "Ordre d'une autorité non communiqué." });
+    await silentOrder.set(unnotified);
 
     const result = await download(me);
     expect(result.status, JSON.stringify(result.body)).toBe(200);
@@ -235,7 +242,10 @@ describe("GET /api/account/export: the file", () => {
       expect(text, field).not.toContain(`"${field}"`);
     }
     expect(text).not.toContain("staff-only");
+    expect(text).not.toContain(dismissed.id);
+    expect(text).not.toContain(silentOrder.id);
+    expect(text).not.toContain("non communiqu");
 
-    await Promise.all([filed.delete(), aboutOther.delete(), aboutMe.delete(), decision.delete(), db().collection(COLLECTIONS.proProfiles).doc(proId).delete()]);
+    await Promise.all([filed.delete(), aboutOther.delete(), aboutMe.delete(), decision.delete(), dismissed.delete(), silentOrder.delete(), db().collection(COLLECTIONS.proProfiles).doc(proId).delete()]);
   });
 });

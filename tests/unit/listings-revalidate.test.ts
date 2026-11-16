@@ -8,11 +8,14 @@ const log = vi.hoisted(() => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), er
 vi.mock("next/cache", () => ({ revalidatePath: cache.revalidatePath }));
 vi.mock("@/lib/logging/logger", () => ({ logger: log }));
 
-const { listingPagePaths, listingRevalidationPaths, profilePagePaths, revalidateListingPaths, storefrontPagePaths } = await import("@/lib/listings/revalidate");
+const { flushPagePurgeForTests, listingPagePaths, listingRevalidationPaths, profilePagePaths, revalidateListingPaths, setRevalidationSinksForTests, storefrontPagePaths } = await import("@/lib/listings/revalidate");
+const { resetServerEnv } = await import("@/lib/env");
 
 beforeEach(() => {
   cache.revalidatePath.mockReset();
   log.debug.mockReset();
+  log.warn.mockReset();
+  setRevalidationSinksForTests(undefined);
 });
 
 describe("revalidateListingPaths", () => {
@@ -39,5 +42,47 @@ describe("revalidateListingPaths", () => {
     expect(() => revalidateListingPaths({ slugId: "velo-casablanca-abcd2345" })).not.toThrow();
     expect(cache.revalidatePath).toHaveBeenCalledTimes(3);
     expect(log.debug).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("other processes and the edge", () => {
+  it("publishes the paths for every web process, the worker's changes included", async () => {
+    const publish = vi.fn(async () => undefined);
+    setRevalidationSinksForTests({ publish, purge: null });
+    cache.revalidatePath.mockImplementation(() => {
+      throw new Error("Invariant: static generation store missing");
+    });
+    const paths = revalidateListingPaths({ slugId: "velo-casablanca-abcd2345", publicId: "k7m2p9q4r8" });
+    expect(publish).toHaveBeenCalledWith(paths);
+    expect(revalidateListingPaths({})).toEqual([]);
+    expect(publish).toHaveBeenCalledTimes(1);
+  });
+
+  it("never throws when the publish fails: it is logged", async () => {
+    setRevalidationSinksForTests({ publish: async () => Promise.reject(new Error("valkey timeout")), purge: null });
+    expect(() => revalidateListingPaths({ slugId: "velo-casablanca-abcd2345" })).not.toThrow();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(log.warn).toHaveBeenCalledWith(expect.objectContaining({ err: "valkey timeout" }), "ISR invalidation not published");
+  });
+
+  it("purges the page URLs at the edge in one request per window", async () => {
+    process.env.SITE_URL = "https://aalan.example/";
+    resetServerEnv();
+    const purge = vi.fn(async (_urls: readonly string[]) => undefined);
+    setRevalidationSinksForTests({ publish: null, purge });
+    revalidateListingPaths({ slugId: "velo-casablanca-abcd2345" });
+    revalidateListingPaths({ slugId: "velo-casablanca-abcd2345", publicId: "k7m2p9q4r8" });
+    await flushPagePurgeForTests();
+    expect(purge).toHaveBeenCalledTimes(1);
+    expect(purge.mock.calls[0]?.[0]).toEqual([...listingPagePaths("velo-casablanca-abcd2345"), ...profilePagePaths("k7m2p9q4r8")].map((path) => `https://aalan.example${path}`));
+    delete process.env.SITE_URL;
+    resetServerEnv();
+  });
+
+  it("purges nothing outside production", async () => {
+    setRevalidationSinksForTests({ publish: null });
+    revalidateListingPaths({ slugId: "velo-casablanca-abcd2345" });
+    await flushPagePurgeForTests();
+    expect(log.warn).not.toHaveBeenCalled();
   });
 });

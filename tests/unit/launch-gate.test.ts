@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { closedDecision, invalidOpensAt, isClosed, parseOpensAt, timeLeft } from "@/lib/launch/gate";
+import { closedDecision, invalidOpensAt, isClosed, launchPhase, parseOpensAt, timeLeft } from "@/lib/launch/gate";
 import { hasPreviewPass, isPreviewKey, previewPass } from "@/lib/launch/preview";
 import { brandSocialLinks } from "@/lib/launch/social";
 import { parseEnv } from "@/lib/env";
@@ -49,6 +49,33 @@ describe("closedDecision", () => {
   it("closes the API but its open list", () => {
     for (const path of ["/api/health", "/api/config", "/api/csp-report", "/api/preview", "/api/webhooks/stripe", "/api/auth/logout", "/api/newsletter/subscribe", "/api/newsletter/confirm", "/api/newsletter/unsubscribe"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "pass" });
     for (const path of ["/api/auth/signup", "/api/listings", "/api/healthz", "/api/webhooks/stripe/x", "/api/configx", "/api/newsletter", "/api/newsletter/list", "/api/newsletter/subscribe/x"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "closed-api" });
+  });
+});
+
+describe("sign-up the day before (owner, 16 Nov 2026)", () => {
+  it("opens accounts 24 hours before the opening, everything at the opening", () => {
+    const at = new Date("2026-12-12T10:00:00Z");
+    expect(launchPhase(at, new Date("2026-12-11T09:59:59Z"))).toBe("closed");
+    expect(launchPhase(at, new Date("2026-12-11T10:00:00Z"))).toBe("signup");
+    expect(launchPhase(at, new Date("2026-12-12T09:59:59Z"))).toBe("signup");
+    expect(launchPhase(at, at)).toBe("open");
+    expect(launchPhase(null)).toBe("open");
+  });
+
+  it("lets the account pages and API through, never posting, search or messaging", () => {
+    for (const path of ["/fr/inscription", "/ar/connexion", "/fr/mot-de-passe-oublie", "/fr/action", "/fr/parametres", "/rif/verifications", "/fr/pro", "/fr/pro/abonnement", "/fr/anti-robot"]) {
+      expect(closedDecision(path, LOCALES, "fr", "signup"), path).toEqual({ kind: "pass" });
+      expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "redirect-home", locale: path.split("/")[1] });
+    }
+    for (const path of ["/fr/deposer", "/fr/mes-annonces", "/fr/messages", "/fr/favoris", "/fr/recherche", "/fr/annonce/x-abcd"]) expect(closedDecision(path, LOCALES, "fr", "signup"), path).toEqual({ kind: "redirect-home", locale: "fr" });
+    expect(closedDecision("/fr", LOCALES, "fr", "signup")).toEqual({ kind: "closed-home", locale: "fr" });
+    const open = ["/api/auth/signup", "/api/auth/login", "/api/auth/google", "/api/auth/me", "/api/auth/password/reset", "/api/auth/verify/resend", "/api/auth/phone/start", "/api/auth/phone/status", "/api/account/avatar", "/api/account/email", "/api/pro/apply", "/api/pro/me", "/api/pro/me/logo", "/api/pro/me/rental/check", "/api/pro/kybc/uploads", "/api/pro/kybc/uploads/AbC_12-x", "/api/pro/kybc/uploads/AbC_12-x/complete", "/api/challenge/pass"];
+    for (const path of open) {
+      expect(closedDecision(path, LOCALES, "fr", "signup"), path).toEqual({ kind: "pass" });
+      if (path !== "/api/auth/logout") expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "closed-api" });
+    }
+    const closed = ["/api/listings", "/api/uploads/sign", "/api/search", "/api/conversations", "/api/messages/unread", "/api/favorites", "/api/wallet", "/api/billing/checkout", "/api/pro/stock", "/api/pro/fleet", "/api/pro/departures", "/api/auth/a/b/c", "/api/pro/kybc/uploads/x/delete", "/api/account/x/y"];
+    for (const path of closed) expect(closedDecision(path, LOCALES, "fr", "signup"), path).toEqual({ kind: "closed-api" });
   });
 });
 

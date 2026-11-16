@@ -151,6 +151,12 @@
       "body": "Votre adresse reçoit les e-mails du lancement : un avant-goût, les places de lancement la veille, puis l'ouverture.",
       "noLink": "Pour vous désinscrire, ouvrez le lien « Se désinscrire » en bas d'un de nos e-mails.",
       "home": "Retour à l'accueil"
+    },
+    "signup": {
+      "title": "Les inscriptions sont ouvertes",
+      "intro": "Créez votre compte dès maintenant et vérifiez votre numéro. Le dépôt d'annonces ouvre {date}.",
+      "create": "Créer mon compte",
+      "login": "Se connecter"
     }
   },
   "Search": {

@@ -7,7 +7,7 @@ import { formatDay, type BuiltMail, type MailLocale, type TemplateContext } from
 
 // The three e-mails of the opening list (owner, 2026-11-16; src/lib/newsletter/campaigns.ts): the
 // door opens a little more with each one. J-7 teaser (closed), J-1 launch places (ajar), the
-// opening (open). The numbers of the launch places come from the live pricing configuration at
+// opening (open). The J-1 e-mail leaves when sign-up opens and points to it. The numbers of the launch places come from the live pricing configuration at
 // send time. Every e-mail carries the one-click unsubscribe (RFC 8058 header to the API, and a
 // footer link to the page that confirms it), and is the visitor's language: Tarifit reads French.
 
@@ -97,9 +97,10 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
           SHARED.fr.individual(p),
           SHARED.fr.shop(p),
           w.lastDay ? `Une place par personne, attribuée jusqu'au ${w.lastDay} ou jusqu'à ce qu'il n'en reste plus.` : "Une place par personne, attribuée jusqu'à ce qu'il n'en reste plus.",
+          "Les inscriptions sont ouvertes dès maintenant : créez votre compte et vérifiez votre numéro aujourd'hui, pour publier dès l'ouverture.",
         ];
       },
-      button: "Voir le compte à rebours",
+      button: "Créer mon compte",
     },
     opening: {
       subject: () => "C'est ouvert : bienvenue sur Aalan",
@@ -139,9 +140,10 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
           SHARED.ar.individual(p),
           SHARED.ar.shop(p),
           w.lastDay ? `مكان واحد لكل شخص، يُمنح حتى ${w.lastDay} أو إلى أن تنفد الأماكن.` : "مكان واحد لكل شخص، يُمنح إلى أن تنفد الأماكن.",
+          "التسجيل مفتوح من الآن: أنشئ حسابك ووثّق رقمك اليوم، لتنشر منذ الافتتاح.",
         ];
       },
-      button: "مشاهدة العد التنازلي",
+      button: "إنشاء حسابي",
     },
     opening: {
       subject: () => "فُتح الباب: مرحبًا بك في أعلان",
@@ -215,7 +217,8 @@ export function newsletterCampaign(data: Data, ctx: TemplateContext): BuiltMail 
     lastDay: lastDay(data.places?.until ?? null, ctx),
   };
   const site = ctx.siteUrl.replace(/\/$/, "");
-  const target = data.campaign === "opening" ? `${site}/${ctx.locale}/deposer` : `${site}/${ctx.locale}`;
+  // J-1: sign-up opens with this e-mail (gate.ts "signup" phase, owner 16 Nov 2026).
+  const target = `${site}/${ctx.locale}${data.campaign === "opening" ? "/deposer" : data.campaign === "places" ? "/inscription" : ""}`;
   const built = renderDoorLayout({
     lang: ctx.lang,
     siteUrl: ctx.siteUrl,

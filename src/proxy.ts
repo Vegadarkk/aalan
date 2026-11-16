@@ -16,7 +16,7 @@ import { checkPageLimits, isMeteredPath, pathLocale, tooManyPagesHtml, TOO_MANY_
 import { challengeUrlPath } from "@/lib/security/challenge-path";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { robotsTag } from "@/lib/security/robots";
-import { closedDecision, isClosed, OPENING_SEGMENT, parseOpensAt } from "@/lib/launch/gate";
+import { closedDecision, launchPhase, OPENING_SEGMENT, parseOpensAt } from "@/lib/launch/gate";
 import { hasPreviewPass, PREVIEW_COOKIE } from "@/lib/launch/preview";
 
 const handleI18nRouting = createMiddleware(routing);
@@ -144,8 +144,9 @@ function launchGate(request: NextRequest, routed: NextResponse | null): NextResp
   };
   if (segment === OPENING_SEGMENT && (LOCALES as readonly string[]).includes(first)) return home(first);
   const opensAt = parseOpensAt(process.env.OPENS_AT);
-  if (!isClosed(opensAt) || hasPreviewPass(request.cookies.get(PREVIEW_COOKIE)?.value, process.env.PREVIEW_SECRET)) return null;
-  const decision = closedDecision(pathname, LOCALES, DEFAULT_LOCALE);
+  const phase = launchPhase(opensAt);
+  if (phase === "open" || hasPreviewPass(request.cookies.get(PREVIEW_COOKIE)?.value, process.env.PREVIEW_SECRET)) return null;
+  const decision = closedDecision(pathname, LOCALES, DEFAULT_LOCALE, phase);
   switch (decision.kind) {
     case "pass":
       return null;

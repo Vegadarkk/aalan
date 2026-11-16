@@ -29,6 +29,8 @@ export interface LaunchScreenProps {
   opensAt: Date;
   socials: readonly BrandSocialLink[];
   publisher: string;
+  /** The day before the opening (gate.ts "signup" phase): accounts can be created already. */
+  signupOpen?: boolean;
 }
 
 /** The opening date in Morocco's time ("jeudi 20 novembre 2026 à 10:00"); Tarifit takes the French format. */
@@ -36,7 +38,7 @@ export function openingDate(locale: Locale, at: Date): string {
   return new Intl.DateTimeFormat(LOCALE_TAGS[numbersLocale(locale)], { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Casablanca", numberingSystem: "latn" }).format(at);
 }
 
-export async function LaunchScreen({ locale, opensAt, socials, publisher }: LaunchScreenProps) {
+export async function LaunchScreen({ locale, opensAt, socials, publisher, signupOpen = false }: LaunchScreenProps) {
   const [t, welcome, common, legal] = await Promise.all([
     getTranslations({ locale, namespace: "Launch" }),
     getTranslations({ locale, namespace: "Welcome" }),
@@ -61,6 +63,24 @@ export async function LaunchScreen({ locale, opensAt, socials, publisher }: Laun
             <time dateTime={opensAt.toISOString()}>{t("opensOn", { date: openingDate(locale, opensAt) })}</time>
             <span className="launch-date-zone">{t("moroccoTime")}</span>
           </p>
+          {signupOpen ? (
+            // Owner, 16 Nov 2026: sign-up opens the day before; posting waits for the opening.
+            <section aria-labelledby="launch-signup" className="launch-news welcome-enter" data-enter="date" data-testid="launch-signup">
+              <h2 id="launch-signup" className="launch-news-title">
+                {t("signup.title")}
+              </h2>
+              <p className="launch-news-intro">{t("signup.intro", { date: openingDate(locale, opensAt) })}</p>
+              <div className="launch-signup-actions">
+                {/* The other root layout: plain links (a full load either way). */}
+                <a href={`/${locale}/inscription`} className="launch-news-button launch-signup-link">
+                  {t("signup.create")}
+                </a>
+                <a href={`/${locale}/connexion`} className="launch-signup-secondary launch-signup-link">
+                  {t("signup.login")}
+                </a>
+              </div>
+            </section>
+          ) : null}
           {/* The form's own messages only: this root layout ships none (src/app/[locale]/(closed)). */}
           <PageMessages locale={locale} namespaces={NEWSLETTER_NAMESPACES}>
             <NewsletterForm locale={locale} privacyHref={`/${locale}/legal/${slugOf("confidentialite")}#${PRIVACY_ANCHOR}`} />

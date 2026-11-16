@@ -101,7 +101,8 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       label: "J-7",
       title: () => "Dans sept jours, la porte s'ouvre",
       paragraphs: (w) => [
-        "Aalan réunit les petites annonces de tout le Maroc : vendre ce qui dort chez vous, acheter d'occasion, louer, trouver un professionnel près de chez vous.",
+        "Aalan réunit les petites annonces de tout le Maroc : vendre ce qui dort chez vous, acheter d'occasion, trouver un professionnel près de chez vous.",
+        "Et aussi : la location de voitures, la location de vacances, et les boutiques des pros, vérifiées avant d'ouvrir.",
         `Ouverture ${w.when} (heure du Maroc).`,
       ],
       points: () => [
@@ -152,7 +153,11 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       preheader: (w) => `إعلانات مبوبة مجانية في كل المغرب. الموعد ${w.when}.`,
       label: "J-7",
       title: () => "بعد سبعة أيام، يُفتح الباب",
-      paragraphs: (w) => ["أعلان يجمع الإعلانات المبوبة لكل المغرب في مكان واحد: بِع ما لا تستعمله، اشترِ المستعمل، أجِّر، وابحث عن مهني قريب منك.", `الافتتاح ${w.when} (بتوقيت المغرب).`],
+      paragraphs: (w) => [
+        "أعلان يجمع الإعلانات المبوبة لكل المغرب في مكان واحد: بِع ما لا تستعمله، اشترِ المستعمل، وابحث عن مهني قريب منك.",
+        "وأيضًا: كراء السيارات، كراء للعطل، ومتاجر المحترفين، موثّقة قبل فتحها.",
+        `الافتتاح ${w.when} (بتوقيت المغرب).`,
+      ],
       points: () => [
         { lead: "نشر الإعلان مجاني", text: "الصور والوصف والسعر: كل شيء من هاتفك." },
         { lead: "رقمك يبقى خاصًا", text: "يتواصل المشترون والبائعون عبر رسائل أعلان." },

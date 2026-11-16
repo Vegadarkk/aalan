@@ -113,9 +113,10 @@ const eurOrder = (amountMinor: number, purchasedAt: string, extra: Partial<Order
   ...extra,
 });
 
-/** A CSV download on the admin host (Access e-mail + session; a GET needs no CSRF token). */
-async function download(as: Staff | undefined, report: string, period: string, host = new URL(expectedOrigin("admin")).host) {
+/** A CSV download on the admin host (Access e-mail + session; a GET needs no CSRF token, only no cross-site start). */
+async function download(as: Staff | undefined, report: string, period: string, host = new URL(expectedOrigin("admin")).host, fetchSite?: string) {
   const headers = new Headers({ host, "user-agent": "vitest", "x-forwarded-for": "10.88.0.7" });
+  if (fetchSite) headers.set("sec-fetch-site", fetchSite);
   if (as) {
     headers.set("x-dev-access-email", as.email);
     headers.set("cookie", `__Host-session=${as.session}`);
@@ -205,6 +206,10 @@ describe("tax exports", () => {
     expect((await download(moderator, "registre-dgi", "2025-T1")).status).toBe(403);
     expect((await download(admin, "registre-dgi", "2025-T1", "localhost:3000")).status).toBe(404);
     expect((await download(undefined, "registre-dgi", "2025-T1")).status).toBe(401);
+    // A navigation another site started is refused (the download would tell that site who its visitor is).
+    const adminHost = new URL(expectedOrigin("admin")).host;
+    expect((await download(admin, "registre-dgi", "2025-T1", adminHost, "cross-site")).status).toBe(403);
+    expect((await download(admin, "registre-dgi", "2025-T1", adminHost, "same-site")).status).toBe(403);
     expect((await download(admin, "bilan", "2025-T1")).status).toBe(404);
     for (const [report, period] of [["registre-dgi", "2025-03"], ["totaux-dgi", "2025"], ["urssaf", "2025-13"], ["e-reporting", "mars"]] as const) {
       const refused = await download(admin, report, period);
@@ -215,7 +220,7 @@ describe("tax exports", () => {
   });
 
   it("lists the quarter's Moroccan pack sales, refunds and paid Pro invoices in the DGI register, and audits the download", async () => {
-    const result = await download(admin, "registre-dgi", "2025-Q1");
+    const result = await download(admin, "registre-dgi", "2025-Q1", new URL(expectedOrigin("admin")).host, "same-origin");
     expect(result.status).toBe(200);
     expect(result.headers.get("content-type")).toBe("text/csv; charset=utf-8");
     expect(result.headers.get("content-disposition")).toBe('attachment; filename="aalan-registre-dgi-2025-T1.csv"');

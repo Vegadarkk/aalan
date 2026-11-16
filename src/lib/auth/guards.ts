@@ -98,6 +98,23 @@ export interface StaffContext extends AuthContext {
 export interface StaffGuardOptions extends Pick<GuardOptions, "mutation"> {
   /** Restrict to these staff roles (default: moderator and admin). */
   roles?: readonly Extract<Role, "moderator" | "admin">[];
+  /**
+   * A GET that answers a file (exports, KYBC pieces): only the back office's own pages or the
+   * staff member's own address bar may ask for it. A navigation started by another site carries
+   * the Lax session cookie, and whether it ends in a download or in an error page tells that
+   * site who its visitor is.
+   */
+  download?: boolean;
+}
+
+/**
+ * Fetch Metadata check of a staff download: `Sec-Fetch-Site` must be same-origin, or none (typed
+ * URL, bookmark). A request without the header (an old browser, a script) carries no cross-site
+ * navigation signal and goes on to the usual checks.
+ */
+export function requireSameOriginFetch(request: Request): void {
+  const site = request.headers.get("sec-fetch-site");
+  if (site !== null && site !== "same-origin" && site !== "none") throw forbidden("cross-site request refused");
 }
 
 /**
@@ -124,6 +141,7 @@ export async function accessIdentity(request: Request): Promise<{ email: string 
 export async function requireStaff(request: Request, options: StaffGuardOptions = {}): Promise<StaffContext> {
   if (hostKind(request.headers) !== "admin") throw notFound();
   if (options.mutation) requireSameOrigin(request);
+  if (options.download) requireSameOriginFetch(request);
   const access = await accessIdentity(request);
   if (!access) throw unauthenticated("Access token required");
   const session = readCookie(request.headers, SESSION_COOKIE);

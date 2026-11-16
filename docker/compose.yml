@@ -21,7 +21,8 @@ x-service: &service
     options: { tag: "{{.Name}}" }
 
 x-valkey-health: &valkey-health
-  test: ["CMD-SHELL", "valkey-cli -a \"$$VALKEY_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+  # A write, not PING: a no-eviction store at maxmemory still answers PING while refusing writes.
+  test: ["CMD-SHELL", "valkey-cli -a \"$$VALKEY_PASSWORD\" --no-auth-warning set health:probe 1 EX 60 | grep -q OK"]
   interval: 10s
   timeout: 3s
   retries: 5

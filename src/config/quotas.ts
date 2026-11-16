@@ -224,7 +224,8 @@ export const QUOTAS = {
     kind: "gauge",
     alertAt: 0.7,
     degradeAt: 0.9,
-    degradedMode: "À 100 %, la file refuse toute écriture (travaux, compteurs de quotas) : purger les travaux terminés ou relever maxmemory.",
+    degradedMode:
+      "À 100 %, la file refuse toute écriture (travaux, compteurs de quotas, heartbeat). Vérifier d'abord stats:day:* (compteurs de vues du jour), bull:*:completed et bull:*:failed : UNLINK des clés stats:day:* les plus anciennes ou purge des travaux terminés, sinon relever maxmemory.",
   },
   "workersAi.neurons": {
     service: "Cloudflare Workers AI",

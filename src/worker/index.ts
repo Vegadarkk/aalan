@@ -14,8 +14,8 @@ import { Redis } from "ioredis";
 import { closeAgentQueue } from "@/lib/ai/queue";
 import { CDN_CONCURRENCY, CDN_QUEUE, closeCdnQueue } from "@/lib/cdn/queue";
 import { serverEnv } from "@/lib/env";
-import { WORKER_HEARTBEAT_KEY, WORKER_HEARTBEAT_TTL } from "@/lib/health";
 import { logger } from "@/lib/logging/logger";
+import { alert } from "@/lib/alert";
 import { captureServerException } from "@/lib/observability/capture";
 import { flushObservability, initServerObservability } from "@/lib/observability/sentry-server";
 import { deliverMail, MailDeferredError } from "@/lib/mail/deliver";
@@ -29,7 +29,6 @@ import { isFirebaseConfigured } from "@/lib/firebase/admin";
 import { SearchUnavailableError } from "@/lib/search/types";
 import { closeSearchQueue, enqueueIndexJobs, indexJobSchema, OUTBOX_POLL_JOB, SEARCH_QUEUE } from "@/lib/search/queue";
 import { setGauge } from "@/lib/quota";
-import { usedMemoryBytes } from "@/lib/quota/valkey-memory";
 import { syncHelpIndex } from "@/lib/help/search";
 import { runStartupChecks } from "@/lib/startup/checks";
 import { clientOptions } from "@/lib/valkey/clients";
@@ -38,6 +37,7 @@ import { onBillingJobFailed, processBillingJob } from "./jobs/billing";
 import { onCdnPurgeJobFailed, processCdnPurgeJob } from "./jobs/cdn-purge";
 import { onMediaJobFailed, processMediaJob } from "./jobs/media";
 import { ensureEngineReady, holdFailedListing, OUTBOX_POLL_EVERY_MS, OUTBOX_POLL_SCHEDULER, processSearchJob, watchSearchOutbox } from "./jobs/search";
+import { createBeat, guardWorkers } from "./store-guard";
 import { onSystemJobFailed, syncSchedulers } from "./system-queue";
 
 /** Touched after each successful heartbeat; the container healthcheck reads its age. */
@@ -151,17 +151,17 @@ async function main(): Promise<void> {
     });
   });
 
-  const beat = async () => {
-    try {
-      await connection.set(WORKER_HEARTBEAT_KEY, new Date().toISOString(), "EX", WORKER_HEARTBEAT_TTL);
-      await writeFile(HEARTBEAT_FILE, "").catch(() => undefined);
-      // valkey-queue never evicts: the gauge alerts before a full memory blinds every quota guard.
-      const used = usedMemoryBytes(await connection.info("memory"));
-      if (used !== null) await setGauge("valkey.queueMemory", used);
-    } catch (error) {
-      logger.warn({ err: (error as Error).message }, "heartbeat failed");
-    }
-  };
+  // Every Worker logs its errors (rate-limited) and pauses on a full store instead of spinning.
+  guardWorkers([systemWorker, mailWorker, mediaWorker, searchWorker, agentWorker, billingWorker, cdnWorker]);
+
+  // valkey-queue never evicts: memory is measured first, so the alert still goes out when the
+  // heartbeat key itself can no longer be written.
+  const beat = createBeat({
+    connection,
+    setGauge: (used) => setGauge("valkey.queueMemory", used),
+    touch: () => writeFile(HEARTBEAT_FILE, ""),
+    alert,
+  });
   await beat();
   const heartbeat = setInterval(beat, 30_000);
 

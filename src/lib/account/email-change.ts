@@ -16,6 +16,7 @@ import { HttpError, forbidden } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logger } from "@/lib/logging/logger";
 import { removeSuppression } from "@/lib/mail/suppressions";
+import { publishRevoked } from "@/lib/messaging";
 import { assertQuotas } from "@/lib/quota/gate";
 import { enforceLimit, resetLimit } from "@/lib/rate-limit/limiter";
 import { confirmVerdict, pendingEmailChange } from "./email-change-rules";
@@ -170,6 +171,8 @@ export async function confirmEmailChange(code: { requestType?: string; email?: s
 
   // The address is a sign-in identifier: every session ends, the member signs in with the new one.
   await revokeSessions(uid);
+  // Open live-messaging streams end with the sessions (as on a password change).
+  await publishRevoked(uid);
   await removeSuppression(newEmail).catch((error: unknown) => logger.warn({ err: (error as Error).message }, "mail suppression removal skipped"));
   await audit({
     actorUid: uid,

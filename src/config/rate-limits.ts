@@ -134,6 +134,7 @@ export const RATE_LIMITS = {
   // POST /api/shops/{proId}/payment: a buyer opens a shop's payment page (2 reads, 1 counter
   // write). Anonymous: 120 per hour per IP.
   "shop.payment.ip": { points: 120, duration: HOUR, policy: "open", key: "ip" },
+  "shop.payment.ip48": { points: 1200, duration: HOUR, policy: "open", key: "ip48" },
   // Its click counter: one count per IP and listing per day (the key carries the listing id), so a
   // script cannot inflate a shop's figures or spend the write quota.
   "shop.payment.click": { points: 1, duration: DAY, policy: "open", key: "ip" },
@@ -320,6 +321,8 @@ export const RATE_LIMITS = {
   "review.mine.uid": { points: 120, duration: HOUR, policy: "open", key: "uid" },
   // GET /api/reviews (storefront "more"): a page of 10 reads, metered like a profile view.
   "review.read.ip": { points: 120, duration: HOUR, policy: "open", key: "ip" },
+  // An IPv6 client also counts on its /48 (ten times the /64 allowance), as for the other anonymous reads.
+  "review.read.ip48": { points: 1200, duration: HOUR, policy: "open", key: "ip48" },
   "report.p0.uid": { points: 3, duration: DAY, policy: "open", key: "uid" },
   "report.p0.device": { points: 2, duration: DAY, policy: "open", key: "device" },
   "report.p0.ip": { points: 5, duration: DAY, policy: "open", key: "ip" },

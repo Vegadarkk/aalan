@@ -146,7 +146,9 @@ export async function handleListReviews(request: Request): Promise<Response> {
   const cursorValue = url.searchParams.get("apres");
   const after = cursorValue ? decodeReviewCursor(cursorValue) : undefined;
   if (after === null) throw new HttpError(400, "invalid_body", undefined, { details: [{ path: "apres", code: "invalid_value" }] });
-  await enforceLimit("review.read.ip", requestIdentity(request.headers).ipBucket);
+  const identity = requestIdentity(request.headers);
+  await enforceLimit("review.read.ip", identity.ipBucket);
+  if (identity.ip48) await enforceLimit("review.read.ip48", identity.ip48);
   await assertQuotas(PUBLIC_READ_QUOTAS);
   const seller = await findUserByPublicId(publicId.data);
   if (!seller || !isVisibleAccount(seller)) throw notFound();

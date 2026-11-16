@@ -31,7 +31,7 @@ import { db } from "@/lib/firebase/admin";
 import { setClaims } from "@/lib/firebase/claims";
 import { createSessionForUid } from "@/lib/firebase/session";
 import { shopConversationId } from "@/lib/messaging/ids";
-import { getConversation } from "@/lib/messaging/repository";
+import { getConversation, setUserBlock } from "@/lib/messaging/repository";
 import { setMessagingValkeyForTests } from "@/lib/messaging/unread";
 import { displayPhone } from "@/lib/phone/normalize";
 import type { ProProfileDoc } from "@/lib/pro/profile-schema";
@@ -106,6 +106,22 @@ describe("POST /api/shops/{proId}/phone", () => {
 
     expect((await reveal(viewer, proId)).status).toBe(200);
     expect(await listRevealLogs(proId)).toHaveLength(1);
+  });
+
+  it("hides the number when either account blocked the other in messaging, as \"no number\"", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const { proId } = await shop(owner);
+    const viewer = await member();
+    await setUserBlock(owner.uid, viewer.uid, true, new Date());
+    const hidden = await reveal(viewer, proId);
+    expect(hidden.status).toBe(404);
+    expect(code(hidden.body)).toBe("not_found");
+    await setUserBlock(owner.uid, viewer.uid, false, new Date());
+    await setUserBlock(viewer.uid, owner.uid, true, new Date());
+    expect((await reveal(viewer, proId)).status).toBe(404);
+    expect(await listRevealLogs(proId)).toHaveLength(0);
+    await setUserBlock(viewer.uid, owner.uid, false, new Date());
+    expect((await reveal(viewer, proId)).status).toBe(200);
   });
 
   it("answers 404 with the switches off, for an example shop, an unverified number or an unknown shop", async () => {

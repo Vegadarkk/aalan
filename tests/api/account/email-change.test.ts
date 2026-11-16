@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as Messaging from "@/lib/messaging";
 import type * as Quota from "@/lib/quota";
 import type * as Turnstile from "@/lib/security/turnstile";
 
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
+vi.mock("@/lib/messaging", async (importOriginal) => ({ ...(await importOriginal<typeof Messaging>()), publishRevoked: vi.fn(async () => undefined) }));
 vi.mock("@/lib/quota", async (importOriginal) => ({ ...(await importOriginal<typeof Quota>()), firstDegraded: vi.fn(async () => null) }));
 vi.mock("@/lib/security/turnstile", async (importOriginal) => ({
   ...(await importOriginal<typeof Turnstile>()),
@@ -21,6 +23,7 @@ import { COLLECTIONS } from "@/lib/db/schemas";
 import { emailNormHash, findUidByEmail, getUserPrivate } from "@/lib/db/repositories/users";
 import { auth, db } from "@/lib/firebase/admin";
 import { sendMail } from "@/lib/mail";
+import { publishRevoked } from "@/lib/messaging";
 import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { CONSENTS, Jar, PASSWORD, actionUrlOf, call, capturedMails, lastMail, oobCodeOf, uniqueEmail, type ErrorBody, type SignedInBody } from "../auth/helpers";
 
@@ -99,7 +102,8 @@ describe("change of e-mail address", () => {
     expect(notice?.data.newEmail).not.toContain(newEmail.split("@")[0]!);
     expect(await auditActions(uid)).toEqual(["account.email_change", "account.email_change_request"]);
 
-    // Every session was revoked; the new address signs in, the old one no longer does.
+    // Every session was revoked, open live-messaging streams with them; the new address signs in, the old one no longer does.
+    expect(vi.mocked(publishRevoked)).toHaveBeenCalledWith(uid);
     expect((await call<ErrorBody>(profile, "/api/auth/profile", { jar, body: { displayName: "Ghost" } })).status).toBe(401);
     expect((await call<SignedInBody>(login, "/api/auth/login", { jar: new Jar(), body: { email: newEmail, password: PASSWORD } })).body.status).toBe("signed_in");
     expect((await call<ErrorBody>(login, "/api/auth/login", { jar: new Jar(), body: { email, password: PASSWORD } })).status).toBe(401);

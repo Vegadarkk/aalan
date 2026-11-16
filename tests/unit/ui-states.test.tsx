@@ -134,14 +134,27 @@ describe("Skeleton", () => {
 describe("KhatamLoader", () => {
   it("is a gold khatam, hidden from assistive technology unless it carries a label", () => {
     const decorative = renderToStaticMarkup(<KhatamLoader />);
-    expect(decorative).toBe('<span aria-hidden="true" data-loader="khatam" class="khatam size-[2.125rem] [--khatam-stroke:2.5px] text-gold-500 dark:text-gold-300"></span>');
+    expect(decorative).toBe('<svg aria-hidden="true" focusable="false" data-loader="khatam" viewBox="0 0 24 24" class="khatam size-[2.125rem] [--khatam-stroke:1.75] text-gold-500 dark:text-gold-300"><rect x="5" y="5" width="14" height="14" rx="0.6"></rect><rect x="5" y="5" width="14" height="14" rx="0.6" transform="rotate(45 12 12)"></rect></svg>');
     const status = renderToStaticMarkup(<KhatamLoader size="lg" label="Chargement des annonces…" />);
-    expect(status).toMatch(/^<span role="status" class="inline-flex"><span aria-hidden="true" data-loader="khatam" class="khatam size-12 /);
+    expect(status).toMatch(/^<span role="status" class="inline-flex"><svg aria-hidden="true" focusable="false" data-loader="khatam" viewBox="0 0 24 24" class="khatam size-12 /);
     expect(status).toContain('<span class="sr-only">Chargement des annonces…</span>');
   });
 
+  it("draws both squares around the centre of its box, inside it at every stroke", () => {
+    const svg = renderToStaticMarkup(<KhatamLoader size="inline" />);
+    const rects = [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)].map((m) => m.slice(1).map(Number));
+    expect(rects).toHaveLength(2);
+    for (const [x = 0, y = 0, w = 0, h = 0] of rects) {
+      expect([x + w / 2, y + h / 2]).toEqual([12, 12]);
+      expect(w).toBe(h);
+    }
+    expect(svg).toContain('transform="rotate(45 12 12)"');
+    // The turned square's corners, with the widest stroke (inline, 2.2), stay inside the 24 box.
+    expect(((14 + 2.2) / 2) * Math.SQRT2).toBeLessThan(12);
+  });
+
   it("stands in for the spinner of buttons, in the text's size and colour", () => {
-    expect(renderToStaticMarkup(<Spinner />)).toBe('<span aria-hidden="true" data-loader="khatam" class="khatam size-[1.1em] [--khatam-stroke:0.1em]"></span>');
+    expect(renderToStaticMarkup(<Spinner />)).toBe('<svg aria-hidden="true" focusable="false" data-loader="khatam" viewBox="0 0 24 24" class="khatam size-[1.1em] [--khatam-stroke:2.2]"><rect x="5" y="5" width="14" height="14" rx="0.6"></rect><rect x="5" y="5" width="14" height="14" rx="0.6" transform="rotate(45 12 12)"></rect></svg>');
     const button = renderToStaticMarkup(<Button loading>Publier</Button>);
     expect(button).toContain('aria-busy="true"');
     expect(button).toContain('data-loader="khatam"');

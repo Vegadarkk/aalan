@@ -241,13 +241,17 @@ export async function replyToReview(id: string, targetUid: string, text: string,
 
 /**
  * Moves a review between `published` and `pending`/`hidden` (moderation), keeping the seller's
- * aggregates exact. `hiddenBy`: `decision:{id}` or `report:{id}`. Returns the review before the change, or null when it does not exist.
+ * aggregates exact. `hiddenBy`: `decision:{id}` or `report:{id}`. Returns the review before the change, or
+ * null when it does not exist or may not be shown (its seller's account is closed or missing).
  */
 export async function setReviewStatus(id: string, status: "published" | "hidden", now: Date, hiddenBy?: string): Promise<ReviewRecord | null> {
   const before = await db().runTransaction(async (tx) => {
     const review = reviewFromSnapshot(await tx.get(reviewRef(id)));
     if (!review || review.status === "deleted" || review.status === status) return review;
     const seller = await tx.get(userRef(review.targetUid));
+    // The seller's account is gone or closed: no storefront to show it on, and the closure's purge
+    // date must hold (the review stays hidden; the decision is still recorded by the caller).
+    if (status === "published" && (!seller.exists || seller.get("status") === "closed")) return null;
     const update: Record<string, unknown> = { status, updatedAt: Timestamp.fromDate(now) };
     if (status === "hidden") {
       update.purgeAt = Timestamp.fromDate(addMonths(now, REVIEW_PURGE_MONTHS));

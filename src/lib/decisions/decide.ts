@@ -66,13 +66,15 @@ import {
   removeListingsForBan,
   restoreBannedListings,
   resumeModerationPaused,
-  readRestoreHold,
+  readRestoreContext,
+  removedFromOf,
+  restoredModeration,
   reverseAuthSanction,
   standingSuspension,
   syncSuspendedClaim,
   undoQuietly,
   unremovePatch,
-  type RestoreHold,
+  type RestoreContext,
   type StandingSuspension,
   type Undo,
 } from "./sanctions";
@@ -297,8 +299,8 @@ function listingDecision(
     superseded: DecisionRecord | null;
     now: Date;
     life: Lifetime;
-    /** A reversal: what the owner's and shop's state allow the listing to come back as (read in the transaction). */
-    hold: RestoreHold;
+    /** A reversal: what the owner's and shop's state and quota allow the listing to come back as (read in the transaction). */
+    restore: RestoreContext;
   },
 ): ListingDecision {
   const { template, now } = input;
@@ -318,6 +320,7 @@ function listingDecision(
         if (error instanceof IllegalTransitionError) throw conflict(`listing cannot be removed from ${listing.status}`);
         throw error;
       }
+      moderation = { ...moderation, removedFrom: removedFromOf(listing) };
       status = "removed";
       effect = "removed";
     }
@@ -335,8 +338,9 @@ function listingDecision(
     // owner keeps the reversed decision's id but is theirs (a restriction reversal leaves it).
     const madeByReversed =
       reversed !== null && listing.moderation.lastDecisionId === reversed.id && (listing.status === "rejected" || (listing.status === "removed" && reversed.action === "remove"));
-    const change = madeByReversed ? unremovePatch(listing, now, input.life, input.hold) : null;
+    const change = madeByReversed ? unremovePatch(listing, now, input.life, input.restore.hold, input.restore.room) : null;
     if (change) {
+      moderation = restoredModeration(moderation);
       statusPatch = change.patch;
       status = change.patch.status ?? listing.status;
       search = change.search;
@@ -506,7 +510,7 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
   const superseded = run.superseded ? await getDecisionTx(tx, run.superseded.id) : null;
   const listing = target.type === "listing" ? await getListingTx(tx, target.id) : null;
   // A reversal restores a listing only as far as its owner's and shop's state allow, read here.
-  const hold: RestoreHold = listing && superseded && isRestoring(template.action) ? await readRestoreHold(listing, tx) : "none";
+  const restore: RestoreContext = listing && superseded && isRestoring(template.action) ? await readRestoreContext(listing, tx) : { hold: "none", room: Number.POSITIVE_INFINITY };
   const hiderId = listing?.moderation.hiddenBy?.reportId;
   const hider = hiderId && isRestoring(template.action) ? ((await readReportsTx(tx, [hiderId]))[0] ?? null) : null;
   const messageSnap = subject.message ? await tx.get(messageRef(subject.message.cid, subject.message.mid)) : null;
@@ -534,7 +538,7 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
   // ---- Listing.
   let listingResult: Committed["listing"] = null;
   if (listing && life) {
-    const change = listingDecision(listing, { template, decisionId: mainId, actorUid: actor.uid, closedIds, hider, superseded, now, life, hold });
+    const change = listingDecision(listing, { template, decisionId: mainId, actorUid: actor.uid, closedIds, hider, superseded, now, life, restore });
     if (closedIds.length === 0 && change.effect === null && !superseded) throw conflict("nothing to decide on this listing");
     updateListingTx(tx, listing.id, change.patch);
     if (change.search) enqueueSearchOutboxTx(tx, listing.id, change.search, change.patch.version, now);

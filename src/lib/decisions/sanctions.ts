@@ -1,10 +1,10 @@
 import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { listingLifetime } from "@/config/pricing";
+import { listingLifetime, listingQuotas, type Seller } from "@/config/pricing";
 import { enqueueAiTask } from "@/lib/ai/queue";
 import { alert } from "@/lib/alert";
 import { audit } from "@/lib/audit";
-import { getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingFieldPatch, type ListingRecord, type OwnerListingFilter } from "@/lib/db/repositories/listings";
+import { countActive, countActiveTx, getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingFieldPatch, type ListingRecord, type OwnerListingFilter } from "@/lib/db/repositories/listings";
 import { listDecisionsForUser } from "@/lib/db/repositories/moderation-decisions";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
@@ -12,12 +12,14 @@ import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
 import type { Transaction } from "firebase-admin/firestore";
 import { auth, db } from "@/lib/firebase/admin";
 import { getClaims, setClaims } from "@/lib/firebase/claims";
+import { getPricing } from "@/lib/config/runtime";
 import { getLegalConfig } from "@/lib/legal/config";
 import { purgeAtFor, transition, withLivePrices, type Lifetime } from "@/lib/listings/lifecycle";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { logger } from "@/lib/logging/logger";
 import { consume } from "@/lib/quota";
 import { adsEligibleOf } from "@/lib/reports";
+import { publishesAsPro } from "@/lib/pro/lifecycle";
 import { notifySearchIndex } from "@/lib/search/queue";
 import { levelAfterReversal, type Sanction } from "./ladder";
 import { privateFromSnapshot, privateRef, suspensionFromSnapshot, suspensionRef, userRef } from "./repository";
@@ -263,7 +265,7 @@ export async function removeListingsForBan(uid: string, decisionId: string, acto
       if (!(BAN_STATUSES as readonly string[]).includes(listing.status)) return null;
       const { patch, effects } = transition(listing, "removed", { now, lifetime: life });
       return {
-        patch: { ...patch, adsEligible: false, moderation: { ...moderationAfter(listing, clearHiddenFor), lastDecisionId: decisionId, reviewedBy: actorUid, reviewedAt: now } },
+        patch: { ...patch, adsEligible: false, moderation: { ...moderationAfter(listing, clearHiddenFor), lastDecisionId: decisionId, removedFrom: removedFromOf(listing), reviewedBy: actorUid, reviewedAt: now } },
         search: effects.search,
       };
     },
@@ -288,49 +290,93 @@ export function restoreHold(owner: Pick<UserRecord, "status"> | null, shop: { li
   return owner.status === "restricted" ? "review" : "none";
 }
 
-/** restoreHold of a listing's owner and shop, read now (inside `tx` when given, before its writes). */
-export async function readRestoreHold(listing: { ownerUid: string; proId?: string | null | undefined }, tx?: Transaction): Promise<RestoreHold> {
+/** What a staff removal replaced (moderation.removedFrom): its reversal gives back exactly that. */
+export function removedFromOf(listing: Pick<ListingRecord, "status" | "pausedReason">): NonNullable<ListingRecord["moderation"]["removedFrom"]> {
+  return listing.status === "paused" && listing.pausedReason ? { status: "paused", pausedReason: listing.pausedReason } : { status: listing.status };
+}
+
+export interface RestoreContext {
+  hold: RestoreHold;
+  /** Free slots of the owner's active-listing quota: a restored listing past them comes back paused for the quota. */
+  room: number;
+}
+
+/** restoreHold and quota room of a listing's owner and shop, read now (inside `tx` when given, before its writes). */
+export async function readRestoreContext(listing: { ownerUid: string; proId?: string | null | undefined }, tx?: Transaction): Promise<RestoreContext> {
   const owner = await getUserRecord(listing.ownerUid, tx);
-  const shop = listing.proId ? await getProProfile(listing.proId, tx) : null;
-  return restoreHold(owner, shop);
+  const proId = listing.proId ?? owner?.proId;
+  const shop = proId ? await getProProfile(proId, tx) : null;
+  const hold = restoreHold(owner, shop);
+  if (!owner || hold === "offline") return { hold, room: 0 };
+  const seller: Seller = owner.type === "pro" ? { type: "pro", plan: shop && shop.ownerUid === owner.uid && publishesAsPro(shop.lifecycle) ? shop.plan : "none" } : { type: "individual" };
+  const quota = listingQuotas(seller, await getPricing());
+  if (quota.activeListings === null) return { hold, room: Number.POSITIVE_INFINITY };
+  const active = tx ? await countActiveTx(tx, owner.uid) : await countActive(owner.uid);
+  return { hold, room: Math.max(0, quota.activeListings - active) };
 }
 
 /**
  * A removed listing restored (appeal reversed, D16), or null when it must stay removed (`hold`
- * offline). Never published before, or an edit still held for review when it was removed: back to
- * review (and the moderation queue), never online unreviewed. Expiry passed: expired (the owner may
- * renew it). Otherwise published with its own dates, unless the hold pauses it or sends it to
- * review. The lifecycle table has no `removed ->` exit but the purge: this is the reversal's own.
+ * offline). It comes back as what the removal replaced (moderation.removedFrom): sold stays sold,
+ * a pause by its owner or for the quota stays that pause, an edit held for review goes back to
+ * review. Never published before, or still flagged: back to review (and the moderation queue),
+ * never online unreviewed. Expiry passed: expired (the owner may renew it). Otherwise published
+ * with its own dates, unless the hold pauses it or sends it to review, or the owner's quota has no
+ * free slot (`room`): then paused for the quota, as the owner's resume would refuse it. The
+ * lifecycle table has no `removed ->` exit but the purge: this is the reversal's own.
  */
-export function unremovePatch(listing: ListingRecord, now: Date, life: Lifetime, hold: RestoreHold = "none"): ListingChange | null {
+export function unremovePatch(listing: ListingRecord, now: Date, life: Lifetime, hold: RestoreHold = "none", room = Number.POSITIVE_INFINITY): ListingChange | null {
   if (hold === "offline") return null;
+  const prior = listing.moderation.removedFrom;
   const base = { version: listing.version + 1, updatedAt: now, pausedReason: null };
+  if (prior?.status === "sold") return { patch: { ...base, status: "sold" }, search: null };
   if (!listing.publishedAt) return { patch: { ...base, status: "pending_review", purgeAt: null }, search: null };
   const live = listing.expiresAt !== undefined && listing.expiresAt.getTime() > now.getTime();
   if (!live) return { patch: { ...base, status: "expired", purgeAt: purgeAtFor(now, life) }, search: null };
   const purgeAt = purgeAtFor(listing.expiresAt ?? now, life);
-  if (listing.moderation.state === "needs_review" || hold === "review") return { patch: { ...base, status: "pending_review", purgeAt }, search: null };
-  if (hold === "moderation" || hold === "pro_revalidation") return { patch: { ...base, status: "paused", pausedReason: hold, purgeAt }, search: null };
+  const paused = (reason: NonNullable<ListingRecord["pausedReason"]>): ListingChange => ({ patch: { ...base, status: "paused", pausedReason: reason, purgeAt }, search: null });
+  // The owner's own pause (or the quota's) outlives the reversal; a held edit keeps it for its approval.
+  const ownPause = prior?.status === "paused" && (prior.pausedReason === "owner" || prior.pausedReason === "quota") ? prior.pausedReason : null;
+  if (listing.moderation.state === "needs_review" || hold === "review" || prior?.status === "pending_review") {
+    if (ownPause) return { patch: { ...base, status: "pending_review", pausedReason: ownPause, purgeAt }, search: null };
+    if (room >= 1) return { patch: { ...base, status: "pending_review", purgeAt }, search: null };
+  }
+  if (ownPause) return paused(ownPause);
+  if (hold === "moderation" || hold === "pro_revalidation") return paused(hold);
+  if (room < 1) return paused("quota");
   return withLivePrices(listing, { patch: { ...base, status: "published" as const, purgeAt }, search: "upsert" as const }, now);
+}
+
+/** True when a restored listing takes a slot of the active-listing quota (published or held for review). */
+export function takesSlot(change: ListingChange): boolean {
+  return change.patch.status === "published" || change.patch.status === "pending_review";
+}
+
+/** Moderation of a restored listing: the removal's trace dropped. */
+export function restoredModeration(moderation: ListingRecord["moderation"]): ListingRecord["moderation"] {
+  const { removedFrom: _removedFrom, ...rest } = moderation;
+  return rest;
 }
 
 /** Ban reversed: the listings this ban removed come back. */
 export async function restoreBannedListings(uid: string, banDecisionId: string, actorUid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
   // Read after the reversal's commit: a closed account keeps them removed, a standing suspension
-  // or a shop under revalidation brings them back paused.
-  const owner = await getUserRecord(uid);
-  const hold = restoreHold(owner, owner?.proId ? await getProProfile(owner.proId) : null);
-  if (hold === "offline") return [];
+  // or a shop under revalidation brings them back paused, the quota's free slots are shared out
+  // (a retried listing transaction may count one twice: it then errs on a quota pause).
+  const context = await readRestoreContext({ ownerUid: uid });
+  if (context.hold === "offline") return [];
+  let room = context.room;
   const changes = await walkOwnerListings(
     uid,
     ["removed"],
     { lastDecisionId: banDecisionId },
     (listing) => {
       if (listing.status !== "removed" || listing.moderation.lastDecisionId !== banDecisionId) return null;
-      const change = unremovePatch(listing, now, life, hold);
+      const change = unremovePatch(listing, now, life, context.hold, room);
       if (!change) return null;
-      const moderation = { ...listing.moderation, reviewedBy: actorUid, reviewedAt: now };
+      if (takesSlot(change)) room -= 1;
+      const moderation = { ...restoredModeration(listing.moderation), reviewedBy: actorUid, reviewedAt: now };
       const status = change.patch.status ?? listing.status;
       return { patch: { ...change.patch, moderation, adsEligible: adsEligibleOf({ status, moderation, subcategoryId: listing.subcategoryId }) }, search: change.search };
     },

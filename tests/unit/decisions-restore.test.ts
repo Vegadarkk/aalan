@@ -4,7 +4,7 @@ import type { AppealAccountState } from "@/lib/decisions/review-context";
 
 vi.mock("@/lib/logging/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), fatal: vi.fn() } }));
 
-const { restoreHold, unremovePatch } = await import("@/lib/decisions/sanctions");
+const { removedFromOf, restoreHold, takesSlot, unremovePatch } = await import("@/lib/decisions/sanctions");
 const { appealWarnings } = await import("@/lib/decisions/review-context");
 
 // What a reversal gives back to a listing (sanctions.ts: restoreHold, unremovePatch) and what the
@@ -63,6 +63,40 @@ describe("un-removal", () => {
   it("expires a listing whose time ran out, and reviews one never published", () => {
     expect(unremovePatch(removed({ expiresAt: new Date(NOW.getTime() - DAY) }), NOW, LIFE)?.patch).toMatchObject({ status: "expired" });
     expect(unremovePatch(removed({ publishedAt: undefined, expiresAt: undefined }), NOW, LIFE)?.patch).toMatchObject({ status: "pending_review", purgeAt: null });
+  });
+});
+
+describe("what the removal replaced", () => {
+  const from = (removedFrom: NonNullable<ListingRecord["moderation"]["removedFrom"]>, overrides: Partial<ListingRecord["moderation"]> = {}) =>
+    removed({ moderation: { state: "auto_ok", flags: [], removedFrom, ...overrides } as unknown as ListingRecord["moderation"] });
+
+  it("is recorded with the pause reason of a paused listing only", () => {
+    expect(removedFromOf({ status: "paused", pausedReason: "owner" })).toEqual({ status: "paused", pausedReason: "owner" });
+    expect(removedFromOf({ status: "sold" })).toEqual({ status: "sold" });
+    expect(removedFromOf({ status: "published" })).toEqual({ status: "published" });
+  });
+
+  it("gives back a sale, an owner's or quota pause, and a held edit", () => {
+    expect(unremovePatch(from({ status: "sold" }), NOW, LIFE)?.patch).toMatchObject({ status: "sold" });
+    expect(unremovePatch(from({ status: "sold" }), NOW, LIFE)?.search).toBeNull();
+    for (const reason of ["owner", "quota"] as const) {
+      expect(unremovePatch(from({ status: "paused", pausedReason: reason }), NOW, LIFE)?.patch).toMatchObject({ status: "paused", pausedReason: reason });
+    }
+    // The owner's pause outlives a suspension hold (the lift resumes moderation pauses only).
+    expect(unremovePatch(from({ status: "paused", pausedReason: "owner" }), NOW, LIFE, "moderation")?.patch).toMatchObject({ pausedReason: "owner" });
+    // A moderation pause the removal replaced is not kept: the account's state decides.
+    expect(unremovePatch(from({ status: "paused", pausedReason: "moderation" }), NOW, LIFE)?.patch).toMatchObject({ status: "published" });
+    expect(unremovePatch(from({ status: "pending_review" }), NOW, LIFE)?.patch).toMatchObject({ status: "pending_review" });
+    // A flagged edit of an owner-paused listing goes to review and back to the owner's pause on approval.
+    expect(unremovePatch(from({ status: "paused", pausedReason: "owner" }, { state: "needs_review" }), NOW, LIFE)?.patch).toMatchObject({ status: "pending_review", pausedReason: "owner" });
+  });
+
+  it("pauses for the quota when the owner has no free slot", () => {
+    const full = unremovePatch(removed(), NOW, LIFE, "none", 0);
+    expect(full?.patch).toMatchObject({ status: "paused", pausedReason: "quota" });
+    expect(takesSlot(full!)).toBe(false);
+    expect(unremovePatch(from({ status: "pending_review" }), NOW, LIFE, "none", 0)?.patch).toMatchObject({ status: "paused", pausedReason: "quota" });
+    expect(takesSlot(unremovePatch(removed(), NOW, LIFE, "none", 1)!)).toBe(true);
   });
 });
 

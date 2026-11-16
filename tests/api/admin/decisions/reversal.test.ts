@@ -21,7 +21,9 @@ import { POST as reviewRoute } from "@/app/api/admin/appeals/[decisionId]/route"
 import { POST as decideRoute } from "@/app/api/admin/decisions/route";
 import { POST as linkRoute } from "@/app/api/appeals/link/route";
 import { POST as appealRoute } from "@/app/api/appeals/route";
+import { POST as pauseRoute } from "@/app/api/listings/[id]/pause/route";
 import { DELETE as deleteRoute } from "@/app/api/listings/[id]/route";
+import { POST as soldRoute } from "@/app/api/listings/[id]/sold/route";
 import { closeAccount } from "@/lib/account/close";
 import type { DecideResponse, OpenAppealResponse, ReviewAppealResponse } from "@/lib/decisions/contracts";
 import { setDecisionAiHooks } from "@/lib/decisions/hooks";
@@ -200,5 +202,29 @@ describe("held listings", () => {
     await reverse(banId);
     expect(await userStatus(seller.uid)).toBe("active");
     expect(await listing(id)).toMatchObject({ status: "pending_review" });
+  });
+});
+
+describe("what the removal replaced", () => {
+  it("a ban reversal gives back the owner's own pause, and a removal reversal gives back a sale", async () => {
+    const { id, seller } = await publishedListing();
+    const sold = await publishedListing({ seller });
+    expect((await api(pauseRoute, "POST", `/api/listings/${id}/pause`, { member: seller, body: {} })).status).toBe(200);
+    expect((await api(soldRoute, "POST", `/api/listings/${sold.id}/sold`, { member: seller, body: {} })).status).toBe(200);
+
+    const removalId = await decide(moderator, { target: `listing:${sold.id}`, templateId: "listing.remove.misleading" });
+    expect((await listing(sold.id)).moderation.removedFrom).toEqual({ status: "sold" });
+    await appealAsOwner(seller, removalId);
+    await reverse(removalId);
+    const back = await listing(sold.id);
+    expect(back.status).toBe("sold");
+    expect(back.moderation.removedFrom).toBeUndefined();
+
+    vi.mocked(sendMail).mockClear();
+    const banId = await decide(adminStaff, { target: `user:${seller.uid}`, templateId: "user.ban" });
+    expect((await listing(id)).moderation.removedFrom).toEqual({ status: "paused", pausedReason: "owner" });
+    await appealByLink(seller, banId);
+    await reverse(banId);
+    expect(await listing(id)).toMatchObject({ status: "paused", pausedReason: "owner" });
   });
 });

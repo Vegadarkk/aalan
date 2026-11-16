@@ -1,6 +1,6 @@
 import "server-only";
 import type { RateLimitOverrides } from "@/config/abuse";
-import { RATE_LIMITS, type RateLimitDefinition, type RateLimitId } from "@/config/rate-limits";
+import { ACCOUNT_DOCUMENT_BUDGETS, RATE_LIMITS, type RateLimitDefinition, type RateLimitId } from "@/config/rate-limits";
 import { getAbuse } from "@/lib/config/runtime";
 import { HttpError, rateLimited, unavailable } from "@/lib/http/errors";
 import * as core from "./core";
@@ -53,9 +53,19 @@ export async function rateLimitDefinition(id: RateLimitId): Promise<RateLimitDef
   return applyRateLimitOverride(id, (await overrides())[id]);
 }
 
-/** Consumes `points` for `rawKey`. Never throws: the outcome carries the decision. */
+const ACCOUNT_DOCS = "account.docs.day.uid" satisfies RateLimitId;
+
+/**
+ * Consumes `points` for `rawKey`. Never throws: the outcome carries the decision. A document budget
+ * of the reads (ACCOUNT_DOCUMENT_BUDGETS) also charges the account's ceiling across families,
+ * account.docs.day.uid, once its own budget accepts: the ceiling refuses like the family would.
+ */
 export async function consumeLimit(id: RateLimitId, rawKey: string, points = 1): Promise<LimitOutcome> {
-  return core.consumeLimit(id, rawKey, points, await rateLimitDefinition(id));
+  const outcome = await core.consumeLimit(id, rawKey, points, await rateLimitDefinition(id));
+  if (!outcome.ok || !ACCOUNT_DOCUMENT_BUDGETS.has(id)) return outcome;
+  const ceiling = await core.consumeLimit(ACCOUNT_DOCS, rawKey, points, await rateLimitDefinition(ACCOUNT_DOCS));
+  // A store that cannot answer leaves the family's decision (every document budget is open).
+  return ceiling.ok || ceiling.reason === "unavailable" ? outcome : ceiling;
 }
 
 /** Consumed points and the time left on `rawKey`, or null when the store cannot answer. */

@@ -168,7 +168,8 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect(mails[0]?.to).toBe(email);
     expect(mails[0]?.priority).toBe("security");
     expect(mails[0]?.idempotencyKey).toMatch(/^signup-existing-.+-\d+$/);
-    expect(mails[0]?.data).toMatchObject({ displayName: "Yasmine Test", loginUrl: "http://localhost:3000/fr/connexion", resetUrl: "http://localhost:3000/fr/mot-de-passe-oublie" });
+    // The account is not verified yet: its name was typed by whoever signed up, so no greeting by name.
+    expect(mails[0]?.data).toMatchObject({ displayName: null, loginUrl: "http://localhost:3000/fr/connexion", resetUrl: "http://localhost:3000/fr/mot-de-passe-oublie" });
     // Gmail-style variants are the same account.
     const variant = await call<{ status: string }>(signup, SIGNUP, { jar: new Jar(), body: signupBody(email.replace("@", "+tag@")) });
     expect(variant.status).toBe(202);

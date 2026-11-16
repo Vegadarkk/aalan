@@ -199,6 +199,21 @@ describe("review moderation", () => {
     expect(mailTo(sendMail, "contentRestored", buyer.email)?.data).toMatchObject({ targetType: "review" });
   });
 
+  it("keeps a removed review hidden, with its purge date, when the seller's account closed before a restore", async () => {
+    const { seller, id } = await reviewed(TEXT, 2);
+    const removed = await decide(`review:${id}`, "review.remove.abuse");
+    expect(removed.status, JSON.stringify(removed.body)).toBe(201);
+    const purgeAt = (await reviewDoc(id)).purgeAt as Timestamp;
+    await db().collection(COLLECTIONS.users).doc(seller.uid).update({ status: "closed" });
+
+    const restored = await decide(`review:${id}`, "review.restore");
+    expect(restored.status, JSON.stringify(restored.body)).toBe(201);
+    const kept = await reviewDoc(id);
+    expect(kept).toMatchObject({ status: "hidden", hiddenBy: `decision:${removed.body.decisionId}` });
+    expect((kept.purgeAt as Timestamp).toMillis()).toBe(purgeAt.toMillis());
+    expect(await ratingCount(seller.uid)).toBe(0);
+  });
+
   it("mails the seller a published review, unless the messaging mails are off", async () => {
     const { buyer, seller } = await reviewed(TEXT, 5);
     expect(mailTo(sendMail, "reviewReceived", seller.email)?.data).toMatchObject({ displayName: "Salma Vendeuse", authorName: "Youssef Acheteur", rating: 5 });

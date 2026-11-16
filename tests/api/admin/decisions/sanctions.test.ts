@@ -200,9 +200,9 @@ describe("ban", () => {
     expect((await auth().getUser(seller.uid)).disabled).toBe(false);
     expect(await userStatus(seller.uid)).toBe("active");
     expect((await privateAccount(seller.uid))["strikes"]).toMatchObject({ level: 2 });
-    // Both come back published (the owner's pause is not remembered by a removal).
+    // Each comes back as the ban found it: published, and the owner's own pause kept.
     expect(await listing(first.id)).toMatchObject({ status: "published" });
-    expect(await listing(paused.id)).toMatchObject({ status: "published" });
+    expect(await listing(paused.id)).toMatchObject({ status: "paused", pausedReason: "owner" });
     expect(await audits("appeal.reversed", banId)).toHaveLength(1);
   });
 });

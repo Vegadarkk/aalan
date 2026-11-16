@@ -24,7 +24,7 @@ const PERIODS: Record<ExportReport, { shape: RegExp; timeZone: string }> = {
 };
 
 export async function handleBillingExport(request: Request, context: Params): Promise<Response> {
-  const staff = await requireStaff(request, { roles: ["admin"] });
+  const staff = await requireStaff(request, { roles: ["admin"], download: true });
   const report = z.enum(EXPORT_REPORTS).safeParse((await context.params).report);
   if (!report.success) throw notFound();
   const raw = new URL(request.url).searchParams.get("period") ?? "";

@@ -32,7 +32,7 @@ function store(): ObjectStore {
 }
 
 export const GET = apiRoute(async (request, context) => {
-  const staff = await requireStaff(request, { roles: ["moderator", "admin"] });
+  const staff = await requireStaff(request, { roles: ["moderator", "admin"], download: true });
   await enforceLimit("pro.kybc.view.uid", staff.user.uid);
   const params = await context.params;
   const proId = proIdSchema.safeParse(params["proId"]);

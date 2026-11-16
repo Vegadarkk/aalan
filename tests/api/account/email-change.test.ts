@@ -51,7 +51,9 @@ async function member(jar = new Jar()): Promise<{ jar: Jar; email: string; uid: 
 }
 
 const ask = (jar: Jar, body: unknown, options: { csrf?: boolean } = {}) => call<EmailChangeResponse & ErrorBody>(requestRoute, ACCOUNT_API.email, { jar, body, ...options });
-const confirm = (oobCode: string) => call<{ status: string; email?: string } & ErrorBody>(action, "/api/auth/action", { jar: new Jar(), body: { mode: "changeEmail", oobCode } });
+/** The link opened on `jar`: the requesting device applies it alone, another one needs the password. */
+const confirm = (oobCode: string, jar = new Jar(), extra: Record<string, unknown> = {}) =>
+  call<{ status: string; email?: string } & ErrorBody>(action, "/api/auth/action", { jar, body: { mode: "changeEmail", oobCode, ...extra } });
 
 async function auditActions(uid: string): Promise<string[]> {
   const snapshot = await db().collection(COLLECTIONS.auditLogs).where("target.id", "==", uid).get();
@@ -79,7 +81,7 @@ describe("change of e-mail address", () => {
     const actionUrl = await actionUrlOf(mails[0]!);
     expect(actionUrl).toMatch(/^http:\/\/localhost:3000\/fr\/action\?mode=changeEmail&oobCode=/);
     await nextSecond();
-    const done = await confirm(oobCodeOf(actionUrl));
+    const done = await confirm(oobCodeOf(actionUrl), jar);
     expect(done.status).toBe(200);
     expect(done.body).toEqual({ status: "email_changed", email: newEmail });
 
@@ -106,6 +108,30 @@ describe("change of e-mail address", () => {
     const again = await confirm(oobCodeOf(actionUrl));
     expect(again.status).toBe(400);
     expect(again.body.error.code).toBe("invalid_code");
+  });
+
+  it("from another device than the request's, applies the link only with the account password", async () => {
+    const { jar, email, uid } = await member();
+    const newEmail = uniqueEmail("new");
+    await ask(jar, { newEmail, currentPassword: PASSWORD });
+    const code = oobCodeOf(await actionUrlOf(lastMail(sendMail, "emailChangeConfirm", newEmail)!));
+    const other = new Jar();
+
+    // The link holder (the new mailbox) sees the new address only, and nothing moves.
+    const asked = await confirm(code, other);
+    expect(asked.status).toBe(200);
+    expect(asked.body).toEqual({ status: "password_required", email: newEmail });
+    expect((await auth().getUser(uid)).email).toBe(email);
+    const wrong = await confirm(code, other, { password: "Not-the-password-1" });
+    expect(wrong.status).toBe(401);
+    expect(wrong.body.error.code).toBe("invalid_credentials");
+    expect((await auth().getUser(uid)).email).toBe(email);
+    expect((await getUserPrivate(uid))?.emailChange).toMatchObject({ newEmail });
+
+    await nextSecond();
+    const done = await confirm(code, other, { password: PASSWORD });
+    expect(done.body).toEqual({ status: "email_changed", email: newEmail });
+    expect((await auth().getUser(uid)).email).toBe(newEmail);
   });
 
   it("asks for the right current password, a new address, a session and the CSRF header", async () => {
@@ -156,7 +182,7 @@ describe("change of e-mail address", () => {
       // Simulates the race: the index entry of the new address now belongs to another account.
       await db().collection(COLLECTIONS.emailIndex).doc(emailNormHash(newEmail)).set({ uid: other.uid, createdAt: new Date() });
     });
-    const refused = await confirm(code);
+    const refused = await confirm(code, jar);
     expect(refused.status).toBe(409);
     expect(refused.body.error.code).toBe("conflict");
     expect((await auth().getUser(uid)).email).toBe(email);

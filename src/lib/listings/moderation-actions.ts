@@ -25,6 +25,7 @@ import { listingRecipient, siteUrl } from "@/lib/mail/recipients";
 import { APPROVAL_GROUND, REJECT_REASONS, rejectStatementFacts, type ModerationDecisionRequest, type ModerationDecisionResponse } from "@/lib/moderation/decisions";
 import type { RequestIdentity } from "@/lib/rate-limit/keys";
 import { notifySearchIndex } from "@/lib/search/queue";
+import { approvalBlocker } from "./approval-guard";
 import { buildSlugId } from "./ids";
 import { IllegalTransitionError, approvalOutcome, approveHold, holdKind, transition, type ApprovalOutcome, type HoldKind, type TransitionResult } from "./lifecycle";
 import { revalidateListingPaths } from "./revalidate";
@@ -292,17 +293,11 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
   if (listing.version !== input.version) throw new HttpError(409, "conflict", "listing changed since it was reviewed, reload it");
   const legal = await getLegalConfig();
   const approve = input.action === "approve";
-  // A suspended or closed seller's held listing is not published (audit zone 7 P2-5): it would be
-  // invisible anyway and the seller would get a "now visible" mail. Refusing it stays possible.
+  // Inactive seller or shop back under verification: not published (shared with the agent's approval).
   if (approve) {
-    const owner = await getUserRecord(listing.ownerUid);
-    if (!owner || owner.status !== "active") throw new HttpError(409, "account_suspended", "the seller's account is not active");
-    // Same for a shop whose validation was withdrawn: its published listings are paused until the
-    // new KYBC validation, so one still held at that time must not go live through the queue.
-    if (listing.proId) {
-      const shop = await getProProfile(listing.proId);
-      if (shop?.lifecycle === "revalidation_required") throw new HttpError(409, "pro_revalidation", "the seller's shop is back under verification");
-    }
+    const blocker = await approvalBlocker(listing);
+    if (blocker === "account_suspended") throw new HttpError(409, "account_suspended", "the seller's account is not active");
+    if (blocker === "pro_revalidation") throw new HttpError(409, "pro_revalidation", "the seller's shop is back under verification");
   }
 
   const ctx = { now, lifetime: listingLifetime(legal) };

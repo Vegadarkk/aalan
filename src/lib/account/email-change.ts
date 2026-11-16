@@ -11,6 +11,7 @@ import { emailNormHash, findUidByEmail, getUser, getUserPrivate, isEmailTaken, m
 import { auth } from "@/lib/firebase/admin";
 import { isStaff, readClaims } from "@/lib/firebase/claims";
 import { revokeSessions } from "@/lib/firebase/session";
+import { pepperedHash, safeEqual } from "@/lib/security/hash";
 import { HttpError, forbidden } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logger } from "@/lib/logging/logger";
@@ -72,7 +73,8 @@ export async function handleEmailChangeRequest(request: Request): Promise<Respon
   await enforceLimit("account.email.target", emailNormHash(newEmail));
 
   const now = new Date();
-  const pending = pendingEmailChange(newEmail, now);
+  const deviceId = device.identity.deviceId ?? device.fresh?.id;
+  const pending = pendingEmailChange(newEmail, now, deviceId ? pepperedHash("did", deviceId) : undefined);
   await setEmailChange(uid, pending);
   const taken = await addressTaken(newEmail);
   if (!taken) {
@@ -101,6 +103,28 @@ export async function handleEmailChangeCancel(request: Request): Promise<Respons
   await setEmailChange(uid, null);
   const body: EmailChangeResponse = { status: "cancelled" };
   return withDevice(jsonResponse(body), request);
+}
+
+/**
+ * The account a VERIFY_AND_CHANGE_EMAIL code (checked, not consumed) would move, before anything is
+ * applied: whether the confirming device is the one that asked for the change decides if the
+ * account password is needed (src/lib/auth/action.ts). Refuses the codes confirmEmailChange refuses.
+ */
+export async function emailChangeTarget(
+  code: { requestType?: string; email?: string; newEmail?: string },
+  deviceId: string | null,
+  now = new Date(),
+): Promise<{ uid: string; email: string; newEmail: string; requestingDevice: boolean }> {
+  if (code.requestType !== "VERIFY_AND_CHANGE_EMAIL" || !code.email || !code.newEmail) throw new HttpError(400, "invalid_code");
+  const record = await userByEmail(code.email);
+  if (!record?.email || isStaff(readClaims(record.customClaims ?? {}))) throw new HttpError(400, "invalid_code");
+  if (record.disabled) throw new HttpError(403, "account_disabled");
+  const account = await getUserPrivate(record.uid);
+  const verdict = confirmVerdict(code, account?.emailChange, now);
+  if (!verdict.ok) throw new HttpError(400, verdict.code);
+  const hash = account!.emailChange!.deviceHash;
+  const requestingDevice = Boolean(deviceId && hash && safeEqual(hash, pepperedHash("did", deviceId)));
+  return { uid: record.uid, email: record.email, newEmail: account!.emailChange!.newEmail, requestingDevice };
 }
 
 /**

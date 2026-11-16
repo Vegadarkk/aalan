@@ -34,6 +34,7 @@ import { csrfToken } from "@/lib/security/csrf";
 import { lastMail } from "../auth/helpers";
 import { api, attachPhoto, freshPhone, member, readyPatch, seedReadyUpload, type ErrorBody, type ListingBody, type Member, type PublishBody } from "../listings/helpers";
 import { admin, adminRequest, application, applyAs, code, kybPiece, staffAccount, type Staff } from "./helpers";
+import { applyAutoDecision } from "@/lib/ai/apply";
 
 const me = (owner: Member) => api<ProMeResponse>(getMe, "GET", "/api/pro/me", { member: owner });
 
@@ -161,6 +162,9 @@ describe("POST /api/admin/pros/{proId}/withdraw", () => {
     const response = await adminRequest(postModeration, "POST", `/api/admin/moderation/${listingId}`, moderator, { action: "approve", version: held!.version }, { params: { id: listingId } });
     expect(response.status).toBe(409);
     expect(code(await response.json())).toBe("pro_revalidation");
+    expect((await getListing(listingId))?.status).toBe("pending_review");
+    // Nor through the moderation agent's automatic approval.
+    expect(await applyAutoDecision("approve", { listingId, version: held!.version, aiDecisionId: "agent-test", confidence: 0.99 })).toEqual({ applied: false, reason: "illegal" });
     expect((await getListing(listingId))?.status).toBe("pending_review");
   });
 

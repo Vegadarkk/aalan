@@ -539,7 +539,11 @@
       "passwordSubmit": "Sentem uca kcem",
       "passwordWrong": "Awal n uɛeddi war iṣeḥḥa ca.",
       "passwordUnknown": "War tessineḍ ca awal n uɛeddi-a niɣ tettuḍ-t?",
-      "passwordChoose": "Xtar yiwen amaynu"
+      "passwordChoose": "Xtar yiwen amaynu",
+      "changePasswordTitle": "Sentem abeddel n adres",
+      "changePasswordLead": "Asaɣ-a yettwaldi deg lmakina nniḍen, mači deg tin zi d tusa tuttra. Ḥima ad tsentmeḍ, ari awal n uɛeddi n dǧa n umiḍan.",
+      "changePasswordAddress": "Adres tamaynut: {email}",
+      "changePasswordSubmit": "Sentem abeddel"
     },
     "settings": {
       "title": "Iɣewwaren inu",
@@ -743,6 +747,7 @@
       "account_disabled": "Amiḍan-a war yetteddu ca dǧa. Mala tɣileḍ d tuccḍa, ari-d aneɣ.",
       "account_suspended": "Amiḍan-a yettwaḥbes. Tzemmreḍ ad teɣreḍ tameslayin nnec d ad tagiḍ x tegtint.",
       "email_not_verified": "Sentem zzat adres n e-mail nnec s usaɣ i dak-d yawḍen.",
+      "google_email_unconfirmed": "Google ur izemmar ad yini ma adres-a mazal tin nnec. Jj amiḍan niɣ kcem s e-mail nnec d awal n uɛeddi.",
       "role_missing": "Amiḍan nnec i ɛad war yexdim. Rzem asaɣ i dak-d yawḍen s e-mail.",
       "invalid_code": "Asaɣ-a war yeṣḥi ca.",
       "expired_code": "Asaɣ-a yekmel lweqt nnes.",

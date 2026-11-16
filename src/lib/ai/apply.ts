@@ -13,6 +13,7 @@ import { COLLECTIONS } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
 import { getLegalConfig } from "@/lib/legal/config";
 import { buildSlugId } from "@/lib/listings/ids";
+import { approvalBlocker } from "@/lib/listings/approval-guard";
 import { IllegalTransitionError, approveHold, transition, type TransitionResult } from "@/lib/listings/lifecycle";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { logger } from "@/lib/logging/logger";
@@ -122,6 +123,9 @@ export async function applyAutoDecision(kind: "approve" | "reject", input: AutoD
   const now = input.now ?? new Date();
   const listing = await getListing(input.listingId);
   if (!listing || listing.status !== "pending_review" || listing.version !== input.version) return { applied: false, reason: "stale" };
+  // The moderator's rule (decide): an inactive seller or a shop back under verification keeps its
+  // held listing in the queue; the agent never publishes it.
+  if (kind === "approve" && (await approvalBlocker(listing))) return { applied: false, reason: "illegal" };
   const legal = await getLegalConfig();
   const ctx = { now, lifetime: listingLifetime(legal) };
   let result: TransitionResult;

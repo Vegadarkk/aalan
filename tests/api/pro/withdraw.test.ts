@@ -7,6 +7,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 // the new KYBC sent from the Pro space and validated restores the shop, its claims and listings.
 
 vi.mock("@/lib/search/queue", () => ({ notifySearchIndex: vi.fn(async () => undefined) }));
+vi.mock("@/lib/ai/queue", () => ({ enqueueAiTask: vi.fn(async () => ({ queued: false })) }));
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
 vi.mock("@/lib/security/turnstile", () => ({ verifyTurnstile: vi.fn(async () => ({ ok: true, codes: [] })) }));
 
@@ -17,6 +18,7 @@ import { POST as create } from "@/app/api/listings/route";
 import { PATCH as patch } from "@/app/api/listings/[id]/route";
 import { POST as publish } from "@/app/api/listings/[id]/publish/route";
 import { GET as getMe } from "@/app/api/pro/me/route";
+import { enqueueAiTask } from "@/lib/ai/queue";
 import { claimsChange } from "@/lib/auth/ended-session";
 import type { CreateListingResponse } from "@/lib/contracts/listings";
 import type { ProDecisionResponse, ProMeResponse, ProWithdrawResponse } from "@/lib/contracts/pro";
@@ -137,6 +139,7 @@ describe("POST /api/admin/pros/{proId}/withdraw", () => {
     expect(code(twice.body)).toBe("pro_application_exists");
 
     // The review validates it again: state, plan, claims and the listing come back.
+    vi.mocked(enqueueAiTask).mockClear();
     const decided = await admin<ProDecisionResponse>(postDecision, "POST", `/api/admin/pros/${proId}`, moderator, { action: "verify", registrySource: "ompic", submittedAt: review!.kybc.submittedAt!.toISOString() });
     expect(decided.status).toBe(200);
     expect(decided.body).toMatchObject({ lifecycle: "verified", effectsPending: false });
@@ -147,6 +150,8 @@ describe("POST /api/admin/pros/{proId}/withdraw", () => {
     expect(await getClaims(owner.uid)).toMatchObject({ role: "pro", proId, proRole: "owner" });
     expect(await getListing(listingId)).toMatchObject({ status: "published", sellerType: "pro", proId });
     expect((await getListing(listingId))?.pausedReason).toBeUndefined();
+    // Back online: the agent screens the committed version (an edit made while paused had the rule screen only).
+    expect(enqueueAiTask).toHaveBeenCalledWith("listing_screen", { type: "listing", id: listingId }, { version: (await getListing(listingId))!.version });
     expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ shopName: "Atlas Vélos SARL", launchOffer: true });
     await signInAgain(owner);
     expect((await me(owner)).body.shop?.storefront).toBe(`${restored!.slug}-${proId}`);

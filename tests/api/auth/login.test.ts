@@ -203,4 +203,17 @@ describe("POST /api/auth/login", () => {
     expect(refused.status).toBe(401);
     expect(refused.body.error.code).toBe("invalid_credentials");
   });
+
+  it("counts a right staff password like a wrong one on the account + IP counter", async () => {
+    const staff = await createAccount(true, "Staff Counted");
+    await setClaims(staff.uid!, { role: "admin" });
+    const jar = new Jar();
+    for (let i = 0; i < TURNSTILE_AFTER_FAILURES; i += 1) {
+      const refused = await call<ErrorBody>(login, LOGIN, { jar, body: { email: staff.email, password: PASSWORD } });
+      expect(refused.status).toBe(401);
+    }
+    // The same escalation a wrong password reaches: the counter was never forgotten.
+    const challenge = await call<{ status: string }>(login, LOGIN, { jar, body: { email: staff.email, password: PASSWORD } });
+    expect(challenge.body).toEqual({ status: "turnstile_required" });
+  });
 });

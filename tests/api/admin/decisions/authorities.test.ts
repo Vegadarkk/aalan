@@ -20,9 +20,9 @@ import { GET as getAuthority, PATCH as patchAuthority } from "@/app/api/admin/au
 import { GET as listAuthorities, POST as createAuthority } from "@/app/api/admin/authorities/route";
 import { GET as findTargets } from "@/app/api/admin/authorities/targets/route";
 import { GET as readConversation } from "@/app/api/admin/conversations/[cid]/route";
-import { POST as appealRoute } from "@/app/api/appeals/route";
+import { GET as myDecisionsRoute, POST as appealRoute } from "@/app/api/appeals/route";
 import { authorityNoticesFor } from "@/lib/decisions/authorities";
-import type { AuthorityRequestView, AuthorityTargetsResponse, CreateAuthorityResponse, StaffConversationView } from "@/lib/decisions/contracts";
+import type { AuthorityRequestView, AuthorityTargetsResponse, CreateAuthorityResponse, MyDecisionsResponse, StaffConversationView } from "@/lib/decisions/contracts";
 import { setDecisionAiHooks } from "@/lib/decisions/hooks";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { resetServerEnv } from "@/lib/env";
@@ -151,6 +151,10 @@ describe("authority requests", () => {
     expect(await listing(id)).toMatchObject({ status: "removed" });
     expect(mailTo(sendMail, "decisionNotice", seller.email)).toBeUndefined();
     expect((await decision(created.body.decisionIds[0] as string)).notifiedAt).toBeUndefined();
+    // Nor does the user's own decisions list show it.
+    const mine = await publicCall<MyDecisionsResponse>(myDecisionsRoute, "GET", "/api/appeals", { as: seller });
+    expect(mine.status).toBe(200);
+    expect(mine.body.items.map((item) => item.decisionId)).not.toContain(created.body.decisionIds[0]);
   });
 
   it("find the contents of a pasted link for the form's picker (admin only)", async () => {

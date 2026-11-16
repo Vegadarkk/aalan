@@ -2,10 +2,9 @@ import "server-only";
 import { audit } from "@/lib/audit";
 import type { StaffContext } from "@/lib/auth/guards";
 import { PRO_NOTES_KEPT, type ProWithdrawInput, type ProWithdrawResponse } from "@/lib/contracts/pro";
-import { listOwnerListingsByStatus, type ListingRecord } from "@/lib/db/repositories/listings";
 import { getProProfile, proProfileRef, proProfileToFirestore, type ProProfileRecord } from "@/lib/db/repositories/pro-profiles";
 import { getStaff } from "@/lib/db/repositories/staff";
-import { changeListings, lifetime, SANCTION_LISTINGS_MAX, undoQuietly } from "@/lib/decisions/sanctions";
+import { lifetime, screenResumedListings, undoQuietly, walkOwnerListings } from "@/lib/decisions/sanctions";
 import { db } from "@/lib/firebase/admin";
 import { getClaims, setClaims, updateClaims } from "@/lib/firebase/claims";
 import { HttpError, notFound } from "@/lib/http/errors";
@@ -33,9 +32,6 @@ import type { ProProfileDoc } from "./profile-schema";
 // search), the storefront and directory refreshed. The account keeps `users.type = "pro"`, so it
 // publishes nothing meanwhile (no Pro plan, src/lib/listings/service.ts sellerOf). The next KYBC
 // validation (src/lib/pro/review.ts) restores the state, the claims and the paused listings.
-
-/** Rounds of SANCTION_LISTINGS_MAX listings one withdrawal or restore walks at most. */
-export const REVALIDATION_LISTING_ROUNDS = 10;
 
 type Note = NonNullable<ProProfileDoc["staffNotes"]>[number];
 
@@ -118,26 +114,23 @@ export async function withdrawValidation(staff: StaffContext, proId: string, inp
  */
 export async function pauseListingsForRevalidation(uid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
-  const ids: string[] = [];
-  // Each round takes the published listings left: the paused ones leave the query.
-  for (let round = 0; round < REVALIDATION_LISTING_ROUNDS; round += 1) {
-    const listings = await listOwnerListingsByStatus(uid, ["published"], SANCTION_LISTINGS_MAX);
-    const changes = await changeListings(
-      listings,
-      (listing) => {
-        if (listing.status !== "published") return null;
-        const { patch } = listingTransition(listing, "paused", { now, lifetime: life, pausedReason: "pro_revalidation" });
-        return { patch: { ...patch, adsEligible: false }, search: "delete" };
-      },
-      now,
-      "revalidation pause",
-    );
-    ids.push(...changes.map((change) => change.listing.id));
-    if (listings.length < SANCTION_LISTINGS_MAX || changes.length === 0) break;
-  }
-  const suspended = (await listOwnerListingsByStatus(uid, ["paused"], SANCTION_LISTINGS_MAX)).filter((listing) => listing.pausedReason === "moderation");
-  const moved = await changeListings(
-    suspended,
+  const paused = await walkOwnerListings(
+    uid,
+    ["published"],
+    {},
+    (listing) => {
+      if (listing.status !== "published") return null;
+      const { patch } = listingTransition(listing, "paused", { now, lifetime: life, pausedReason: "pro_revalidation" });
+      return { patch: { ...patch, adsEligible: false }, search: "delete" };
+    },
+    now,
+    "revalidation pause",
+  );
+  const ids = paused.map((change) => change.listing.id);
+  const moved = await walkOwnerListings(
+    uid,
+    ["paused"],
+    { pausedReason: "moderation" },
     (listing) => (listing.status === "paused" && listing.pausedReason === "moderation" ? { patch: { pausedReason: "pro_revalidation", version: listing.version + 1, updatedAt: now }, search: null } : null),
     now,
     "revalidation hold",
@@ -148,28 +141,24 @@ export async function pauseListingsForRevalidation(uid: string, now: Date): Prom
 /** The new validation: listings paused for the revalidation come back, published if not expired, else expired (renewable). */
 export async function resumeRevalidationPaused(uid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
-  const ids: string[] = [];
-  const held = (listing: ListingRecord) => listing.status === "paused" && listing.pausedReason === "pro_revalidation";
-  for (let round = 0; round < REVALIDATION_LISTING_ROUNDS; round += 1) {
-    const listings = await listOwnerListingsByStatus(uid, ["paused"], SANCTION_LISTINGS_MAX);
-    const changes = await changeListings(
-      listings.filter(held),
-      (listing) => {
-        if (!held(listing)) return null;
-        const live = listing.expiresAt !== undefined && listing.expiresAt.getTime() > now.getTime();
-        const { patch } = listingTransition(listing, live ? "published" : "expired", { now, lifetime: life });
-        return {
-          patch: { ...patch, pausedReason: null, adsEligible: live && adsEligibleOf({ status: "published", moderation: listing.moderation, subcategoryId: listing.subcategoryId }) },
-          search: live ? "upsert" : null,
-        };
-      },
-      now,
-      "revalidation resume",
-    );
-    ids.push(...changes.map((change) => change.listing.id));
-    if (listings.length < SANCTION_LISTINGS_MAX || changes.length === 0) break;
-  }
-  return ids;
+  const changes = await walkOwnerListings(
+    uid,
+    ["paused"],
+    { pausedReason: "pro_revalidation" },
+    (listing) => {
+      if (listing.status !== "paused" || listing.pausedReason !== "pro_revalidation") return null;
+      const live = listing.expiresAt !== undefined && listing.expiresAt.getTime() > now.getTime();
+      const { patch } = listingTransition(listing, live ? "published" : "expired", { now, lifetime: life });
+      return {
+        patch: { ...patch, pausedReason: null, adsEligible: live && adsEligibleOf({ status: "published", moderation: listing.moderation, subcategoryId: listing.subcategoryId }) },
+        search: live ? "upsert" : null,
+      };
+    },
+    now,
+    "revalidation resume",
+  );
+  await screenResumedListings(changes);
+  return changes.map((change) => change.listing.id);
 }
 
 /** proValidationWithdrawn; a failure is logged, never thrown (the withdrawal is committed). */

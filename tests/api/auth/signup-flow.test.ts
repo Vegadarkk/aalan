@@ -183,6 +183,26 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect(capturedMails(sendMail).filter((mail) => mail.template === "signupExisting" && mail.to === email)).toHaveLength(warned);
   });
 
+  it("lets the plain address sign up over a never-verified +tag variant, never the reverse", async () => {
+    const email = uniqueEmail("sq");
+    const squatted = email.replace("@", "+squat@");
+    expect((await signUp(new Jar(), squatted)).template).toBe("verifyEmail");
+    const squatter = (await findUidByEmail(email))!;
+    // The owner of the plain address signs up: the unproven variant gives way.
+    const owner = await signUp(new Jar(), email);
+    expect(owner.template).toBe("verifyEmail");
+    expect(owner.to).toBe(email);
+    const uid = (await findUidByEmail(email))!;
+    expect(uid).not.toBe(squatter);
+    expect(await getUser(squatter)).toBeNull();
+    await expect(auth().getUser(squatter)).rejects.toMatchObject({ code: "auth/user-not-found" });
+    // A +tag sign-up never displaces the plain address's pending account.
+    const reverse = await call<{ status: string }>(signup, SIGNUP, { jar: new Jar(), body: signupBody(email.replace("@", "+other@")) });
+    expect(reverse.status).toBe(202);
+    expect(await findUidByEmail(email)).toBe(uid);
+    expect(lastMail(sendMail, "signupExisting")?.to).toBe(email);
+  });
+
   it("answers a closed account's e-mail like a new one and tells its owner the account is closed, not to sign in (Z1-11)", async () => {
     const email = uniqueEmail();
     // Same device for the link: another device would need the password first (audit A-1).

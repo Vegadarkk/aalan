@@ -15,6 +15,17 @@ export function detailsOf(record: Pick<DecisionRecord, "templateId" | "facts" | 
 
 const iso = (date: Date | undefined | null): string | null => (date ? date.toISOString() : null);
 
+/**
+ * Whether the affected account may see a decision about itself (its decisions list, appeals and
+ * data export): never a dismissal (`no_action`, it was never told of the notice), and never a
+ * decision taken under an authority order that forbids informing it (origin `authority_order`
+ * without `notifiedAt`).
+ */
+export function affectedMaySee(record: Pick<DecisionRecord, "action" | "origin" | "notifiedAt">): boolean {
+  if (record.action === "no_action") return false;
+  return !(record.origin === "authority_order" && !record.notifiedAt);
+}
+
 /** Back-office view of a decision (D24). */
 export function decisionView(record: DecisionRecord): DecisionView {
   const appeal = record.appeal;

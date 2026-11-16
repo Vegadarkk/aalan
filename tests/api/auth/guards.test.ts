@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requireUser } from "@/lib/auth/guards";
 import { setClaims } from "@/lib/firebase/claims";
-import { createSessionForUid, revokeSessions } from "@/lib/firebase/session";
+import { auth } from "@/lib/firebase/admin";
+import { createSessionForUid, revokeSessions, verifySession } from "@/lib/firebase/session";
 import { sendMail } from "@/lib/mail";
 import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { csrfToken } from "@/lib/security/csrf";
@@ -99,5 +100,21 @@ describe("suspended account", () => {
     const allowed = await requireUser(requestWith(jar), { mutation: true, allowSuspended: true });
     expect(allowed.user.uid).toBe(uid);
     expect(allowed.user.claims.st).toBe("suspended");
+  });
+});
+
+describe("session minted in the same second as a claims change", () => {
+  it("is refused once its rights differ from the account's current claims, whatever the revocation floor", async () => {
+    const { uid } = await verifiedAccount();
+    const jar = await jarFor(uid);
+    const session = jar.get("__Host-session")!;
+    expect(await verifySession(session, { checkRevoked: true })).toMatchObject({ uid });
+    // The claims change without moving the revocation floor: what a session minted in the same
+    // second as setClaims looks like to the floor check.
+    const current = (await auth().getUser(uid)).customClaims ?? {};
+    await auth().setCustomUserClaims(uid, { ...current, st: "suspended" });
+    expect(await verifySession(session, { checkRevoked: true })).toBeNull();
+    // Without the account lookup (non-sensitive reads), the cookie is only checked for integrity.
+    expect(await verifySession(session)).toMatchObject({ uid });
   });
 });

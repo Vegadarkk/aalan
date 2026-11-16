@@ -125,15 +125,20 @@ export async function passwordGate(flow: AnonymousFlow, request: Request, email:
 }
 
 /**
- * The password check behind passwordGate. Counted before the check (atomic), forgotten as soon as
- * the password is right: a pending, disabled or staff account answered by the caller is not a failed
- * attempt (the caller records one itself where it must look like a wrong password).
+ * The password check behind passwordGate, counted before the check (atomic). A right password is
+ * not forgotten here: the caller calls acceptAttempt once it has accepted the account, or
+ * recordFailure where the answer must look like a wrong password (a staff account), so that no
+ * counter tells a right password from a wrong one.
  */
 export async function verifyPassword(email: string, password: string, keys: LoginKeys): Promise<{ localId: string; idToken: string; attempt: LoginAttempt }> {
   const attempt = await countAttempt(keys);
   const result = await checkPassword(email, password, keys, attempt);
-  await resetLimit("login.fail.accountIp", keys.accountIp);
   return { ...result, attempt };
+}
+
+/** Forgets the account + IP failures once the caller has accepted the account behind a right password. */
+export async function acceptAttempt(keys: LoginKeys): Promise<void> {
+  await resetLimit("login.fail.accountIp", keys.accountIp);
 }
 
 async function login(request: Request): Promise<Response> {
@@ -143,14 +148,16 @@ async function login(request: Request): Promise<Response> {
   if (!keys) return respond<LoginResponse>(flow, { status: "turnstile_required" });
   const { attempt, ...result } = await verifyPassword(input.email, input.password, keys);
   const record = await auth().getUser(result.localId);
-  if (record.disabled) throw new HttpError(403, "account_disabled");
   const claims = readClaims(record.customClaims ?? {});
   // Staff accounts only exist on the back office (§6 "Personnel"): no public session for them, and
-  // the same answer as a wrong password, so the public host never confirms a staff password.
+  // the same answer as a wrong password, counters included (the attempt stays counted), so the
+  // public host never confirms a staff password.
   if (isStaff(claims)) {
     await recordFailure(keys, attempt);
     throw new HttpError(401, "invalid_credentials");
   }
+  await acceptAttempt(keys);
+  if (record.disabled) throw new HttpError(403, "account_disabled");
   if (!record.emailVerified) return respond<LoginResponse>(flow, { status: "verification_required" });
 
   let minted: MintedSession;

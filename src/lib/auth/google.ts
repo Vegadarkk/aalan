@@ -22,6 +22,7 @@ import { deleteOrphanRecord, recordState } from "./orphan";
 import { anonymous, beginAnonymous, checkTurnstile, finish, respond, type AnonymousFlow } from "./anonymous";
 import { signedIn } from "./respond";
 import { sessionSummary } from "./summary";
+import { displacePendingVariant } from "./pending-variant";
 
 // Google sign-in through Google Identity Services (PLAN "Research corrections"): the browser sends
 // the Google ID token, the server verifies it (signature, issuer, audience, verified e-mail, the
@@ -276,7 +277,9 @@ async function googleSignIn(request: Request): Promise<Response> {
   // Before the device limit, which a refusal must not use up (as for a password sign-up).
   await assertQuotas(SIGNUP_QUOTAS);
   await enforceLimit("signup.device", flow.identity.deviceKey);
-  if (await findUidByEmail(identity.email)) throw new HttpError(409, "conflict", "an account exists under a variant of this e-mail");
+  // An unproven variant (a pending +tag or Gmail-dot sign-up) gives way: Google proved this address.
+  const holder = await findUidByEmail(identity.email);
+  if (holder && !(await displacePendingVariant(holder, identity.email, true))) throw new HttpError(409, "conflict", "an account exists under a variant of this e-mail");
   if (!input.consents) return respond<GoogleResponse>(flow, { status: "needs_consent", email: identity.email, displayName: identity.name });
   return signUp(flow, { ...input, consents: input.consents }, identity);
 }

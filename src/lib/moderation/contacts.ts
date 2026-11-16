@@ -1,7 +1,9 @@
 import type { ContactMatch } from "@/lib/moderation/types";
+import { foldForDetection, inputSpan } from "./fold";
 
 // E-mail addresses and links written in a listing text: contact must go through the platform
-// (architecture §7 step 3, design D8). Pure, client-safe.
+// (architecture §7 step 3, design D8). Found on the folded text (fold.ts: format characters
+// removed, NFKC); `raw` is the span as written. Pure, client-safe.
 //
 // URLs: explicit scheme, "www.", known messaging / social hosts (WhatsApp, Telegram, Instagram...)
 // and bare domains on a short list of TLDs. The TLD list leaves out .me/.co/.tv/.app (words that
@@ -21,15 +23,18 @@ interface Span {
 const overlaps = (a: Span, b: Span) => a.start < b.end && b.start < a.end;
 
 /** E-mails and links found in a text, in text order, without overlaps (an e-mail wins over the domain inside it). */
-export function findContacts(text: string): ContactMatch[] {
-  if (!text) return [];
+export function findContacts(input: string): ContactMatch[] {
+  if (!input) return [];
+  const folded = foldForDetection(input);
+  const text = folded.text;
   const found: { span: Span; match: ContactMatch }[] = [];
   const add = (kind: ContactMatch["kind"], pattern: RegExp) => {
     for (const match of text.matchAll(pattern)) {
-      const raw = match[0].replace(/[.,;:!?)]+$/, "");
-      const span = { start: match.index, end: match.index + raw.length };
-      if (raw.length === 0 || found.some((entry) => overlaps(entry.span, span))) continue;
-      found.push({ span, match: { kind, raw } });
+      const trimmed = match[0].replace(/[.,;:!?)]+$/, "");
+      const span = { start: match.index, end: match.index + trimmed.length };
+      if (trimmed.length === 0 || found.some((entry) => overlaps(entry.span, span))) continue;
+      const written = inputSpan(folded, span.start, span.end);
+      found.push({ span, match: { kind, raw: input.slice(written.start, written.end) } });
     }
   };
   add("email", EMAIL);

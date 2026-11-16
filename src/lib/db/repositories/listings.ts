@@ -199,12 +199,23 @@ export async function countPublishedSince(uid: string, since: Date): Promise<num
   return result.data().count;
 }
 
+/** Optional equality filters of listOwnerListingsByStatus. */
+export interface OwnerListingFilter {
+  pausedReason?: NonNullable<ListingDoc["pausedReason"]>;
+  lastDecisionId?: string;
+}
+
 /**
  * Owner's listings in a status set other than `exceptId` (duplicate detection: text fingerprint,
  * photo hashes). Capped: a seller has at most `activeListings` of them.
  */
-export async function listOwnerListingsByStatus(uid: string, statuses: readonly ListingStatus[], limit = 50): Promise<ListingRecord[]> {
-  const snapshot = await listings().where("ownerUid", "==", uid).where("status", "in", [...statuses]).limit(limit).get();
+export async function listOwnerListingsByStatus(uid: string, statuses: readonly ListingStatus[], limit = 50, only: OwnerListingFilter = {}): Promise<ListingRecord[]> {
+  let query = listings().where("ownerUid", "==", uid).where("status", "in", [...statuses]);
+  // Equality filters in the query (served by merged single-field indexes): a walk over one kind of
+  // paused or removed listing is never starved by the others.
+  if (only.pausedReason) query = query.where("pausedReason", "==", only.pausedReason);
+  if (only.lastDecisionId) query = query.where("moderation.lastDecisionId", "==", only.lastDecisionId);
+  const snapshot = await query.limit(limit).get();
   void consume("firestore.reads", Math.max(1, snapshot.size));
   return snapshot.docs.map(fromSnapshot).filter((record): record is ListingRecord => record !== null);
 }

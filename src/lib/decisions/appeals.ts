@@ -14,7 +14,7 @@ import { decide, type DecisionActor, type DecisionTarget } from "./decide";
 import { appealProposal, markAiDecision, requestAppealReview, type AiReviewOutcome } from "./hooks";
 import { appellantAddress, sendAppealOutcome, sendAppealReceived } from "./notify";
 import { decisionFromSnapshot, decisionRef, decisionsCol, getDecision, getDecisionTx, getReports, type DecisionRecord, type OpenReport } from "./repository";
-import { appealRefusal, appealableView } from "./views";
+import { affectedMaySee, appealRefusal, appealableView } from "./views";
 
 // Appeals (art. 20 DSA, design D16): one per decision, within 6 months, stored on the decision.
 // The affected user appeals a restrictive measure (signed in, suspended accounts included, or by
@@ -133,11 +133,11 @@ export async function openAppealByLink(input: { token: string; text: string }, n
 /**
  * GET /api/appeals: the decisions about the signed-in account (newest first), with their appeal
  * state. A dismissal (`no_action`) stays hidden: the account was never told of the notice and must
- * not learn of it here.
+ * not learn of it here; so does a decision under an authority order that forbids informing it.
  */
 export async function myDecisions(uid: string, now = new Date()): Promise<AppealableDecision[]> {
   const records = await listDecisionsForUser(uid, MY_DECISIONS_LIMIT);
-  return records.filter((record) => record.action !== "no_action").map((record) => appealableView(record, "affected", now));
+  return records.filter(affectedMaySee).map((record) => appealableView(record, "affected", now));
 }
 
 // ---- Review (staff) -----------------------------------------------------------------------------

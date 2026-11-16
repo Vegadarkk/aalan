@@ -29,6 +29,7 @@ import { consume } from "@/lib/quota";
 import { assertQuotas } from "@/lib/quota/gate";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { listSavedSearches } from "@/lib/saved-searches/repository";
+import { affectedMaySee } from "@/lib/decisions/views";
 import { EXPORT_LIMITS, messageAllowances } from "./rules";
 import { avatarUrl } from "./avatar-url";
 
@@ -37,7 +38,7 @@ import { avatarUrl } from "./avatar-url";
 // or sees of itself: the profile and private settings, its listings (ended ones included), its
 // conversations and their messages as stored (masked; never the evidence of a masked or hidden
 // message, never more of the other participant than the conversation shows), the reports it filed
-// and its own appeals, the decisions about it and its appeals, favorites, saved searches, the
+// and its own appeals, the decisions about it it was told of (affectedMaySee) and its appeals, favorites, saved searches, the
 // accounts it blocked. Never a staff field: AI proposals and verdicts, moderator ids and notes on a
 // report, risk scores, legal holds, who reported the account. Every list is bounded (rules.ts
 // EXPORT_LIMITS, ~2 000 Firestore reads at most) and says so in `truncated` when it was cut.
@@ -433,7 +434,7 @@ export async function buildAccountExport(uid: string, now = new Date()): Promise
     })),
     conversations: conversations.conversations,
     reportsFiled: reportsFiled.reports,
-    decisions: decisions.slice(0, EXPORT_LIMITS.decisions).filter((decision) => decision.affectedUid === uid).map(decisionOf),
+    decisions: decisions.slice(0, EXPORT_LIMITS.decisions).filter((decision) => decision.affectedUid === uid && affectedMaySee(decision)).map(decisionOf),
     blockedAccounts,
     reviewsGiven: reviewsGiven.reviews,
     reviewsReceived: reviewsReceived.reviews,

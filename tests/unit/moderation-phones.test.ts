@@ -107,3 +107,24 @@ describe("deobfuscatePhoneText", () => {
     expect(deobfuscatePhoneText("iPhone Go 128")).toBe("iPhone Go 128");
   });
 });
+
+describe("findPhoneNumbers on obfuscated spellings", () => {
+  it.each([
+    ["commas", "Appelez le 06,12,34,56,78"],
+    ["semicolons and colons", "tel 06;12;34:56:78"],
+    ["zero-width joiners", "06‍12‍34‍56‍78"],
+    ["zero-width spaces", "0​6​1​2 34 56 78"],
+    ["soft hyphens", "06­12­34­56­78"],
+    ["fullwidth digits", "０６１２３４５６７８"],
+    ["fullwidth digits with the country code", "＋２１２ ６１２ ３４ ５６ ７８"],
+  ])("finds the number written with %s", (_label, text) => {
+    const found = findPhoneNumbers(text);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.e164).toBe("+212612345678");
+  });
+
+  it("reports the number as written, invisible characters included", () => {
+    const text = "Contact 06​12​34​56​78 svp";
+    expect(findPhoneNumbers(text)[0]?.raw).toBe("06​12​34​56​78");
+  });
+});

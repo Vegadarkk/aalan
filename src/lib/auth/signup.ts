@@ -17,6 +17,7 @@ import { anonymous, beginAnonymous, checkTurnstile, deviceIdOf, respond, uniform
 import { sendSignupClosedMail, sendSignupExistingMail, sendVerificationMail } from "./mails";
 import { deleteOrphanRecord, recordState } from "./orphan";
 import { assertPasswordPolicy } from "./password-policy";
+import { displacePendingVariant } from "./pending-variant";
 
 // Sign-up by e-mail (§6): Turnstile, limits, disposable domains, password policy, then an Auth
 // record without role and the Firestore documents; the verification link activates the account.
@@ -80,7 +81,7 @@ async function signup(request: Request): Promise<Response> {
   assertPasswordPolicy(input.password, { email: input.email, displayName: input.displayName });
 
   const existing = await findUidByEmail(input.email);
-  if (existing) return existingAccountAnswer(flow, existing, input.email, input.locale);
+  if (existing && !(await displacePendingVariant(existing, input.email, false))) return existingAccountAnswer(flow, existing, input.email, input.locale);
 
   const { uid, created } = await createAuthUser(input);
   if (!created) return existingAccountAnswer(flow, uid, input.email, input.locale);

@@ -1,6 +1,6 @@
 import "server-only";
 import mailchecker from "mailchecker";
-import { anonymous, beginAnonymous, checkTurnstile, respond, uniformDuration } from "@/lib/auth/anonymous";
+import { anonymous, beginAnonymous, checkTurnstile, respond, uniformDuration, type AnonymousFlow } from "@/lib/auth/anonymous";
 import { newsletterSubscribeSchema, newsletterTokenSchema, type NewsletterSubscribeResponse } from "@/lib/contracts/newsletter";
 import { emailNormHash } from "@/lib/db/repositories/users";
 import { serverEnv } from "@/lib/env";
@@ -50,13 +50,20 @@ async function mayMail(email: string): Promise<boolean> {
   return true;
 }
 
+/** The list's mail budget (per source and /48 per day, then a global daily cap). Spent: no mail, same 202. */
+async function withinBudget(flow: AnonymousFlow): Promise<boolean> {
+  if (!(await consumeLimit("newsletter.subscribe.ip.day", flow.identity.ipBucket)).ok) return false;
+  if (flow.identity.ip48 && !(await consumeLimit("newsletter.subscribe.ip48.day", flow.identity.ip48)).ok) return false;
+  return (await consumeLimit("newsletter.subscribe.global", "newsletter")).ok;
+}
+
 async function subscribe(request: Request): Promise<Response> {
   const flow = beginAnonymous(request);
   const input = await readJson(request, newsletterSubscribeSchema);
   await enforceLimit("newsletter.subscribe.ip", flow.identity.ipBucket);
   await checkTurnstile(flow, input.turnstileToken, "newsletter");
   if (!mailchecker.isValid(input.email)) throw new HttpError(400, "disposable_email");
-  if (!(await isSubscribed(input.email)) && (await mayMail(input.email))) {
+  if (!(await isSubscribed(input.email)) && (await mayMail(input.email)) && (await withinBudget(flow))) {
     const now = Date.now();
     // The link is a sign-up confirmation, not an account key: it may wait in the queue (a few
     // seconds) and can only add this address to the list.
@@ -64,7 +71,9 @@ async function subscribe(request: Request): Promise<Response> {
       template: "newsletterConfirm",
       locale: input.locale,
       to: input.email,
-      priority: "transactional",
+      // Dropped, never deferred, once the provider quota is degraded: the list never holds back
+      // the site's other transactional mail.
+      priority: "bulk",
       data: {
         confirmUrl: doorUrl(input.locale, `confirmer=${confirmToken(input.email, input.locale, now)}`),
         expiresAt: new Date(now + CONFIRM_TTL_MS).toISOString(),

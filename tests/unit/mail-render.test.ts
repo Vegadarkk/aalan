@@ -28,8 +28,18 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   accountClosed: { displayName: "Nadia", closedAt: "2026-10-20T09:30:00.000Z", purgeAt: "2027-10-20T09:30:00.000Z" },
   cguChanged: { displayName: "Nadia", version: "1.1", effective: "2026-12-01" },
   listingPublished: { displayName: "Nadia", title: "Vélo de ville", url: `${SITE}/fr/annonce/velo-de-ville-casablanca-abcd2345`, expiresAt: "2026-12-15T09:30:00.000Z" },
-  listingPendingReview: { displayName: "Nadia", title: "Vélo de ville", listingId: "abcd2345", statement: { measure: "hold", facts: ["new_account", "dup_text"], ground: "CGU §7", automated: true, redress: "dsa@joutiya.ma" } },
-  listingRejected: { displayName: "Nadia", title: "Vélo de ville", listingId: "abcd2345", statement: { measure: "reject", facts: ["prohibited_kw"], ground: "CGU §7.2", automated: true, redress: "dsa@joutiya.ma" } },
+  listingPendingReview: {
+    displayName: "Nadia",
+    title: "Vélo de ville",
+    listingId: "abcd2345",
+    statement: { measure: "hold", facts: ["new_account", "dup_text"], ground: "CGU §7", automated: true, redress: "dsa@joutiya.ma" },
+  },
+  listingRejected: {
+    displayName: "Nadia",
+    title: "Vélo de ville",
+    listingId: "abcd2345",
+    statement: { measure: "reject", facts: ["prohibited_kw"], ground: "CGU §7.2", automated: true, redress: "dsa@joutiya.ma" },
+  },
   listingApproved: { displayName: "Nadia", title: "Vélo de ville", url: `${SITE}/fr/annonce/velo-de-ville-casablanca-abcd2345`, expiresAt: "2026-12-15T09:30:00.000Z" },
   listingChangesApproved: { displayName: "Nadia", title: "Vélo de ville", status: "paused", url: `${SITE}/fr/mes-annonces?onglet=active`, until: "2026-12-15T09:30:00.000Z" },
   listingExpiringSoon: { displayName: "Nadia", title: "Vélo de ville", url: `${SITE}/fr/annonce/velo-de-ville-casablanca-abcd2345`, expiresAt: "2026-12-15T09:30:00.000Z" },
@@ -64,7 +74,14 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   },
   contentRestored: { displayName: "Nadia", targetType: "listing", title: "Vélo de ville", via: "report", decisionId: "DeCiSiOn0123456789ab" },
   appealReceived: { displayName: "Nadia", decisionId: "DeCiSiOn0123456789ab", receivedAt: "2026-10-16T09:30:00.000Z", slaDays: 14 },
-  appealOutcome: { displayName: "Nadia", decisionId: "DeCiSiOn0123456789ab", outcome: "reversed", by: "affected", note: "Les photos montrent un objet conforme.", reviewedAt: "2026-10-20T09:30:00.000Z" },
+  appealOutcome: {
+    displayName: "Nadia",
+    decisionId: "DeCiSiOn0123456789ab",
+    outcome: "reversed",
+    by: "affected",
+    note: "Les photos montrent un objet conforme.",
+    reviewedAt: "2026-10-20T09:30:00.000Z",
+  },
   reporterWarning: { displayName: "Nadia", kind: "warning", count: 3, windowDays: 30, until: null },
   savedSearchAlert: {
     displayName: "Nadia",
@@ -85,7 +102,16 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   newsletterConfirm: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" },
   newsletterCampaign: { campaign: "places", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "fixture-token", places: PLACES },
   passNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "ended", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 2 },
-  withdrawalReceipt: { displayName: "Nadia", receipt: "R-20270301-AB12CD", requestedAt: "2027-03-01T10:00:00.000Z", packCredits: 110, removedCredits: 90, refundMinor: 8_200, currency: "MAD", refundBy: "2027-03-15T10:00:00.000Z" },
+  withdrawalReceipt: {
+    displayName: "Nadia",
+    receipt: "R-20270301-AB12CD",
+    requestedAt: "2027-03-01T10:00:00.000Z",
+    packCredits: 110,
+    removedCredits: 90,
+    refundMinor: 8_200,
+    currency: "MAD",
+    refundBy: "2027-03-15T10:00:00.000Z",
+  },
   sellerPaymentNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "changed", host: "pay.example-bank.ma", activeFrom: "2026-11-02T10:00:00.000Z" },
   socialLinksNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "hidden", reason: "Le lien Instagram mène au compte d'un autre vendeur." },
   proRejected: { displayName: "Nadia", shopName: "Atlas Vélos", reason: "L'ICE ne correspond pas au registre du commerce.", contact: "dsa@aalan.ma" },
@@ -280,7 +306,12 @@ describe("newsletterConfirm (opening list)", () => {
   beforeAll(() => resetServerEnv());
 
   it("names the opening, links the signed confirmation twice and loads only the site's static images", () => {
-    const rendered = renderMail({ template: "newsletterConfirm", locale: "fr", to: "nadia@example.com", data: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" } });
+    const rendered = renderMail({
+      template: "newsletterConfirm",
+      locale: "fr",
+      to: "nadia@example.com",
+      data: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" },
+    });
     expect(rendered.subject).toBe("Confirmez votre inscription à Aalan");
     expect(rendered.text).toContain("12 décembre 2026 à 10:00 (heure du Maroc)");
     // The button and the raw link under it (href twice, the text once).
@@ -291,7 +322,12 @@ describe("newsletterConfirm (opening list)", () => {
   });
 
   it("speaks of the launch e-mails without a date once the site is open", () => {
-    const rendered = renderMail({ template: "newsletterConfirm", locale: "ar", to: "nadia@example.com", data: { confirmUrl: `${SITE}/ar#confirmer=abc.def`, expiresAt: "2026-12-14T09:30:00.000Z", opensAt: null } });
+    const rendered = renderMail({
+      template: "newsletterConfirm",
+      locale: "ar",
+      to: "nadia@example.com",
+      data: { confirmUrl: `${SITE}/ar#confirmer=abc.def`, expiresAt: "2026-12-14T09:30:00.000Z", opensAt: null },
+    });
     expect(rendered.text).toContain("لتصلك رسائل إطلاق أعلان");
     expect(rendered.html).toContain('<html lang="ar" dir="rtl">');
     // The brand in Arabic script (Z1-17): the logo image carries the Latin wordmark.
@@ -304,13 +340,22 @@ describe("newsletterConfirm (opening list)", () => {
 describe("newsletterCampaign (opening list, J-7 / J-1 / J)", () => {
   beforeAll(() => resetServerEnv());
   const campaign = (locale: Locale, data: Partial<TemplateData["newsletterCampaign"]>) =>
-    renderMail({ template: "newsletterCampaign", locale, to: "nadia@example.com", data: { campaign: "teaser", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "fixture-token", places: PLACES, ...data } });
+    renderMail({
+      template: "newsletterCampaign",
+      locale,
+      to: "nadia@example.com",
+      data: { campaign: "teaser", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "fixture-token", places: PLACES, ...data },
+    });
 
   it("opens the door a little more with each e-mail and dates the opening in Morocco time", () => {
     const teaser = campaign("fr", { campaign: "teaser" });
-    expect(teaser.subject).toBe("J-7 : Aalan ouvre ses portes le 12 décembre");
+    expect(teaser.subject).toBe("Le 12 décembre, Aalan ouvre ses portes");
     expect(teaser.text).toContain("samedi 12 décembre à 10:00 (heure du Maroc)");
     expect(teaser.html).toContain(`${SITE}/mail/door-closed.png`);
+    // J-7: the button saves the opening hour (UTC) in a calendar, the countdown is the link under it.
+    expect(teaser.html).toContain("https://calendar.google.com/calendar/render?action=TEMPLATE");
+    expect(teaser.html).toContain("dates=20261212T100000Z%2F20261212T110000Z");
+    expect(teaser.text).toContain(`Voir le compte à rebours : ${SITE}/fr`);
     expect(teaser.text).not.toContain("1 000");
     expect(campaign("fr", { campaign: "places" }).html).toContain(`${SITE}/mail/door-ajar.png`);
     const opening = campaign("fr", { campaign: "opening" });
@@ -321,13 +366,15 @@ describe("newsletterCampaign (opening list, J-7 / J-1 / J)", () => {
 
   it("announces the launch places from the configuration, last day included", () => {
     const fr = campaign("fr", { campaign: "places" });
-    expect(fr.subject).toBe("Demain : 1\u202f000 places de lancement à prendre");
+    expect(fr.subject).toBe("1\u202f000 places de lancement : inscrivez-vous dès aujourd'hui");
     expect(fr.text).toContain("30 crédits offerts, valables 90 jours");
-    expect(fr.text).toContain("numéro de téléphone vérifié requis");
-    expect(fr.text).toContain("offre Essentiel offerte pendant 6 mois");
+    expect(fr.text).toContain("3. Demain, 10:00 : Publiez votre première annonce");
+    expect(fr.html).toContain(`${SITE}/fr/inscription`);
+    expect(fr.text).toContain("numéro de téléphone vérifié");
+    expect(fr.text).toContain("Boutique : 6 mois d'offre Essentiel offerts");
     expect(fr.text).toContain("jusqu'au 12 mars 2027");
     const ar = campaign("ar", { campaign: "places" });
-    expect(ar.subject).toBe("غدًا: 1000 مكان في الإطلاق");
+    expect(ar.subject).toBe("1000 مكان في الإطلاق: سجّل من اليوم");
     expect(ar.text).toContain("30 نقطة مجانية");
     expect(ar.text).not.toContain("Aalan");
     expect(ar.html).toContain('<html lang="ar" dir="rtl">');
@@ -337,7 +384,7 @@ describe("newsletterCampaign (opening list, J-7 / J-1 / J)", () => {
   it("leaves the places out of the opening e-mail when none is given", () => {
     const opening = campaign("fr", { campaign: "opening", places: null });
     expect(opening.text).not.toMatch(/places de lancement|crédits/);
-    expect(opening.text).toContain("déposez votre première annonce");
+    expect(opening.text).toContain("Déposer une annonce est gratuit");
   });
 
   it("carries the one-click unsubscribe: RFC 8058 headers to the API, footer link to the page with the token in the fragment", () => {

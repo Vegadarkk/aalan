@@ -19,43 +19,65 @@ interface Words {
   when: string;
   /** "12 décembre": the opening day in a subject. */
   day: string;
+  /** "10:00": the opening time, Morocco time. */
+  time: string;
   /** Last day a place is given ("12 mars 2027"), or null (no end date). */
   lastDay: string | null;
 }
 
+type Block<T> = (w: Words, p: Places | null) => T;
+
 /** `p` is null only for the opening e-mail when no launch place is given. */
 interface Copy {
-  subject: (w: Words, p: Places | null) => string;
-  preheader: (w: Words, p: Places | null) => string;
+  subject: Block<string>;
+  preheader: Block<string>;
   label: string;
-  title: (p: Places | null) => string;
-  paragraphs: (w: Words, p: Places | null) => string[];
+  title: Block<string>;
+  paragraphs: Block<string[]>;
+  points?: Block<{ lead: string; text: string }[]>;
+  offers?: Block<{ who: string; figure: string; text: string }[] | undefined>;
+  steps?: Block<{ when: string; text: string }[]>;
+  note?: string;
   button: string;
-  closing?: string[];
+  /** The button comes right after the opening paragraphs. */
+  early?: boolean;
+  /** The teaser's countdown link, under its calendar button. */
+  secondary?: string;
+  closing?: Block<string[]>;
+  signature: string[];
 }
 
 interface Shared {
   reason: string;
   unsubscribe: string;
-  /** The place of an individual and of a shop, in one sentence each. */
-  individual: (p: Places) => string;
-  shop: (p: Places) => string;
+  /** The two launch offers, side by side. */
+  offers: (p: Places) => { who: string; figure: string; text: string }[];
 }
 
 const SHARED: Record<MailLocale, Shared> = {
   fr: {
     reason: "Vous recevez cet e-mail car vous vous êtes inscrit à la liste d'ouverture d'Aalan sur aalan.ma.",
     unsubscribe: "Se désinscrire en un clic",
-    individual: (p) =>
-      `Particulier : votre première annonce acceptée par la modération vous donne ${p.credits} crédits offerts, valables ${p.creditDays} jours, pour remonter vos annonces ou les mettre « À la Une »${p.requirePhone ? " (numéro de téléphone vérifié requis)" : ""}.`,
-    shop: (p) => `Boutique : votre boutique validée profite de l'offre Essentiel offerte pendant ${p.months} mois.`,
+    offers: (p) => [
+      {
+        who: "Particulier",
+        figure: `${p.credits} crédits`,
+        text: `offerts, valables ${p.creditDays} jours, pour remonter vos annonces ou les mettre « À la Une ». Dès votre première annonce acceptée${p.requirePhone ? ", numéro de téléphone vérifié" : ""}.`,
+      },
+      { who: "Boutique", figure: `${p.months} mois`, text: "d'offre Essentiel offerts, dès la validation de votre boutique." },
+    ],
   },
   ar: {
     reason: "تصلك هذه الرسالة لأنك سجّلت في قائمة افتتاح أعلان على aalan.ma.",
     unsubscribe: "إلغاء الاشتراك بنقرة واحدة",
-    individual: (p) =>
-      `للأفراد: أول إعلان تقبله المراجعة يمنحك ${p.credits} نقطة مجانية صالحة لمدة ${p.creditDays} يومًا، لرفع إعلاناتك أو وضعها «في الواجهة»${p.requirePhone ? " (يلزم رقم هاتف موثَّق)" : ""}.`,
-    shop: (p) => `للمتاجر: يستفيد متجرك بعد توثيقه من عرض «Essentiel» مجانًا لمدة ${p.months} أشهر.`,
+    offers: (p) => [
+      {
+        who: "للأفراد",
+        figure: `${p.credits} نقطة`,
+        text: `مجانية، صالحة لمدة ${p.creditDays} يومًا، لرفع إعلاناتك أو وضعها «في الواجهة». ابتداءً من أول إعلان تقبله المراجعة${p.requirePhone ? "، برقم هاتف موثَّق" : ""}.`,
+      },
+      { who: "للمتاجر", figure: `${p.months} أشهر`, text: "من عرض «Essentiel» مجانًا، ابتداءً من توثيق متجرك." },
+    ],
   },
 };
 
@@ -74,85 +96,110 @@ function seats(places: Places | null, lang: MailLocale): string {
 const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
   fr: {
     teaser: {
-      subject: (w) => `J-7 : Aalan ouvre ses portes le ${w.day}`,
-      preheader: (w) => `Les petites annonces de tout le Maroc. Rendez-vous ${w.when}.`,
+      subject: (w) => `Le ${w.day}, Aalan ouvre ses portes`,
+      preheader: (w) => `Petites annonces gratuites, partout au Maroc. Rendez-vous ${w.when}.`,
       label: "J-7",
       title: () => "Dans sept jours, la porte s'ouvre",
       paragraphs: (w) => [
-        "Aalan, ce sont les petites annonces de tout le Maroc au même endroit : vendre ce qui dort chez vous, acheter d'occasion, louer, trouver un professionnel près de chez vous.",
-        "Déposer une annonce sera gratuit. Acheteurs et vendeurs se parlent par la messagerie d'Aalan : votre numéro reste privé.",
-        `Ouverture ${w.when} (heure du Maroc). Et une surprise attend les premiers arrivés : on vous la dévoile la veille.`,
+        "Aalan réunit les petites annonces de tout le Maroc : vendre ce qui dort chez vous, acheter d'occasion, trouver un professionnel près de chez vous.",
+        "Et aussi : la location de voitures, la location de vacances, et les boutiques des pros, vérifiées avant d'ouvrir.",
+        `Ouverture ${w.when} (heure du Maroc).`,
       ],
-      button: "Voir le compte à rebours",
+      points: () => [
+        { lead: "Déposer une annonce est gratuit", text: "Photos, description, prix : tout se fait depuis votre téléphone." },
+        { lead: "Votre numéro reste privé", text: "Acheteurs et vendeurs se parlent par la messagerie d'Aalan." },
+        { lead: "Des annonces contrôlées", text: "Chaque annonce est vérifiée avant d'être publiée." },
+      ],
+      note: "Une surprise attend les premiers arrivés. On vous la dévoile la veille, ici même.",
+      button: "Ajouter à mon agenda",
+      secondary: "Voir le compte à rebours",
+      signature: ["À très vite,", "L'équipe Aalan"],
     },
     places: {
-      subject: (_w, p) => `Demain : ${seats(p, "fr")} places de lancement à prendre`,
-      preheader: (_w, p) => `${need(p).credits} crédits offerts aux particuliers, ${need(p).months} mois d'Essentiel offerts aux boutiques.`,
+      subject: (_w, p) => `${seats(p, "fr")} places de lancement : inscrivez-vous dès aujourd'hui`,
+      preheader: (_w, p) => `${need(p).credits} crédits offerts aux particuliers, ${need(p).months} mois d'Essentiel aux boutiques. Une place par personne.`,
       label: "J-1",
-      title: (p) => `${seats(p, "fr")} places de lancement`,
-      paragraphs: (w, places) => {
-        const p = need(places);
-        return [
-          `Aalan ouvre demain, ${w.when} (heure du Maroc). Les ${seats(p, "fr")} premiers à se lancer, particuliers et boutiques ensemble, reçoivent un cadeau de bienvenue.`,
-          SHARED.fr.individual(p),
-          SHARED.fr.shop(p),
-          w.lastDay ? `Une place par personne, attribuée jusqu'au ${w.lastDay} ou jusqu'à ce qu'il n'en reste plus.` : "Une place par personne, attribuée jusqu'à ce qu'il n'en reste plus.",
-          "Les inscriptions sont ouvertes dès maintenant : créez votre compte et vérifiez votre numéro aujourd'hui, pour publier dès l'ouverture.",
-        ];
-      },
+      title: () => "Votre place de lancement vous attend",
+      paragraphs: (w, p) => [`Aalan ouvre demain, ${w.when} (heure du Maroc). Les ${seats(p, "fr")} premiers à se lancer, particuliers et boutiques confondus, reçoivent un cadeau de bienvenue.`],
+      offers: (_w, p) => SHARED.fr.offers(need(p)),
+      steps: (w, p) => [
+        { when: "Dès maintenant", text: "Créez votre compte." },
+        ...(need(p).requirePhone ? [{ when: "Dès maintenant", text: "Vérifiez votre numéro de téléphone." }] : []),
+        { when: `Demain, ${w.time}`, text: "Publiez votre première annonce et prenez votre place." },
+      ],
       button: "Créer mon compte",
+      closing: (w) => [w.lastDay ? `Une place par personne, attribuée jusqu'au ${w.lastDay} ou jusqu'à épuisement.` : "Une place par personne, attribuée jusqu'à épuisement."],
+      signature: ["À demain,", "L'équipe Aalan"],
     },
     opening: {
-      subject: () => "C'est ouvert : bienvenue sur Aalan",
-      preheader: (_w, p) => (p ? "Déposez votre première annonce et prenez votre place de lancement." : "Créez votre compte et déposez votre première annonce."),
+      subject: () => "C'est ouvert : déposez votre première annonce sur Aalan",
+      preheader: (_w, p) => (p ? `Les ${seats(p, "fr")} places de lancement partent aux premiers arrivés.` : "Aalan est en ligne. Déposer une annonce est gratuit."),
       label: "J",
       title: () => "La porte est ouverte",
       paragraphs: (_w, p) => [
-        "Aalan est en ligne. Créez votre compte et déposez votre première annonce : c'est gratuit.",
-        ...(p ? [`Les ${seats(p, "fr")} places de lancement sont ouvertes.`, SHARED.fr.individual(p), SHARED.fr.shop(p)] : []),
+        "Aalan est en ligne. Déposer une annonce est gratuit, et les acheteurs vous écrivent par la messagerie : votre numéro reste privé.",
+        "Annonces, location de voitures, location de vacances, boutiques des pros : tout est ouvert.",
+        ...(p ? [`Les ${seats(p, "fr")} places de lancement sont ouvertes : votre première annonce acceptée vous donne la vôtre.`] : []),
       ],
-      button: "Déposer une annonce",
-      closing: ["C'était le dernier e-mail de la liste d'ouverture : votre adresse sera effacée dans les 30 jours. Merci de nous avoir attendus."],
+      offers: (_w, p) => (p ? SHARED.fr.offers(p) : undefined),
+      button: "Déposer ma première annonce",
+      early: true,
+      closing: () => ["C'était le dernier e-mail de la liste d'ouverture : votre adresse sera effacée dans les 30 jours. Merci de nous avoir attendus."],
+      signature: ["Bienvenue sur Aalan,", "L'équipe Aalan"],
     },
   },
   ar: {
     teaser: {
-      subject: (w) => `بقيت 7 أيام: أعلان يفتح أبوابه يوم ${w.day}`,
-      preheader: (w) => `الإعلانات المبوبة لكل المغرب. الموعد ${w.when}.`,
+      subject: (w) => `يوم ${w.day}، أعلان يفتح أبوابه`,
+      preheader: (w) => `إعلانات مبوبة مجانية في كل المغرب. الموعد ${w.when}.`,
       label: "J-7",
       title: () => "بعد سبعة أيام، يُفتح الباب",
       paragraphs: (w) => [
-        "أعلان هو الإعلانات المبوبة لكل المغرب في مكان واحد: بِع ما لا تستعمله، اشترِ المستعمل، أجِّر، وابحث عن مهني قريب منك.",
-        "نشر الإعلان سيكون مجانيًا. يتواصل المشترون والبائعون عبر رسائل أعلان: رقمك يبقى خاصًا.",
-        `الافتتاح ${w.when} (بتوقيت المغرب). ومفاجأة تنتظر أوائل القادمين: نكشفها لك في اليوم السابق.`,
+        "أعلان يجمع الإعلانات المبوبة لكل المغرب في مكان واحد: بِع ما لا تستعمله، اشترِ المستعمل، وابحث عن مهني قريب منك.",
+        "وأيضًا: كراء السيارات، كراء للعطل، ومتاجر المحترفين، موثّقة قبل فتحها.",
+        `الافتتاح ${w.when} (بتوقيت المغرب).`,
       ],
-      button: "مشاهدة العد التنازلي",
+      points: () => [
+        { lead: "نشر الإعلان مجاني", text: "الصور والوصف والسعر: كل شيء من هاتفك." },
+        { lead: "رقمك يبقى خاصًا", text: "يتواصل المشترون والبائعون عبر رسائل أعلان." },
+        { lead: "إعلانات مراقَبة", text: "كل إعلان يُراجَع قبل نشره." },
+      ],
+      note: "مفاجأة تنتظر أوائل القادمين. نكشفها لك في اليوم السابق، هنا بالذات.",
+      button: "أضِف الموعد إلى مفكرتي",
+      secondary: "مشاهدة العد التنازلي",
+      signature: ["إلى اللقاء قريبًا،", "فريق أعلان"],
     },
     places: {
-      subject: (_w, p) => `غدًا: ${seats(p, "ar")} مكان في الإطلاق`,
-      preheader: (_w, p) => `${need(p).credits} نقطة مجانية للأفراد، و${need(p).months} أشهر من «Essentiel» مجانًا للمتاجر.`,
+      subject: (_w, p) => `${seats(p, "ar")} مكان في الإطلاق: سجّل من اليوم`,
+      preheader: (_w, p) => `${need(p).credits} نقطة مجانية للأفراد، و${need(p).months} أشهر من «Essentiel» للمتاجر. مكان واحد لكل شخص.`,
       label: "J-1",
-      title: (p) => `${seats(p, "ar")} مكان في الإطلاق`,
-      paragraphs: (w, places) => {
-        const p = need(places);
-        return [
-          `يفتح أعلان غدًا، ${w.when} (بتوقيت المغرب). أول ${seats(p, "ar")} من الأفراد والمتاجر معًا يحصلون على هدية ترحيب.`,
-          SHARED.ar.individual(p),
-          SHARED.ar.shop(p),
-          w.lastDay ? `مكان واحد لكل شخص، يُمنح حتى ${w.lastDay} أو إلى أن تنفد الأماكن.` : "مكان واحد لكل شخص، يُمنح إلى أن تنفد الأماكن.",
-          "التسجيل مفتوح من الآن: أنشئ حسابك ووثّق رقمك اليوم، لتنشر منذ الافتتاح.",
-        ];
-      },
+      title: () => "مكانك في الإطلاق ينتظرك",
+      paragraphs: (w, p) => [`يفتح أعلان غدًا، ${w.when} (بتوقيت المغرب). أول ${seats(p, "ar")} من الأفراد والمتاجر معًا يحصلون على هدية ترحيب.`],
+      offers: (_w, p) => SHARED.ar.offers(need(p)),
+      steps: (w, p) => [
+        { when: "من الآن", text: "أنشئ حسابك." },
+        ...(need(p).requirePhone ? [{ when: "من الآن", text: "وثّق رقم هاتفك." }] : []),
+        { when: `غدًا، ${w.time}`, text: "انشر إعلانك الأول واحجز مكانك." },
+      ],
       button: "إنشاء حسابي",
+      closing: (w) => [w.lastDay ? `مكان واحد لكل شخص، يُمنح حتى ${w.lastDay} أو إلى أن تنفد الأماكن.` : "مكان واحد لكل شخص، يُمنح إلى أن تنفد الأماكن."],
+      signature: ["نلتقي غدًا،", "فريق أعلان"],
     },
     opening: {
-      subject: () => "فُتح الباب: مرحبًا بك في أعلان",
-      preheader: (_w, p) => (p ? "انشر إعلانك الأول واحجز مكانك في الإطلاق." : "أنشئ حسابك وانشر إعلانك الأول."),
+      subject: () => "فُتح الباب: انشر إعلانك الأول على أعلان",
+      preheader: (_w, p) => (p ? `أماكن الإطلاق الـ${seats(p, "ar")} تذهب لأوائل القادمين.` : "أعلان متاح الآن. نشر الإعلان مجاني."),
       label: "اليوم",
       title: () => "الباب مفتوح",
-      paragraphs: (_w, p) => ["أعلان متاح الآن. أنشئ حسابك وانشر إعلانك الأول: النشر مجاني.", ...(p ? [`أماكن الإطلاق الـ${seats(p, "ar")} مفتوحة.`, SHARED.ar.individual(p), SHARED.ar.shop(p)] : [])],
-      button: "نشر إعلان",
-      closing: ["كانت هذه آخر رسالة من قائمة الافتتاح: سيُحذف عنوانك خلال 30 يومًا. شكرًا على انتظارك."],
+      paragraphs: (_w, p) => [
+        "أعلان متاح الآن. نشر الإعلان مجاني، ويراسلك المشترون عبر الرسائل: رقمك يبقى خاصًا.",
+        "الإعلانات، كراء السيارات، كراء للعطل، متاجر المحترفين: كل شيء مفتوح.",
+        ...(p ? [`أماكن الإطلاق الـ${seats(p, "ar")} مفتوحة: أول إعلان تقبله المراجعة يمنحك مكانك.`] : []),
+      ],
+      offers: (_w, p) => (p ? SHARED.ar.offers(p) : undefined),
+      button: "نشر إعلاني الأول",
+      early: true,
+      closing: () => ["كانت هذه آخر رسالة من قائمة الافتتاح: سيُحذف عنوانك خلال 30 يومًا. شكرًا على انتظارك."],
+      signature: ["مرحبًا بك في أعلان،", "فريق أعلان"],
     },
   },
 };
@@ -179,6 +226,30 @@ function when(iso: string, lang: MailLocale): string {
     timeZone: moroccoTimeZone(at.getTime()),
     numberingSystem: "latn",
   }).format(at);
+}
+
+/** "10:00", Morocco time, Latin digits. */
+function time(iso: string, lang: MailLocale): string {
+  const at = new Date(iso);
+  return new Intl.DateTimeFormat(tagOf(lang), { hour: "2-digit", minute: "2-digit", timeZone: moroccoTimeZone(at.getTime()), numberingSystem: "latn" }).format(at);
+}
+
+/** Google Calendar "add event" link for the opening hour (no account data, nothing per recipient). */
+export function calendarUrl(opensAt: string, siteUrl: string, lang: MailLocale): string {
+  const start = new Date(opensAt);
+  const stamp = (at: Date) =>
+    at
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\.\d{3}/, "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: lang === "ar" ? "افتتاح أعلان" : "Ouverture d'Aalan",
+    dates: `${stamp(start)}/${stamp(new Date(start.getTime() + 3_600_000))}`,
+    details: siteUrl,
+    location: siteUrl,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 function day(iso: string, lang: MailLocale): string {
@@ -214,11 +285,15 @@ export function newsletterCampaign(data: Data, ctx: TemplateContext): BuiltMail 
   const words: Words = {
     when: when(data.opensAt, ctx.lang),
     day: day(data.opensAt, ctx.lang),
+    time: time(data.opensAt, ctx.lang),
     lastDay: lastDay(data.places?.until ?? null, ctx),
   };
   const site = ctx.siteUrl.replace(/\/$/, "");
-  // J-1: sign-up opens with this e-mail (gate.ts "signup" phase, owner 16 Nov 2026).
-  const target = `${site}/${ctx.locale}${data.campaign === "opening" ? "/deposer" : data.campaign === "places" ? "/inscription" : ""}`;
+  const home = `${site}/${ctx.locale}`;
+  // J-1: sign-up opens with this e-mail (gate.ts "signup" phase, owner 16 Nov 2026). J-7: the
+  // button saves the opening hour in the reader's calendar, the countdown is the link under it.
+  const target = data.campaign === "opening" ? `${home}/deposer` : data.campaign === "places" ? `${home}/inscription` : calendarUrl(data.opensAt, home, ctx.lang);
+  const offers = copy.offers?.(words, data.places);
   const built = renderDoorLayout({
     lang: ctx.lang,
     siteUrl: ctx.siteUrl,
@@ -227,10 +302,16 @@ export function newsletterCampaign(data: Data, ctx: TemplateContext): BuiltMail 
     door: DOOR[data.campaign],
     kicker: words.when,
     label: copy.label,
-    title: copy.title(data.places),
+    title: copy.title(words, data.places),
     paragraphs: copy.paragraphs(words, data.places),
-    action: { label: copy.button, url: target },
-    ...(copy.closing ? { closing: copy.closing } : {}),
+    ...(copy.points ? { points: copy.points(words, data.places) } : {}),
+    ...(offers ? { offers } : {}),
+    ...(copy.steps ? { steps: copy.steps(words, data.places) } : {}),
+    ...(copy.note ? { note: copy.note } : {}),
+    action: { label: copy.button, url: target, ...(copy.early ? { early: true } : {}) },
+    ...(copy.secondary ? { secondary: { label: copy.secondary, url: home } } : {}),
+    ...(copy.closing ? { closing: copy.closing(words, data.places) } : {}),
+    signature: copy.signature,
     reason: shared.reason,
     unsubscribe: {
       label: shared.unsubscribe,

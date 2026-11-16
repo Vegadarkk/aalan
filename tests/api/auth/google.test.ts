@@ -39,7 +39,8 @@ class Jar extends BaseJar {
 
 /** The test verifier reads the identity from the credential itself (no Google keys in tests). */
 function credential(identity: Partial<GoogleIdentity> & { email: string }, device = DEVICE): string {
-  return JSON.stringify({ sub: `g-${identity.email}`, emailVerified: true, name: "Nadia Google", nonce: gisNonce(device.id), ...identity });
+  // A Workspace account by default (`hd`): Google vouches for its address (googleVouchesForEmail).
+  return JSON.stringify({ sub: `g-${identity.email}`, emailVerified: true, name: "Nadia Google", nonce: gisNonce(device.id), hostedDomain: "workspace.test", ...identity });
 }
 
 /** Request body of a Google call: a credential minted on `device`, plus the sign-up fields. */
@@ -144,6 +145,54 @@ describe("POST /api/auth/google", () => {
     expect(linked.body.session.uid).toBe(uid);
     expect([...linked.body.session.providers].sort()).toEqual(["google.com", "password"]);
     expect((await call<SignedInBody>(login, "/api/auth/login", { jar: new Jar(), body: { email, password: PASSWORD } })).status).toBe(200);
+  });
+
+  it("opens, links or creates nothing by e-mail when Google does not vouch for the address", async () => {
+    // A consumer Google account on another provider's mailbox: email_verified may date from a past
+    // owner of that mailbox.
+    const email = uniqueEmail("gu");
+    expect((await call(signup, "/api/auth/signup", { jar: new Jar(), body: { email, password: PASSWORD, displayName: "Mailbox Owner", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
+    const uid = (await findUidByEmail(email))!;
+    await auth().updateUser(uid, { emailVerified: true });
+    const refused = await call<ErrorBody>(google, GOOGLE, { jar: new Jar(), body: body({ email, sub: "g-stale-sub", hostedDomain: null }) });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe("google_email_unconfirmed");
+    expect((await auth().getUser(uid)).providerData.map((p) => p.providerId)).toEqual(["password"]);
+
+    // Same answer for an address no account uses: no account is created either.
+    const fresh = uniqueEmail("gu");
+    const noAccount = await call<ErrorBody>(google, GOOGLE, { jar: new Jar(), body: body({ email: fresh, hostedDomain: null }, { consents: CONSENTS, turnstileToken: "t" }) });
+    expect(noAccount.status).toBe(409);
+    expect(noAccount.body.error.code).toBe("google_email_unconfirmed");
+    expect(await findUidByEmail(fresh)).toBeNull();
+
+    // A Gmail address needs no `hd`.
+    const gmail = `${Date.now()}-gu@gmail.com`;
+    const consent = await call<{ status: string }>(google, GOOGLE, { jar: new Jar(), body: body({ email: gmail, hostedDomain: null }) });
+    expect(consent.body.status).toBe("needs_consent");
+  });
+
+  it("keeps signing in an identity already linked by its sub, whatever its address", async () => {
+    const email = uniqueEmail("gs");
+    const created = await call<SignedInBody>(google, GOOGLE, { jar: new Jar(), body: body({ email, sub: "g-linked-sub" }, { consents: CONSENTS, turnstileToken: "t" }) });
+    expect(created.status).toBe(200);
+    const again = await call<SignedInBody>(google, GOOGLE, { jar: new Jar(), body: body({ email, sub: "g-linked-sub", hostedDomain: null }) });
+    expect(again.status).toBe(200);
+    expect(again.body.session.uid).toBe(created.body.session.uid);
+  });
+
+  it("ignores a Google link added at the provider for another address than the account's", async () => {
+    const email = uniqueEmail("gl");
+    expect((await call(signup, "/api/auth/signup", { jar: new Jar(), body: { email, password: PASSWORD, displayName: "Pending Person", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
+    const uid = (await findUidByEmail(email))!;
+    const foreign = uniqueEmail("gf");
+    await auth().updateUser(uid, { providerToLink: { providerId: "google.com", uid: "g-provider-side", email: foreign } });
+    const refused = await call<ErrorBody>(google, GOOGLE, { jar: new Jar(), body: body({ email: foreign, sub: "g-provider-side" }) });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe("google_email_unconfirmed");
+    const record = await auth().getUser(uid);
+    expect(record.emailVerified).toBe(false);
+    expect((await getUserPrivate(uid))?.providers).toEqual(["password"]);
   });
 
   it("replaces an orphan Auth record with this e-mail by a fresh uid instead of adopting it", async () => {

@@ -1,5 +1,5 @@
 import "server-only";
-import { confirmEmailChange } from "@/lib/account/email-change";
+import { confirmEmailChange, emailChangeTarget } from "@/lib/account/email-change";
 import { actionSchema, type ActionResponse } from "@/lib/contracts/auth";
 import { getUserPrivate } from "@/lib/db/repositories/users";
 import { auth } from "@/lib/firebase/admin";
@@ -24,7 +24,8 @@ import { sessionSummary } from "./summary";
 // and signs the person in. On the device that signed up the link alone is enough; on any other
 // device the code is only applied once the account password is given (audit A-1). A reset code is
 // only checked here, the new password goes to /api/auth/password/confirm. A change-of-address code
-// moves the account to its new address (src/lib/account/email-change.ts, Z1-10).
+// moves the account to its new address (src/lib/account/email-change.ts, Z1-10), under the same
+// device-or-password rule (the device that asked for the change).
 
 async function uidOf(result: OobResult): Promise<string> {
   if (result.localId) return result.localId;
@@ -92,6 +93,15 @@ async function action(request: Request): Promise<Response> {
   if (input.mode === "changeEmail") {
     // Checked, not consumed (Firebase would change the address itself): see confirmEmailChange.
     const code = await withCodeErrors(() => verifyPasswordResetCode(input.oobCode));
+    // Same rule as the verification link: from the device that asked for the change the link alone
+    // is enough; from any other one the link proves the mailbox, not the account, so the account
+    // password is needed as well.
+    const target = await emailChangeTarget(code, flow.identity.deviceId);
+    if (!target.requestingDevice) {
+      // The new address is the one the link holder owns: the current one is not shown to them.
+      if (!input.password) return respond<ActionResponse>(flow, { status: "password_required", email: target.newEmail });
+      if (!(await checkAccountPassword(flow, request, target.uid, target.email, input.password, input.turnstileToken))) return respond<ActionResponse>(flow, { status: "turnstile_required" });
+    }
     const changed = await confirmEmailChange(code, flow.identity.ip);
     return respond<ActionResponse>(flow, { status: "email_changed", email: changed.email });
   }

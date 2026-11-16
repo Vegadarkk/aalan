@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CsvError, csvLine, guessSeparator, neutralizeFormula, parseCsv } from "@/lib/pro/stock-import/csv";
+import { CSV_CELL_MAX, CsvError, csvLine, guessSeparator, neutralizeFormula, parseCsv } from "@/lib/pro/stock-import/csv";
 import { diffFields, planImport, type StockEntry } from "@/lib/pro/stock-import/plan";
 import { dayNumber } from "@/lib/listings/rental-availability";
 import { mapColumns, parseInteger, parsePeriods, parseRows, type ParsedRow } from "@/lib/pro/stock-import/rows";
@@ -56,6 +56,38 @@ describe("parseCsv", () => {
     expect(csvLine(["=1+1", 'a "b"', "c;d", "e"])).toBe(`'=1+1;"a ""b""";"c;d";e`);
     // Reading keeps what the dealer wrote.
     expect(parseCsv("a\n=1+1", 10).records[0]!.cells).toEqual(["=1+1"]);
+  });
+});
+
+describe("parsing cost", () => {
+  it("refuses a cell longer than CSV_CELL_MAX, with its line", () => {
+    const long = `reference;description\nR1;ok\nR2;${"a".repeat(CSV_CELL_MAX + 1)}`;
+    expect(() => parseCsv(long, 300)).toThrowError(expect.objectContaining({ code: "cell_too_long", line: 3 }));
+    const quoted = `reference;description\nR1;"${"a".repeat(CSV_CELL_MAX + 1)}"`;
+    expect(() => parseCsv(quoted, 300)).toThrowError(expect.objectContaining({ code: "cell_too_long", line: 2 }));
+    expect(parseCsv(`reference;description\nR1;${"a".repeat(CSV_CELL_MAX)}`, 300).records[0]!.cells[1]).toHaveLength(CSV_CELL_MAX);
+  });
+
+  it("stays linear on long runs of spaces and quotes in list, variant and period cells", () => {
+    const run = " ".repeat(CSV_CELL_MAX - 2);
+    const lines = (header: string) => [header, ...Array.from({ length: 300 }, (_, index) => `R${index};a${run}b`)].join("\n");
+    for (const header of ["reference;equipements", "reference;variante 1"]) {
+      const started = performance.now();
+      rowsOf(lines(header));
+      expect(performance.now() - started, header).toBeLessThan(2_000);
+    }
+    let started = performance.now();
+    for (let index = 0; index < 300; index += 1) parsePeriods(`2026-11-02${run}x`, dayNumber("2026-11-01"));
+    expect(performance.now() - started).toBeLessThan(2_000);
+    // A cell of spaces then quotes: the opening-quote test no longer re-reads the cell.
+    const quotes = ["reference;description", ...Array.from({ length: 300 }, (_, index) => `R${index};${" ".repeat(CSV_CELL_MAX / 2)}x${'"'.repeat(CSV_CELL_MAX / 2 - 2)}`)].join("\n");
+    started = performance.now();
+    parseCsv(quotes, 300);
+    expect(performance.now() - started).toBeLessThan(2_000);
+  });
+
+  it("reads list, variant and period cells as before", () => {
+    expect(parsePeriods(" 2026-11-02 / 2026-11-05 ;2026-12-24 ", dayNumber("2026-11-01"))).toEqual(parsePeriods("2026-11-02/2026-11-05; 2026-12-24", dayNumber("2026-11-01")));
   });
 });
 

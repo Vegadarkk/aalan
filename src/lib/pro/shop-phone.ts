@@ -12,6 +12,7 @@ import { escalateOnIp } from "@/lib/listings/escalation";
 import { MIN_ACCOUNT_AGE_MS, REVEAL_ALERT_PER_DAY, whatsappUrl, type RevealOutcome } from "@/lib/listings/phone-reveal";
 import { SELLER_UNREACHABLE } from "@/lib/listings/public";
 import { logger } from "@/lib/logging/logger";
+import { getUserBlocks, isPairBlocked } from "@/lib/messaging/repository";
 import { displayPhone } from "@/lib/phone/normalize";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
 import { countReveal } from "@/lib/stats/counters";
@@ -49,9 +50,11 @@ export async function revealShopPhone(auth: AuthContext, request: Request, proId
     turnstilePassed = await escalateOnIp(request, "reveal.ip", options.device, options.turnstileToken, "listing");
   }
 
-  const [owner, account] = await Promise.all([getUserRecord(profile.ownerUid), getUserPrivate(profile.ownerUid)]);
+  const [owner, account, blocks] = await Promise.all([getUserRecord(profile.ownerUid), getUserPrivate(profile.ownerUid), getUserBlocks([viewer.uid, profile.ownerUid])]);
   if (!owner || SELLER_UNREACHABLE.includes(owner.status) || owner.status === "suspended") throw new HttpError(409, "listing_unavailable");
   if (!owner.badges.phoneVerified || !account?.phoneE164) throw notFound();
+  // Same rule as a listing's number (audit C-5): a messaging block either way hides it, as "no number".
+  if (isPairBlocked(blocks, viewer.uid, profile.ownerUid)) throw notFound();
 
   if (!repeat) {
     await recordReveal({ viewerUid: viewer.uid, listingId: profile.proId, kind: "shop", ip: options.device.identity.ip, deviceKey: options.device.identity.deviceKey, now });

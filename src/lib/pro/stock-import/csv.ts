@@ -17,7 +17,7 @@ export interface CsvTable {
 
 export class CsvError extends Error {
   constructor(
-    readonly code: "empty" | "unclosed_quote" | "too_many_rows",
+    readonly code: "empty" | "unclosed_quote" | "too_many_rows" | "cell_too_long",
     readonly line: number,
   ) {
     super(`${code} at line ${line}`);
@@ -39,13 +39,21 @@ export function guessSeparator(text: string): "," | ";" | "\t" {
   return ",";
 }
 
-/** Parses the whole text; throws `CsvError` on an unclosed quote, an empty file or more than `maxRows` data lines. */
+/** Longest cell read: a description (4,000 characters) with room to spare; longer is an error. */
+export const CSV_CELL_MAX = 5_000;
+
+/**
+ * Parses the whole text; throws `CsvError` on an unclosed quote, a cell longer than CSV_CELL_MAX,
+ * an empty file or more than `maxRows` data lines. Linear in the text.
+ */
 export function parseCsv(input: string, maxRows: number): CsvTable {
   const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
   const separator = guessSeparator(text);
   const rows: CsvRecord[] = [];
   let cells: string[] = [];
   let cell = "";
+  // No other character than white space in `cell` yet: an opening quote may still start it.
+  let blank = true;
   let quoted = false;
   let line = 1;
   let rowLine = 1;
@@ -60,6 +68,12 @@ export function parseCsv(input: string, maxRows: number): CsvTable {
     }
     cells = [];
     cell = "";
+    blank = true;
+  };
+  const append = (char: string) => {
+    if (cell.length >= CSV_CELL_MAX) throw new CsvError("cell_too_long", quoted ? quoteLine : line);
+    if (blank && char.trim() !== "") blank = false;
+    cell += char;
   };
 
   for (let i = 0; i < text.length; i += 1) {
@@ -67,22 +81,23 @@ export function parseCsv(input: string, maxRows: number): CsvTable {
     if (quoted) {
       if (char === '"') {
         if (text[i + 1] === '"') {
-          cell += '"';
+          append('"');
           i += 1;
         } else quoted = false;
       } else {
         if (char === "\n") line += 1;
-        cell += char;
+        append(char);
       }
       continue;
     }
-    if (char === '"' && cell.trim() === "") {
+    if (char === '"' && blank) {
       quoted = true;
       quoteLine = line;
       cell = "";
     } else if (char === separator) {
       cells.push(cell);
       cell = "";
+      blank = true;
     } else if (char === "\r" && text[i + 1] === "\n") {
       continue;
     } else if (char === "\n" || char === "\r") {
@@ -90,7 +105,7 @@ export function parseCsv(input: string, maxRows: number): CsvTable {
       line += 1;
       rowLine = line;
     } else {
-      cell += char;
+      append(char);
     }
   }
   if (quoted) throw new CsvError("unclosed_quote", quoteLine);

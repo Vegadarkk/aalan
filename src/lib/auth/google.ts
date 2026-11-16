@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { UpdateRequest, UserRecord } from "firebase-admin/auth";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { CGU_VERSION, displayNameSchema, googleSchema, type GoogleInput, type GoogleResponse } from "@/lib/contracts/auth";
-import { createAccountDocuments, findUidByEmail, isEmailTaken, linkProvider, unlinkProvider } from "@/lib/db/repositories/users";
+import { createAccountDocuments, findUidByEmail, getUserPrivate, isEmailTaken, linkProvider, unlinkProvider } from "@/lib/db/repositories/users";
 import { serverEnv } from "@/lib/env";
 import { auth } from "@/lib/firebase/admin";
 import { isStaff, readClaims, setClaims } from "@/lib/firebase/claims";
@@ -40,6 +40,22 @@ export interface GoogleIdentity {
   name: string | null;
   /** `nonce` claim: the value the page gave GIS, derived from its device cookie (src/lib/security/device.ts). */
   nonce: string | null;
+  /** `hd` claim: the Google Workspace domain of the account, absent for consumer accounts. */
+  hostedDomain?: string | null;
+}
+
+const GOOGLE_MAIL_DOMAINS = ["gmail.com", "googlemail.com"];
+
+/**
+ * Whether Google vouches for the address today: a Gmail address, or a Workspace account (`hd`).
+ * A consumer Google account registered on another provider's mailbox keeps `email_verified` from a
+ * past check even once that mailbox belongs to someone else, so it never opens, links or creates an
+ * account by its address alone (password or e-mail sign-up instead).
+ */
+export function googleVouchesForEmail(identity: Pick<GoogleIdentity, "email" | "emailVerified" | "hostedDomain">): boolean {
+  if (!identity.emailVerified) return false;
+  const domain = identity.email.slice(identity.email.lastIndexOf("@") + 1).toLowerCase();
+  return GOOGLE_MAIL_DOMAINS.includes(domain) || Boolean(identity.hostedDomain);
 }
 
 export type GoogleVerifier = (credential: string) => Promise<GoogleIdentity>;
@@ -79,6 +95,7 @@ export async function verifyGoogleCredential(credential: string): Promise<Google
     emailVerified: payload.email_verified === true,
     name: name || null,
     nonce: typeof payload.nonce === "string" && payload.nonce ? payload.nonce : null,
+    hostedDomain: typeof payload.hd === "string" && payload.hd ? payload.hd : null,
   };
 }
 
@@ -209,13 +226,20 @@ async function signUp(flow: AnonymousFlow, input: GoogleInput & { consents: NonN
  * record with this exact e-mail. The normalized index (+tag stripped, Gmail dots removed) is lossy
  * and never picks the account someone signs into.
  */
-async function existingRecord(identity: GoogleIdentity): Promise<UserRecord | null> {
+/** True when the site itself linked Google to this account (its private provider list says so). */
+async function siteLinkedGoogle(uid: string): Promise<boolean> {
+  const account = await getUserPrivate(uid);
+  return account?.providers.includes(PROVIDER) ?? false;
+}
+
+async function existingRecord(identity: GoogleIdentity): Promise<{ record: UserRecord; bySub: boolean } | null> {
   try {
-    return await auth().getUserByProviderUid(PROVIDER, identity.sub);
+    return { record: await auth().getUserByProviderUid(PROVIDER, identity.sub), bySub: true };
   } catch (error) {
     if (errorCode(error) !== "auth/user-not-found") throw error;
   }
-  return userByEmail(identity.email);
+  const record = await userByEmail(identity.email);
+  return record ? { record, bySub: false } : null;
 }
 
 async function googleSignIn(request: Request): Promise<Response> {
@@ -227,7 +251,17 @@ async function googleSignIn(request: Request): Promise<Response> {
   assertNonce(identity, flow.identity.deviceId);
   if (!identity.emailVerified) throw new HttpError(403, "email_not_verified");
 
-  const record = await existingRecord(identity);
+  const found = await existingRecord(identity);
+  // An identity the site linked to an account keeps signing in by its sub. Otherwise the address is
+  // the key, and only an address Google vouches for may open, link or create an account: the same
+  // answer whether or not an account uses it. A link the site did not record (added at the
+  // provider) counts only for the account's own address.
+  const vouched = googleVouchesForEmail(identity);
+  if (found?.bySub && !(await siteLinkedGoogle(found.record.uid)) && !(vouched && found.record.email?.toLowerCase() === identity.email)) {
+    throw new HttpError(409, "google_email_unconfirmed");
+  }
+  if (!found?.bySub && !vouched) throw new HttpError(409, "google_email_unconfirmed");
+  const record = found?.record;
   if (record) {
     const state = await recordState(record);
     if (state === "member") return signInExisting(flow, record.uid, identity, "google_login");

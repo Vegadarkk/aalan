@@ -18,8 +18,8 @@ import { isLoadTestRequest } from "./loadtest";
 // Committed values only (core.ts, not limiter.ts): the `config/abuse` overrides would put a
 // Firestore client and its reads on the path of every page view, so `pages.*` overrides are ignored.
 
-/** Second path segment of the metered pages: /{locale}/annonce/..., /c/..., /profil/..., /boutique/... */
-export const METERED_SEGMENTS: readonly string[] = ["annonce", "c", "profil", "boutique"];
+/** Second path segment of the metered pages: /{locale}/annonce/..., /c/..., /profil/..., /boutique/..., /boutiques/... */
+export const METERED_SEGMENTS: readonly string[] = ["annonce", "c", "profil", "boutique", "boutiques"];
 
 /** Set by a Cloudflare Transform Rule on every request (overwritten, so a client cannot forge it). */
 export const VERIFIED_BOT_HEADER = "x-verified-bot";

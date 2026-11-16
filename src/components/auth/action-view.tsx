@@ -64,6 +64,12 @@ export function ActionView({ nonce }: { nonce?: string }) {
     setState({ kind: "verified", session });
   }, []);
 
+  const onEmailChanged = useCallback((email: string) => {
+    // Every session of the account was revoked: this browser's one too.
+    setSession(null);
+    setState({ kind: "emailChanged", email });
+  }, []);
+
   /** True when the error was about the code itself (used, expired): the page shows that instead. */
   const onCodeError = useCallback((error: unknown): boolean => {
     if (isApiError(error, "invalid_code")) setState({ kind: "invalid" });
@@ -80,17 +86,13 @@ export function ActionView({ nonce }: { nonce?: string }) {
       if (answer.status === "verified") onVerified(answer.session);
       else if (answer.status === "reset_ok") setState({ kind: "reset", email: answer.email });
       else if (answer.status === "password_required") setState({ kind: "password", email: answer.email });
-      else if (answer.status === "email_changed") {
-        // Every session of the account was revoked: this browser's one too.
-        setSession(null);
-        setState({ kind: "emailChanged", email: answer.email });
-      }
+      else if (answer.status === "email_changed") onEmailChanged(answer.email);
       // turnstile_required only answers a request that carried a password, which this one did not.
       else setState({ kind: "failed", error: new Error(`unexpected answer ${answer.status}`) });
     } catch (error) {
       if (!onCodeError(error)) setState({ kind: "failed", error });
     }
-  }, [mode, oobCode, onVerified, onCodeError]);
+  }, [mode, oobCode, onVerified, onEmailChanged, onCodeError]);
 
   useEffect(() => {
     // One call per page load (React strict mode runs effects twice in development).
@@ -162,7 +164,17 @@ export function ActionView({ nonce }: { nonce?: string }) {
     );
   }
   if (state.kind === "password" && oobCode) {
-    return <VerifyPasswordForm oobCode={oobCode} email={state.email} nonce={nonce} onVerified={onVerified} onCodeError={onCodeError} />;
+    return (
+      <VerifyPasswordForm
+        mode={mode === "changeEmail" ? "changeEmail" : "verifyEmail"}
+        oobCode={oobCode}
+        email={state.email}
+        nonce={nonce}
+        onVerified={onVerified}
+        onEmailChanged={onEmailChanged}
+        onCodeError={onCodeError}
+      />
+    );
   }
   if (state.kind === "reset" && oobCode) {
     return <ResetPasswordForm oobCode={oobCode} email={state.email} onDone={() => setState({ kind: "resetDone" })} />;
@@ -317,19 +329,28 @@ type VerifyPasswordValues = z.input<typeof verifyPasswordSchema>;
  * address registered by somebody else) sets a new one through the forgotten-password page, which
  * confirms the address too.
  */
+/**
+ * A link opened on another device than the one that signed up (verifyEmail) or asked for the new
+ * address (changeEmail): the account password applies the code.
+ */
 function VerifyPasswordForm({
+  mode,
   oobCode,
   email,
   nonce,
   onVerified,
+  onEmailChanged,
   onCodeError,
 }: {
+  mode: "verifyEmail" | "changeEmail";
   oobCode: string;
   email: string;
   nonce?: string;
   onVerified: (session: SessionSummary | null) => void;
+  onEmailChanged: (email: string) => void;
   onCodeError: (error: unknown) => boolean;
 }) {
+  const change = mode === "changeEmail";
   const t = useTranslations("Auth.action");
   const signIn = useTranslations("Auth.signIn");
   const c = useTranslations("Auth.common");
@@ -352,8 +373,9 @@ function VerifyPasswordForm({
   async function onValid(values: VerifyPasswordValues) {
     setServerError(undefined);
     try {
-      const answer = await apiPost<ActionResponse>(AUTH_API.action, { mode: "verifyEmail", oobCode, password: values.password, turnstileToken: values.turnstileToken });
+      const answer = await apiPost<ActionResponse>(AUTH_API.action, { mode, oobCode, password: values.password, turnstileToken: values.turnstileToken });
       if (answer.status === "verified") onVerified(answer.session);
+      else if (answer.status === "email_changed") onEmailChanged(answer.email);
       else if (answer.status === "turnstile_required") {
         // Several failed attempts: the widget appears and the same password goes again with its token.
         resubmitOnToken.current = !automatic.current;
@@ -390,17 +412,17 @@ function VerifyPasswordForm({
       <div className="flex flex-col gap-3">
         <h2 id="action-password-title" className="flex items-center gap-2 font-semibold">
           <MailCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          {t("passwordTitle")}
+          {change ? t("changePasswordTitle") : t("passwordTitle")}
         </h2>
-        <p className="text-sm text-foreground-muted text-pretty">{t("passwordLead")}</p>
+        <p className="text-sm text-foreground-muted text-pretty">{change ? t("changePasswordLead") : t("passwordLead")}</p>
         <div className="flex items-center gap-3 rounded-md bg-surface-muted px-4 py-3 text-sm">
           <KeyRound className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="min-w-0 break-words text-pretty">{t("passwordAccount", { email })}</span>
+          <span className="min-w-0 break-words text-pretty">{change ? t("changePasswordAddress", { email }) : t("passwordAccount", { email })}</span>
         </div>
       </div>
       <FormMessage error={serverError} />
-      {/* Password managers read the account from this field. */}
-      <input type="hidden" name="username" autoComplete="username" value={email} readOnly />
+      {/* Password managers read the account from this field (changeEmail: the account keeps its current address until then). */}
+      {change ? null : <input type="hidden" name="username" autoComplete="username" value={email} readOnly />}
       <PasswordField label={c("password")} autoComplete="current-password" required autoFocus error={fieldMessage("password", errors.password)} {...register("password")} />
       {turnstileNeeded ? (
         <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted p-4">
@@ -412,14 +434,16 @@ function VerifyPasswordForm({
         </div>
       ) : null}
       <Button type="submit" loading={isSubmitting} disabled={!hydrated} className="w-full">
-        {t("passwordSubmit")}
+        {change ? t("changePasswordSubmit") : t("passwordSubmit")}
       </Button>
-      <p className="text-sm text-foreground-muted text-pretty">
-        {t("passwordUnknown")}{" "}
-        <Link href="/mot-de-passe-oublie" className={cn("text-link", quietLinkClassName)}>
-          {t("passwordChoose")}
-        </Link>
-      </p>
+      {change ? null : (
+        <p className="text-sm text-foreground-muted text-pretty">
+          {t("passwordUnknown")}{" "}
+          <Link href="/mot-de-passe-oublie" className={cn("text-link", quietLinkClassName)}>
+            {t("passwordChoose")}
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

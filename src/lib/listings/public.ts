@@ -486,6 +486,29 @@ export async function getPublicStorefront(proId: string, limit = 24): Promise<Pu
   await assertQuotas(PUBLIC_READ_QUOTAS);
   const profile = await getProProfile(proId);
   if (!profile || !storefrontShown(profile.lifecycle, profile.plan)) return null;
+  return storefrontOf(profile, limit);
+}
+
+export type StorefrontLookup = { kind: "store"; store: PublicStorefront } | { kind: "moved"; segment: string } | null;
+
+/**
+ * The storefront of a /boutique segment "{slug}-{proId}". Any slug prefix names the same shop, so
+ * a segment that is not the current one costs the shop profile read alone and answers its current
+ * segment (the page redirects): only the canonical URL loads the owner, listings and reviews.
+ */
+export async function lookupStorefront(segment: string, limit = 24): Promise<StorefrontLookup> {
+  const parsed = parseStorefrontSegment(segment);
+  if (!parsed) return null;
+  await assertQuotas(PUBLIC_READ_QUOTAS);
+  const profile = await getProProfile(parsed.proId);
+  if (!profile || !storefrontShown(profile.lifecycle, profile.plan)) return null;
+  const current = storefrontSegment(profile.slug, profile.proId);
+  if (current !== segment) return { kind: "moved", segment: current };
+  const store = await storefrontOf(profile, limit);
+  return store ? { kind: "store", store } : null;
+}
+
+async function storefrontOf(profile: ProProfileRecord, limit: number): Promise<PublicStorefront | null> {
   const user = await getUserRecord(profile.ownerUid);
   if (!user || !isVisibleAccount(user) || user.status === "suspended") return null;
   const payment = profile.sellerPayment ? publicShopPayment(profile, await getSellerPayments(), new Date()) : null;

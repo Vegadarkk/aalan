@@ -549,7 +549,11 @@
       "passwordSubmit": "Confirmer et me connecter",
       "passwordWrong": "Mot de passe incorrect.",
       "passwordUnknown": "Vous ne connaissez pas ce mot de passe ou vous l'avez oublié ?",
-      "passwordChoose": "Choisissez-en un nouveau"
+      "passwordChoose": "Choisissez-en un nouveau",
+      "changePasswordTitle": "Confirmez le changement d'adresse",
+      "changePasswordLead": "Ce lien est ouvert sur un autre appareil que celui de la demande. Pour confirmer, saisissez le mot de passe actuel du compte.",
+      "changePasswordAddress": "Nouvelle adresse : {email}",
+      "changePasswordSubmit": "Confirmer le changement"
     },
     "settings": {
       "title": "Mes paramètres",
@@ -753,6 +757,7 @@
       "account_disabled": "Ce compte a été désactivé. Si vous pensez qu'il s'agit d'une erreur, écrivez-nous.",
       "account_suspended": "Ce compte est suspendu. Vous pouvez lire vos conversations et faire un recours.",
       "email_not_verified": "Confirmez d'abord votre adresse e-mail avec le lien reçu.",
+      "google_email_unconfirmed": "Google ne peut pas garantir que cette adresse vous appartient encore. Inscrivez-vous ou connectez-vous avec votre e-mail et un mot de passe.",
       "role_missing": "Votre compte n'est pas encore activé. Ouvrez le lien reçu par e-mail.",
       "invalid_code": "Ce lien n'est plus valable.",
       "expired_code": "Ce lien a expiré.",
@@ -5908,7 +5913,8 @@
     "csvErrors": {
       "empty": "Le fichier ne contient aucune ligne sous l'en-tête.",
       "unclosed_quote": "Un guillemet ouvert ligne {line} n'est jamais fermé : corrigez la cellule puis renvoyez le fichier.",
-      "too_many_rows": "Le fichier dépasse 300 lignes (ligne {line}) : découpez-le en plusieurs fichiers."
+      "too_many_rows": "Le fichier dépasse 300 lignes (ligne {line}) : découpez-le en plusieurs fichiers.",
+      "cell_too_long": "Une cellule ligne {line} dépasse 5 000 caractères : raccourcissez-la puis renvoyez le fichier."
     },
     "preview": {
       "title": "Vérifier",

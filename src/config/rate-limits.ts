@@ -134,6 +134,7 @@ export const RATE_LIMITS = {
   // POST /api/shops/{proId}/payment: a buyer opens a shop's payment page (2 reads, 1 counter
   // write). Anonymous: 120 per hour per IP.
   "shop.payment.ip": { points: 120, duration: HOUR, policy: "open", key: "ip" },
+  "shop.payment.ip48": { points: 1200, duration: HOUR, policy: "open", key: "ip48" },
   // Its click counter: one count per IP and listing per day (the key carries the listing id), so a
   // script cannot inflate a shop's figures or spend the write quota.
   "shop.payment.click": { points: 1, duration: DAY, policy: "open", key: "ip" },
@@ -194,8 +195,12 @@ export const RATE_LIMITS = {
   "listing.read.ip": { points: 1200, duration: HOUR, policy: "open", key: "ip" },
   "profile.read.ip": { points: 1200, duration: HOUR, policy: "open", key: "ip" },
   // View beacons of the listing and storefront pages (shop counters, UX audit lot 1): one Valkey
-  // round trip each, no Firestore. 600 per hour per IP; open, a lost view costs nothing.
+  // round trip each, but every distinct id counted costs Firestore work at the nightly flush
+  // (src/lib/stats/flush.ts). 600 per hour per IP, 6,000 per /48, and past 2,000 a day per IP
+  // the views are no longer counted (the beacon still answers 204); open, a lost view costs nothing.
   "stats.view.ip": { points: 600, duration: HOUR, policy: "open", key: "ip" },
+  "stats.view.ip48": { points: 6000, duration: HOUR, policy: "open", key: "ip48" },
+  "stats.view.day.ip": { points: 2000, duration: DAY, policy: "open", key: "ip" },
   // Staff moderation decisions (admin host, behind Access): a moderator working the queue.
   "moderation.decision.uid": { points: 300, duration: HOUR, policy: "closed", key: "uid" },
   // Pro applications (phase 7): a moderator's verify or reject; each verification retags the
@@ -288,6 +293,11 @@ export const RATE_LIMITS = {
   "conversation.new.young.uid": { points: 10, duration: DAY, policy: "open", key: "uid" },
   // Read, archive, hide, block calls of the inbox, and the unread badge.
   "conversation.state.uid": { points: 600, duration: HOUR, policy: "open", key: "uid" },
+  // Archive, hide, block and unblock write Firestore (a block re-mirrors every conversation of the
+  // pair): 300 a day per account, of which 30 block or unblock changes, a small share of the
+  // 20,000 daily writes (sends: 400 a day, D1a-01).
+  "conversation.state.day.uid": { points: 300, duration: DAY, policy: "open", key: "uid" },
+  "conversation.block.day.uid": { points: 30, duration: DAY, policy: "open", key: "uid" },
   "messages.unread.uid": { points: 600, duration: HOUR, policy: "open", key: "uid" },
   // The browser reads conversations through the API only (D2, 19 Oct): inbox pages, inbox rows and
   // thread pages, 1 200 calls per hour (a live thread refetches its newer messages on each event),
@@ -311,6 +321,8 @@ export const RATE_LIMITS = {
   "review.mine.uid": { points: 120, duration: HOUR, policy: "open", key: "uid" },
   // GET /api/reviews (storefront "more"): a page of 10 reads, metered like a profile view.
   "review.read.ip": { points: 120, duration: HOUR, policy: "open", key: "ip" },
+  // An IPv6 client also counts on its /48 (ten times the /64 allowance), as for the other anonymous reads.
+  "review.read.ip48": { points: 1200, duration: HOUR, policy: "open", key: "ip48" },
   "report.p0.uid": { points: 3, duration: DAY, policy: "open", key: "uid" },
   "report.p0.device": { points: 2, duration: DAY, policy: "open", key: "device" },
   "report.p0.ip": { points: 5, duration: DAY, policy: "open", key: "ip" },

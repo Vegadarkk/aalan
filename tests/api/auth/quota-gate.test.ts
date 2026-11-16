@@ -36,7 +36,7 @@ function googleJar(): Jar {
 }
 
 function googleBody(email: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
-  return { credential: JSON.stringify({ sub: `g-${email}`, email, emailVerified: true, name: "Nadia Google", nonce: gisNonce(DEVICE.id) }), ...extra };
+  return { credential: JSON.stringify({ sub: `g-${email}`, email, emailVerified: true, name: "Nadia Google", nonce: gisNonce(DEVICE.id), hostedDomain: "workspace.test" }), ...extra };
 }
 
 async function authRecord(email: string) {

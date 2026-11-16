@@ -7,10 +7,15 @@ export interface PendingEmailChange {
   newEmail: string;
   requestedAt: Date;
   expiresAt: Date;
+  /**
+   * pepperedHash("did", deviceId) of the browser that asked for the change: the link applies from
+   * that device alone, any other one needs the account password (src/lib/auth/action.ts).
+   */
+  deviceHash?: string;
 }
 
-export function pendingEmailChange(newEmail: string, now: Date): PendingEmailChange {
-  return { newEmail, requestedAt: now, expiresAt: new Date(now.getTime() + EMAIL_CHANGE_TTL_HOURS * 3_600_000) };
+export function pendingEmailChange(newEmail: string, now: Date, deviceHash?: string): PendingEmailChange {
+  return { newEmail, requestedAt: now, expiresAt: new Date(now.getTime() + EMAIL_CHANGE_TTL_HOURS * 3_600_000), ...(deviceHash ? { deviceHash } : {}) };
 }
 
 /** The pending change still waiting for its link, or null (none, or past its expiry). */

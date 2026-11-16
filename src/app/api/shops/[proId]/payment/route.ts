@@ -16,8 +16,9 @@ export const dynamic = "force-dynamic";
 
 export const POST = apiRoute(async (request, context) => {
   requireSameOrigin(request);
-  const { ipBucket } = requestIdentity(request.headers);
+  const { ipBucket, ip48 } = requestIdentity(request.headers);
   await enforceLimit("shop.payment.ip", ipBucket);
+  if (ip48) await enforceLimit("shop.payment.ip48", ip48);
   const id = proIdSchema.safeParse((await context.params)["proId"]);
   if (!id.success) throw notFound();
   const body = await readJson(request, openPaymentSchema);

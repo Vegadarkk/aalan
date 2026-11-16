@@ -159,7 +159,7 @@ const FALSE_WORDS = new Set(["non", "no", "n", "0", "faux", "false", "لا", "la
  * Separators of a multiple choice cell ("GPS | Caméra de recul", "gps, camera-recul"): the bar or
  * semicolon first, so a label holding a slash or a comma ("CarPlay / Android Auto") stays whole.
  */
-const LIST_SEPARATORS = [/\s*[|;]\s*/, /\s*[|,;/+]\s*/];
+const LIST_SEPARATORS = [/[|;]/, /[|,;/+]/];
 
 export interface ColumnMap {
   /** Column index -> core field or criterion target. */
@@ -282,17 +282,23 @@ const AXIS_NAMES: Record<VariantCriterion, readonly string[]> = {
   "shoe-size": ["pointure", "taille chaussure", FR.Criteria["shoe-size"]?.label ?? "", AR.Criteria["shoe-size"]?.label ?? ""],
   color: ["couleur", "coloris", "color", "colour", FR.Criteria["color"]?.label ?? "", AR.Criteria["color"]?.label ?? ""],
 };
-const VARIANT_CELL = /^([^:=：]+?)\s*[:=：]\s*(.+)$/u;
+/** Name and value of a variant cell, around its first `:`, `=` or `：` (no regular expression: cells can be long). */
+function splitVariantCell(raw: string): [string, string] | undefined {
+  const at = raw.search(/[:=：]/u);
+  const rest = at > 0 ? raw.slice(at + 1) : "";
+  if (rest === "" || /[\n\r\u2028\u2029]/.test(rest)) return undefined;
+  return [raw.slice(0, at), rest];
+}
 
 /**
  * A variant cell (« Taille : M »): a size or colour of the subcategory takes its option, any other
  * name is a free axis with the value as written. « Taille » of shoes is their size.
  */
 function readVariantCell(raw: string, subcategory: Subcategory): { axis: ImportedAxis; value: string } | undefined {
-  const match = VARIANT_CELL.exec(raw);
-  if (!match) return undefined;
-  const name = match[1]!.trim();
-  const value = match[2]!.trim();
+  const parts = splitVariantCell(raw);
+  if (!parts) return undefined;
+  const name = parts[0].trim();
+  const value = parts[1].trim();
   const has = (id: string) => subcategory.criteria.find((criterion) => criterion.id === id);
   const wanted = key(name);
   for (const [id, names] of Object.entries(AXIS_NAMES) as [VariantCriterion, readonly string[]][]) {
@@ -314,7 +320,7 @@ const PERIOD = /^(\d{4}-\d{2}-\d{2})(?:\s*(?:\/|au|à|->|→|\.\.)\s*(\d{4}-\d{2
 export function parsePeriods(raw: string, today: number): RentalPeriod[] | undefined {
   if (NO_PERIOD_WORDS.has(key(raw))) return [];
   const periods: RentalPeriod[] = [];
-  for (const part of raw.split(/\s*[;,|\n]\s*/).filter(Boolean)) {
+  for (const part of raw.split(/[;,|\n]/).map((piece) => piece.trim()).filter(Boolean)) {
     const match = PERIOD.exec(part.trim());
     if (!match || !DAY_PATTERN.test(match[1]!) || (match[2] !== undefined && !DAY_PATTERN.test(match[2]))) return undefined;
     periods.push({ from: match[1]!, to: match[2] ?? match[1]! });
@@ -474,7 +480,7 @@ function readCriterion(criterion: Criterion, raw: string): ListingAttributes[str
       return optionOf(criterion, raw);
     case "multiselect": {
       for (const separator of LIST_SEPARATORS) {
-        const values = raw.split(separator).filter(Boolean).map((part) => optionOf(criterion, part));
+        const values = raw.split(separator).map((part) => part.trim()).filter(Boolean).map((part) => optionOf(criterion, part));
         if (values.every((value): value is string => value !== undefined)) return [...new Set(values)];
       }
       return undefined;

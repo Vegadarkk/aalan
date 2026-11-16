@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { MAX_OBJECT_STREAMS, pdfHasActiveContentDeep } from "@/lib/pro/kybc-pdf";
+import { DICTIONARY_WINDOW, MAX_OBJECT_STREAMS, MAX_STREAM_KEYWORDS, pdfHasActiveContentDeep } from "@/lib/pro/kybc-pdf";
 
 // KYBC PDFs: active content hidden in a compressed object stream (security review, 2 Nov 2026).
 
@@ -33,6 +33,21 @@ describe("pdfHasActiveContentDeep", () => {
     expect(pdfHasActiveContentDeep(pdf(head, "3 0 obj\n<< /Type /ObjStm /N 1 /First 4 /Filter /FlateDecode >>\nstream\nnot zlib\nendstream\nendobj\n", tail))).toBe(true);
     const many = Array.from({ length: MAX_OBJECT_STREAMS + 1 }, (_, index) => objectStream(10 + index, "2 0 << /Count 0 >>")).flat();
     expect(pdfHasActiveContentDeep(pdf(head, ...many, tail))).toBe(true);
+  });
+
+  it("stays linear on crafted pieces: keywords without a nearby object header, or too many of them", () => {
+    // `stream` keywords and no object header at all: not inspectable, refused at once.
+    const bare = pdf("%PDF-1.4\n", "stream\n".repeat(1_500_000));
+    let started = performance.now();
+    expect(pdfHasActiveContentDeep(bare)).toBe(true);
+    expect(performance.now() - started).toBeLessThan(1_000);
+    // A header farther than the window from its keyword: refused.
+    expect(pdfHasActiveContentDeep(pdf(head, "3 0 obj\n<< /Length 1 ", " ".repeat(DICTIONARY_WINDOW), ">>\nstream\nx\nendstream\nendobj\n", tail))).toBe(true);
+    // More keywords than a real piece holds, each with its header: refused, quickly.
+    const many = Array.from({ length: MAX_STREAM_KEYWORDS + 1 }, (_, index) => `${index + 10} 0 obj\n<< /Length 1 >>\nstream\nx\nendstream\nendobj\n`).join("");
+    started = performance.now();
+    expect(pdfHasActiveContentDeep(pdf(head, many, tail))).toBe(true);
+    expect(performance.now() - started).toBeLessThan(1_000);
   });
 
   it("ignores ordinary content streams (pages, images) and still sees raw tokens", () => {

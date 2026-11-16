@@ -350,20 +350,23 @@ export type ParticipantState = { archived: boolean } | { hidden: true };
 
 /**
  * Archive / unarchive, or delete for me (D7: `hiddenFor`, the unread count goes with it). Neither
- * touches `updatedAt` (the inbox order). Returns the conversation before the change.
+ * touches `updatedAt` (the inbox order). Nothing is written, nor charged, when the state already
+ * holds. Returns the conversation before the change.
  */
 export async function setParticipantState(cid: string, uid: string, change: ParticipantState): Promise<ConversationRecord> {
-  const conversation = await db().runTransaction(async (tx) => {
+  const { conversation, wrote } = await db().runTransaction(async (tx) => {
     const current = await participantConversationTx(tx, cid, uid);
     if ("hidden" in change) {
+      if (current.hiddenFor.includes(uid) && (current.unread[uid] ?? 0) === 0) return { conversation: current, wrote: false };
       tx.update(conversationRef(cid), { hiddenFor: FieldValue.arrayUnion(uid), unread: { ...current.unread, [uid]: 0 } });
     } else {
+      if (current.archivedBy.includes(uid) === change.archived) return { conversation: current, wrote: false };
       tx.update(conversationRef(cid), { archivedBy: change.archived ? FieldValue.arrayUnion(uid) : FieldValue.arrayRemove(uid) });
     }
-    return current;
+    return { conversation: current, wrote: true };
   });
   void consume("firestore.reads", 1);
-  void consume("firestore.writes", 1);
+  if (wrote) void consume("firestore.writes", 1);
   return conversation;
 }
 

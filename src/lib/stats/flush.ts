@@ -2,10 +2,11 @@ import "server-only";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { listingStatsRef } from "@/lib/db/repositories/listing-stats";
 import { listingRef } from "@/lib/db/repositories/listings";
+import { proProfileRef } from "@/lib/db/repositories/pro-profiles";
 import { COLLECTIONS, type ShopStatsDay } from "@/lib/db/schemas";
 import { db, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
-import { consume, firstDegraded } from "@/lib/quota";
+import { consume, firstDegraded, headroom } from "@/lib/quota";
 import { isResourceExhausted } from "@/lib/quota/gate";
 import { STATS_KEYS, statsClient, statsDay } from "./counters";
 
@@ -18,6 +19,10 @@ import { STATS_KEYS, statsClient, statsDay } from "./counters";
 // through the listing's proId (one read per listing seen that day, which also drops purged
 // listings). Each shop write also deletes the days that fell out of the kept window. Deferred,
 // hash kept, while Firestore writes or reads are degraded.
+// The hash is fed by anonymous beacons: each run spends at most FLUSH_QUOTA_SHARE of the day's
+// Firestore reads and writes (headroom, checked before every batch) and defers past it; a shop id
+// is written only when its proProfiles document exists, and written shops are marked (`y:{id}`)
+// so a repeated run resumes instead of writing them again.
 
 export const STATS_LOOKBACK_DAYS = 7;
 /** Days a shop keeps: the Pro space shows 30. */
@@ -27,6 +32,30 @@ const PRUNE_SPAN_DAYS = 30;
 const TOP_LISTINGS_PER_DAY = 50;
 const READ_BATCH = 100;
 const DAY_MS = 24 * 3_600_000;
+/** Share of the daily Firestore quotas a run may bring the counters up to. */
+export const FLUSH_QUOTA_SHARE = 0.3;
+
+/** The run's budget is spent: the hash is kept for the next night. */
+class FlushDeferred extends Error {}
+
+/** Reads and writes this run may still spend; null: the counter is unreadable (not limited here). */
+export interface FlushBudget {
+  reads: number | null;
+  writes: number | null;
+}
+
+async function flushBudget(): Promise<FlushBudget> {
+  const [reads, writes] = await Promise.all([headroom("firestore.reads", FLUSH_QUOTA_SHARE), headroom("firestore.writes", FLUSH_QUOTA_SHARE)]);
+  return { reads, writes };
+}
+
+/** Takes `units` from the budget before a batch, or defers the run. */
+function spend(budget: FlushBudget, kind: keyof FlushBudget, units: number): void {
+  const left = budget[kind];
+  if (left === null) return;
+  if (units > left) throw new FlushDeferred(`stats-flush ${kind} budget spent`);
+  budget[kind] = left - units;
+}
 
 export interface StatsFlushResult {
   days: string[];
@@ -50,18 +79,23 @@ function dayOffset(day: string, days: number): string {
 
 /** Field of the day's hash marking a listing already added to its listingStats. */
 const flushedField = (listingId: string) => `x:${listingId}`;
+/** Field of the day's hash marking a shop whose day is written. */
+const shopFlushedField = (proId: string) => `y:${proId}`;
 
 /** Shops and listings of one day's hash, and the listings already added to listingStats. */
-function parse(hash: Record<string, string>): { shops: Map<string, Pending>; listings: Map<string, [number, number]>; flushed: Set<string> } {
+function parse(hash: Record<string, string>): { shops: Map<string, Pending>; listings: Map<string, [number, number]>; flushed: Set<string>; shopsFlushed: Set<string> } {
   const shops = new Map<string, Pending>();
   const listings = new Map<string, [number, number]>();
   const flushed = new Set<string>();
+  const shopsFlushed = new Set<string>();
   for (const [field, raw] of Object.entries(hash)) {
     const [scope, id, metric] = field.split(":");
     const count = Number(raw);
     if (!id || !Number.isSafeInteger(count) || count <= 0) continue;
     if (scope === "x" && metric === undefined) {
       flushed.add(id);
+    } else if (scope === "y" && metric === undefined) {
+      shopsFlushed.add(id);
     } else if (scope === "s" && (metric === "v" || metric === "c" || metric === "r")) {
       const shop = shops.get(id) ?? empty();
       shop[metric] += count;
@@ -72,14 +106,15 @@ function parse(hash: Record<string, string>): { shops: Map<string, Pending>; lis
       listings.set(id, entry);
     }
   }
-  return { shops, listings, flushed };
+  return { shops, listings, flushed, shopsFlushed };
 }
 
 /** Listings that still exist (purged ones are left out), with their shop's proId (null: a member's). */
-async function ownersOf(listingIds: string[]): Promise<Map<string, string | null>> {
+async function ownersOf(listingIds: string[], budget: FlushBudget): Promise<Map<string, string | null>> {
   const out = new Map<string, string | null>();
   for (let start = 0; start < listingIds.length; start += READ_BATCH) {
     const batch = listingIds.slice(start, start + READ_BATCH);
+    spend(budget, "reads", batch.length);
     const snapshots = await db().getAll(...batch.map((id) => listingRef(id)), { fieldMask: ["proId", "status"] });
     void consume("firestore.reads", batch.length);
     snapshots.forEach((snapshot, index) => {
@@ -94,11 +129,12 @@ async function ownersOf(listingIds: string[]): Promise<Map<string, string | null
 }
 
 /** Adds the day's views and contacts to listingStats, marking each committed batch in the hash. */
-async function flushListings(day: string, listings: Map<string, [number, number]>, owners: Map<string, string | null>, flushed: Set<string>, now: Date): Promise<void> {
+async function flushListings(day: string, listings: Map<string, [number, number]>, owners: Map<string, string | null>, flushed: Set<string>, now: Date, budget: FlushBudget): Promise<void> {
   const pending = [...listings.entries()].filter(([listingId]) => owners.has(listingId) && !flushed.has(listingId));
   const client = statsClient();
   for (let start = 0; start < pending.length; start += 400) {
     const slice = pending.slice(start, start + 400);
+    spend(budget, "writes", slice.length);
     const batch = db().batch();
     for (const [listingId, [views, contacts]] of slice) {
       // increment(0) creates the other counters of a new document (listingStatsSchema is strict).
@@ -123,10 +159,26 @@ function dayDoc(pending: Pending): ShopStatsDay {
   return { v: pending.v, lv: pending.lv, c: pending.c, r: pending.r, ...(top.length > 0 ? { l: Object.fromEntries(top) } : {}) };
 }
 
-async function flushDay(day: string, hash: Record<string, string>, now: Date): Promise<number> {
-  const { shops, listings, flushed } = parse(hash);
-  const owners = await ownersOf([...listings.keys()]);
-  await flushListings(day, listings, owners, flushed, now);
+/** The shop ids that have a proProfiles document (one read each, in batches). */
+async function existingShops(proIds: string[], budget: FlushBudget): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (let start = 0; start < proIds.length; start += READ_BATCH) {
+    const batch = proIds.slice(start, start + READ_BATCH);
+    spend(budget, "reads", batch.length);
+    const snapshots = await db().getAll(...batch.map((id) => proProfileRef(id)), { fieldMask: ["ownerUid"] });
+    void consume("firestore.reads", batch.length);
+    snapshots.forEach((snapshot, index) => {
+      const proId = batch[index];
+      if (proId && snapshot.exists) out.add(proId);
+    });
+  }
+  return out;
+}
+
+async function flushDay(day: string, hash: Record<string, string>, now: Date, budget: FlushBudget): Promise<number> {
+  const { shops, listings, flushed, shopsFlushed } = parse(hash);
+  const owners = await ownersOf([...listings.keys()], budget);
+  await flushListings(day, listings, owners, flushed, now, budget);
   for (const [listingId, [views, contacts]] of listings) {
     const proId = owners.get(listingId);
     if (!proId) continue;
@@ -137,17 +189,31 @@ async function flushDay(day: string, hash: Record<string, string>, now: Date): P
   }
   const prune: Record<string, FieldValue> = {};
   for (let offset = STATS_KEEP_DAYS; offset < STATS_KEEP_DAYS + PRUNE_SPAN_DAYS; offset += 1) prune[dayOffset(day, -offset)] = FieldValue.delete();
-  const entries = [...shops.entries()];
+  // Shops named by a listing's proId exist; the others (storefront beacons) are checked first.
+  const owning = new Set([...owners.values()].filter((proId): proId is string => proId !== null));
+  const unwritten = [...shops.keys()].filter((proId) => !shopsFlushed.has(proId));
+  const known = await existingShops(
+    unwritten.filter((proId) => !owning.has(proId)),
+    budget,
+  );
+  const entries = [...shops.entries()].filter(([proId]) => !shopsFlushed.has(proId) && (owning.has(proId) || known.has(proId)));
+  const client = statsClient();
   for (let start = 0; start < entries.length; start += 400) {
-    const batch = db().batch();
     const slice = entries.slice(start, start + 400);
+    spend(budget, "writes", slice.length);
+    const batch = db().batch();
     for (const [proId, pending] of slice) {
       batch.set(db().collection(COLLECTIONS.shopStats).doc(proId), { days: { ...prune, [day]: dayDoc(pending) }, updatedAt: Timestamp.fromDate(now) }, { merge: true });
     }
     await batch.commit();
     void consume("firestore.writes", slice.length);
+    if (client) {
+      let chain = client.multi();
+      for (const [proId] of slice) chain = chain.hincrby(STATS_KEYS.day(day), shopFlushedField(proId), 1);
+      await chain.exec();
+    }
   }
-  return shops.size;
+  return entries.length;
 }
 
 export async function statsFlush(now = new Date()): Promise<StatsFlushResult> {
@@ -158,6 +224,7 @@ export async function statsFlush(now = new Date()): Promise<StatsFlushResult> {
     return result;
   }
   const today = statsDay(now);
+  const budget = await flushBudget();
   for (let back = STATS_LOOKBACK_DAYS; back >= 1; back -= 1) {
     const day = dayOffset(today, -back);
     const key = STATS_KEYS.day(day);
@@ -170,8 +237,13 @@ export async function statsFlush(now = new Date()): Promise<StatsFlushResult> {
       break;
     }
     try {
-      result.shops += await flushDay(day, hash, now);
+      result.shops += await flushDay(day, hash, now, budget);
     } catch (error) {
+      if (error instanceof FlushDeferred) {
+        result.deferred = true;
+        logger.warn({ day }, "stats-flush deferred: the run's share of the Firestore quotas is spent");
+        break;
+      }
       if (!isResourceExhausted(error)) throw error;
       result.deferred = true;
       logger.warn({ day }, "stats-flush deferred: Firestore answered RESOURCE_EXHAUSTED");

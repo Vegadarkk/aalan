@@ -21,6 +21,8 @@ export type ErrorCode =
   | "account_disabled"
   | "account_suspended"
   | "email_not_verified"
+  /** Google sign-in with an address Google does not vouch for today (not Gmail, no Workspace domain). */
+  | "google_email_unconfirmed"
   | "role_missing"
   | "invalid_code"
   | "expired_code"

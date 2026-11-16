@@ -1,5 +1,5 @@
 import "server-only";
-import { UPLOAD_URL_TTL_SECONDS } from "@/lib/contracts/media";
+import { MAX_UPLOAD_BYTES, UPLOAD_URL_TTL_SECONDS } from "@/lib/contracts/media";
 import type { KybcCompleteResponse, KybcRejectReason, KybcSignInput, KybcSignResponse } from "@/lib/contracts/pro";
 import { recordContentOp } from "@/lib/db/repositories/content-ops";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
@@ -90,20 +90,28 @@ async function reject(objects: ObjectStore, upload: UploadRecord, reason: Exclud
   return answer(marked.upload ?? { ...upload, status: "rejected", rejectReason: reason });
 }
 
+/** Longest edge of a stored image piece: an A4 page at 300 dpi; larger scans are scaled down. */
+export const KYBC_IMAGE_MAX_EDGE = 3500;
+/** Largest stored piece once re-encoded: a re-encode may grow a file, never past this. */
+export const KYBC_STORED_MAX_BYTES = 2 * MAX_UPLOAD_BYTES;
+
 /**
  * The bytes stored for a piece: a PDF as received once it carries no active content; an image
- * re-encoded by sharp (auto-rotated, metadata dropped, pixel cap and timeout of the photo
- * pipeline). Null when the piece is refused, with the reason.
+ * re-encoded by sharp (auto-rotated, scaled down to KYBC_IMAGE_MAX_EDGE, metadata dropped, pixel
+ * cap and timeout of the photo pipeline), refused as too large past KYBC_STORED_MAX_BYTES. Null
+ * when the piece is refused, with the reason.
  */
-export async function sanitizeKybcPiece(body: Buffer, declaredType: UploadRecord["declaredType"]): Promise<{ bytes: Buffer } | { reason: Exclude<KybcRejectReason, "expired" | "too_large"> }> {
+export async function sanitizeKybcPiece(body: Buffer, declaredType: UploadRecord["declaredType"]): Promise<{ bytes: Buffer } | { reason: Exclude<KybcRejectReason, "expired"> }> {
   if (declaredType === "application/pdf") return pdfHasActiveContentDeep(body) ? { reason: "active_content" } : { bytes: body };
+  let bytes: Buffer;
   try {
-    const image = openImage(body).rotate();
-    return { bytes: await (declaredType === "image/png" ? image.png({ compressionLevel: 6 }) : image.jpeg({ quality: 88 })).toBuffer() };
+    const image = openImage(body).rotate().resize({ width: KYBC_IMAGE_MAX_EDGE, height: KYBC_IMAGE_MAX_EDGE, fit: "inside", withoutEnlargement: true });
+    bytes = await (declaredType === "image/png" ? image.png({ compressionLevel: 6, adaptiveFiltering: true }) : image.jpeg({ quality: 88 })).toBuffer();
   } catch (error) {
     logger.info({ err: (error as Error).message }, "kybc image not decodable");
     return { reason: "bad_type" };
   }
+  return bytes.byteLength > KYBC_STORED_MAX_BYTES ? { reason: "too_large" } : { bytes };
 }
 
 /** Repeating it is harmless: a finished piece answers its status. */

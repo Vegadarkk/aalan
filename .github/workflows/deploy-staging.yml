@@ -105,11 +105,15 @@ jobs:
           test -n "$CLOUDFLARED_IMAGE" || { echo "cloudflared image not found in docker/compose.yml"; exit 1; }
           docker pull --quiet "$CLOUDFLARED_IMAGE"
           # The proxy logs at info (never debug, which may print request headers) so a dropped link
-          # says why; ServerAlive notices a stalled one.
+          # says why; ServerAlive notices a stalled one. `access ssh` keeps stdout for the SSH stream
+          # and writes its log only to --logfile: a host directory, printed when the link drops.
+          PROXY_LOGS="$RUNNER_TEMP/cloudflared-logs"
+          install -d -m 0777 "$PROXY_LOGS"
+          proxy_log() { echo "::group::cloudflared log"; tail -n 40 "$PROXY_LOGS/access.log" 2>/dev/null || echo "(no log)"; echo "::endgroup::"; }
           vm() {
             ssh -i ~/.ssh/deploy_staging -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
               -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
-              -o ProxyCommand="docker run --rm -i -e TUNNEL_SERVICE_TOKEN_ID -e TUNNEL_SERVICE_TOKEN_SECRET $CLOUDFLARED_IMAGE access ssh --hostname %h --loglevel info" \
+              -o ProxyCommand="docker run --rm -i -v $PROXY_LOGS:/logs -e TUNNEL_SERVICE_TOKEN_ID -e TUNNEL_SERVICE_TOKEN_SECRET $CLOUDFLARED_IMAGE access ssh --hostname %h --loglevel info --logfile /logs/access.log" \
               deploy-staging@ssh.joutiya.ma "$@"
           }
           send() { zstd -T0 -10 -q -c "$RUNNER_TEMP/release.tar" | vm "load $RELEASE"; }
@@ -121,6 +125,7 @@ jobs:
           send || code=$?
           if ((code == 255)); then
             echo "::warning::The SSH link to the VM dropped (exit 255): checking the VM, then one more attempt"
+            proxy_log
             sleep 30
             if vm status | grep -qF "\"staging\":{\"release\":\"$RELEASE\""; then
               echo "Staging already runs $RELEASE"
@@ -129,6 +134,7 @@ jobs:
             code=0
             send || code=$?
           fi
+          ((code == 0)) || proxy_log
           exit "$code"
 
   rules:

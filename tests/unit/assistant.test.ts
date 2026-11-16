@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_AI } from "@/config/ai";
 import { DEFAULT_LEGAL } from "@/config/legal";
+import { GUIDE_PROCEDURE_IDS, guideProcedureTitle } from "@/content/guide";
 import { HELP_SLUGS, helpArticles, helpValues } from "@/content/help";
 import type { AssistantClient } from "@/lib/ai/assistant";
 
@@ -82,7 +83,15 @@ describe("assistant prompt", () => {
     expect(system).toMatch(/does not arbitrate disputes/);
     expect(system).toMatch(/WhatsApp is not available/);
     expect(assistantSystemPrompt("rif", helpArticles("rif", values))).toMatch(/Tarifit \(Riffian Amazigh\) written in Latin script/);
-    expect(assistantPromptVersion(system)).toMatch(/^assistant\.v2\.[0-9a-f]{8}$/);
+    expect(assistantPromptVersion(system)).toMatch(/^assistant\.v3\.[0-9a-f]{8}$/);
+    // The procedures guide of the locale (owner, 2026-11-11), its link labels but never a URL.
+    for (const id of GUIDE_PROCEDURE_IDS) expect(system).toContain(`<procedure id="${id}"`);
+    expect(system).toContain(guideProcedureTitle("fr", "visa-france"));
+    expect(system).not.toContain(guideProcedureTitle("ar", "visa-france"));
+    expect(system).toMatch(/Never state a fee, a price, a delay/);
+    expect(system).toMatch(/never recommend an intermediary/);
+    expect(system).toMatch(/information, not an official procedure/);
+    expect(system).not.toMatch(/https?:\/\//);
     // No per-request value: nothing that would break the cache.
     expect(system).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
   });
@@ -101,10 +110,15 @@ describe("assistant prompt", () => {
   });
 
   it("bounds the answer and keeps known, distinct citations (3 at most)", () => {
-    const { answer, cited } = clampAnswer({ answer: `  ${"a".repeat(2000)}\u0007 `, articles: ["eviter-les-arnaques", "eviter-les-arnaques", "role-d-aalan", "signaler-un-contenu", "creer-un-compte"] as never });
+    const { answer, cited, procedures } = clampAnswer({
+      answer: `  ${"a".repeat(2000)}\u0007 `,
+      articles: ["eviter-les-arnaques", "eviter-les-arnaques", "role-d-aalan", "signaler-un-contenu", "creer-un-compte"] as never,
+      procedures: ["visa-france", "visa-france", "inconnue", "visa-schengen", "id-passeport", "id-cnie"] as never,
+    });
     expect(answer).toHaveLength(900);
     expect(answer.endsWith("…")).toBe(true);
     expect(cited).toEqual(["eviter-les-arnaques", "role-d-aalan", "signaler-un-contenu"]);
+    expect(procedures).toEqual(["visa-france", "visa-schengen", "id-passeport"]);
   });
 });
 
@@ -114,7 +128,7 @@ describe("askAssistant", () => {
   it("answers with Haiku 5.5: cached system prompt, masked question, cost counted into claude.budget", async () => {
     const parse = stub(async () => reply({ answer: "Ne payez jamais avant d'avoir vu l'article.", articles: ["eviter-les-arnaques"] }));
     const outcome = await askAssistant(input);
-    expect(outcome).toEqual({ mode: "ai", answer: "Ne payez jamais avant d'avoir vu l'article.", cited: ["eviter-les-arnaques"] });
+    expect(outcome).toEqual({ mode: "ai", answer: "Ne payez jamais avant d'avoir vu l'article.", cited: ["eviter-les-arnaques"], procedures: [] });
     const params = parse.mock.calls[0]?.[0] as Params;
     expect(params.model).toBe("claude-haiku-5-5");
     expect(params.system[0]?.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
@@ -127,6 +141,16 @@ describe("askAssistant", () => {
     expect(sent).toContain("[téléphone]");
     // 200 x 0.10 + 100 x 0.50 + 8000 x 0.01 = 150 micro-USD.
     expect(consume).toHaveBeenCalledWith("claude.budget", 150);
+  });
+
+  it("passes on the guide procedures the answer relied on", async () => {
+    stub(async () => reply({ answer: "La demande se fait sur France-Visas, puis au centre de visas.", articles: [], procedures: ["visa-france", "visa-schengen"] }));
+    expect(await askAssistant({ ...input, question: "Comment demander un visa pour la France ?" })).toEqual({
+      mode: "ai",
+      answer: "La demande se fait sur France-Visas, puis au centre de visas.",
+      cited: [],
+      procedures: ["visa-france", "visa-schengen"],
+    });
   });
 
   it("falls back to search without a key, never calling Claude", async () => {

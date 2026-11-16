@@ -118,7 +118,33 @@
     "seconds": "Tisegnatin",
     "opening": "Tawwurt qa tetterzem…",
     "follow": "Ḍfar-aɣ ḥima ur k-yezri walu",
-    "legal": "Isallen n lqanun"
+    "legal": "Isallen n lqanun",
+    "newsletter": {
+      "title": "Soyez prévenu de l'ouverture",
+      "intro": "Trois e-mails, pas un de plus : un avant-goût, les places de lancement la veille, puis l'ouverture.",
+      "emailLabel": "Votre adresse e-mail",
+      "placeholder": "vous@exemple.com",
+      "submit": "M'inscrire",
+      "consent": "En vous inscrivant, vous acceptez de recevoir ces e-mails. Désinscription en un clic.",
+      "privacy": "Politique de confidentialité",
+      "sent": "Vérifiez votre boîte mail : cliquez sur le lien reçu pour confirmer votre inscription.",
+      "sentHint": "Rien reçu dans quelques minutes ? Regardez dans les indésirables.",
+      "confirming": "Confirmation de votre inscription…",
+      "confirmed": "Inscription confirmée. On vous écrit avant l'ouverture.",
+      "confirmFailed": "Ce lien a expiré ou n'est plus valable. Inscrivez-vous de nouveau ci-dessous.",
+      "unsubscribeQuestion": "Ne plus recevoir les e-mails du lancement ?",
+      "unsubscribeButton": "Me désinscrire",
+      "unsubscribed": "C'est fait : vous ne recevrez plus nos e-mails.",
+      "unsubscribeFailed": "Ce lien n'est pas valable.",
+      "errors": {
+        "invalid": "Saisissez une adresse e-mail valide, par exemple nom@exemple.com.",
+        "disposable": "Les adresses jetables ne sont pas acceptées : utilisez votre adresse habituelle.",
+        "robot": "La vérification anti-robot n'a pas abouti. Attendez qu'elle se termine, puis réessayez.",
+        "rateLimited": "Trop d'essais depuis votre connexion. Réessayez dans une heure.",
+        "network": "Pas de connexion. Vérifiez votre réseau, puis réessayez.",
+        "generic": "L'inscription n'a pas abouti. Réessayez dans quelques minutes."
+      }
+    }
   },
   "Search": {
     "bar": {
@@ -236,9 +262,9 @@
       "open": "Ssteqsi Amallal",
       "title": "Amallal n Aalan",
       "badge": "IA",
-      "disclosure": "Tettmeslayeḍ d IA, war d amdan. Ad dak-d yerr zi tasna n tallalt d yezmer ad yecceḍ : ɣar amagrad i d-yenna.",
+      "disclosure": "Tettmeslayeḍ d IA, war d amdan. Ad dak-d yerr zi tasna n tallalt d lewraq n lidara, d yezmer ad yecceḍ : ɣar amagrad niɣ tawuri i d-yenna.",
       "privacy": "War tefkeḍ ca isefka nnec (isem, tilifun, e-mail, adres, awal n uɛeddi, code). Amallal war yeẓẓar ca amiḍan nnec d war yezmir ad ibeddel walu.",
-      "welcome": "Ssteqsi x Aalan : ad tessufɣeḍ annonce, ad taruḍ i umzenzu, ad tḥedreḍ zi taxriqt, ad tagiḍ x tegtint…",
+      "welcome": "Ssteqsi x Aalan niɣ x yiwet n tawuri : ad tessufɣeḍ annonce, ad tḥedreḍ zi taxriqt, ad tsutreḍ visa, mutation n tkarḍa tazegzawt…",
       "conversation": "Tameslayt d Umallal n Aalan",
       "you": "Cek",
       "label": "Isteqsi nnec",
@@ -248,6 +274,8 @@
       "restart": "Tameslayt tamaynut",
       "thinking": "Amallal yettheyyi tiririt nnes…",
       "sources": "Imagraden i yesxdem",
+      "procedures": "Tiwuriwin n lidara",
+      "guideNote": "D talɣut, war d tawuri tunṣibt : ɣir tasna n lidara i yettwaḥsaben.",
       "degradedTitle": "Amallal war d-yelli ca ar dǧa",
       "degradedBody": "Ha imagraden n tasna n tallalt i d-yessiwlen x isteqsi nnec.",
       "degradedEmpty": "War yella ca amagrad i isteqsi nnec. Ari-t s wawalen nniḍen, niɣ ẓar lmewḍuɛat n tasna n tallalt.",
@@ -312,7 +340,7 @@
   },
   "Guide": {
     "metaTitle": "Lewraq n lidara deg Lmeɣrib",
-    "metaDescription": "Isuɣan n lidara i lewraq nnec, s profil : ṭṭelba, auto-entrepreneurs, ṭumubilat, lɛeqqar, MRE, cerikat d coopératives, tamagit.",
+    "metaDescription": "Isuɣan n lidara i lewraq nnec, s profil : ṭṭelba, auto-entrepreneurs, ṭumubilat, lɛeqqar, MRE, cerikat d coopératives, tamagit, visa, lḥajj.",
     "title": "Lewraq n lidara",
     "lead": "Mani ad tegged lewraq, s wacmen ttertib, d usaɣ nican ɣer tasna n lidara. S profil, s tefransist, s taɛrabt d s tarifit.",
     "guideHome": "Lewraq n lidara",
@@ -5451,7 +5479,9 @@
       "title": "Vendez plus vite",
       "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
       "action": "Mettre en avant"
-    }
+    },
+    "availableGift": "seg-sen {count, plural, one {# n crédit offert} other {# n crédits offerts}}, ad ttwaxedmen d imezwura",
+    "giftOnly": "Mazal war tzemmreḍ ad taɣeḍ crédits : crédits offerts nnec ad xelṣen options."
   },
   "Wallet": {
     "metaTitle": "Tasakkut n idrimen",
@@ -5481,7 +5511,8 @@
       "refund_reversed": "Arrar n idrimen yettwakkes",
       "admin_adjust": "Abeddel zi Aalan",
       "option": "Option",
-      "withdrawal": "Tuɣalin"
+      "withdrawal": "Tuɣalin",
+      "launch_gift": "Place de lancement : crédits offerts"
     },
     "amount": "{count, plural, one {# n crédit} other {# n crédits}}",
     "fromPlan": "seg-sen {count, plural, one {# n crédit} other {# n crédits}} n abonnement nnec",
@@ -5493,7 +5524,10 @@
     "paid": "Adfaɛ yewḍed. Crédits nnec ad d-banen da deg kra n tesdidin.",
     "withdrawLink": "Uɣal zi crédits i taɣeḍ (14 n wussan)",
     "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
-    "promoteBackAction": "Mettre en avant"
+    "promoteBackAction": "Mettre en avant",
+    "gift": "Crédits offerts",
+    "giftUntil": "Ṣeḥḥan ar {date}, ad ttwaxedmen d imezwura",
+    "closedGift": "Mazal war tzemmreḍ ad taɣeḍ crédits deg Aalan. Crédits offerts nnec ad xedmen zeg ass-a i tannonces nnec."
   },
   "Packs": {
     "metaTitle": "Aɣ crédits",
@@ -6546,7 +6580,7 @@
       "stock": "Inawen n tiddi d yini, d usekcem n stock nnec s ufaylu s tefrayin Business d Premium",
       "planning": "I wid itekran, planning n ṭumubilat d isutar s wussan"
     },
-    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : les {seats} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Taḥanut i yiwen n wayyur? Pass Boutique yerezzem vitrine i {days} n wussan, bla abonnement, zi tarzemt n uzenzi.",
     "stepsTitle": "Mamec ad yeddu",
     "steps": {
@@ -6656,11 +6690,12 @@
         "pack": "{amount, number} DH: {credits, number} n crédits",
         "packBonus": "{amount, number} DH: {credits, number} n crédits + {bonus, number} bla idrimen",
         "cta": "Sseɣ crédits"
-      }
+      },
+      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers inscrits, particuliers et boutiques, jusqu'au {until, date, long}. Un particulier reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
     },
     "pros": {
       "title": "Imhniyen",
-      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : les {seats, number} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Bla abonnement, bla asnulfu s yiman nnes"

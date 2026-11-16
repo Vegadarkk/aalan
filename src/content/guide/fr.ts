@@ -6,9 +6,19 @@ import type { GuideLocaleContent } from "./catalog";
 
 export const GUIDE_FR: GuideLocaleContent = {
   rubrics: {
+    visa: {
+      title: "Visas et voyages",
+      summary: "Visa Schengen, France, Espagne, Royaume-Uni, États-Unis, Canada : documents et rendez-vous. Venir au Maroc : e-visa et pays exemptés.",
+      intro: "Un visa se demande auprès du pays de destination, sur ses sites officiels : ni {brand} ni aucun intermédiaire ne peut l'obtenir à votre place. Cette rubrique indique par où commencer pour les destinations les plus demandées, puis comment un étranger ou un proche vient au Maroc.",
+    },
+    hajj: {
+      title: "Pèlerinage (Hajj)",
+      summary: "Inscription au tirage au sort du Hajj auprès du ministère des Habous : conditions et période d'inscription.",
+      intro: "Le ministère des Habous et des Affaires islamiques organise chaque année l'inscription au Hajj et le tirage au sort des pèlerins. N'avancez jamais d'argent à une personne qui promet une place : passez uniquement par le portail du ministère.",
+    },
     etudiant: {
       title: "Étudiants",
-      summary: "Orientation après le bac, bourses, logement universitaire, couverture médicale, études en France.",
+      summary: "Orientation après le bac, bourses, logement, couverture médicale, études en France, équivalence de diplôme.",
       intro: "Les aides aux étudiants relèvent de l'ONOUSC (bourses, cités universitaires, couverture médicale) et du ministère de l'Enseignement supérieur. Les demandes se font en ligne, pendant des périodes ouvertes chaque année : surveillez les calendriers publiés.",
     },
     "auto-entrepreneur": {
@@ -18,7 +28,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     },
     vehicule: {
       title: "Vendre ou acheter un véhicule",
-      summary: "Mutation de la carte grise, vignette, échange de permis, véhicule d'un MRE.",
+      summary: "Mutation de la carte grise, vignette, permis de conduire (examen, duplicata, échange), véhicule d'un MRE.",
       intro: "Une vente de véhicule entre particuliers ne s'arrête pas à la remise des clés : le changement de propriétaire (mutation) se déclare à la NARSA et le droit de timbre se paie à la DGI. Tant que la mutation n'est pas faite, le vendeur reste le propriétaire inscrit.",
     },
     immobilier: {
@@ -28,7 +38,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     },
     mre: {
       title: "Marocains du monde (MRE)",
-      summary: "Services consulaires, immatriculation, retour définitif, procuration, envoi de colis.",
+      summary: "Services consulaires, immatriculation, mariage, succession, retour définitif, procuration, envoi de colis.",
       intro: "Depuis l'étranger, la plupart des démarches passent par le consulat de votre pays de résidence et par les services en ligne du ministère chargé des Marocains résidant à l'étranger.",
     },
     "pro-cooperative": {
@@ -38,7 +48,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     },
     identite: {
       title: "Identité et état civil",
-      summary: "CNIE, passeport, acte de naissance, casier judiciaire, nationalité, service militaire.",
+      summary: "CNIE, passeport, acte de naissance, casier judiciaire, nationalité, service militaire, listes électorales.",
       intro: "Au Maroc, la CNIE et le passeport relèvent de la DGSN et l'acte de naissance du bureau d'état civil de la commune d'inscription. À l'étranger, le consulat s'en charge.",
     },
     sante: {
@@ -48,7 +58,7 @@ export const GUIDE_FR: GuideLocaleContent = {
     },
     retraite: {
       title: "Retraite",
-      summary: "Pension de la CNSS, de la CMR ou du RCAR, retraite complémentaire.",
+      summary: "Pension de la CNSS, de la CMR ou du RCAR, retraite complémentaire, certificat de vie à l'étranger.",
       intro: "Votre caisse de retraite dépend de votre employeur : la CNSS pour le secteur privé, la CMR pour les fonctionnaires titulaires et les militaires, le RCAR pour les contractuels et le personnel de nombreux établissements publics. Une retraite complémentaire (CIMR) peut s'y ajouter.",
     },
     "aides-sociales": {
@@ -328,6 +338,104 @@ export const GUIDE_FR: GuideLocaleContent = {
         "Le service militaire concerne les jeunes de 19 à 25 ans. Lors de chaque campagne de recensement, les personnes concernées remplissent le formulaire en ligne puis reçoivent, le cas échéant, une convocation. Les cas de dispense et de report sont précisés sur le portail officiel.",
       ],
     },
+    "visa-schengen": {
+      title: "Visa Schengen : quel pays choisir et comment faire",
+      body: [
+        "Les Marocains ont besoin d'un visa pour un court séjour dans l'espace Schengen (jusqu'à 90 jours sur une période de 180 jours). Un seul visa vaut pour tout l'espace, mais la demande se dépose au consulat du pays de votre destination principale : celui où vous resterez le plus longtemps, ou, à durées égales, celui par lequel vous entrerez en premier.",
+        "Chaque consulat confie la réception des dossiers à un centre de visas qu'il désigne. Ne payez jamais un intermédiaire qui vend des rendez-vous ou promet un visa : seul le consulat décide, et chaque étape se fait sur les sites officiels.",
+        "À la frontière, le système européen d'entrée et de sortie (EES) enregistre vos empreintes et une photo : prévoyez plus de temps lors de votre premier passage.",
+      ],
+      prepare: ["Un passeport en cours de validité", "Les justificatifs de votre voyage : la liste exacte figure sur la page du consulat"],
+    },
+    "visa-france": {
+      title: "Visa pour la France : documents et rendez-vous",
+      body: [
+        "La demande de visa pour la France se fait sur France-Visas, le portail officiel du gouvernement français. Son assistant indique d'abord si un visa est nécessaire, les documents à joindre et le tarif ; vous créez ensuite un compte et remplissez la demande en ligne.",
+        "Vous déposez ensuite le dossier, sur rendez-vous, dans l'un des centres TLS du Maroc (Agadir, Casablanca, Fès, Marrakech, Oujda, Rabat, Tanger) ; les consulats généraux de France à Casablanca et à Rabat décident. La demande se suit en ligne jusqu'à la décision du consulat. Pour des études, passez d'abord par Campus France (rubrique Étudiants).",
+      ],
+      prepare: ["Un passeport en cours de validité", "Les justificatifs indiqués par l'assistant de France-Visas"],
+    },
+    "visa-espagne": {
+      title: "Visa pour l'Espagne : documents et rendez-vous",
+      body: [
+        "Chaque consulat d'Espagne au Maroc ne reçoit que les demandes des personnes dont le passeport a été délivré dans sa circonscription. La page officielle du consulat général d'Espagne à Rabat, en espagnol, détaille les cas et les étapes.",
+        "Selon votre situation (premier visa, visas Schengen obtenus ces dernières années, études), le rendez-vous se prend sur le site du prestataire BLS désigné par le consulat. Méfiez-vous des faux sites et des revendeurs de rendez-vous : partez toujours de la page officielle du consulat.",
+      ],
+    },
+    "visa-royaume-uni": {
+      title: "Visa pour le Royaume-Uni (visiteur)",
+      body: [
+        "Selon la nationalité, il faut un visa, une autorisation électronique de voyage (ETA) ou rien pour entrer au Royaume-Uni : l'outil officiel du gouvernement britannique vous le dit en quelques questions.",
+        "Le visa visiteur (Standard Visitor) couvre notamment le tourisme et les visites à la famille. Il se demande en ligne, avant le voyage. Le Royaume-Uni n'est pas dans l'espace Schengen : un visa Schengen n'y donne pas accès.",
+      ],
+    },
+    "visa-etats-unis": {
+      title: "Visa pour les États-Unis : formulaire DS-160 et entretien",
+      body: [
+        "Pour un voyage de tourisme ou de visite, la demande de visa commence par le formulaire en ligne DS-160, puis un entretien au consulat des États-Unis à Casablanca, sur rendez-vous. La page de l'ambassade des États-Unis au Maroc décrit les étapes et la prise de rendez-vous.",
+        "Seul le consulat décide de la délivrance du visa : méfiez-vous des sites qui proposent de remplir le formulaire contre paiement.",
+      ],
+    },
+    "visa-canada": {
+      title: "Visa pour le Canada : visa de visiteur ou AVE",
+      body: [
+        "Les Marocains ont besoin d'un visa de visiteur pour le Canada. Une autorisation de voyage électronique (AVE) suffit seulement si vous arrivez en avion et que vous avez eu un visa canadien ces dix dernières années, ou que vous avez un visa américain de non-immigrant valide.",
+        "La demande se fait en ligne ; le questionnaire du gouvernement du Canada indique ce qu'il vous faut.",
+      ],
+    },
+    "entrer-au-maroc": {
+      title: "Venir au Maroc : e-visa et pays exemptés",
+      body: [
+        "Les ressortissants de nombreux pays entrent au Maroc sans visa pour un court séjour : le ministère des Affaires étrangères publie la liste. Pour les autres, le visa électronique (e-visa) se demande en ligne sur la plateforme officielle Accès Maroc, qui vérifie d'abord votre admissibilité selon votre nationalité, votre passeport et un éventuel autre visa valide (Schengen, Royaume-Uni, États-Unis, Canada…) ; sinon, la demande se fait au consulat du Maroc. Certains ressortissants dispensés de visa doivent obtenir une autorisation électronique de voyage (AEVM) sur la même plateforme : la liste officielle l'indique.",
+        "Un proche de nationalité marocaine, même né à l'étranger, peut demander ses papiers marocains au consulat (rubrique Identité). Un conjoint de nationalité étrangère suit les règles de sa propre nationalité.",
+        "Pour rester plus longtemps que la durée autorisée, un étranger demande une carte de séjour (carte d'immatriculation) auprès des services de la DGSN.",
+      ],
+    },
+    "hajj-inscription": {
+      title: "S'inscrire au tirage au sort du Hajj",
+      body: [
+        "Le ministère annonce chaque année la période d'inscription en ligne et les conditions, notamment l'âge minimum et le fait de ne pas avoir accompli le Hajj ces dernières années. L'inscription se confirme ensuite auprès de l'autorité locale, puis un tirage au sort désigne les pèlerins.",
+        "Des agences de voyages agréées proposent aussi des places : vérifiez leur agrément auprès du ministère avant tout paiement.",
+      ],
+    },
+    "permis-conduire": {
+      title: "Permis de conduire : demande, examen, duplicata",
+      body: [
+        "Le permis s'obtient après une formation théorique et pratique, puis un examen. L'âge minimum dépend de la catégorie : 18 ans pour le permis B. L'examen théorique se passe au centre d'immatriculation de la NARSA, sur convocation, avec votre pièce d'identité originale ; l'épreuve pratique vient ensuite.",
+        "Un permis perdu, volé ou abîmé se remplace par un duplicata, à demander sur le portail de services de la NARSA.",
+      ],
+    },
+    "equivalence-diplomes": {
+      title: "Faire reconnaître un diplôme étranger (équivalence)",
+      body: [
+        "Un diplôme obtenu à l'étranger doit souvent être reconnu par une équivalence pour poursuivre des études, passer un concours ou travailler dans la fonction publique au Maroc. La demande se dépose en ligne, avec un compte personnel, sur la plateforme officielle des équivalences, qui indique les pièces exactes.",
+      ],
+      prepare: ["Vos diplômes et relevés de notes, numérisés lisiblement"],
+    },
+    "mre-mariage": {
+      title: "Se marier ou faire transcrire son mariage à l'étranger",
+      body: [
+        "À l'étranger, l'acte de mariage adoulaire peut être établi au consulat par les adouls consulaires ; dans certains cas, par exemple pour un mariage mixte, une autorisation du juge de la famille est nécessaire. Un mariage civil célébré à l'étranger se fait transcrire à l'état civil marocain par le consulat.",
+      ],
+    },
+    "mre-succession": {
+      title: "Succession d'un proche décédé",
+      body: [
+        "L'acte d'hérédité est établi par des adouls. Depuis l'étranger, le consulat peut aider à liquider une succession, notamment avec une procuration et l'original de l'acte d'hérédité : la page officielle précise à quel consulat s'adresser selon le lieu du décès et celui des héritiers.",
+      ],
+    },
+    "certificat-vie": {
+      title: "Certificat de vie pour une pension (à l'étranger)",
+      body: [
+        "Une caisse de retraite demande régulièrement aux retraités qui vivent à l'étranger de prouver qu'ils sont en vie. Le consulat délivre le certificat de vie, individuel ou collectif : le demandeur se présente en personne avec sa pièce d'identité.",
+      ],
+    },
+    "listes-electorales": {
+      title: "S'inscrire sur les listes électorales",
+      body: [
+        "Pour voter, il faut être inscrit sur les listes électorales. L'inscription se fait pendant la période de révision annoncée chaque année, en ligne sur le portail officiel ou auprès de l'administration ; les Marocains résidant à l'étranger peuvent aussi s'inscrire. Le portail permet de vérifier votre inscription.",
+      ],
+    },
   },
   sources: {
     "idarati-entreprises": "Services en ligne pour les entreprises (Idarati)",
@@ -396,5 +504,27 @@ export const GUIDE_FR: GuideLocaleContent = {
     acaps: "Autorité de contrôle des assurances et de la prévoyance sociale (ACAPS)",
     "acaps-reclamation": "Déposer une réclamation contre un assureur (ACAPS)",
     tajnid: "Portail du service militaire",
+    "schengen-demande": "Demander un visa Schengen (Commission européenne)",
+    "france-visas": "France-Visas : demander un visa depuis le Maroc",
+    "france-visa-maroc": "Demander un visa (consulats de France au Maroc)",
+    "espagne-visa-rabat": "Demandes de visa (consulat général d'Espagne à Rabat)",
+    "uk-check-visa": "Vérifier s'il vous faut un visa pour le Royaume-Uni",
+    "uk-standard-visitor": "Visa visiteur (Standard Visitor)",
+    "us-visas-maroc": "Visas (ambassade des États-Unis au Maroc)",
+    "us-visitor": "Visa de visiteur (Département d'État)",
+    "canada-visite": "Visiter le Canada",
+    "canada-ave": "AVE pour les titulaires d'un visa (conditions)",
+    "maroc-evisa": "Accès Maroc, plateforme officielle de l'e-visa",
+    "consulat-dispense-visa": "Pays dispensés de visa pour le Maroc",
+    habous: "Ministère des Habous et des Affaires islamiques",
+    "narsa-examen": "Examen du permis de conduire (NARSA)",
+    "narsa-permis-premier": "Obtenir son premier permis de conduire",
+    "narsa-permis-duplicata": "Duplicata du permis de conduire",
+    equivalence: "Plateforme des équivalences de diplômes",
+    "consulat-mariage-adoulaire": "Acte de mariage adoulaire (consulat)",
+    "consulat-mariage-civil": "Transcription d'un mariage civil (consulat)",
+    "consulat-succession": "Liquidation d'une succession (consulat)",
+    "consulat-certificat-vie": "Certificat de vie (consulat)",
+    "listes-electorales": "Portail des listes électorales",
   },
 };

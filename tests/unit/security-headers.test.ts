@@ -40,5 +40,7 @@ describe("static security headers", () => {
     expect(match("/api/dev/storage/joutiya-dev-quarantine/uploads/x")).toBe(false);
     expect(match("/fr/api/dev/storage/x")).not.toBe(false);
     expect(match("/api/dev/storagex/y")).not.toBe(false);
+    expect(match("/mail/door-closed.png")).toBe(false);
+    expect(match("/fr/mail/x")).not.toBe(false);
   });
 });

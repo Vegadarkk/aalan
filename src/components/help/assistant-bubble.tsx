@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { lazyIsland } from "@/components/layout/lazy-island";
@@ -18,13 +18,28 @@ import type { AssistantPanelProps } from "./assistant-panel";
 
 const AssistantPanel = lazyIsland<AssistantPanelProps>(() => import("./assistant-panel"), () => null);
 
-export function AssistantBubble() {
+/**
+ * `from`: the site's opening (ISO) while it is closed (its API answers 503 until then): no bubble
+ * before it. The page may be served from cache past the opening, so the browser checks the time
+ * after hydration (the server rendered no bubble: same first render).
+ */
+export function AssistantBubble({ from = null }: { from?: string | null }) {
   const t = useTranslations("Help.assistant");
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [opened, setOpened] = useState(from === null);
   const bubble = useRef<HTMLButtonElement>(null);
-  if (!showsAssistantBubble(pathname)) return null;
+  useEffect(() => {
+    if (from === null) return;
+    // At once past the opening (a page served from cache), else for a tab left open across it
+    // (setTimeout holds at most about 24.8 days).
+    const wait = Math.max(0, Date.parse(from) - Date.now());
+    if (wait > 2 ** 31 - 1) return;
+    const timer = setTimeout(() => setOpened(true), wait);
+    return () => clearTimeout(timer);
+  }, [from]);
+  if (!opened || !showsAssistantBubble(pathname)) return null;
   // Above the « Vendre » arch on a phone, or in the corner where the arch is left out.
   const aboveSell = showsSellButton(pathname);
   return (

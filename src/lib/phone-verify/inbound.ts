@@ -1,4 +1,5 @@
 import "server-only";
+import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import { audit } from "@/lib/audit";
 import { captureServerException } from "@/lib/observability/capture";
 import { MOROCCAN_MOBILE_E164 } from "@/lib/phone/normalize";
@@ -65,6 +66,8 @@ export async function processInbound(items: readonly InboundMessage[], options: 
         await notifyPhoneChange("phoneRemoved", previousUid, e164, item.wamid);
       }
       await notifyPhoneChange("phoneVerified", challenge.uid, e164, item.wamid);
+      // A verified number may complete a launch place (owner, 2026-11-11); never throws.
+      await claimLaunchPlace(challenge.uid, new Date(now));
     } catch (error) {
       summary.failed += 1;
       captureServerException(error, { route: "/api/webhooks/whatsapp", step: "processInbound" });

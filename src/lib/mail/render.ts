@@ -21,6 +21,8 @@ import { passwordChanged } from "./templates/passwordChanged";
 import { phoneRemoved } from "./templates/phoneRemoved";
 import { phoneVerified } from "./templates/phoneVerified";
 import { launchOfferNotice } from "./templates/launchOfferNotice";
+import { launchPlaceGranted } from "./templates/launchPlaceGranted";
+import { newsletterConfirm } from "./templates/newsletterConfirm";
 import { passNotice } from "./templates/passNotice";
 import { withdrawalReceipt } from "./templates/withdrawalReceipt";
 import { sellerPaymentNotice } from "./templates/sellerPaymentNotice";
@@ -77,6 +79,7 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   proRejected,
   proValidationWithdrawn,
   launchOfferNotice,
+  launchPlaceGranted,
   passNotice,
   withdrawalReceipt,
   sellerPaymentNotice,
@@ -87,6 +90,7 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   reviewPublished,
   accountClosed,
   cguChanged,
+  newsletterConfirm,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];

@@ -2,7 +2,8 @@ import "server-only";
 import { anonymous, beginAnonymous, respond } from "@/lib/auth/anonymous";
 import { optionalUser } from "@/lib/auth/guards";
 import { askAssistant } from "@/lib/ai/assistant";
-import { assistantRequestSchema, type AssistantResponse, type HelpHit } from "@/lib/contracts/assistant";
+import { GUIDE_PROCEDURES, guideProcedureTitle } from "@/content/guide";
+import { assistantRequestSchema, type AssistantResponse, type GuideHit, type HelpHit } from "@/lib/contracts/assistant";
 import { readJson } from "@/lib/http/json";
 import { escalateOnIp } from "@/lib/listings/escalation";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
@@ -39,7 +40,8 @@ async function ask(request: Request): Promise<Response> {
       const article = bySlug.get(slug);
       return article ? [{ slug, title: article.title, summary: article.summary, ...elsewhere }] : [];
     });
-    return respond<AssistantResponse>(flow, { mode: "ai", answer: outcome.answer, articles: cited });
+    const procedures = outcome.procedures.map((id): GuideHit => ({ id, rubric: GUIDE_PROCEDURES[id].rubric, title: guideProcedureTitle(locale, id), ...elsewhere }));
+    return respond<AssistantResponse>(flow, { mode: "ai", answer: outcome.answer, articles: cited, procedures });
   }
   const found = await searchHelp(locale, input.question, SEARCH_LIMIT, articles);
   return respond<AssistantResponse>(flow, { mode: "search", articles: found.map((hit) => ({ ...hit, ...elsewhere })) });

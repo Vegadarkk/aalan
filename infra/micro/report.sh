@@ -39,9 +39,11 @@ if [[ -n "$end" ]]; then
   echo "tls $tls_host ${days} days left"
   ((days < 14)) && alerts+=("tls-expires-${days}d")
 fi
-# Host.
+# Host. APT_UPDATES= skips the apt count (unit test: apt on a CI runner can take seconds).
+updates=skipped
+[[ -n "${APT_UPDATES-1}" ]] && updates="$(apt list --upgradable 2> /dev/null | grep -c upgradable)"
 disk="$(df --output=pcent / | tail -1 | tr -dc 0-9)"
-echo "host disk ${disk}% mem-avail $(awk '/MemAvailable/ { print int($2 / 1024) }' /proc/meminfo) MB up $(uptime -p | sed 's/^up //') updates $(apt list --upgradable 2> /dev/null | grep -c upgradable) reboot-required $([[ -e /var/run/reboot-required ]] && echo yes || echo no)"
+echo "host disk ${disk}% mem-avail $(awk '/MemAvailable/ { print int($2 / 1024) }' /proc/meminfo) MB up $(uptime -p | sed 's/^up //') updates ${updates} reboot-required $([[ -e /var/run/reboot-required ]] && echo yes || echo no)"
 ((disk >= 85)) && alerts+=("disk-${disk}%")
 crontab -l 2> /dev/null | grep -q aalan/bin/probe.sh || alerts+=("cron-missing")
 if ((${#alerts[@]} == 0)); then echo "verdict ok"; else echo "verdict ALERT ${alerts[*]}"; fi

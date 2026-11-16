@@ -128,7 +128,33 @@
     "seconds": "Secondes",
     "opening": "La porte s'ouvre…",
     "follow": "Suivez-nous pour ne rien manquer",
-    "legal": "Informations légales"
+    "legal": "Informations légales",
+    "newsletter": {
+      "title": "Soyez prévenu de l'ouverture",
+      "intro": "Trois e-mails, pas un de plus : un avant-goût, les places de lancement la veille, puis l'ouverture.",
+      "emailLabel": "Votre adresse e-mail",
+      "placeholder": "vous@exemple.com",
+      "submit": "M'inscrire",
+      "consent": "En vous inscrivant, vous acceptez de recevoir ces e-mails. Désinscription en un clic.",
+      "privacy": "Politique de confidentialité",
+      "sent": "Vérifiez votre boîte mail : cliquez sur le lien reçu pour confirmer votre inscription.",
+      "sentHint": "Rien reçu dans quelques minutes ? Regardez dans les indésirables.",
+      "confirming": "Confirmation de votre inscription…",
+      "confirmed": "Inscription confirmée. On vous écrit avant l'ouverture.",
+      "confirmFailed": "Ce lien a expiré ou n'est plus valable. Inscrivez-vous de nouveau ci-dessous.",
+      "unsubscribeQuestion": "Ne plus recevoir les e-mails du lancement ?",
+      "unsubscribeButton": "Me désinscrire",
+      "unsubscribed": "C'est fait : vous ne recevrez plus nos e-mails.",
+      "unsubscribeFailed": "Ce lien n'est pas valable.",
+      "errors": {
+        "invalid": "Saisissez une adresse e-mail valide, par exemple nom@exemple.com.",
+        "disposable": "Les adresses jetables ne sont pas acceptées : utilisez votre adresse habituelle.",
+        "robot": "La vérification anti-robot n'a pas abouti. Attendez qu'elle se termine, puis réessayez.",
+        "rateLimited": "Trop d'essais depuis votre connexion. Réessayez dans une heure.",
+        "network": "Pas de connexion. Vérifiez votre réseau, puis réessayez.",
+        "generic": "L'inscription n'a pas abouti. Réessayez dans quelques minutes."
+      }
+    }
   },
   "Search": {
     "bar": {
@@ -246,9 +272,9 @@
       "open": "Poser une question à l'Assistant",
       "title": "Assistant Aalan",
       "badge": "IA",
-      "disclosure": "Vous échangez avec une intelligence artificielle, pas avec une personne. Elle répond à partir du centre d'aide et peut se tromper : vérifiez dans l'article cité.",
+      "disclosure": "Vous échangez avec une intelligence artificielle, pas avec une personne. Elle répond à partir du centre d'aide et du guide des démarches, et peut se tromper : vérifiez dans l'article ou la démarche cités.",
       "privacy": "Ne donnez aucune donnée personnelle (nom, téléphone, e-mail, adresse, mot de passe, code). L'assistant n'a pas accès à votre compte et ne peut rien modifier.",
-      "welcome": "Posez votre question sur Aalan : déposer une annonce, contacter un vendeur, éviter une arnaque, contester une décision…",
+      "welcome": "Posez votre question sur Aalan ou sur une démarche : déposer une annonce, éviter une arnaque, demander un visa, changer une carte grise…",
       "conversation": "Conversation avec l'Assistant Aalan",
       "you": "Vous",
       "label": "Votre question",
@@ -258,6 +284,8 @@
       "restart": "Nouvelle conversation",
       "thinking": "L'assistant prépare sa réponse…",
       "sources": "Articles utilisés",
+      "procedures": "Démarches du guide",
+      "guideNote": "Information, pas une démarche officielle : seule la page de l'administration fait foi.",
       "degradedTitle": "L'assistant n'est pas disponible pour le moment",
       "degradedBody": "Voici les articles du centre d'aide qui correspondent à votre question.",
       "degradedEmpty": "Aucun article ne correspond à votre question. Reformulez-la, ou parcourez les thèmes du centre d'aide.",
@@ -322,7 +350,7 @@
   },
   "Guide": {
     "metaTitle": "Démarches administratives au Maroc",
-    "metaDescription": "Les liens officiels de vos démarches, classés par profil : étudiants, auto-entrepreneurs, véhicules, immobilier, MRE, sociétés et coopératives, identité.",
+    "metaDescription": "Les liens officiels de vos démarches, classés par profil : étudiants, auto-entrepreneurs, véhicules, immobilier, MRE, sociétés et coopératives, identité, visas, Hajj.",
     "title": "Démarches administratives",
     "lead": "Où faire une démarche, dans quel ordre, et le lien direct vers la page officielle. Classé par profil, en français, en arabe et en tarifit.",
     "guideHome": "Démarches administratives",
@@ -5461,7 +5489,9 @@
       "title": "Vendez plus vite",
       "body": "Remontez votre annonce en tête des résultats, ou mettez-la À la Une sur l'accueil, avec vos crédits.",
       "action": "Mettre en avant"
-    }
+    },
+    "availableGift": "dont {count, plural, one {# crédit offert} other {# crédits offerts}}, dépensés en premier",
+    "giftOnly": "Les achats de crédits ne sont pas encore ouverts : vos crédits offerts paient les options."
   },
   "Wallet": {
     "metaTitle": "Porte-monnaie",
@@ -5491,7 +5521,8 @@
       "refund_reversed": "Remboursement annulé",
       "admin_adjust": "Ajustement par Aalan",
       "option": "Option",
-      "withdrawal": "Rétractation"
+      "withdrawal": "Rétractation",
+      "launch_gift": "Place de lancement : crédits offerts"
     },
     "amount": "{count, plural, one {# crédit} other {# crédits}}",
     "fromPlan": "dont {count, plural, one {# crédit} other {# crédits}} de votre offre",
@@ -5503,7 +5534,10 @@
     "paid": "Paiement reçu. Vos crédits apparaissent ici dans quelques instants.",
     "withdrawLink": "Se rétracter d'un achat de crédits (14 jours)",
     "promoteBack": "Vos crédits sont là : terminez la mise en avant de « {title} ».",
-    "promoteBackAction": "Mettre en avant"
+    "promoteBackAction": "Mettre en avant",
+    "gift": "Crédits offerts",
+    "giftUntil": "Place de lancement, valables jusqu'au {date}, dépensés en premier",
+    "closedGift": "Les achats de crédits ne sont pas encore ouverts sur Aalan. Vos crédits offerts servent déjà à mettre vos annonces en avant."
   },
   "Packs": {
     "metaTitle": "Acheter des crédits",
@@ -6556,7 +6590,7 @@
       "stock": "Les variantes de taille et de couleur, et l'import de votre stock par fichier avec les offres Business et Premium",
       "planning": "Pour les loueurs, le planning de flotte et les demandes par dates"
     },
-    "offer": "Offre de lancement : les {seats} premières boutiques validées ont la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : les {seats} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Une boutique pour un mois ? Le Pass Boutique ouvre une vitrine pour {days} jours, sans abonnement, dès l'ouverture des ventes.",
     "stepsTitle": "Comment ça se passe",
     "steps": {
@@ -6666,11 +6700,12 @@
         "pack": "{amount, number} DH : {credits, number} crédits",
         "packBonus": "{amount, number} DH : {credits, number} crédits + {bonus, number} offerts",
         "cta": "Acheter des crédits"
-      }
+      },
+      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers inscrits, particuliers et boutiques, jusqu'au {until, date, long}. Un particulier reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
     },
     "pros": {
       "title": "Professionnels",
-      "launchOffer": "Offre de lancement : les {seats, number} premières boutiques validées ont la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : les {seats, number} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Sans abonnement ni reconduction"

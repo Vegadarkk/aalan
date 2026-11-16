@@ -247,6 +247,13 @@ export const RATE_LIMITS = {
   "savedSearch.docs.uid": { points: 1000, duration: DAY, policy: "open", key: "uid" },
   // One-click unsubscribe links of the alert e-mails (signed token, no session).
   "alerts.unsubscribe.ip": { points: 60, duration: HOUR, policy: "open", key: "ip" },
+  // Opening list (/api/newsletter): Turnstile on every sign-up; one confirmation mail per address
+  // every 10 minutes and 3 a day (no mail bombing of a stranger's inbox); confirm and unsubscribe
+  // are token-authenticated.
+  "newsletter.subscribe.ip": { points: 10, duration: HOUR, policy: "closed", key: "ip" },
+  "newsletter.subscribe.email": { points: 3, duration: DAY, policy: "closed", key: "email" },
+  "newsletter.subscribe.email.burst": { points: 1, duration: 10 * MINUTE, policy: "closed", key: "email" },
+  "newsletter.token.ip": { points: 60, duration: HOUR, policy: "open", key: "ip" },
   // Provider webhooks (/api/webhooks/*, security review D-1): checked before the body is read, so
   // a sender of junk-signed bodies is cut off before any buffering or HMAC. 120 per minute per IP
   // is far above Stripe, RevenueCat, Resend or Meta volumes, and each provider retries a 429.

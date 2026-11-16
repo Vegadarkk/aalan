@@ -335,12 +335,12 @@ export interface OwnerListing {
 }
 
 export type CreateListingResponse = { id: string };
-/** `salesOpen`: paid options can be bought (config/flags.salesEnabled, phase 7). */
+/** `salesOpen`: sales are open (config/flags.salesEnabled, phase 7); `optionsOpen`: paid options can be bought now (sales open, or gift credits of a launch place). */
 /** `sections`: the shop's storefront sections (catalogue §5), for a Pro owner that has some. */
 /** `paymentReady`: the shop's « Payer chez le vendeur » is shown, so a listing may have its own link (catalogue §6). */
 /** `pinned`: the shop's « Sélection de la boutique » (UX audit lot 3), present for a shop that publishes. */
 /** `duplicate`: the rows offer « Dupliquer » (a shop that publishes, audit §7). */
-export type OwnerListingsResponse = { listings: OwnerListingSummary[]; salesOpen: boolean; sections?: ShopSection[]; paymentReady?: boolean; pinned?: string[]; duplicate?: true };
+export type OwnerListingsResponse = { listings: OwnerListingSummary[]; salesOpen: boolean; optionsOpen: boolean; sections?: ShopSection[]; paymentReady?: boolean; pinned?: string[]; duplicate?: true };
 export type ListingResponse = { listing: OwnerListing };
 /** A change made in place from « Mes annonces » (promotion, section): the row (status included: a deep cut is held). */
 export type OwnerRowResponse = { listing: OwnerListingSummary };

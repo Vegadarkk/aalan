@@ -177,11 +177,16 @@ Les copies de vos pièces sont gardées dans un espace privé, accessible seulem
 
 Le badge « Certifié », lorsqu'il est proposé, signale un professionnel dont {brand} a examiné les documents en détail. Il ne garantit pas la qualité de ses biens ou de ses services.
 
-### 4.5 Offre de lancement Pro {#roles-5}
+### 4.5 Places de lancement {#roles-5}
 
-Les comptes Pro sont ouverts dès le lancement d'{brand}. Les 100 premiers professionnels dont le compte est validé bénéficient gratuitement, pendant 6 mois à compter de cette validation, des quotas de publication et de la boutique de l'offre Essentiel, sans crédits mensuels. Cette offre ne prend jamais fin tant que les ventes ne sont pas ouvertes.
+Les comptes Pro sont ouverts dès le lancement d'{brand}. Pour son lancement, {brand} attribue 1 000 places de lancement, communes aux professionnels et aux particuliers, dans l'ordre où les conditions ci-dessous sont remplies, jusqu'au 12 mars 2027 inclus (heure du Maroc) ou jusqu'à épuisement des places. Une place ne s'obtient qu'une fois par compte et, pour un particulier, qu'une fois par numéro de téléphone, même si ce numéro passe sur un autre compte.
 
-Avant la fin ou toute modification de cette offre, {brand} vous prévient au moins 30 jours à l'avance, par e-mail et dans votre espace. Aucun paiement ne vous sera demandé sans votre accord exprès, donné selon les CGV alors publiées.
+- **Professionnel** : la place est prise à la première validation de son compte Pro. Il bénéficie gratuitement, pendant 6 mois à compter de cette validation, des quotas de publication et de la boutique de l'offre Essentiel, sans crédits mensuels. Cette offre ne prend jamais fin tant que les ventes ne sont pas ouvertes.
+- **Particulier** : la place est prise lorsque sa première annonce est en ligne après la modération et que son numéro de téléphone est vérifié. Il reçoit 30 crédits offerts, valables 90 jours, qui servent uniquement à payer les options de mise en avant (§16.1), y compris avant l'ouverture des ventes. Ils sont utilisés avant les crédits achetés ; ils ne sont ni remboursables, ni transférables, ni convertibles en argent, et ceux qui restent à leur date de fin sont perdus.
+
+{brand} peut refuser ou retirer une place obtenue par une fraude (comptes multiples, numéro emprunté, annonce fictive) ; les crédits offerts non utilisés sont alors retirés.
+
+Avant la fin ou toute modification de l'offre d'un professionnel, {brand} vous prévient au moins 30 jours à l'avance, par e-mail et dans votre espace. Aucun paiement ne vous sera demandé sans votre accord exprès, donné selon les CGV alors publiées.
 
 À la fin de l'offre, si vous ne souscrivez ni abonnement ni Pass Boutique (§16.2), votre compte reste un compte Pro, mais ses quotas de publication sont réduits. Les annonces au-delà du quota sont mises en pause, les plus anciennes d'abord ; elles ne sont pas supprimées pour ce motif.
 
@@ -766,13 +771,13 @@ Les utilisateurs règlent leur différend entre eux et, si besoin, devant le tri
 
 ### 16.1 Options payantes {#services-payants-1}
 
-{brand} proposera des options payantes pour mettre en avant une annonce (« Remontée », « À la Une »), réglées en crédits. **Elles ne sont pas encore en vente.** Leur achat sera régi par les CGV, présentées et acceptées avant tout paiement.
+{brand} proposera des options payantes pour mettre en avant une annonce (« Remontée », « À la Une »), réglées en crédits. **Elles ne sont pas encore en vente.** Leur achat sera régi par les CGV, présentées et acceptées avant tout paiement. Les crédits offerts d'une place de lancement (§4.5) permettent déjà de les utiliser.
 
 Une annonce remontée porte la mention « Remontée » ; une annonce À la Une porte la mention « À la Une · Sponsorisé ». Leur effet sur l'affichage est décrit sur la page [Référencement et classement](/legal/referencement-et-classement). {brand} répond de la bonne exécution des options qu'elle vend (§19.3).
 
 ### 16.2 Abonnements Pro {#services-payants-2}
 
-À l'ouverture des ventes, les professionnels pourront souscrire un abonnement Pro, ou acheter un Pass Boutique : 30 jours de l'offre Essentiel, en un seul paiement, sans renouvellement. Les deux sont régis par les CGV. Les 100 premiers professionnels validés bénéficient de l'offre de lancement gratuite (§4.5).
+À l'ouverture des ventes, les professionnels pourront souscrire un abonnement Pro, ou acheter un Pass Boutique : 30 jours de l'offre Essentiel, en un seul paiement, sans renouvellement. Les deux sont régis par les CGV. Un professionnel validé qui obtient l'une des places de lancement bénéficie de l'offre de lancement gratuite (§4.5).
 
 ### 16.3 Publicité sur le site {#services-payants-3}
 

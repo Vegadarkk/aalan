@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { GUIDE_PROCEDURE_IDS, GUIDE_PROCEDURES, type GuideProcedureId } from "@/content/guide/catalog";
 import { HELP_SLUGS, isHelpSlug, type HelpArticle, type HelpSlug } from "@/content/help";
 import type { Locale } from "@/config/site";
 import type { AssistantTurn } from "@/lib/contracts/assistant";
@@ -24,7 +25,7 @@ import { ProviderError } from "./types";
 // person reaches the model besides the masked text they typed.
 
 // Sober by design (owner, 3 Nov 2026: minimal consumption, help and guidance only): an 80-word
-// answer plus the JSON envelope fits in 450 tokens, Arabic included.
+// answer plus the JSON envelope (help slugs and guide procedure ids) fits in 450 tokens, Arabic included.
 const MAX_TOKENS = 450;
 const TIMEOUT_MS = 20_000;
 export const ANSWER_MAX = 900;
@@ -39,12 +40,13 @@ const outputSchema = z
   .object({
     answer: z.string().describe("The answer to the person, plain text, in the requested language"),
     articles: z.array(z.enum(HELP_SLUGS)).describe("Slugs of the help articles the answer relies on, most relevant first"),
+    procedures: z.array(z.enum(GUIDE_PROCEDURE_IDS as [GuideProcedureId, ...GuideProcedureId[]])).describe("Ids of the guide's procedures the answer relies on, most relevant first"),
   })
   .strict();
 type ModelAnswer = z.infer<typeof outputSchema>;
 
 export type SearchReason = "not_configured" | "budget" | "spend_limit" | "unavailable" | "unusable";
-export type AssistantOutcome = { mode: "ai"; answer: string; cited: HelpSlug[] } | { mode: "search"; reason: SearchReason };
+export type AssistantOutcome = { mode: "ai"; answer: string; cited: HelpSlug[]; procedures: GuideProcedureId[] } | { mode: "search"; reason: SearchReason };
 
 let override: { client: AssistantClient | null } | undefined;
 let shared: AssistantClient | undefined;
@@ -64,12 +66,15 @@ function assistantClient(): AssistantClient | null {
 
 const clean = (text: string) => text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").trim();
 
-/** The answer bounded (length) and its citations limited to known, distinct slugs. */
-export function clampAnswer(output: ModelAnswer): { answer: string; cited: HelpSlug[] } {
+const isProcedureId = (id: string): id is GuideProcedureId => Object.hasOwn(GUIDE_PROCEDURES, id);
+
+/** The answer bounded (length) and its citations limited to known, distinct slugs and procedures. */
+export function clampAnswer(output: ModelAnswer): { answer: string; cited: HelpSlug[]; procedures: GuideProcedureId[] } {
   const text = clean(output.answer);
   const answer = text.length > ANSWER_MAX ? `${text.slice(0, ANSWER_MAX - 1)}…` : text;
   const cited = [...new Set(output.articles.filter(isHelpSlug))].slice(0, CITED_MAX);
-  return { answer, cited };
+  const procedures = [...new Set((output.procedures ?? []).filter(isProcedureId))].slice(0, CITED_MAX);
+  return { answer, cited, procedures };
 }
 
 export interface AssistantInput {
@@ -137,7 +142,7 @@ export async function askAssistant(input: AssistantInput): Promise<AssistantOutc
   const parsed = response.stop_reason === "refusal" || response.stop_reason === "max_tokens" ? null : response.parsed_output;
   logger.info({ model, costMicroUsd, stop: response.stop_reason, prompt: assistantPromptVersion(system), cacheRead: response.usage.cache_read_input_tokens ?? 0 }, "assistant answer");
   if (!parsed) return { mode: "search", reason: "unusable" };
-  const { answer, cited } = clampAnswer(parsed);
+  const { answer, cited, procedures } = clampAnswer(parsed);
   if (!answer) return { mode: "search", reason: "unusable" };
-  return { mode: "ai", answer, cited };
+  return { mode: "ai", answer, cited, procedures };
 }

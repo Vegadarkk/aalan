@@ -363,6 +363,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 export const config = {
   // Everything but build assets and files with an asset extension (brand images, map worker,
   // robots.txt, ads.txt, sitemaps). Any other dotted path (`/fr/annonce/x.1-{id}`) still gets the
-  // CSP and the page limits set here; tests/unit/proxy.test.ts checks both lists.
-  matcher: ["/((?!_next/static|_next/image|.*\\.(?:svg|png|jpe?g|webp|avif|gif|ico|txt|xml|json|webmanifest|js|mjs|css|map|woff2?|wasm)$).*)"],
+  // CSP and the page limits set here. Under /api, /admin and the locales an asset extension skips
+  // nothing: `/api/listings/x.json` or `/fr/deposer/x.png` reached its handler past the launch gate
+  // and the admin-host check (closed-site audit, 11 Nov 2026). Locales spelled out: the matcher
+  // must be a literal. tests/unit/proxy.test.ts checks both lists.
+  matcher: ["/((?!_next/static|_next/image|(?!(?:api|admin|fr|ar|rif)/).*\\.(?:svg|png|jpe?g|webp|avif|gif|ico|txt|xml|json|webmanifest|js|mjs|css|map|woff2?|wasm)$).*)"],
 };

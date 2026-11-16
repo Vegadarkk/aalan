@@ -161,11 +161,13 @@ export function PromoteDialog({ listingId, title, onClose, returnFocus }: Promot
   }
 
   const data = state.kind === "ready" ? state.data : null;
-  const buyable = data !== null && data.salesOpen && data.allowed && data.promotable;
+  // Sales closed, the gift credits of a launch place still pay (owner, 2026-11-11): `optionsOpen`.
+  const buyable = data !== null && data.optionsOpen && data.allowed && data.promotable;
   const chosen = data?.options.find((option) => option.id === choice);
   // No option can be paid now (6-03): the credits missing for the cheapest one, and the way to buy them.
   const shortfall = (() => {
-    if (!data || !buyable || data.wallet.frozen || data.options.some((option) => option.affordable && option.availableAt === null)) return 0;
+    // No credit to buy while sales are closed: only the gift credits pay then.
+    if (!data || !buyable || !data.salesOpen || data.wallet.frozen || data.options.some((option) => option.affordable && option.availableAt === null)) return 0;
     const prices = data.options.filter((option) => !option.coveredByAllowance && option.availableAt === null).map((option) => option.price);
     if (prices.length === 0) return 0;
     return Math.max(0, Math.min(...prices) - (Math.max(0, data.wallet.balance) + data.wallet.planCredits));
@@ -222,9 +224,10 @@ export function PromoteDialog({ listingId, title, onClose, returnFocus }: Promot
                 {messageOf(state.error)}
               </ErrorBanner>
             ) : null}
-            {data && !data.salesOpen ? <ErrorBanner tone="info" title={t("closed")} /> : null}
-            {data && data.salesOpen && !data.allowed ? <ErrorBanner tone="info" title={t("notAllowed")} /> : null}
-            {data && data.salesOpen && data.allowed && !data.promotable ? <ErrorBanner tone="warning" title={t("notPromotable")} /> : null}
+            {data && !data.optionsOpen ? <ErrorBanner tone="info" title={t("closed")} /> : null}
+            {data && data.optionsOpen && !data.salesOpen && data.allowed && data.promotable ? <ErrorBanner tone="info" title={t("giftOnly")} /> : null}
+            {data && data.optionsOpen && !data.allowed ? <ErrorBanner tone="info" title={t("notAllowed")} /> : null}
+            {data && data.optionsOpen && data.allowed && !data.promotable ? <ErrorBanner tone="warning" title={t("notPromotable")} /> : null}
 
             {data && buyable ? (
               <>
@@ -312,8 +315,9 @@ function WalletLine({ data }: { data: ListingOptionsResponse }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
       <div className="flex flex-col gap-0.5 text-sm">
-        <p className="font-medium tabular-nums">{t("available", { count: Math.max(0, wallet.balance) + wallet.planCredits })}</p>
-        {wallet.planCredits > 0 ? <p className="text-foreground-muted">{t("availableDetail", { count: wallet.planCredits })}</p> : null}
+        {/* Sales closed, purchased credits wait: only the gift credits count. */}
+        <p className="font-medium tabular-nums">{t("available", { count: (data.salesOpen ? Math.max(0, wallet.balance) : 0) + wallet.planCredits })}</p>
+        {wallet.planCredits > 0 ? <p className="text-foreground-muted">{t(data.account === "personal" ? "availableGift" : "availableDetail", { count: wallet.planCredits })}</p> : null}
         {wallet.featuredAllowance > 0 ? <p className="text-foreground-muted">{t("allowanceLeft", { count: wallet.featuredAllowance })}</p> : null}
       </div>
       {link}

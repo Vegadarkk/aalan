@@ -47,8 +47,8 @@ describe("closedDecision", () => {
   });
 
   it("closes the API but its open list", () => {
-    for (const path of ["/api/health", "/api/config", "/api/csp-report", "/api/preview", "/api/webhooks/stripe", "/api/auth/logout"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "pass" });
-    for (const path of ["/api/auth/signup", "/api/listings", "/api/healthz", "/api/webhooks/stripe/x", "/api/configx"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "closed-api" });
+    for (const path of ["/api/health", "/api/config", "/api/csp-report", "/api/preview", "/api/webhooks/stripe", "/api/auth/logout", "/api/newsletter/subscribe", "/api/newsletter/confirm", "/api/newsletter/unsubscribe"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "pass" });
+    for (const path of ["/api/auth/signup", "/api/listings", "/api/healthz", "/api/webhooks/stripe/x", "/api/configx", "/api/newsletter", "/api/newsletter/list", "/api/newsletter/subscribe/x"]) expect(closedDecision(path, LOCALES, "fr"), path).toEqual({ kind: "closed-api" });
   });
 });
 

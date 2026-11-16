@@ -993,6 +993,148 @@ html:has(.launch) {
   color: var(--color-cream-200);
   text-decoration-color: currentColor;
 }
+/* The opening list's sign-up (newsletter-form.tsx): one field joined to its button on a gold
+   hairline, quiet under the date; the door stays the page's one bold thing. */
+.launch-news {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 30rem;
+}
+.launch-news-title {
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  font-weight: 500;
+  color: var(--color-cream-200);
+  text-wrap: balance;
+}
+.launch-news-intro,
+.launch-news-note {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: color-mix(in oklab, var(--color-cream-200) 72%, transparent);
+  text-wrap: pretty;
+}
+.launch-news-note a {
+  color: var(--color-cream-200);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--color-cream-200) 40%, transparent);
+  text-underline-offset: 0.25em;
+}
+.launch-news-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+}
+.launch-news-field {
+  display: flex;
+  align-items: stretch;
+  padding: 0.25rem;
+  border: 1px solid color-mix(in oklab, var(--color-gold-400) 55%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-bab-950) 55%, transparent);
+  transition: border-color 150ms var(--ease-door);
+}
+.launch-news-field:focus-within {
+  border-color: var(--color-gold-300);
+}
+.launch-news-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding-inline: 1rem 0.5rem;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--color-cream-100, var(--color-cream-200));
+  outline: none;
+}
+.launch-news-input::placeholder {
+  color: color-mix(in oklab, var(--color-cream-200) 45%, transparent);
+}
+[dir="rtl"] .launch-news-input {
+  text-align: right;
+}
+.launch-news-input:focus-visible {
+  outline: none;
+}
+.launch-news-field:has(.launch-news-input:focus-visible) {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 3px;
+}
+.launch-news-button {
+  flex: none;
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  border-radius: 9999px;
+  background: var(--color-gold-400);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-bab-950);
+  transition:
+    background-color 150ms var(--ease-door),
+    scale 150ms var(--ease-door);
+}
+.launch-news-button:hover:not(:disabled) {
+  background: var(--color-gold-300);
+}
+.launch-news-button:active:not(:disabled) {
+  scale: 0.97;
+}
+.launch-news-button:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 3px;
+}
+.launch-news-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.launch-news-done > .launch-news-button {
+  align-self: center;
+}
+.launch-news-error {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-ochre-200);
+}
+.launch-news-robot:empty {
+  display: none;
+}
+.launch-news-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.launch-news-status {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-cream-200);
+  outline: none;
+  text-wrap: balance;
+}
+/* Inline, so it leads the first line of a wrapped, centred message. */
+.launch-news-star {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-end: 0.5rem;
+  vertical-align: -0.1em;
+  fill: var(--color-gold-400);
+}
+@media (width < 24rem) {
+  .launch-news-field {
+    flex-direction: column;
+    gap: 0.25rem;
+    border-radius: 1.5rem;
+  }
+  .launch-news-input {
+    text-align: center;
+  }
+}
 /* The page's one entrance: the gate rises out of the night (the welcome screen's), then the
    promise, the time left and the rest. Each change of a figure drops it into place. */
 @media (prefers-reduced-motion: no-preference) {
@@ -1014,6 +1156,7 @@ html:has(.launch) {
     animation-delay: 900ms;
   }
   .launch .welcome-enter[data-enter="date"],
+  .launch .welcome-enter[data-enter="news"],
   .launch .welcome-enter[data-enter="follow"],
   .launch .welcome-enter[data-enter="legal"] {
     animation-delay: 1100ms;

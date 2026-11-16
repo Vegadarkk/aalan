@@ -32,7 +32,7 @@ Ce qui se perd : les files BullMQ et les compteurs de quotas du jour (`valkey-qu
 
 ## Entretien courant
 
-- Les mises à jour de sécurité (Ubuntu, Docker, cloudflared, agent Oracle) s'installent seules chaque nuit. Si un redémarrage est nécessaire, il a lieu à 03:30 UTC, et les conteneurs repartent seuls.
+- Les mises à jour de sécurité (Ubuntu, Docker, cloudflared, agent Oracle) s'installent seules chaque nuit. Si un redémarrage est nécessaire, il a lieu à 05:45 UTC (hors des tâches de nuit du worker, 02:15 à 05:20), et les conteneurs repartent seuls.
 - Une fois par mois, Claude vérifie le disque par Run Command (`df -h /` et `docker system df`). Les anciennes images sont supprimées à chaque déploiement : on garde les 4 dernières versions.
 - Images de base (Node, Valkey, cloudflared) : Dependabot ouvre une PR, et la CI la vérifie.
 - Oracle reprend une VM gratuite inactive sur 7 jours (processeur, réseau et mémoire sous 20 %). Le trafic du site suffit après le lancement ; avant, le staging et la sonde réduisent ce risque.

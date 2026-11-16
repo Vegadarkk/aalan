@@ -7,6 +7,8 @@ import { Footer } from "@/components/legal/footer";
 import type { PublicConfig } from "@/lib/config/public-types";
 import type { SessionSummary } from "@/lib/contracts/auth";
 import { getFlags } from "@/lib/config/runtime";
+import { serverEnv } from "@/lib/env";
+import { isClosed, parseOpensAt } from "@/lib/launch/gate";
 import { getLegalConfig } from "@/lib/legal/config";
 import { pickMessages } from "@/i18n/client-messages";
 import { readex, ruqaa, tarifitFallback } from "@/lib/fonts";
@@ -40,6 +42,10 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
   // Live config/legal (cached 5 minutes); it reads no request data, so (public) stays static (ISR).
   const [{ companyName }, { carriersEnabled }] = await Promise.all([getLegalConfig(), getFlags()]);
   const dir = isRtl(locale) ? "rtl" : "ltr";
+  // While the site is closed its API answers 503 (src/lib/launch/gate.ts): the Assistant's bubble
+  // waits for the opening (the pages open before it, the guide included), checked again in the browser.
+  const opensAt = parseOpensAt(serverEnv().OPENS_AT);
+  const assistantFrom = opensAt && isClosed(opensAt) ? opensAt.toISOString() : null;
   return (
     <html lang={LOCALE_TAGS[locale]} dir={dir} className={`${readex.variable} ${tarifitFallback.variable} ${ruqaa.variable}`} suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col antialiased search-map:h-dvh search-map:overflow-hidden">
@@ -56,7 +62,7 @@ export async function RootShell({ locale, nonce, config, initialSession, clientN
         </a>
         <NextIntlClientProvider messages={messages}>
           <Providers dir={dir} config={config} initialSession={initialSession}>
-            <SiteHeader locale={locale} carriers={carriersEnabled} />
+            <SiteHeader locale={locale} carriers={carriersEnabled} assistantFrom={assistantFrom} />
             <CguNotice />
             {/* A floor under short pages (an invoice or two, an empty state): the tall footer starts near
                 the bottom of the screen instead of right under the content (owner, 2026-11-04), about

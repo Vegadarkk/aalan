@@ -96,7 +96,7 @@ export function MyListingsView() {
   const [tab, setTab] = useState<OwnerListBucket>(isBucket(initial) ? initial : "active");
   const [buckets, setBuckets] = useState<Partial<Record<OwnerListBucket, Bucket>>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [salesOpen, setSalesOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [sections, setSections] = useState<ShopSection[]>([]);
   const [paymentReady, setPaymentReady] = useState(false);
   // « Dupliquer » (Pros, audit §7), offered when the list says so.
@@ -126,11 +126,11 @@ export function MyListingsView() {
     const request = (requests.current[bucket] ?? 0) + 1;
     requests.current[bucket] = request;
     try {
-      const { listings, salesOpen: open, sections: shelves, paymentReady: ready, pinned: pins, duplicate } = await listMine(bucket);
+      const { listings, optionsOpen: open, sections: shelves, paymentReady: ready, pinned: pins, duplicate } = await listMine(bucket);
       if (requests.current[bucket] !== request) return;
       setCanDuplicate(duplicate === true);
       setPinned(pins ?? null);
-      setSalesOpen(open);
+      setOptionsOpen(open);
       setSections(shelves ?? []);
       setPaymentReady(ready === true);
       setBuckets((current) => ({ ...current, [bucket]: { kind: "ready", listings: visibleListings(bucket, listings) } }));
@@ -413,7 +413,7 @@ export function MyListingsView() {
                     listing={listing}
                     mediaBaseUrl={mediaBaseUrl}
                     busy={busyId === listing.id}
-                    salesOpen={salesOpen}
+                    optionsOpen={optionsOpen}
                     autoPromote={listing.id === promoteId}
                     onAction={(action) => onAction(listing.id, action)}
                     onDelete={() => onDelete(listing.id)}

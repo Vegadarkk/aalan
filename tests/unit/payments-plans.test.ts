@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_LEGAL } from "@/config/legal";
-import { addMonths, DEFAULT_PRICING, launchOfferEndFor, launchOfferGrantEnd, launchOfferSeatsLeft, planOfEntitlement, resolvePricingConfig, shopLaunchOfferEnd } from "@/config/pricing";
+import { addMonths, DEFAULT_PRICING, launchOfferEndFor, launchOfferGrantEnd, launchOfferOpen, launchOfferSeatsLeft, launchPlacesOpen, planOfEntitlement, resolvePricingConfig, shopLaunchOfferEnd } from "@/config/pricing";
 import { resetServerEnv } from "@/lib/env";
 import { invoiceViews } from "@/lib/payments/invoices";
 import { noticeDue } from "@/lib/payments/launch-offer";
@@ -350,11 +350,28 @@ describe("launch offer end of a shop (owner, 2026-11-05)", () => {
   const offer = DEFAULT_PRICING.launchOffer;
   const day = 86_400_000;
 
-  it("offers 6 months to the first 100 validations by default", () => {
-    expect([offer.seats, offer.months, offer.noticeDays]).toEqual([100, 6, 30]);
-    expect(launchOfferSeatsLeft(offer, 0)).toBe(100);
-    expect(launchOfferSeatsLeft(offer, 100)).toBe(0);
-    expect(launchOfferSeatsLeft(offer, 140)).toBe(0);
+  it("offers 6 months to a shop on one of the 1,000 shared launch places by default (owner, 2026-11-11)", () => {
+    expect([offer.seats, offer.months, offer.noticeDays]).toEqual([1_000, 6, 30]);
+    expect(offer.individual).toEqual({ credits: 30, days: 90, requirePhone: true });
+    expect(launchOfferSeatsLeft(offer, 0)).toBe(1_000);
+    expect(launchOfferSeatsLeft(offer, 1_000)).toBe(0);
+    expect(launchOfferSeatsLeft(offer, 1_400)).toBe(0);
+  });
+
+  it("gives places until 12 March 2027 included (Morocco, UTC+0), the offer itself running on", () => {
+    expect(launchPlacesOpen(offer, new Date("2027-03-12T23:59:59.000Z"))).toBe(true);
+    expect(launchPlacesOpen(offer, new Date("2027-03-13T00:00:00.000Z"))).toBe(false);
+    expect(launchOfferOpen(offer, new Date("2027-03-13T00:00:00.000Z"))).toBe(true);
+    expect(launchPlacesOpen({ ...offer, grantsUntil: null }, new Date("2030-01-01T00:00:00.000Z"))).toBe(true);
+    expect(launchPlacesOpen({ ...offer, active: false }, new Date("2026-12-12T10:00:00.000Z"))).toBe(false);
+  });
+
+  it("reads a stored offer without the 2026-11-11 fields as shops only, places given with no end", () => {
+    const stored = { ...DEFAULT_PRICING, launchOffer: { active: true, plan: "essentiel", noticeDays: 30, endsAt: null, seats: 100, months: 6 } };
+    const { config, errors } = resolvePricingConfig(stored);
+    expect(errors).toEqual([]);
+    expect(config.launchOffer.grantsUntil).toBeNull();
+    expect(config.launchOffer.individual.credits).toBe(0);
   });
 
   it("ends 6 calendar months after the validation, the day clamped to the month", () => {

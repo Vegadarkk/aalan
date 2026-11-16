@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { config, proxy } from "@/proxy";
+import { LOCALES } from "@/config/site";
 import { resetServerEnv } from "@/lib/env";
 import { INLINE_HASH_MARKER } from "@/lib/security/csp";
 import { PINNED_SCRIPT_HASHES } from "@/lib/security/inline-hashes";
@@ -40,6 +41,12 @@ describe("proxy matcher", () => {
     const matches = (url: string) => unstable_doesMiddlewareMatch({ config, url });
     for (const url of ["/_next/static/chunks/a.js", "/_next/image", "/robots.txt", "/ads.txt", "/sitemap.xml", "/sitemaps/index.xml", "/brand/joutiya-icon.svg", "/vendor/maplibre-gl-5.0.0-worker.mjs"]) expect(matches(url), url).toBe(false);
     for (const url of ["/", "/fr", "/fr/annonce/velo-abcdefgh", "/fr/annonce/x.1-abcdefgh", "/fr/messages/a.b", "/comptes/a.b", "/fr/x.svg.html", "/api/health"]) expect(matches(url), url).toBe(true);
+  });
+
+  it("never lets an asset extension skip the gate under /api, /admin or a locale", () => {
+    const matches = (url: string) => unstable_doesMiddlewareMatch({ config, url });
+    for (const locale of LOCALES) for (const url of [`/${locale}/deposer/x.json`, `/${locale}/connexion/x.png`, `/${locale}/c/vehicules/x.js`]) expect(matches(url), url).toBe(true);
+    for (const url of ["/api/listings/x.json", "/api/owner-media/listings/x/p-md.webp", "/api/search.txt", "/api/admin/stats.xml", "/admin/kybc/x/y.png", "/admin/photos/x/y/z.webp"]) expect(matches(url), url).toBe(true);
   });
 });
 

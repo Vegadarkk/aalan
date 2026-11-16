@@ -4,17 +4,25 @@ import { LEGAL_PAGES } from "@/config/legal-pages";
 import { LOCALE_TAGS, type Locale } from "@/config/site";
 import { SocialIcon } from "@/components/pro/social-icon";
 import { SOCIAL_NETWORK_NAMES } from "@/components/pro/social-links";
+import { PageMessages } from "@/components/i18n/page-messages";
 import { DoorScene } from "@/components/welcome/door-scene";
 import { numbersLocale } from "@/i18n/params";
 import type { BrandSocialLink } from "@/lib/launch/social";
 import { LaunchStage } from "./launch-stage";
+import { NewsletterForm } from "./newsletter-form";
 
 // The countdown page before the opening (owner, 5 Nov 2026; src/lib/launch/gate.ts): the welcome
 // threshold's gate on its night ground, the door shut, the brand promise, the time left, the date,
-// Aalan's social accounts (the campaign's videos) and the legal texts, the only pages still open.
+// the opening list's sign-up (owner, 2026-11-12), Aalan's social accounts (the campaign's videos)
+// and the legal texts, the only pages still open.
 
 /** Legal texts linked under the countdown: the ones a visitor may look for before an opening. */
 const LEGAL_LINKS = ["mentions", "cgu", "confidentialite", "cookies"] as const;
+
+/** Client messages of the sign-up form: its copy and the anti-robot widget's labels. */
+const NEWSLETTER_NAMESPACES = ["Launch.newsletter", "Auth.common"] as const;
+/** The privacy policy's paragraph on the opening list (content/legal/{fr,ar}/confidentialite.md). */
+const PRIVACY_ANCHOR = "finalites-14";
 
 export interface LaunchScreenProps {
   locale: Locale;
@@ -53,6 +61,10 @@ export async function LaunchScreen({ locale, opensAt, socials, publisher }: Laun
             <time dateTime={opensAt.toISOString()}>{t("opensOn", { date: openingDate(locale, opensAt) })}</time>
             <span className="launch-date-zone">{t("moroccoTime")}</span>
           </p>
+          {/* The form's own messages only: this root layout ships none (src/app/[locale]/(closed)). */}
+          <PageMessages locale={locale} namespaces={NEWSLETTER_NAMESPACES}>
+            <NewsletterForm locale={locale} privacyHref={`/${locale}/legal/${slugOf("confidentialite")}#${PRIVACY_ANCHOR}`} />
+          </PageMessages>
           {socials.length > 0 ? (
             <section aria-labelledby="launch-follow" className="launch-follow welcome-enter" data-enter="follow" data-testid="launch-social">
               <h2 id="launch-follow" className="launch-follow-title">

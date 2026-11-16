@@ -17,6 +17,7 @@ Un crédit vaut 1 dirham toutes taxes comprises. Les crédits s'achètent par pa
 - Les crédits servent uniquement à payer les options d'{brand}. Ils ne sont ni transférables à un autre compte, ni convertibles en argent, ni utilisables en dehors d'{brand} : ce n'est pas de la monnaie électronique.
 - Les crédits achetés n'expirent pas tant que le compte est ouvert.
 - Les crédits mensuels d'un abonnement Pro sont utilisés en premier. Ils ne se cumulent pas : ils sont remis à niveau au début de chaque période, et ceux qui restent sont perdus.
+- Les crédits offerts d'une place de lancement (CGU §4.5) sont utilisés en premier et valent 90 jours ; ils ne sont pas vendus : ni facture, ni remboursement, ni rétractation, et ceux qui restent à leur date de fin sont perdus.
 - Payer une option avec des crédits vaut exécution complète du service acheté avec ces crédits.
 
 ## 3. Prix, commande et paiement {#prix}
@@ -36,7 +37,7 @@ Les packs se paient par carte sur la page sécurisée de notre prestataire Reven
 - L'abonnement se renouvelle automatiquement à la fin de chaque période. Il se résilie à tout moment depuis l'espace Pro et court jusqu'à la fin de la période payée, qui n'est pas remboursée.
 - Passer à une offre supérieure prend effet aussitôt et la différence est facturée. Passer à une offre inférieure prend effet à la fin de la période.
 - Après un échec de paiement, l'abonnement reste actif pendant un délai de grâce, puis prend fin. Les annonces au-delà du quota du compte sont alors mises en pause ; elles peuvent être remises en ligne depuis « Mes annonces ».
-- Offre de lancement : les 100 premiers Pros validés bénéficient gratuitement des quotas de l'offre Essentiel pendant 6 mois à compter de leur validation, sans crédits mensuels. Ils sont prévenus au moins 30 jours avant la fin de cette offre, qui ne prend jamais fin tant que les ventes sont fermées.
+- Offre de lancement : un Pro validé qui obtient l'une des 1 000 places de lancement (CGU §4.5) bénéficie gratuitement des quotas de l'offre Essentiel pendant 6 mois à compter de sa validation, sans crédits mensuels. Il est prévenu au moins 30 jours avant la fin de cette offre, qui ne prend jamais fin tant que les ventes sont fermées.
 
 ## 5. Pass Boutique {#pass}
 

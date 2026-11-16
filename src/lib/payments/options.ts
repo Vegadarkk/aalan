@@ -71,8 +71,17 @@ function bumpAvailableAt(sortAt: Date, now: Date): Date | null {
   return at > now.getTime() ? new Date(at) : null;
 }
 
-function offers(listing: Pick<ListingDoc, "categoryId" | "sortAt">, state: WalletState, pricing: PricingConfig, now: Date): OptionOffer[] {
+/**
+ * Sales closed, only the plan pool can pay: an individual's gift credits of a launch place (owner,
+ * 2026-11-11); purchased credits and the shop plans wait for the sales gate.
+ */
+export function optionsOpen(salesOpen: boolean, state: WalletState): boolean {
+  return salesOpen || state.planCredits > 0;
+}
+
+function offers(listing: Pick<ListingDoc, "categoryId" | "sortAt">, state: WalletState, pricing: PricingConfig, now: Date, salesOpen: boolean): OptionOffer[] {
   const blocked = state.frozen || state.balance < 0;
+  const spendable = state.planCredits + (salesOpen ? state.balance : 0);
   return OPTION_IDS.map((id) => {
     const price = optionPrice(id, listing.categoryId, pricing);
     const coveredByAllowance = usesAllowance(id) && state.featuredAllowance > 0;
@@ -82,7 +91,7 @@ function offers(listing: Pick<ListingDoc, "categoryId" | "sortAt">, state: Walle
       price,
       days: id === "bump" ? null : FEATURED_DAYS[id],
       coveredByAllowance,
-      affordable: !blocked && (coveredByAllowance || state.planCredits + state.balance >= price),
+      affordable: !blocked && (coveredByAllowance || spendable >= price),
       availableAt: availableAt?.toISOString() ?? null,
     };
   });
@@ -99,11 +108,14 @@ export async function listingOptions(auth: AuthContext, listingId: string, now =
   if (!listing) throw notFound();
   const accountId = payerOf(auth, listing);
   const [flags, pricing, wallet] = await Promise.all([getFlags(), getPricing(), getWallet(accountId)]);
+  const state = walletStateAt(wallet, now);
   return {
     salesOpen: flags.salesEnabled,
+    optionsOpen: optionsOpen(flags.salesEnabled, state),
+    account: listing.proId ? "shop" : "personal",
     promotable: promotable(listing, now),
     allowed: paidOptionsAllowed(listing.subcategoryId),
-    options: offers(listing, walletStateAt(wallet, now), pricing, now),
+    options: offers(listing, state, pricing, now, flags.salesEnabled),
     wallet: walletSummary(wallet, now),
     boosts: boostsView(listing, now),
     expiresAt: listing.expiresAt?.toISOString() ?? null,
@@ -159,7 +171,8 @@ export async function buyOption(auth: AuthContext, listingId: string, input: Buy
     return response(option, true, committed, await getWallet(accountId), listing.boosts, now);
   }
   const flags = await getFlags();
-  if (!flags.salesEnabled) throw new HttpError(403, "sales_closed");
+  // Sales closed, only gift credits of a launch place can pay (checked again in the transaction).
+  if (!flags.salesEnabled && !optionsOpen(false, walletStateAt(await getWallet(accountId), now))) throw new HttpError(403, "sales_closed");
   await options.beforePurchase?.();
   const pricing = await getPricing();
 
@@ -182,6 +195,8 @@ export async function buyOption(auth: AuthContext, listingId: string, input: Buy
       // Price at the listing's category as read in the transaction (a category edit meanwhile counts).
       const price = optionPrice(option, current.categoryId, pricing);
       const spent = spendOption(walletStateAt(wallet, now), price, { useAllowance: usesAllowance(option) });
+      // Sales closed: the gift credits must cover it all, purchased credits stay untouched.
+      if (!flags.salesEnabled && spent.ledger.delta !== 0) throw new HttpError(403, "sales_closed");
       // The price or the allowance moved since the dialog showed them (another purchase, an admin edit, a new period).
       if (creditsTaken(spent.ledger) !== input.expectedCost) throw new HttpError(409, "price_changed");
       const version = current.version + 1;

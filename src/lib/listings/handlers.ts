@@ -11,6 +11,8 @@ import { paymentShown } from "@/lib/pro/seller-payment-rules";
 import { getListingCounts } from "@/lib/db/repositories/listing-stats";
 import { getListing, listOwnerListings } from "@/lib/db/repositories/listings";
 import { getProProfile } from "@/lib/db/repositories/pro-profiles";
+import { getWallet, walletStateAt } from "@/lib/db/repositories/wallets";
+import { optionsOpen } from "@/lib/payments/options";
 import { getFlags } from "@/lib/config/runtime";
 import { HttpError, notFound } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
@@ -103,12 +105,14 @@ export async function handleMine(request: Request): Promise<Response> {
   const sections = owned?.sections ?? [];
   // A listing's own payment link needs the shop's « Payer chez le vendeur » shown (catalogue §6).
   const paymentReady = owned !== null && paymentShown(owned.lifecycle, owned.plan, owned.sellerPayment);
+  const salesOpen = (await getFlags()).salesEnabled;
   const body: OwnerListingsResponse = {
     listings: listings.map((listing) => {
       const stats = counts.get(listing.id);
       return { ...toOwnerSummary(listing, now), ...(stats ? { stats } : {}) };
     }),
-    salesOpen: (await getFlags()).salesEnabled,
+    salesOpen,
+    optionsOpen: salesOpen || (owned === null && optionsOpen(false, walletStateAt(await getWallet(auth.user.uid), now))),
     ...(sections.length > 0 ? { sections } : {}),
     ...(paymentReady ? { paymentReady } : {}),
     // The pins of « Mes annonces » rows (UX audit lot 3), for a shop that publishes.

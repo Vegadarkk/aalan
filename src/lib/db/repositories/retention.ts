@@ -176,7 +176,8 @@ export async function getListingDocument(id: string): Promise<DocumentSnapshot> 
 }
 
 /** Journals purged by date only (no legal hold on them); auditLogs since phase 5 (D22, 5 years). */
-export type JournalCollection = typeof COLLECTIONS.contentOps | typeof COLLECTIONS.revealLogs | typeof COLLECTIONS.auditLogs;
+/** Collections deleted at `purgeAt` without a check of their own: journals, and the launch-place markers of phone numbers. */
+export type JournalCollection = typeof COLLECTIONS.contentOps | typeof COLLECTIONS.revealLogs | typeof COLLECTIONS.auditLogs | typeof COLLECTIONS.launchPlaces;
 
 /** Deletes up to `limit` (<= 500, one batch) documents of `collection` whose purgeAt is <= now; returns how many. */
 export async function deleteJournalPastPurge(collection: JournalCollection, now: Date, limit: number): Promise<number> {

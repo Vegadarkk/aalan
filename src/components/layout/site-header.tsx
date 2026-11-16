@@ -31,7 +31,17 @@ import { AssistantBubble } from "@/components/help/assistant-bubble";
 // menus. The header and its category row run to max-w-7xl, 88rem from xl, wider than the page's
 // max-w-6xl, so the search pill keeps its room beside the six pieces (its place segment waits for xl).
 
-export function SiteHeader({ locale, carriers = false }: { locale: string; /** The carriers space is open (`carriersEnabled`): « Transporteurs » joins the doors. */ carriers?: boolean }) {
+export function SiteHeader({
+  locale,
+  carriers = false,
+  assistantFrom = null,
+}: {
+  locale: string;
+  /** The carriers space is open (`carriersEnabled`): « Transporteurs » joins the doors. */
+  carriers?: boolean;
+  /** The site's opening (ISO) while it is closed: the Assistant's bubble waits for it. */
+  assistantFrom?: string | null;
+}) {
   const t = useTranslations("Nav");
   const names = useTranslations("Categories");
   type CategoryKey = Parameters<typeof names>[0];
@@ -73,7 +83,7 @@ export function SiteHeader({ locale, carriers = false }: { locale: string; /** T
       <CategoryChips items={chips} label={t("categories")} shops={t("shops")} guide={t("guide")} {...(carriers ? { carriers: { label: t("carriers"), href: CARRIERS_PATH } } : {})} previous={t("previousCategories")} next={t("nextCategories")} />
       <FloatingActions label={t("floating")}>
         <SellFab label={t("post")} text={t("sell")} />
-        <AssistantBubble />
+        <AssistantBubble from={assistantFrom} />
       </FloatingActions>
     </>
   );

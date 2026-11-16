@@ -24,11 +24,16 @@ export const listingQuotasSchema = z
 export type ListingQuotas = z.infer<typeof listingQuotasSchema>;
 
 /**
- * Launch offer (owner decisions Q13, 2026-10-16, and 2026-11-05): the first `seats` verified Pros
- * get the quotas and storefront of `plan` for free, without its monthly credits, for `months` from
- * their own validation (`proProfiles.launchOfferEndsAt`). `endsAt` (ISO date, optional) closes the
- * offer for everyone at once. A shop is never downgraded while sales are closed, and gets at least
- * `noticeDays` of notice once they are open (src/lib/payments/launch-offer.ts).
+ * Launch offer (owner decisions Q13, 2026-10-16, 2026-11-05 and 2026-11-11): `seats` launch places,
+ * one counter (`system/launchOfferSeats`) shared by shops and individuals, handed out until
+ * `grantsUntil`. A shop takes a place at its first validation and gets the quotas and storefront of
+ * `plan` for free, without its monthly credits, for `months` from that validation
+ * (`proProfiles.launchOfferEndsAt`). An individual takes a place once a listing of theirs passed
+ * moderation (and their phone is verified when `individual.requirePhone`): `individual.credits` gift
+ * credits, valid `individual.days`, spendable on options even while sales are closed, one place per
+ * account and per phone number (src/lib/payments/launch-place.ts). `endsAt` (ISO date, optional)
+ * closes the shops' offer for everyone at once. A shop is never downgraded while sales are closed,
+ * and gets at least `noticeDays` of notice once they are open (src/lib/payments/launch-offer.ts).
  */
 export const launchOfferSchema = z
   .object({
@@ -36,10 +41,21 @@ export const launchOfferSchema = z
     plan: z.enum(["essentiel", "business"]),
     noticeDays: z.number().int().min(0).max(90),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
-    /** Validations that can get the offer, counted in `system/launchOfferSeats`. */
-    seats: z.number().int().min(1).max(100_000).default(100),
+    /** Launch places (shop validations and individuals together), counted in `system/launchOfferSeats`. */
+    seats: z.number().int().min(1).max(100_000).default(1_000),
     /** Months offered from each shop's validation. */
     months: z.number().int().min(1).max(36).default(6),
+    /** No new place from this date (ISO, exclusive); the places already given keep running. */
+    grantsUntil: z.iso.datetime({ offset: true }).nullable().default(null),
+    /** What an individual's place gives (0 credits: shops only). */
+    individual: z
+      .object({
+        credits: z.number().int().min(0).max(1_000),
+        days: z.number().int().min(1).max(365),
+        requirePhone: z.boolean(),
+      })
+      .strict()
+      .default({ credits: 0, days: 90, requirePhone: true }),
   })
   .strict();
 export type LaunchOffer = z.infer<typeof launchOfferSchema>;
@@ -183,7 +199,18 @@ export const DEFAULT_PRICING: PricingConfig = {
     premium: { activeListings: null, photosPerListing: 20, listingsPerDay: null },
   },
   graceDays: 7,
-  launchOffer: { active: true, plan: "essentiel", noticeDays: 30, endsAt: null, seats: 100, months: 6 },
+  // Owner 2026-11-11: 1,000 places for shops and individuals together, given until 12 March 2027
+  // included (Morocco, UTC+0); an individual's place is 30 credits valid 90 days.
+  launchOffer: {
+    active: true,
+    plan: "essentiel",
+    noticeDays: 30,
+    endsAt: null,
+    seats: 1_000,
+    months: 6,
+    grantsUntil: "2027-03-13T00:00:00+00:00",
+    individual: { credits: 30, days: 90, requirePhone: true },
+  },
   options: { bump: { standard: 10, premiumCat: 20 }, featured7: { standard: 29, premiumCat: 59 }, featured30: { standard: 79, premiumCat: 149 } },
   packs: [
     // 30 / 100 / 200 / 500 MAD, bonus 0 / 10 / 15 / 20 % (owner, 2026-10-31; was 50 / 100 / 250).
@@ -223,7 +250,12 @@ export function launchOfferOpen(offer: LaunchOffer, now: Date): boolean {
   return offer.active && (offer.endsAt === null || Date.parse(offer.endsAt) > now.getTime());
 }
 
-/** Seats left, from the validations already counted. */
+/** True while new launch places are given at `now`: the offer is open and `grantsUntil` not reached. */
+export function launchPlacesOpen(offer: LaunchOffer, now: Date): boolean {
+  return launchOfferOpen(offer, now) && (offer.grantsUntil === null || Date.parse(offer.grantsUntil) > now.getTime());
+}
+
+/** Seats left, from the places already counted. */
 export function launchOfferSeatsLeft(offer: LaunchOffer, granted: number): number {
   return Math.max(0, offer.seats - granted);
 }

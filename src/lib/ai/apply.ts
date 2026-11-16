@@ -1,4 +1,5 @@
 import "server-only";
+import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import type { AiConfig } from "@/config/ai";
 import { subcategoryAllowsAds } from "@/config/categories";
 import { listingLifetime } from "@/config/pricing";
@@ -162,6 +163,8 @@ export async function applyAutoDecision(kind: "approve" | "reject", input: AutoD
   }
   if (effects.search) await notifySearchIndex([listing.id]);
   const updated = applyPatch(listing, patch);
+  // An individual's listing approved online may take a launch place (owner, 2026-11-11); never throws.
+  if (kind === "approve" && updated.status === "published" && !updated.proId) await claimLaunchPlace(updated.ownerUid, now);
   await audit({
     actorUid: "system",
     actorRole: "system",

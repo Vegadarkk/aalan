@@ -4,6 +4,7 @@ import { signUploadSchema, UPLOAD_ID_PATTERN, type SignUploadResponse, type Uplo
 import { notFound } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { chargeMemberDocs } from "@/lib/rate-limit/member-reads";
 import { json, noContent } from "@/lib/http/route";
 import { assertQuotas, DEPOSIT_QUOTAS } from "@/lib/quota/gate";
 import { requestIdentity } from "@/lib/rate-limit/keys";
@@ -39,6 +40,7 @@ export async function handleSign(request: Request): Promise<Response> {
 export async function handleComplete(request: Request, params: Params): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
   await enforceLimit("upload.status.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   // Processing writes the upload and attaches the photo: suspended with the deposit. Status and
   // deletion stay open (a degraded day must not trap a photo the owner wants removed).
   await assertQuotas(DEPOSIT_QUOTAS);
@@ -51,6 +53,7 @@ export async function handleComplete(request: Request, params: Params): Promise<
 export async function handleStatus(request: Request, params: Params): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("upload.status.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   const id = await uploadIdOf(params);
   const body: UploadStatusResponse = await uploadStatus(uploaderOf(request, auth), id);
   return json(body);

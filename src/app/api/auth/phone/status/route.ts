@@ -4,6 +4,7 @@ import { apiRoute, json } from "@/lib/http/route";
 import { displayPhone } from "@/lib/phone/normalize";
 import { phoneVerifier } from "@/lib/phone-verify";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { chargeMemberDocs } from "@/lib/rate-limit/member-reads";
 
 // GET /api/auth/phone/status: polled by the account page while the user sends the code.
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export const GET = apiRoute(async (request) => {
   const { user } = await requireUser(request);
   await enforceLimit("phone.status.uid", user.uid);
+  await chargeMemberDocs(user.uid);
   const state = await phoneVerifier().status(user.uid);
   const response: PhoneStatusResponse = {
     status: state.status,

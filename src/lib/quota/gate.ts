@@ -30,6 +30,12 @@ export const PASSWORD_SIGNUP_QUOTAS = [...SIGNUP_QUOTAS, "mail.anonymous.daily"]
 export const PUBLIC_READ_QUOTAS = ["firestore.reads"] as const satisfies readonly QuotaId[];
 
 /**
+ * A member's reads of their own account (settings, decisions): refused once reads are degraded;
+ * GET /api/auth/me answers from the cookie instead (src/lib/rate-limit/member-reads.ts).
+ */
+export const MEMBER_READ_QUOTAS = ["firestore.reads"] as const satisfies readonly QuotaId[];
+
+/**
  * API code of a refusal: its own code, so clients neither retry it like a transient "unavailable"
  * nor show a generic error. Auth.errors and Listing.errors (messages/*.json) say to retry after
  * 9 h, Morocco time (the Pacific midnight is 07:00 to 09:00 there).

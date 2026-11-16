@@ -22,22 +22,33 @@ describe("endedSessionReason", () => {
     mocks.getClaims.mockReset().mockResolvedValue({ role: "individual", v: 2 });
   });
 
+  const suspended = { role: "individual", st: "suspended", v: 2 };
+
   it("names a running suspension, checking the cookie without the revocation check", async () => {
+    mocks.getClaims.mockResolvedValue(suspended);
     await expect(endedSessionReason("cookie", NOW)).resolves.toEqual({ kind: "suspended", until: UNTIL });
     expect(mocks.verifySession).toHaveBeenCalledWith("cookie", { checkRevoked: false });
     expect(mocks.getSuspension).toHaveBeenCalledWith("u1");
   });
 
-  it("says nothing for a forged or expired cookie, no suspension, or one already over", async () => {
+  it("says nothing for a forged or expired cookie, or an account that is not suspended", async () => {
     mocks.verifySession.mockResolvedValueOnce(null);
     await expect(endedSessionReason("forged", NOW)).resolves.toBeNull();
-    mocks.getSuspension.mockResolvedValueOnce(null);
-    await expect(endedSessionReason("cookie", NOW)).resolves.toBeNull();
-    mocks.getSuspension.mockResolvedValueOnce({ until: new Date("2026-11-04T11:00:00Z"), decisionId: "d1", createdAt: NOW });
     await expect(endedSessionReason("cookie", NOW)).resolves.toBeNull();
   });
 
+  it("reads the suspension document only for an account whose claims say suspended", async () => {
+    await endedSessionReason("cookie", NOW);
+    expect(mocks.getSuspension).not.toHaveBeenCalled();
+    mocks.getClaims.mockResolvedValue(suspended);
+    mocks.getSuspension.mockResolvedValueOnce({ until: new Date("2026-11-04T11:00:00Z"), decisionId: "d1", createdAt: NOW });
+    // A suspension already over: the claims changed, the generic rights notice shows.
+    await expect(endedSessionReason("cookie", NOW)).resolves.toEqual({ kind: "account-changed" });
+    expect(mocks.getSuspension).toHaveBeenCalledTimes(1);
+  });
+
   it("fails open when the suspension or the claims cannot be read", async () => {
+    mocks.getClaims.mockResolvedValueOnce(suspended);
     mocks.getSuspension.mockRejectedValueOnce(new Error("unavailable"));
     await expect(endedSessionReason("cookie", NOW)).resolves.toBeNull();
     mocks.getSuspension.mockResolvedValueOnce(null);

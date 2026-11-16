@@ -25,6 +25,9 @@ async function idOf(params: Params): Promise<string> {
 
 const actorOf = (request: Request, auth: Awaited<ReturnType<typeof requireUser>>) => ({ auth, ip: requestIdentity(request.headers).ip });
 
+/** Documents an edit reads before the listing service: shop, departure, seller (user and shop), the result. */
+const DEPARTURE_EDIT_READS = 5;
+
 /** GET /api/pro/departures: charged like « Mes annonces », a document per departure read. */
 export async function handleDepartures(request: Request): Promise<Response> {
   const auth = await requireUser(request);
@@ -47,11 +50,15 @@ export async function handleDepartureCreate(request: Request): Promise<Response>
   return outcome.turnstilePassed ? applyTurnstilePass(response, device) : response;
 }
 
-/** PUT /api/pro/departures/{id}: new facts (counted as a listing edit by the listing service). */
+/**
+ * PUT /api/pro/departures/{id}: new facts (counted as a listing edit by the listing service). The
+ * shop, departure and seller documents it reads before that are charged like « Mes annonces ».
+ */
 export async function handleDepartureEdit(request: Request, params: Params): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
   const id = await idOf(params);
   const input = await readJson(request, departureEditSchema);
+  await enforceLimit("listing.owner.read.uid", auth.user.uid, DEPARTURE_EDIT_READS);
   await assertQuotas(DEPOSIT_QUOTAS);
   const body: DepartureResponse = { departure: await editDeparture(actorOf(request, auth), id, input) };
   return json(body);

@@ -8,6 +8,7 @@ import { json, noContent } from "@/lib/http/route";
 import { revokeVerifiedPhone } from "@/lib/phone-verify/accounts";
 import { requestIdentity } from "@/lib/rate-limit/keys";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterMemberRead, topUpMemberDocs } from "@/lib/rate-limit/member-reads";
 import { parseTargetKey } from "@/lib/reports/target-key";
 import { z } from "@/lib/zod";
 import { appealLinkView, appealQueue, myDecisions, openAppealAsMember, openAppealByLink, reviewAppeal } from "./appeals";
@@ -272,7 +273,10 @@ export async function handleStaffConversation(request: Request, context: Params)
 export async function handleMyDecisions(request: Request): Promise<Response> {
   // Revocation checked, as the messaging reads: a cookie from before a ban or a sign-out everywhere reads nothing (D9).
   const { user } = await requireUser(request, { checkRevoked: true, allowSuspended: true });
-  return json<MyDecisionsResponse>({ items: await myDecisions(user.uid) });
+  await meterMemberRead(user.uid);
+  const items = await myDecisions(user.uid);
+  await topUpMemberDocs(user.uid, items.length - 1);
+  return json<MyDecisionsResponse>({ items });
 }
 
 /** POST /api/appeals: signed-in appeal (affected account or notifier). */

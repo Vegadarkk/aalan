@@ -36,11 +36,16 @@ export function claimsChange(before: Claims, after: Claims): EndedSessionReason 
 
 export async function endedSessionReason(cookie: string | undefined, now: Date = new Date()): Promise<EndedSessionReason | null> {
   try {
-    const user = await verifySession(cookie, { checkRevoked: false });    if (!user) return null;
-    const suspension = await getSuspension(user.uid);
-    if (suspension && suspension.until.getTime() > now.getTime()) return { kind: "suspended", until: suspension.until };
-    // The cookie carries the claims it was signed with; the account holds the current ones.
-    return claimsChange(user.claims, await getClaims(user.uid));
+    const user = await verifySession(cookie, { checkRevoked: false });
+    if (!user) return null;
+    // The cookie carries the claims it was signed with; the account holds the current ones (Auth,
+    // no Firestore read). Only a suspended account has its suspension document read.
+    const current = await getClaims(user.uid);
+    if (current.st === "suspended") {
+      const suspension = await getSuspension(user.uid);
+      if (suspension && suspension.until.getTime() > now.getTime()) return { kind: "suspended", until: suspension.until };
+    }
+    return claimsChange(user.claims, current);
   } catch (error) {
     // Fail open: the generic "session ended" notice still shows.
     logger.warn({ err: error instanceof Error ? error.message : String(error) }, "sign-in: ended session reason skipped");

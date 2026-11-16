@@ -69,7 +69,7 @@ async function resetConfirm(request: Request): Promise<Response> {
     await activateMember(record.uid, readClaims(record.customClaims ?? {}));
     // The account has a usable password again (a Google sign-in may have dropped it, src/lib/auth/google.ts).
     await linkProvider(record.uid, "password").catch((error: unknown) => logger.warn({ err: (error as Error).message }, "providers update skipped"));
-    await sendPasswordChangedMail({ email: record.email ?? email, displayName: displayNameFor(profile, record, email), locale: profile?.locale ?? "fr" });
+    await sendPasswordChangedMail({ uid: record.uid, email: record.email ?? email, displayName: displayNameFor(profile, record, email), locale: profile?.locale ?? "fr" });
     await logConnection({ uid: record.uid, event: "password_reset", ip: flow.identity.ip });
   }
   const body: ResetConfirmResponse = { status: "password_reset" };
@@ -82,6 +82,8 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   const device = deviceOf(request);
   const { uid } = context.user;
   await enforceLimit("account.mutation.uid", uid);
+  // Each success mails a security notice: a daily cap per account besides the hourly one.
+  await enforceLimit("password.change.day.uid", uid);
   const email = context.user.email ?? (await auth().getUser(uid)).email;
   if (!email) throw forbidden("this account has no password");
   const keys = loginKeys(email, device.identity.ipBucket);
@@ -100,7 +102,7 @@ export async function handlePasswordChange(request: Request): Promise<Response> 
   // Every open stream closes, this device's too: its client reopens one with the new session (A-4).
   await publishRevoked(uid);
   const minted = await createSessionForUid(uid);
-  await sendPasswordChangedMail({ email, displayName: displayNameFor(profile, null, email), locale: profile?.locale ?? "fr" });
+  await sendPasswordChangedMail({ uid, email, displayName: displayNameFor(profile, null, email), locale: profile?.locale ?? "fr" });
   await logConnection({ uid, event: "password_change", ip: device.identity.ip });
   const body: PasswordChangeResponse = { status: "changed", session: await sessionSummary(minted.user) };
   return applyDevice(signedIn(minted, body), device);

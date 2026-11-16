@@ -14,6 +14,7 @@ import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { firstStrictIssue } from "@/lib/moderation/free-text";
 import type { CompiledProhibited } from "@/lib/moderation/prohibited";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterMemberRead } from "@/lib/rate-limit/member-reads";
 
 // Storefront settings of the signed-in member (vitrine-avis §1): the "about" text, the house
 // banner and the city shown on /profil. The uid comes from the session, never from the body. The
@@ -53,6 +54,7 @@ async function currentUser(uid: string): Promise<UserRecord> {
 /** GET /api/account/storefront. */
 export async function handleStorefrontRead(request: Request): Promise<Response> {
   const { user } = await requireUser(request);
+  await meterMemberRead(user.uid);
   return json(storefrontSettings(await currentUser(user.uid)));
 }
 

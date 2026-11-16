@@ -4,6 +4,7 @@ import { readJson } from "@/lib/http/json";
 import { apiRoute, json } from "@/lib/http/route";
 import { saveSellerPayment, sellerPaymentSettings } from "@/lib/pro/seller-payment";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { chargeMemberDocs } from "@/lib/rate-limit/member-reads";
 
 // « Payer chez le vendeur » settings of the signed-in owner's shop (design phase-7/boutique-temporaire.md §2).
 
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const GET = apiRoute(async (request) => {
   const auth = await requireUser(request);
   await enforceLimit("pro.read.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   return json<SellerPaymentView>(await sellerPaymentSettings(auth));
 });
 

@@ -28,6 +28,31 @@ export async function sessionSummary(user: SessionUser, readPrivate: typeof getU
   };
 }
 
+/**
+ * The summary from the cookie alone, without Firestore: when the account's read budget is spent or
+ * Firestore reads are degraded (src/lib/rate-limit/member-reads.ts). The profile fields stay empty,
+ * no CGU or address-change notice shows, until a later request reads them again.
+ */
+export function claimsSummary(user: SessionUser): SessionSummary {
+  return {
+    uid: user.uid,
+    email: user.email ?? null,
+    emailVerified: user.emailVerified,
+    role: user.claims.role ?? null,
+    suspended: user.claims.st === "suspended",
+    displayName: null,
+    publicId: null,
+    phoneVerified: false,
+    locale: null,
+    providers: user.provider === "password" || user.provider === "google.com" ? [user.provider] : [],
+    cguUpdate: null,
+    emailChange: null,
+  };
+}
+
+/** Firestore documents sessionSummary reads (users/{uid} and its private account document). */
+export const SESSION_SUMMARY_DOCUMENTS = 2;
+
 /** The change of address still waiting for its link (Z1-10); an expired one reads as none. */
 function pendingChange(pending: PendingEmailChange | undefined): SessionSummary["emailChange"] {
   const live = livePendingChange(pending, new Date());

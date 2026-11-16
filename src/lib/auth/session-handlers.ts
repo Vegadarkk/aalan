@@ -1,26 +1,35 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { optionalUser, requireSameOrigin } from "@/lib/auth/guards";
-import type { MeResponse } from "@/lib/contracts/auth";
-import { revokeSessions, verifySession } from "@/lib/firebase/session";
+import type { MeResponse, SessionSummary } from "@/lib/contracts/auth";
+import { revokeSessions, verifySession, type SessionUser } from "@/lib/firebase/session";
 import { readCookie } from "@/lib/http/cookies";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { publishRevoked } from "@/lib/messaging";
 import { CSRF_HEADER, SESSION_COOKIE, clearSessionCookies } from "@/lib/security/cookies";
 import { csrfToken } from "@/lib/security/csrf";
 import { deviceOf, jsonResponse, withDevice } from "./respond";
-import { sessionSummary } from "./summary";
+import { memberReadAllowed } from "@/lib/rate-limit/member-reads";
+import { claimsSummary, SESSION_SUMMARY_DOCUMENTS, sessionSummary } from "./summary";
 
 // Session plumbing: who am I and logout. Google sign-in goes through /api/auth/google only: the
 // Firebase ID token exchange (/api/auth/session) was removed, it skipped the GIS nonce binding.
 
-/** The session of the caller, or null (a revoked cookie reads as signed out); the CSRF header lets the UI recover its token. */
+/**
+ * The session of the caller, or null (a revoked cookie reads as signed out); the CSRF header lets
+ * the UI recover its token. Charged to the account's member reads: past its budget, or with
+ * Firestore reads degraded, the summary comes from the cookie alone.
+ */
 export async function handleMe(request: Request): Promise<Response> {
   const context = await optionalUser(request, { checkRevoked: true });
-  const body: MeResponse = { session: context ? await sessionSummary(context.user) : null };
+  const body: MeResponse = { session: context ? await summaryFor(context.user) : null };
   const response = jsonResponse(body);
   if (context) response.headers.set(CSRF_HEADER, csrfToken(context.session));
   return withDevice(response, request);
+}
+
+async function summaryFor(user: SessionUser): Promise<SessionSummary> {
+  return (await memberReadAllowed(user.uid, SESSION_SUMMARY_DOCUMENTS)) ? sessionSummary(user) : claimsSummary(user);
 }
 
 /**

@@ -65,6 +65,17 @@ export const RATE_LIMITS = {
   "staff.login.accountIp": { points: 5, duration: 15 * MINUTE, blockDuration: 15 * MINUTE, policy: "closed", key: "account+ip" },
   // Account settings mutations (display name, password change, account closure).
   "account.mutation.uid": { points: 60, duration: HOUR, policy: "closed", key: "uid" },
+  // Password change: 10 attempts a day per account besides the hourly mutations (each success
+  // mails a security notice and revokes every session).
+  "password.change.day.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
+  // Reads of the member's own account with no budget of their own: the session (GET /api/auth/me,
+  // private page renders), the settings reads (tutorials, notifications, storefront) and the
+  // decisions (GET /api/appeals). 1 200 calls an hour per account.
+  "member.read.uid": { points: 1200, duration: HOUR, policy: "open", key: "uid" },
+  // Documents those reads cost, with upload status, Pro reads, phone status and « Mes avis »
+  // (hourly limiters above and below): 5 000 per day per account, a tenth of the Spark day, like
+  // listing.owner.read.uid (src/lib/rate-limit/member-reads.ts).
+  "member.docs.uid": { points: 5000, duration: DAY, policy: "open", key: "uid" },
   // Guided tours (a tour finished, skipped or replayed; the settings switch): one small write each.
   // Open: a Valkey outage must not bring a finished tour back.
   "tutorials.uid": { points: 60, duration: HOUR, policy: "open", key: "uid" },

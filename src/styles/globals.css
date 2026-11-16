@@ -1095,6 +1095,36 @@ html:has(.launch) {
 .launch-news-done > .launch-news-button {
   align-self: center;
 }
+/* Sign-up open the day before the opening: the gold button, and sign-in as its quiet twin. */
+.launch-signup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.launch-signup-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.launch-signup-secondary {
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--color-gold-400) 55%, transparent);
+  border-radius: 9999px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-cream-200);
+  transition: border-color 150ms var(--ease-door);
+}
+.launch-signup-secondary:hover {
+  border-color: var(--color-gold-300);
+}
+.launch-signup-secondary:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 3px;
+}
 .launch-news-error {
   font-size: 0.875rem;
   line-height: 1.5;

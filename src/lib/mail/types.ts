@@ -1,5 +1,6 @@
 import type { Locale } from "@/config/site";
 import type { AppointmentKind } from "@/lib/contracts/appointments";
+import type { NewsletterCampaign } from "@/lib/newsletter/campaigns";
 
 // Mail adapter (§2 "Adapters": MailTransport). Resend in production, Brevo as the security
 // fallback, an in-memory mailbox in development (DEV_MAILBOX). The web app only enqueues; the
@@ -65,8 +66,10 @@ export type TemplateId =
   | "accountClosed"
   // Legal (phase 6, D11): the CGU changed since the member accepted them (DSA art. 14 § 2).
   | "cguChanged"
-  // Opening list (owner, 2026-11-12): the double opt-in of the door's sign-up.
-  | "newsletterConfirm";
+  // Opening list (owner, 2026-11-12): the double opt-in of the door's sign-up, then its three
+  // e-mails (owner, 2026-11-16: J-7, J-1 and the opening).
+  | "newsletterConfirm"
+  | "newsletterCampaign";
 
 /**
  * Statement of reasons (art. 17 DSA, design D8) carried by the hold and rejection mails. The
@@ -205,6 +208,18 @@ export interface TemplateData {
   launchPlaceGranted: { displayName: string; credits: number; expiresAt: string };
   /** Sign-up confirmation of the opening list: the signed link, its expiry and the opening (ISO; null once open). */
   newsletterConfirm: { confirmUrl: string; expiresAt: string; opensAt: string | null };
+  /**
+   * One of the opening list's e-mails: the opening (ISO), the subscriber's unsubscribe token
+   * (src/lib/newsletter/token.ts) and the launch places as configured at send time (`until`:
+   * pricing launchOffer.grantsUntil, exclusive ISO, or null). `places` null: no place is given
+   * (offer off); the J-1 e-mail is then not sent and the opening one leaves them out.
+   */
+  newsletterCampaign: {
+    campaign: NewsletterCampaign;
+    opensAt: string;
+    unsubscribeToken: string;
+    places: { seats: number; credits: number; creditDays: number; months: number; until: string | null; requirePhone: boolean } | null;
+  };
   /** Pass Boutique (2026-10-28): notices at J-7 and J-1 (`ending`), then the downgrade (`ended`). */
   passNotice: { displayName: string; shopName: string; kind: "ending" | "ended"; endsAt: string; freeListings: number | null; paused: number };
   /**

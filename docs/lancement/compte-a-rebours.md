@@ -3,7 +3,12 @@
 Décision du propriétaire (5 nov. 2026) : la production est en ligne une dizaine de jours avant
 l'ouverture, pendant la campagne sur les réseaux sociaux. Pendant ce temps le site est **fermé** :
 l'accueil montre la porte d'Aalan, fermée, avec le temps restant ; à l'heure dite la porte s'ouvre
-d'elle-même et le site apparaît. Pas d'inscription ni de dépôt avant l'ouverture.
+d'elle-même et le site apparaît. Pas de dépôt avant l'ouverture. Les inscriptions ouvrent 24 h avant
+(décision du 16 novembre 2026) : création de compte, connexion, réglages, vérification du téléphone
+et demandes Pro ; l'accueil montre alors « Créer mon compte ». Annonces, recherche et messagerie
+attendent l'ouverture (`src/lib/launch/gate.ts`, phase `signup`). La liste d'ouverture reçoit ses
+e-mails à J-7, J-1 (avec l'ouverture des inscriptions) et le jour J
+(`src/worker/jobs/newsletter-campaigns.ts`).
 
 Code : `src/lib/launch/gate.ts` (règles), `src/proxy.ts` (application), page
 `src/app/[locale]/(closed)/ouverture`, composants `src/components/launch/`.

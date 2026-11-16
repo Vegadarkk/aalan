@@ -308,7 +308,8 @@ describe("proxy before the opening (OPENS_AT)", () => {
   const visitor = (path: string) => request(path, HOST);
   const signedIn = (path: string) => member(path, HOST);
   beforeEach(() => {
-    vi.stubEnv("OPENS_AT", new Date(Date.now() + 86_400_000).toISOString());
+    // A week ahead: before the day of sign-up (gate.ts SIGNUP_LEAD_MS).
+    vi.stubEnv("OPENS_AT", new Date(Date.now() + 7 * 86_400_000).toISOString());
     vi.stubEnv("ADMIN_HOST", `admin.${HOST}`);
   });
 
@@ -357,6 +358,16 @@ describe("proxy before the opening (OPENS_AT)", () => {
     expect((await proxy(pass("/api/listings", previewPass(SECRET)))).status).toBe(200);
     expect((await proxy(pass("/fr/recherche", "forged"))).status).toBe(307);
     expect((await proxy(pass("/api/listings", previewPass("x".repeat(40))))).status).toBe(503);
+  });
+
+  it("opens sign-up the day before: account pages and API pass, posting and search stay shut", async () => {
+    vi.stubEnv("OPENS_AT", new Date(Date.now() + 3_600_000).toISOString());
+    expect((await proxy(visitor("/fr"))).headers.get("x-middleware-rewrite")).toBe(`https://${HOST}/fr/ouverture`);
+    for (const path of ["/fr/inscription", "/fr/connexion"]) expect((await proxy(visitor(path))).status, path).toBe(200);
+    for (const path of ["/fr/parametres", "/ar/verifications", "/fr/pro"]) expect((await proxy(signedIn(path))).status, path).toBe(200);
+    for (const path of ["/fr/deposer", "/fr/recherche", "/fr/annonce/velo-casablanca-abcd2345"]) expect((await proxy(signedIn(path))).status, path).toBe(307);
+    for (const path of ["/api/auth/signup", "/api/auth/login", "/api/auth/phone/start"]) expect((await proxy(visitor(path))).status, path).toBe(200);
+    for (const path of ["/api/listings", "/api/search", "/api/uploads/sign"]) expect((await proxy(visitor(path))).status, path).toBe(503);
   });
 
   it("opens at the instant, and the countdown page is never reached directly", async () => {

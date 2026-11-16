@@ -68,4 +68,6 @@ export const PRIVATE_SEGMENTS: readonly string[] = [
   // Phase 4, outside (account): page challenge of the SSR limits, alert e-mail unsubscribe.
   "anti-robot",
   "alertes",
+  // Opening list (owner, 2026-11-16): the unsubscribe page of its e-mails.
+  "liste-ouverture",
 ];

@@ -116,6 +116,9 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>
           theme: resolvedTheme,
           language: locale === "ar" ? "ar" : "fr",
           size: "flexible",
+          // Owner, 16 Nov 2026: no visible box when it validates on its own; it shows only when
+          // Cloudflare asks the visitor to act (a suspicious browser). The server check is unchanged.
+          appearance: "interaction-only",
           callback: (token) => {
             setReady(true);
             latest.current(token);
@@ -167,8 +170,8 @@ export const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>
   if (siteKey === null) return null;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      {/* 65 px: the widget's own height, reserved so the form does not jump when it appears. */}
-      <div ref={container} role="group" aria-label={t("turnstileLabel")} data-turnstile={ready ? "ready" : "pending"} className="min-h-[65px]" />
+      {/* No reserved height: in "interaction-only" the widget stays hidden unless a challenge is needed. */}
+      <div ref={container} role="group" aria-label={t("turnstileLabel")} data-turnstile={ready ? "ready" : "pending"} />
       {failed ? <InlineError>{t("turnstileError")}</InlineError> : error ? <InlineError>{error}</InlineError> : null}
     </div>
   );

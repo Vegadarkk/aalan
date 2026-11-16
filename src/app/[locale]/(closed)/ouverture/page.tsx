@@ -5,7 +5,7 @@ import { LaunchScreen, openingDate } from "@/components/launch/launch-screen";
 import { pageLocale } from "@/i18n/params";
 import { serverEnv } from "@/lib/env";
 import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
-import { parseOpensAt } from "@/lib/launch/gate";
+import { launchPhase, parseOpensAt } from "@/lib/launch/gate";
 import { brandSocialLinks } from "@/lib/launch/social";
 import { getLegalConfig } from "@/lib/legal/config";
 import { LOCALE_TAGS, SITE_NAME } from "@/config/site";
@@ -47,5 +47,7 @@ export default async function OpeningPage({ params }: { params: Promise<{ locale
   // Only the proxy's rewrite leads here, and only while OPENS_AT is set.
   if (!opensAt) notFound();
   const { companyName } = await getLegalConfig();
-  return <LaunchScreen locale={locale} opensAt={opensAt} socials={brandSocialLinks(env.BRAND_SOCIAL_LINKS).links} publisher={companyName} />;
+  // The day before the opening, the door invites to sign up (kept one minute like the rest).
+  const signupOpen = launchPhase(opensAt) === "signup";
+  return <LaunchScreen locale={locale} opensAt={opensAt} socials={brandSocialLinks(env.BRAND_SOCIAL_LINKS).links} publisher={companyName} signupOpen={signupOpen} />;
 }

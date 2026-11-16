@@ -317,7 +317,7 @@ describe("newsletterConfirm (opening list)", () => {
     // The button and the raw link under it (href twice, the text once).
     expect(rendered.html.match(/fr#confirmer=abc\.def/g)).toHaveLength(3);
     const images = [...rendered.html.matchAll(/<img src="([^"]+)"/g)].map((match) => match[1]);
-    expect(images).toEqual([`${SITE}/mail/aalan-logo-light.png`, `${SITE}/mail/door-closed.png`]);
+    expect(images).toEqual([`${SITE}/mail/aalan-logo-dark.png`, `${SITE}/mail/door-closed.png`]);
     expect(rendered.html).not.toMatch(/<img[^>]*alt=""/);
   });
 

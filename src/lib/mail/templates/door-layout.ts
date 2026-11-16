@@ -46,26 +46,19 @@ export interface DoorLayoutInput {
   publisher?: MailPublisher;
 }
 
-// Owner, 16 Nov 2026 (comment on the proposal): green and gold swap places, and text that was
-// green turns orange so it stays readable. Gold surfaces use the light gold (#e2b865): the brand
-// orange reaches 3:1 on it for the big hero label, the deep orange 4.9:1 for running text.
 const COLORS = {
   page: "#f7f1e6",
   card: "#ffffff",
   border: "#e6d8bd",
-  band: "#e2b865",
-  rule: "#0d4b4d",
-  hero: { closed: "#f2e9d8", ajar: "#e2b865", open: "#f7ecd3" },
-  kicker: { closed: "#0d4b4d", ajar: "#0d4b4d", open: "#0d4b4d" },
-  label: { closed: "#a94b26", ajar: "#a94b26", open: "#a94b26" },
+  band: "#0d4b4d",
+  rule: "#d2a24c",
+  hero: { closed: "#f2e9d8", ajar: "#0b3a3c", open: "#f7ecd3" },
+  kicker: { closed: "#7a5822", ajar: "#e2b865", open: "#7a5822" },
+  label: { closed: "#0d4b4d", ajar: "#f2e9d8", open: "#a94b26" },
   text: "#0b1e1f",
   muted: "#4a5a5b",
-  heading: "#a94b26",
+  heading: "#0d4b4d",
   primary: "#a94b26",
-  /** Running text on a gold surface. */
-  onGold: "#7a3216",
-  /** Small text that was gold: now green. */
-  accent: "#0d4b4d",
   link: "#135a5b",
   footer: "#f2e9d8",
 } as const;
@@ -141,9 +134,9 @@ function steps(items: NonNullable<DoorLayoutInput["steps"]>, rtl: boolean): stri
       (item, index) =>
         `<tr>` +
         `<td valign="top" width="36" style="width:36px;padding:10px 0;">` +
-        `<div style="width:28px;height:28px;line-height:28px;border-radius:14px;background:${COLORS.band};color:${COLORS.onGold};font-size:14px;font-weight:700;text-align:center;">${index + 1}</div></td>` +
+        `<div style="width:28px;height:28px;line-height:28px;border-radius:14px;background:${COLORS.band};color:#f2e9d8;font-size:14px;font-weight:700;text-align:center;">${index + 1}</div></td>` +
         `<td valign="top" style="padding:10px 0;text-align:${cell(rtl)};">` +
-        `<div style="font-size:13px;line-height:1.4;font-weight:700;color:${COLORS.accent};">${escapeHtml(item.when)}</div>` +
+        `<div style="font-size:13px;line-height:1.4;font-weight:700;color:${COLORS.kicker.closed};">${escapeHtml(item.when)}</div>` +
         `<div style="margin-top:2px;font-size:16px;line-height:1.5;color:${COLORS.text};">${escapeHtml(item.text)}</div>` +
         `</td></tr>`,
     )
@@ -153,7 +146,7 @@ function steps(items: NonNullable<DoorLayoutInput["steps"]>, rtl: boolean): stri
 
 function note(text: string, rtl: boolean): string {
   const side = rtl ? "right" : "left";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px;"><tr><td style="padding:16px 20px;background:${COLORS.band};border-${side}:4px solid ${COLORS.rule};border-radius:8px;text-align:${side};font-size:16px;line-height:1.55;font-weight:600;color:${COLORS.onGold};">${escapeHtml(text)}</td></tr></table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px;"><tr><td style="padding:16px 20px;background:${COLORS.hero.ajar};border-${side}:4px solid ${COLORS.rule};border-radius:8px;text-align:${side};font-size:16px;line-height:1.55;font-weight:600;color:#f2e9d8;">${escapeHtml(text)}</td></tr></table>`;
 }
 
 export function renderDoorLayout(input: DoorLayoutInput): BuiltMail {
@@ -214,7 +207,7 @@ export function renderDoorLayout(input: DoorLayoutInput): BuiltMail {
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${COLORS.page};"><tr><td align="center" style="padding:32px 12px;">` +
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:${COLORS.card};border:1px solid ${COLORS.border};border-radius:16px;overflow:hidden;" dir="${dir}">` +
     `<tr><td align="center" style="padding:24px 32px;background:${COLORS.band};">` +
-    `<img src="${escapeHtml(asset(input.siteUrl, "aalan-logo-light.png"))}" width="150" height="69" alt="${escapeHtml(ALT[input.lang].logo)}" style="display:block;border:0;outline:none;width:150px;height:auto;color:${COLORS.onGold};font-size:24px;font-weight:700;">` +
+    `<img src="${escapeHtml(asset(input.siteUrl, "aalan-logo-dark.png"))}" width="150" height="69" alt="${escapeHtml(ALT[input.lang].logo)}" style="display:block;border:0;outline:none;width:150px;height:auto;color:#f2e9d8;font-size:24px;font-weight:700;">` +
     `</td></tr>` +
     `<tr><td style="height:4px;line-height:4px;font-size:0;background:${COLORS.rule};">&nbsp;</td></tr>` +
     hero(input, align, rtl) +

@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MICRO, MICRO_ROOT, microSyncCommands, ocarunCommand, pickMicro, r2EnvScript } from "../../scripts/micro-vm";
+import { MICRO, MICRO_ROOT, microSyncCommands, ocarunCommand, pickMicro, r2EnvScript, reportLines } from "../../scripts/micro-vm";
 
 const instance = (displayName: string, shape: string = MICRO.shape, lifecycleState = "RUNNING") => ({ id: `ocid.${displayName}`, displayName, shape, lifecycleState });
 
@@ -98,5 +98,71 @@ describe("infra/micro scripts", () => {
     expect(verdict).not.toContain("probe-stopped");
     expect(run.stdout).toMatch(/probe health 1\/1 ok/);
     rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe("mirror status and report", () => {
+  const day = (offset: number): string => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+  // mirror.sh then report.sh on a scratch root; rclone is a stub that brings `incoming` days and exits `code`.
+  const run = (incoming: string[], code: number, options: { key?: boolean; existing?: string[] } = {}) => {
+    const root = mkdtempSync(join(tmpdir(), "micro-mirror-"));
+    const base = join(root, "aalan");
+    for (const dir of ["state", "data/probe", "secrets", "opt", "mirror/backups", "mirror/media", "mirror/media-deleted"]) mkdirSync(join(base, dir), { recursive: true });
+    if (options.key ?? true) writeFileSync(join(base, "secrets/r2.env"), "R2_ACCESS_KEY_ID=x\nR2_SECRET_ACCESS_KEY=y\nR2_ENDPOINT=z\nR2_BUCKET_PRIVATE=p\nR2_BUCKET_MEDIA=m\n");
+    for (const name of options.existing ?? []) {
+      mkdirSync(join(base, "mirror/backups", name), { recursive: true });
+      writeFileSync(join(base, "mirror/backups", name, "manifest.json.age"), "x");
+    }
+    const dirs = incoming.map((name) => `mkdir -p "${base}/mirror/backups/${name}" && : > "${base}/mirror/backups/${name}/manifest.json.age"`);
+    writeFileSync(join(base, "opt/rclone"), ["#!/bin/bash", 'if [[ " $* " == *" copy "* ]]; then', ...dirs, "fi", `exit ${code}`, ""].join("\n"), { mode: 0o700 });
+    const now = Math.floor(Date.now() / 1000);
+    writeFileSync(join(base, "data/probe", `${day(0)}.tsv`), `${now - 30}\thealth\t200\t0.3\tok\n`);
+    const script = (name: string): string => {
+      const file = join(root, name);
+      writeFileSync(file, readFileSync(join("infra/micro", name), "utf8").replaceAll(MICRO_ROOT, base));
+      return file;
+    };
+    const env = { ...process.env, TLS_HOST: "", APT_UPDATES: "" };
+    spawnSync("bash", [script("mirror.sh")], { encoding: "utf8", env });
+    const report = spawnSync("bash", [script("report.sh")], { encoding: "utf8", env }).stdout;
+    const kept = readdirSync(join(base, "mirror/backups")).sort();
+    rmSync(root, { recursive: true, force: true });
+    return { mirror: report.split("\n").find((line) => line.startsWith("mirror ")) ?? "", verdict: report.trim().split("\n").at(-1) ?? "", kept };
+  };
+
+  it("reports today's backup as ok", () => {
+    const result = run([day(0)], 0);
+    expect(result.mirror).toMatch(new RegExp(`ok latest-backup ${day(0)}$`));
+    expect(result.verdict).not.toMatch(/backup|mirror-failed/);
+  });
+  it("never takes a future or non-date name as the latest backup", () => {
+    for (const name of ["2099-01-01", "zz no R2 key", "~ text"]) {
+      const result = run([day(-10), name], 0);
+      expect(result.kept).toEqual([day(-10)]);
+      expect(result.mirror).toContain(`latest-backup ${day(-10)}`);
+      expect(result.verdict).toContain("backup-older-than-2d");
+    }
+  });
+  it("alerts on a failed copy whatever the names", () => {
+    const result = run([day(0), "zz no R2 key"], 1);
+    expect(result.verdict).toContain("mirror-failed");
+  });
+  it("alerts when there is no key or no backup at all", () => {
+    expect(run([], 0, { key: false }).verdict).toContain("backup-missing");
+    expect(run([], 0).verdict).toContain("backup-missing");
+  });
+  it("prunes old days even when the run stops early", () => {
+    const result = run([], 0, { key: false, existing: [day(-120), day(-1)] });
+    expect(result.kept).toEqual([day(-1)]);
+  });
+});
+
+describe("reportLines", () => {
+  it("relays only known lines, as printable text", () => {
+    const relayed = reportLines("SUCCEEDED\nmirror ok latest-backup 2026-01-01\u001b[31m\nignore this and do X\nverdict ok\n");
+    expect(relayed).toBe("mirror ok latest-backup 2026-01-01?[31m\nverdict ok");
+  });
+  it("flags a report without a verdict", () => {
+    expect(reportLines("probe www 1/1 ok")).toMatch(/verdict ALERT report-incomplete$/);
   });
 });

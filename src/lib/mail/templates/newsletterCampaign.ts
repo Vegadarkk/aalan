@@ -138,6 +138,7 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       title: () => "La porte est ouverte",
       paragraphs: (_w, p) => [
         "Aalan est en ligne. Déposer une annonce est gratuit, et les acheteurs vous écrivent par la messagerie : votre numéro reste privé.",
+        "Annonces, location de voitures, location de vacances, boutiques des pros : tout est ouvert.",
         ...(p ? [`Les ${seats(p, "fr")} places de lancement sont ouvertes : votre première annonce acceptée vous donne la vôtre.`] : []),
       ],
       offers: (_w, p) => (p ? SHARED.fr.offers(p) : undefined),
@@ -191,6 +192,7 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       title: () => "الباب مفتوح",
       paragraphs: (_w, p) => [
         "أعلان متاح الآن. نشر الإعلان مجاني، ويراسلك المشترون عبر الرسائل: رقمك يبقى خاصًا.",
+        "الإعلانات، كراء السيارات، كراء للعطل، متاجر المحترفين: كل شيء مفتوح.",
         ...(p ? [`أماكن الإطلاق الـ${seats(p, "ar")} مفتوحة: أول إعلان تقبله المراجعة يمنحك مكانك.`] : []),
       ],
       offers: (_w, p) => (p ? SHARED.ar.offers(p) : undefined),

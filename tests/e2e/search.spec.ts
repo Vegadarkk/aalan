@@ -312,10 +312,13 @@ test.describe("search page", () => {
     await words.press("Enter");
     await expect(page).toHaveURL(/sous-categorie=voitures/);
     await expect(page).not.toHaveURL(/q=tomob/);
-    // A typed search is remembered on this device and offered on the next focus.
-    await words.fill(WORD);
-    await words.press("Enter");
-    await expect(page).toHaveURL(new RegExp(`q=${WORD}`));
+    // A typed search is remembered on this device and offered on the next focus. The results page
+    // binds the pill after the navigation and remounts it empty: a fill made before that is lost.
+    await expect(async () => {
+      await words.fill(WORD);
+      await words.press("Enter");
+      await expect(page).toHaveURL(new RegExp(`q=${WORD}`), { timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
     // The new results bind the pill again and refill it with the words: clear until it stays empty.
     await expect(async () => {
       await words.fill("");

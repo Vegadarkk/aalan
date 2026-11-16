@@ -19,6 +19,7 @@ import { sendSavedSearchAlerts } from "./saved-search-alerts";
 import { sendCguNotices } from "./cgu-notice";
 import { exportAuditLogs } from "./audit-export";
 import { sendMessageDigests } from "./message-digest";
+import { sendNewsletterCampaigns } from "./newsletter-campaigns";
 import { sendAppointmentReminders } from "./appointment-reminders";
 import { expireOffers } from "./offer-expiry";
 import { sweepReportSla } from "./report-sla-sweep";
@@ -52,6 +53,7 @@ export const JOBS: Record<string, (job: Job) => Promise<unknown>> = {
   "billing-thresholds": () => updateBillingThresholds(),
   "lift-suspensions": () => liftSuspensions(),
   "message-digest": () => sendMessageDigests(),
+  "newsletter-campaigns": () => sendNewsletterCampaigns(),
   "appointment-reminders": () => sendAppointmentReminders(),
   "offer-expiry": () => expireOffers(),
   "report-sla-sweep": () => sweepReportSla(),
@@ -108,6 +110,9 @@ export const SCHEDULES = {
   "lift-suspensions-hourly": { pattern: "35 * * * *", job: "lift-suspensions" },
   // Phase 5 (D21). Every 10 minutes from :01: grouped new-messages mails due (30 min after the first unread).
   "message-digest-10min": { pattern: "1-59/10 * * * *", job: "message-digest" },
+  // Every 10 minutes from :02 (owner, 2026-11-16): the opening list's e-mails (J-7, J-1, opening)
+  // within their Resend budget, then the list's deletion 30 days after the opening.
+  "newsletter-campaigns-10min": { pattern: "2-59/10 * * * *", job: "newsletter-campaigns" },
   // Appointments (28 Oct). Every 10 minutes from :04: reminders due (the day before, 2 hours before).
   "appointment-reminders-10min": { pattern: "4-59/10 * * * *", job: "appointment-reminders" },
   // Price offers (Carte vivante lot 5). Every 10 minutes from :09: offers unanswered for 48 h expire.

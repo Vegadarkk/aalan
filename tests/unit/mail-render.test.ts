@@ -11,7 +11,8 @@ const ACTION = "https://staging.joutiya.ma/fr/action?mode=verifyEmail&oobCode=ab
 const ADDRESS = "6 rue d'Armaillé, 75017 Paris";
 
 /** The opening list's e-mails (door layout, its own tests below): no name, the site's static images. */
-const DOOR_TEMPLATES: ReadonlySet<TemplateId> = new Set(["newsletterConfirm"]);
+const DOOR_TEMPLATES: ReadonlySet<TemplateId> = new Set(["newsletterConfirm", "newsletterCampaign"]);
+const PLACES = { seats: 1000, credits: 30, creditDays: 90, months: 6, until: "2027-03-13T00:00:00+00:00", requirePhone: true };
 
 const DATA: { [T in TemplateId]: TemplateData[T] } = {
   verifyEmail: { displayName: "Nadia", actionUrl: ACTION },
@@ -82,6 +83,7 @@ const DATA: { [T in TemplateId]: TemplateData[T] } = {
   launchOfferNotice: { displayName: "Nadia", shopName: "Atlas Vélos", plan: "essentiel", kind: "ending", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 0 },
   launchPlaceGranted: { displayName: "Nadia", credits: 30, expiresAt: "2027-03-12T10:00:00.000Z" },
   newsletterConfirm: { confirmUrl: `${SITE}/fr#confirmer=abc.def`, expiresAt: "2026-11-14T09:30:00.000Z", opensAt: "2026-12-12T10:00:00.000Z" },
+  newsletterCampaign: { campaign: "places", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "fixture-token", places: PLACES },
   passNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "ended", endsAt: "2027-03-01T00:00:00.000Z", freeListings: 0, paused: 2 },
   withdrawalReceipt: { displayName: "Nadia", receipt: "R-20270301-AB12CD", requestedAt: "2027-03-01T10:00:00.000Z", packCredits: 110, removedCredits: 90, refundMinor: 8_200, currency: "MAD", refundBy: "2027-03-15T10:00:00.000Z" },
   sellerPaymentNotice: { displayName: "Nadia", shopName: "Atlas Vélos", kind: "changed", host: "pay.example-bank.ma", activeFrom: "2026-11-02T10:00:00.000Z" },
@@ -287,5 +289,55 @@ describe("newsletterConfirm (opening list)", () => {
     expect(rendered.text).not.toContain("Aalan");
     expect(rendered.html).not.toContain("Aalan");
     expect(rendered.text).toContain("\u2068Adark Prime");
+  });
+});
+
+describe("newsletterCampaign (opening list, J-7 / J-1 / J)", () => {
+  beforeAll(() => resetServerEnv());
+  const campaign = (locale: Locale, data: Partial<TemplateData["newsletterCampaign"]>) =>
+    renderMail({ template: "newsletterCampaign", locale, to: "nadia@example.com", data: { campaign: "teaser", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "fixture-token", places: PLACES, ...data } });
+
+  it("opens the door a little more with each e-mail and dates the opening in Morocco time", () => {
+    const teaser = campaign("fr", { campaign: "teaser" });
+    expect(teaser.subject).toBe("J-7 : Aalan ouvre ses portes le 12 décembre");
+    expect(teaser.text).toContain("samedi 12 décembre à 10:00 (heure du Maroc)");
+    expect(teaser.html).toContain(`${SITE}/mail/door-closed.png`);
+    expect(teaser.text).not.toContain("1 000");
+    expect(campaign("fr", { campaign: "places" }).html).toContain(`${SITE}/mail/door-ajar.png`);
+    const opening = campaign("fr", { campaign: "opening" });
+    expect(opening.html).toContain(`${SITE}/mail/door-open.png`);
+    expect(opening.text).toContain(`${SITE}/fr/deposer`);
+    expect(opening.text).toContain("votre adresse sera effacée dans les 30 jours");
+  });
+
+  it("announces the launch places from the configuration, last day included", () => {
+    const fr = campaign("fr", { campaign: "places" });
+    expect(fr.subject).toBe("Demain : 1\u202f000 places de lancement à prendre");
+    expect(fr.text).toContain("30 crédits offerts, valables 90 jours");
+    expect(fr.text).toContain("numéro de téléphone vérifié requis");
+    expect(fr.text).toContain("offre Essentiel offerte pendant 6 mois");
+    expect(fr.text).toContain("jusqu'au 12 mars 2027");
+    const ar = campaign("ar", { campaign: "places" });
+    expect(ar.subject).toBe("غدًا: 1000 مكان في الإطلاق");
+    expect(ar.text).toContain("30 نقطة مجانية");
+    expect(ar.text).not.toContain("Aalan");
+    expect(ar.html).toContain('<html lang="ar" dir="rtl">');
+    expect(() => campaign("fr", { campaign: "places", places: null })).toThrow();
+  });
+
+  it("leaves the places out of the opening e-mail when none is given", () => {
+    const opening = campaign("fr", { campaign: "opening", places: null });
+    expect(opening.text).not.toMatch(/places de lancement|crédits/);
+    expect(opening.text).toContain("déposez votre première annonce");
+  });
+
+  it("carries the one-click unsubscribe: RFC 8058 headers to the API, footer link to the page with the token in the fragment", () => {
+    const rif = campaign("rif", { campaign: "teaser" });
+    expect(rif.headers).toEqual({ "List-Unsubscribe": `<${SITE}/api/newsletter/unsubscribe?t=fixture-token>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" });
+    expect(rif.html).toContain(`href="${SITE}/rif/liste-ouverture#desinscription=fixture-token"`);
+    expect(rif.text).toContain("Se désinscrire en un clic");
+    // Tarifit reads French, its links keep its locale.
+    expect(rif.text).toContain(`${SITE}/rif`);
+    expect(rif.html).toContain('<html lang="fr" dir="ltr">');
   });
 });

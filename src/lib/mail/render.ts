@@ -22,6 +22,7 @@ import { phoneRemoved } from "./templates/phoneRemoved";
 import { phoneVerified } from "./templates/phoneVerified";
 import { launchOfferNotice } from "./templates/launchOfferNotice";
 import { launchPlaceGranted } from "./templates/launchPlaceGranted";
+import { newsletterCampaign } from "./templates/newsletterCampaign";
 import { newsletterConfirm } from "./templates/newsletterConfirm";
 import { passNotice } from "./templates/passNotice";
 import { withdrawalReceipt } from "./templates/withdrawalReceipt";
@@ -91,6 +92,7 @@ const TEMPLATES: { [T in TemplateId]: TemplateRenderer<T> } = {
   accountClosed,
   cguChanged,
   newsletterConfirm,
+  newsletterCampaign,
 };
 
 export const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];

@@ -38,9 +38,10 @@ export function isClosed(opensAt: Date | null, now: Date = new Date()): boolean 
 /**
  * Page segments still served while closed: the legal texts (mentions, CGU, privacy, cookies) and
  * the admin procedures guide, its rubrics included (owner, 11 Nov 2026: the guide opens before the
- * site so search engines index it early; sign-up, listings and the API stay closed).
+ * site so search engines index it early; sign-up, listings and the API stay closed), and the
+ * opening list's unsubscribe page (owner, 16 Nov 2026: its e-mails start 7 days before the opening).
  */
-export const OPEN_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["legal", "demarches"]);
+export const OPEN_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["legal", "demarches", "liste-ouverture"]);
 
 /**
  * Public API paths still served while closed: health (uptime probe), the browser's config, CSP

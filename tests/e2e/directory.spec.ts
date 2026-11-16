@@ -74,6 +74,8 @@ test("lists the verified shops by city and activity", async ({ browser, page, re
   await firestore.collection("users").doc(shopUid).update({ proId: shopId, type: "pro", "badges.phoneVerified": true, "stats.activeListings": 3, updatedAt: now });
   await firestore.collection("users").doc(agencyUid).update({ proId: agencyId, type: "pro", "badges.phoneVerified": true, "badges.proCertified": true, updatedAt: now });
   await firestore.collection("users").doc(suspendedUid).update({ proId: suspendedId, type: "pro", "badges.phoneVerified": true, status: "suspended", updatedAt: now });
+  // Every directory path shares one copy of the shop list for 5 minutes: forget it, the seed is new.
+  expect((await request.post("/api/dev/directory/reset")).ok()).toBe(true);
 
   // The whole directory: the two shops with their activity, city, badge and listings; the others never.
   // The way in from every page: the « Boutiques » chip closing the header's category row (owner's choice, 30 Oct 2026).

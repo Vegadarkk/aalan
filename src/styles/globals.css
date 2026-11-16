@@ -329,25 +329,18 @@
 
 /*
  * Loading mark: the khatam, the 8-point star of the logo's door (two squares, one turned 45deg),
- * turning slowly. Drawn in currentColor; --khatam-stroke sets the line for each size
- * (src/components/ui/khatam-loader.tsx). Reduced motion keeps the star still.
+ * turning slowly. An SVG drawn in currentColor; --khatam-stroke sets the line for each size, in
+ * viewBox units (src/components/ui/khatam-loader.tsx). Reduced motion keeps the star still.
  */
 @utility khatam {
-  position: relative;
   display: inline-block;
   flex: none;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--khatam-stroke, 2);
+  stroke-linejoin: round;
   animation: khatam-turn 3.2s linear infinite;
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 17.5%;
-    border: var(--khatam-stroke, 2px) solid currentColor;
-    border-radius: 1px;
-  }
-  &::after {
-    transform: rotate(45deg);
-  }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
   }

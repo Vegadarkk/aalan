@@ -4,11 +4,11 @@ import type { AuthContext } from "@/lib/auth/guards";
 import type { ProLogoResponse } from "@/lib/contracts/pro";
 import { recordModerationDecision } from "@/lib/db/repositories/moderation-decisions";
 import { proProfileRef } from "@/lib/db/repositories/pro-profiles";
-import { serverEnv } from "@/lib/env";
 import { HttpError, unavailable } from "@/lib/http/errors";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { logger } from "@/lib/logging/logger";
-import { imageClassifier, type ImageClassifier } from "@/lib/media/classify";
+import type { ImageClassifier } from "@/lib/media/classify";
+import { uploadImageClassifier } from "@/lib/media/image-check";
 import { checkImageType, SNIFF_BYTES } from "@/lib/media/magic";
 import { toMediaError } from "@/lib/media/process";
 import { INPUT_OPTIONS, MAX_INPUT_PIXELS, openImage, sharp } from "@/lib/media/sharp-setup";
@@ -27,7 +27,8 @@ import { ownedPublishingShop } from "./service";
 // (metadata dropped, orientation applied, pixel cap) as WebP 512 and 160 px, and the local
 // nudity check reads it on white before anything is stored: a refusal is a recorded automated
 // decision. The variants go to the public media bucket under a new key each time (immutable
-// cache), the profile points at it, the previous ones are deleted. Done inline: one small image.
+// cache), the profile points at it, the previous ones are deleted. Encoded inline (one small image);
+// the nudity check runs in the worker, which holds the models (src/lib/media/image-check.ts).
 
 const VARIANTS = Object.keys(LOGO_VARIANTS) as LogoVariant[];
 const WEBP = { quality: 88, alphaQuality: 90, effort: 4 } as const;
@@ -103,7 +104,7 @@ export async function updateLogo(auth: AuthContext, body: Uint8Array, declaredTy
 
   const variants = await encodeLogo(Buffer.from(body.buffer, body.byteOffset, body.byteLength));
   const ai = deps.ai ?? DEFAULT_AI;
-  const classifier = deps.classifier ?? imageClassifier(serverEnv(), ai);
+  const classifier = deps.classifier ?? uploadImageClassifier(store, ai);
   const onWhite = await openImage(variants.l).flatten({ background: "#ffffff" }).webp({ quality: 90 }).toBuffer();
   const { nsfw } = await classifier.classify(onWhite);
   if (nsfw >= ai.nsfw.rejectAt) {

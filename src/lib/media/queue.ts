@@ -60,16 +60,22 @@ function mediaQueue(url: string): Queue {
   return queue;
 }
 
-export async function enqueueMediaJob(uploadId: string): Promise<void> {
+/** The web's producer on the media queue (also used by the upload image checks, ./image-check.ts). */
+export function mediaProducer(): Queue {
   const url = serverEnv().QUEUE_REDIS_URL;
   if (!url) throw new Error("QUEUE_REDIS_URL is not set: the media queue is disabled");
+  return mediaQueue(url);
+}
+
+export async function enqueueMediaJob(uploadId: string): Promise<void> {
+  const queue = mediaProducer();
   const data: MediaJobData = { uploadId: uploadIdSchema.parse(uploadId) };
   let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error("media job not enqueued in time")), ENQUEUE_TIMEOUT_MS);
   });
   try {
-    await Promise.race([mediaQueue(url).add(MEDIA_JOB, data, { ...MEDIA_JOB_OPTIONS, jobId: mediaJobId(uploadId) }), timeout]);
+    await Promise.race([queue.add(MEDIA_JOB, data, { ...MEDIA_JOB_OPTIONS, jobId: mediaJobId(uploadId) }), timeout]);
   } finally {
     clearTimeout(timer);
   }

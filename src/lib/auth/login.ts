@@ -9,6 +9,7 @@ import { HttpError, unavailable } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { assertLimit, blockLimit, consumeLimit, consumedPoints, limitState, rateLimitDefinition, resetLimit } from "@/lib/rate-limit/limiter";
+import { enforceSignInBudget } from "@/lib/rate-limit/sign-ins";
 import { classifySignInError } from "./accounts";
 import { activateMember } from "./activation";
 import { anonymous, beginAnonymous, checkTurnstile, finish, hasPass, respond, type AnonymousFlow } from "./anonymous";
@@ -159,6 +160,7 @@ async function login(request: Request): Promise<Response> {
   await acceptAttempt(keys);
   if (record.disabled) throw new HttpError(403, "account_disabled");
   if (!record.emailVerified) return respond<LoginResponse>(flow, { status: "verification_required" });
+  await enforceSignInBudget(record.uid);
 
   let minted: MintedSession;
   if (claims.role) {

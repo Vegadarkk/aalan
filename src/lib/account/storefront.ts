@@ -13,7 +13,7 @@ import { json } from "@/lib/http/route";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { firstStrictIssue } from "@/lib/moderation/free-text";
 import type { CompiledProhibited } from "@/lib/moderation/prohibited";
-import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterAccountWrite } from "@/lib/rate-limit/account-writes";
 import { meterMemberRead } from "@/lib/rate-limit/member-reads";
 
 // Storefront settings of the signed-in member (vitrine-avis §1): the "about" text, the house
@@ -45,6 +45,15 @@ export function storefrontPatch(input: { bio?: string | null; bannerKey?: string
   return patch;
 }
 
+/** The fields of `patch` that differ from what `user` holds. */
+export function changedStorefront(user: UserRecord, patch: StorefrontPatch): StorefrontPatch {
+  const changed: StorefrontPatch = {};
+  if (patch.bio !== undefined && patch.bio !== (user.storefront?.bio ?? null)) changed.bio = patch.bio;
+  if (patch.bannerKey !== undefined && patch.bannerKey !== (user.storefront?.bannerKey ?? null)) changed.bannerKey = patch.bannerKey;
+  if (patch.city !== undefined && (patch.city?.citySlug ?? null) !== (user.citySlug ?? null)) changed.city = patch.city;
+  return changed;
+}
+
 async function currentUser(uid: string): Promise<UserRecord> {
   const user = await getUserRecord(uid);
   if (!user) throw notFound();
@@ -63,9 +72,12 @@ export async function handleStorefrontUpdate(request: Request): Promise<Response
   const context = await requireUser(request, { mutation: true });
   const input = await readJson(request, storefrontSchema);
   const { uid } = context.user;
-  await enforceLimit("account.mutation.uid", uid);
-  const patch = storefrontPatch(input, (await getAbuseRules()).prohibited);
-  if (Object.keys(patch).length > 0) await updateStorefront(uid, patch);
+  await meterAccountWrite(uid, "account");
+  const before = await currentUser(uid);
+  const patch = changedStorefront(before, storefrontPatch(input, (await getAbuseRules()).prohibited));
+  // The same values again: no write, no page invalidation.
+  if (Object.keys(patch).length === 0) return json(storefrontSettings(before));
+  await updateStorefront(uid, patch);
   const user = await currentUser(uid);
   revalidateListingPaths({ publicId: user.publicId });
   return json(storefrontSettings(user));

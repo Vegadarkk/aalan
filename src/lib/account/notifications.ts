@@ -6,7 +6,7 @@ import { getUserPrivate, updateNotificationPreferences, type NotificationPatch }
 import { notFound } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { json } from "@/lib/http/route";
-import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterAccountWrite } from "@/lib/rate-limit/account-writes";
 import { meterMemberRead } from "@/lib/rate-limit/member-reads";
 
 // E-mail preferences of the signed-in member (audit B2: Z1-02 "révocable à tout moment", zone 5
@@ -48,7 +48,7 @@ export async function handleNotificationsUpdate(request: Request): Promise<Respo
   const context = await requireUser(request, { mutation: true });
   const input = await readJson(request, notificationSettingsSchema);
   const { uid } = context.user;
-  await enforceLimit("account.mutation.uid", uid);
+  await meterAccountWrite(uid, "account");
   const current = notificationSettings(await currentAccount(uid));
   const patch = notificationPatch(current, input);
   if (Object.keys(patch).length === 0) return json(current);

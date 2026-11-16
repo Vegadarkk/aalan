@@ -19,6 +19,7 @@ import { removeSuppression } from "@/lib/mail/suppressions";
 import { publishRevoked } from "@/lib/messaging";
 import { assertQuotas } from "@/lib/quota/gate";
 import { enforceLimit, resetLimit } from "@/lib/rate-limit/limiter";
+import { meterAccountWrite } from "@/lib/rate-limit/account-writes";
 import { confirmVerdict, pendingEmailChange } from "./email-change-rules";
 
 // Change of e-mail address (audit Z1-10, M2), in two steps:
@@ -100,8 +101,9 @@ export async function handleEmailChangeRequest(request: Request): Promise<Respon
 export async function handleEmailChangeCancel(request: Request): Promise<Response> {
   const context = await requireUser(request, { mutation: true, checkRevoked: true });
   const { uid } = context.user;
-  await enforceLimit("account.mutation.uid", uid);
-  await setEmailChange(uid, null);
+  await meterAccountWrite(uid, "account");
+  // Nothing pending: nothing to write.
+  if ((await getUserPrivate(uid))?.emailChange) await setEmailChange(uid, null);
   const body: EmailChangeResponse = { status: "cancelled" };
   return withDevice(jsonResponse(body), request);
 }

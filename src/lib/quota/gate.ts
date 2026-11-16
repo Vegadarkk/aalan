@@ -17,6 +17,9 @@ import { firstDegraded, nextReset } from "./index";
  */
 export const DEPOSIT_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
 
+/** Account settings writes (profile, notifications, storefront, tutorials, consents, address change cancel). */
+export const ACCOUNT_WRITE_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
+
 /** New account (password or Google): three documents, then the connection log. */
 export const SIGNUP_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
 

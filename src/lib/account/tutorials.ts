@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase/admin";
 import { readJson } from "@/lib/http/json";
 import { json } from "@/lib/http/route";
 import { consume } from "@/lib/quota";
-import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterAccountWrite } from "@/lib/rate-limit/account-writes";
 import { meterMemberRead } from "@/lib/rate-limit/member-reads";
 import { cleanSeen } from "@/lib/tours/catalog";
 
@@ -54,7 +54,7 @@ export async function handleTutorialsUpdate(request: Request): Promise<Response>
   const context = await requireUser(request, { mutation: true });
   const input = await readJson(request, tutorialSettingsSchema);
   const { uid } = context.user;
-  await enforceLimit("tutorials.uid", uid);
+  await meterAccountWrite(uid, "tutorials");
   const current = await readTutorials(uid);
   const next = nextTutorials(current, input);
   if (sameTutorials(current, next)) return json(current);

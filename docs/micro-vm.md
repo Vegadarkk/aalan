@@ -40,8 +40,21 @@ La deuxième VM gratuite d'Oracle (E2.1.Micro : 1 Go de mémoire, 1/8 de cœur g
 
 ## Restaurer depuis la copie
 
-Si R2 est perdu : demandez à Claude de rapatrier `backups/` depuis la VM vers votre PC (ou vers un
-nouveau bucket), puis suivez [backups.md](backups.md) avec `--from <dossier>`.
+La répétition de restauration et une restauration normale lisent R2 (voir [backups.md](backups.md)). La
+copie de la VM sert seulement si R2 ou Cloudflare ne répond plus.
+
+Dans ce cas, la VM n'a aucun port ouvert. Il faut donc qu'elle envoie elle-même le dossier
+`/var/lib/ocarun/aalan/mirror/backups` vers un dépôt temporaire hors Cloudflare. Le plus simple est
+Oracle Object Storage (gratuit jusqu'à 20 Go), par une URL d'écriture à durée courte (« pre-authenticated
+request ») :
+
+1. Nav crée dans le compartiment du projet un bucket privé `aalan-restore-<date>` et deux URL
+   pré-authentifiées valables 24 h : une en écriture (pour la VM), une en lecture (pour le PC2).
+2. Claude lance sur la VM, par OCI Run Command, un `tar` du dossier envoyé avec `curl -T` vers l'URL d'écriture. Les
+   fichiers sont déjà chiffrés : rien ne sort en clair.
+3. Sur le PC2, Nav télécharge l'archive avec l'URL de lecture et la décompresse. Ensuite
+   `restore-firestore.ts --identity <clé age> --from <dossier>`, comme dans backups.md.
+4. Nav supprime ensuite les URL et le bucket.
 
 ## Commandes
 

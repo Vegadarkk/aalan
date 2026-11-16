@@ -36,7 +36,7 @@ describe("github-ci bundles", () => {
   });
 
   it("names the same single header as staging's Access application", () => {
-    const staging = readEdgeFile<{ apps: AccessApp[] }>("access-apps.json").apps.find((app) => app.domain === "staging.joutiya.ma");
+    const staging = readEdgeFile<{ apps: AccessApp[] }>("access-apps.json").apps.find((app) => app.domain === "staging.aalan.ma");
     expect(staging?.read_service_tokens_from_header).toBe(SCAN_HEADER);
   });
 });

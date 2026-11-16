@@ -37,7 +37,7 @@ export const BUNDLE_FORMAT = "joutiya-github-ci v1";
 export const SSH_HOST = "ssh.joutiya.ma";
 const CI_TOKEN_NAME = "joutiya-ci";
 export const SCAN_TOKEN_NAME = "joutiya-scan";
-/** Single-header Access authentication of staging.joutiya.ma (infra/cloudflare/access-apps.json): Access accepts no other name. */
+/** Single-header Access authentication of staging.aalan.ma (infra/cloudflare/access-apps.json): Access accepts no other name. */
 export const SCAN_HEADER = "Authorization";
 /** The only names a bundle may write: those of deploy-staging.yml, security-scan.yml and load-test.yml. */
 export const SECRET_NAMES = ["STAGING_DEPLOY_SSH_KEY", "STAGING_ACCESS_CLIENT_ID", "STAGING_ACCESS_CLIENT_SECRET", "STAGING_SCAN_ACCESS_TOKEN", "LOADTEST_BYPASS_SECRET"] as const;

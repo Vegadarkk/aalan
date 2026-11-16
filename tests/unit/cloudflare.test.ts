@@ -16,6 +16,9 @@ import {
   settingsDrift,
   substitute,
   tunnelHostnames,
+  liveAppFor,
+  liveUris,
+  staleTunnelRecords,
   validateEdge,
   validateR2,
   appUris,
@@ -23,6 +26,7 @@ import {
   webhookBypass,
   type AccessApp,
   type DnsRecord,
+  type LiveAccessApp,
   type R2CorsRule,
   type R2Settings,
   type Ruleset,
@@ -65,7 +69,6 @@ describe("infra/cloudflare", () => {
         ingress: [
           { hostname: "joutiya.ma", service: "http://web:3000" },
           { hostname: "www.joutiya.ma", service: "http://web:3000" },
-          { hostname: "admin.joutiya.ma", service: "http://web:3000" },
           { hostname: "aalan.ma", service: "http://web:3000" },
           { hostname: "www.aalan.ma", service: "http://web:3000" },
           { hostname: "admin.aalan.ma", service: "http://web:3000" },
@@ -96,7 +99,7 @@ describe("infra/cloudflare", () => {
     const { apps } = readEdgeFile<{ apps: AccessApp[] }>("access-apps.json");
     const withOtp = { apps: apps.map((app, index) => (index === 0 ? { ...app, allowed_idps: [] } : app)) };
     const read = <T,>(name: string): T => (name === "access-apps.json" ? withOtp : readEdgeFile(name)) as T;
-    expect(validateEdge(read, targets)).toEqual(["access-apps.json: admin.joutiya.ma must allow the Google login method only (§6)"]);
+    expect(validateEdge(read, targets)).toEqual(["access-apps.json: admin.aalan.ma must allow the Google login method only (§6)"]);
   });
 
   it("lets only the staging webhook path bypass Access", () => {
@@ -104,32 +107,33 @@ describe("infra/cloudflare", () => {
     const bypass = { name: "Open", decision: "bypass", include: [{ everyone: {} }] };
     const changed = {
       apps: [
-        ...apps.map((app) => (appUris(app).includes(WEBHOOK_BYPASS) || app.domain === "admin-staging.joutiya.ma" ? { ...app, policies: [...app.policies, bypass] } : app)),
-        { name: "Open API", domain: "staging.joutiya.ma/api", type: "self_hosted", session_duration: "24h", policies: [bypass] },
+        ...apps.map((app) => (appUris(app).includes(WEBHOOK_BYPASS) || app.domain === "admin-staging.aalan.ma" ? { ...app, policies: [...app.policies, bypass] } : app)),
+        { name: "Open API", domain: "staging.aalan.ma/api", type: "self_hosted", session_duration: "24h", policies: [bypass] },
       ],
     };
     const read = <T,>(name: string): T => (name === "access-apps.json" ? changed : readEdgeFile(name)) as T;
     expect(validateEdge(read, targets)).toEqual([
-      "access-apps.json: staging.joutiya.ma/api/webhooks/* must have a single bypass policy",
-      "access-apps.json: admin-staging.joutiya.ma: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
-      "access-apps.json: staging.joutiya.ma/api: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
+      "access-apps.json: staging.aalan.ma/api/webhooks/* must have a single bypass policy",
+      "access-apps.json: admin-staging.aalan.ma: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
+      "access-apps.json: staging.aalan.ma/api: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
     ]);
   });
 
-  it("guards each aalan.ma twin in the same application, and keeps the webhook bypass to the staging hosts", () => {
+  it("guards each application on its aalan.ma hostname only, and keeps the webhook bypass to the staging hosts", () => {
     const { apps } = readEdgeFile<{ apps: AccessApp[] }>("access-apps.json");
-    expect(appUris(apps.find((app) => app.domain === "admin.joutiya.ma")!)).toEqual(["admin.joutiya.ma", "admin.aalan.ma"]);
+    expect(appUris(apps.find((app) => app.domain === "admin.aalan.ma")!)).toEqual(["admin.aalan.ma"]);
+    expect(apps.flatMap(appUris).filter((uri) => uri.includes("joutiya"))).toEqual(["ssh.joutiya.ma"]); // legacy-name: allow
     const widened = {
       apps: apps.map((app) => {
         if (appUris(app).includes(WEBHOOK_BYPASS)) return { ...app, destinations: [...(app.destinations ?? []), { type: "public" as const, uri: "aalan.ma/api/webhooks/*" }] };
-        if (app.domain === "admin-staging.joutiya.ma") return { ...app, destinations: [{ type: "public" as const, uri: "admin-staging.aalan.ma" }] };
+        if (app.domain === "admin-staging.aalan.ma") return { ...app, destinations: [{ type: "public" as const, uri: "admin-staging.example.ma" }] };
         return app;
       }),
     };
     const read = <T,>(name: string): T => (name === "access-apps.json" ? widened : readEdgeFile(name)) as T;
     expect(validateEdge(read, targets)).toEqual([
       "access-apps.json: aalan.ma/api/webhooks/*: only staging.joutiya.ma/api/webhooks/* and staging.aalan.ma/api/webhooks/* may bypass Access",
-      "access-apps.json: admin-staging.joutiya.ma: the first destination must be the domain",
+      "access-apps.json: admin-staging.aalan.ma: the first destination must be the domain",
     ]);
   });
 
@@ -148,8 +152,33 @@ describe("infra/cloudflare", () => {
   });
 
   it("lists the tunnel hostnames", () => {
-    expect(tunnelHostnames(readEdgeFile<TunnelConfig>("tunnel.prod.json"))).toEqual(["joutiya.ma", "www.joutiya.ma", "admin.joutiya.ma", "aalan.ma", "www.aalan.ma", "admin.aalan.ma"]);
+    expect(tunnelHostnames(readEdgeFile<TunnelConfig>("tunnel.prod.json"))).toEqual(["joutiya.ma", "www.joutiya.ma", "aalan.ma", "www.aalan.ma", "admin.aalan.ma"]);
+    expect(tunnelHostnames(readEdgeFile<TunnelConfig>("tunnel.staging.json"))).toEqual(["staging.aalan.ma", "admin-staging.aalan.ma"]);
     expect(tunnelHostnames(readEdgeFile<TunnelConfig>("tunnel.ssh.json"))).toEqual(["ssh.joutiya.ma"]);
+  });
+});
+
+describe("hostname moves", () => {
+  const app: AccessApp = { name: "Back-office", domain: "admin.aalan.ma", destinations: [{ type: "public", uri: "admin.aalan.ma" }], type: "self_hosted", session_duration: "8h", policies: [] };
+  const moved: LiveAccessApp = { id: "a1", aud: "aud1", domain: "admin.old.ma", destinations: [{ type: "public", uri: "admin.old.ma" }, { type: "public", uri: "admin.aalan.ma" }] };
+  const other: LiveAccessApp = { id: "a2", aud: "aud2", domain: "staging.aalan.ma/api/webhooks/*" };
+
+  it("updates the live application that already guards a hostname, whatever its domain", () => {
+    expect(liveAppFor([other, moved], app)).toBe(moved);
+    expect(liveUris(moved).filter((uri) => !appUris(app).includes(uri))).toEqual(["admin.old.ma"]);
+    expect(liveAppFor([other], app)).toBeUndefined();
+    expect(() => liveAppFor([moved, { ...moved, id: "a3", domain: "admin.aalan.ma", destinations: undefined }], app)).toThrow("2 live applications");
+  });
+
+  it("deletes only this tunnel's CNAMEs that no ingress rule serves", () => {
+    const target = "t1.cfargotunnel.com";
+    const records: DnsRecord[] = [
+      { id: "1", type: "CNAME", name: "staging.aalan.ma", content: target, proxied: true },
+      { id: "2", type: "CNAME", name: "staging.old.ma", content: target, proxied: true },
+      { id: "3", type: "CNAME", name: "other.old.ma", content: "t2.cfargotunnel.com", proxied: true },
+      { id: "4", type: "TXT", name: "staging.old.ma", content: target },
+    ];
+    expect(staleTunnelRecords(records, target, ["staging.aalan.ma"]).map((record) => record.id)).toEqual(["2"]);
   });
 });
 

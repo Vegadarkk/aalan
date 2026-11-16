@@ -92,6 +92,21 @@ export function microSyncCommands(bundle: string, chunkSize = 3_500): string[] {
   return [...append, install];
 }
 
+const REPORT_LINE = /^(probe|mirror|mirror-size|tls|host|verdict) /;
+
+/**
+ * The report as relayed to the agents: only lines of the known shapes, as printable ASCII, so text
+ * that reached the VM from elsewhere (an object name in the bucket) is never handed on verbatim.
+ */
+export function reportLines(output: string): string {
+  const lines = output
+    .split("\n")
+    .map((line) => line.replace(/[^\x20-\x7e]/g, "?").slice(0, 240))
+    .filter((line) => REPORT_LINE.test(line));
+  if (!lines.some((line) => line.startsWith("verdict "))) lines.push("verdict ALERT report-incomplete");
+  return lines.join("\n");
+}
+
 export interface R2Values {
   accessKeyId: string;
   secretAccessKey: string;
@@ -172,7 +187,7 @@ async function main(): Promise<void> {
   const instance = await micro(oci, compartment);
   if (action === "report") {
     // The installed copy (sync): the report of what runs there.
-    console.log((await runCommand(oci, compartment, instance.id, "aalan-micro report", ocarunCommand(`bash ${MICRO_ROOT}/bin/report.sh`), 300, true)).trimEnd());
+    console.log(reportLines(await runCommand(oci, compartment, instance.id, "aalan-micro report", ocarunCommand(`bash ${MICRO_ROOT}/bin/report.sh`), 300, true)));
     return;
   }
   if (action === "sync") {

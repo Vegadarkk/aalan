@@ -21,14 +21,14 @@ while read -r target ok total failed_at recent; do
 done <<< "$rows"
 ((now - last > 300)) && alerts+=("probe-stopped")
 # Mirror.
-mirror="$(cat "$ROOT/state/mirror.status" 2> /dev/null || echo "never run")"
-echo "mirror $mirror"
-case "$mirror" in
-  *"no R2 key"*) ;;
-  *FAIL*) alerts+=("mirror-failed") ;;
-esac
-latest="$(echo "$mirror" | sed -n 's/.*latest-backup \([0-9-]*\).*/\1/p')"
-if [[ -n "$latest" ]] && (( (now - $(date -u -d "$latest" +%s)) > 2 * 86400 )); then alerts+=("backup-older-than-2d"); fi
+mirror="$(head -c 200 "$ROOT/state/mirror.status" 2> /dev/null | head -1 | tr -d '\n' | tr -c '[:alnum:] :.()_+-' '?')"
+echo "mirror ${mirror:-never run}"
+[[ "$mirror" == *FAIL* || -z "$mirror" ]] && alerts+=("mirror-failed")
+# The newest backup day, from the end of the status line ("latest-backup D" or "(latest backup D)").
+latest="$(sed -nE 's/.*latest[- ]backup ([0-9]{4}-[0-9]{2}-[0-9]{2})\)?$/\1/p' <<< "$mirror")"
+if [[ -z "$latest" ]] || ! seen="$(date -u -d "$latest" +%s 2> /dev/null)"; then alerts+=("backup-missing")
+elif ((seen > now)); then alerts+=("backup-in-future")
+elif ((now - seen > 2 * 86400)); then alerts+=("backup-older-than-2d"); fi
 echo "mirror-size $(du -sh "$ROOT/mirror/backups" 2> /dev/null | cut -f1) backups, $(du -sh "$ROOT/mirror/media" 2> /dev/null | cut -f1) media, $(find "$ROOT/mirror/backups" -mindepth 1 -maxdepth 1 -type d 2> /dev/null | wc -l) days"
 # Edge certificate of aalan.ma (TLS_HOST= skips it, for the unit test).
 tls_host="${TLS_HOST-aalan.ma}"

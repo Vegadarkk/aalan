@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { DECISION_TARGET_TYPES, RESTRICTIVE_ACTIONS, type DecisionTargetType } from "@/config/decision-templates";
 import { Badge } from "@/components/ui/badge";
 import { requirePageStaff } from "@/lib/auth/current-user";
 import { canReview } from "@/lib/decisions/appeals";
 import { APPEAL_SLA_DAYS, docIdSchema } from "@/lib/decisions/contracts";
 import { appealProposal } from "@/lib/decisions/hooks";
+import { appealAccountState, appealWarnings } from "@/lib/decisions/review-context";
 import { getDecision } from "@/lib/decisions/repository";
 import { decisionView } from "@/lib/decisions/views";
 import { getStaff } from "@/lib/db/repositories/staff";
@@ -35,6 +37,15 @@ export const metadata: Metadata = { title: "Décision" };
 
 const APPEAL_WINDOW_MS = APPEAL_SLA_DAYS * 24 * 60 * 60 * 1000;
 
+const ACCOUNT_STATUS_LABEL: Record<string, string> = {
+  active: "Actif",
+  restricted: "Restreint",
+  suspended: "Suspendu",
+  banned: "Banni",
+  closed: "Fermé",
+  missing: "Introuvable",
+};
+
 async function staffName(uid: string | null, me: string, automated: boolean): Promise<string> {
   if (!uid) return "Inconnu";
   if (uid === me) return "Vous";
@@ -54,11 +65,14 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
   const restrictive = (RESTRICTIVE_ACTIONS as readonly string[]).includes(decision.action);
   const openAppeal = appeal?.status === "open";
   const proposal = appeal ? await appealProposal(decision.id) : null;
-  const [ai, decidedBy, reviewer] = await Promise.all([
+  const [ai, decidedBy, reviewer, accountState] = await Promise.all([
     proposal ? aiProposal(proposal.id) : null,
     staffName(decision.decidedBy, staff.uid, decision.automated.decision),
     appeal?.reviewer ? staffName(appeal.reviewer, staff.uid, false) : null,
+    // The account as it is now: what a reversal can give back depends on it.
+    openAppeal && restrictive ? appealAccountState(record) : null,
   ]);
+  const warnings = accountState ? appealWarnings(accountState, record) : [];
   const reviewable = canReview(record, { uid: staff.uid, role: staff.role });
   const targetType = (DECISION_TARGET_TYPES as readonly string[]).includes(decision.target.type) ? (decision.target.type as DecisionTargetType) : null;
   const resendable = restrictive && !decision.supersededBy && !(decision.origin === "authority_order" && !decision.notifiedAt);
@@ -179,6 +193,35 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
 
         <aside className="flex flex-col gap-6" aria-label="Réexamen du recours">
           {ai ? <AiProposalPanel ai={ai} /> : null}
+          {accountState ? (
+            <Panel title="Compte aujourd'hui">
+              <Facts
+                rows={[
+                  ["Statut", ACCOUNT_STATUS_LABEL[accountState.status]],
+                  ...(accountState.closed && accountState.status !== "closed" ? ([["Fermeture", "Demandée par la personne"]] as [string, string][]) : []),
+                  ...(accountState.suspendedUntil ? ([["Suspendu jusqu'au", formatDateTime(accountState.suspendedUntil.toISOString())]] as [string, string][]) : []),
+                  ...(accountState.otherSuspension
+                    ? ([
+                        [
+                          "Autre suspension",
+                          <Link key="other" href={`/decisions/${accountState.otherSuspension.decisionId}`} className={linkClassName}>
+                            jusqu&apos;au {formatDateTime(accountState.otherSuspension.until.toISOString())}
+                          </Link>,
+                        ],
+                      ] as [string, ReactNode][])
+                    : []),
+                  ...(accountState.shopLifecycle ? ([["Boutique", accountState.shopLifecycle === "revalidation_required" ? "En revalidation" : accountState.shopLifecycle]] as [string, string][]) : []),
+                ]}
+              />
+              {warnings.length > 0 ? (
+                <ul className="flex list-disc flex-col gap-1 rounded-md border border-warning/30 bg-warning-surface p-3 ps-7 text-sm text-pretty" role="note">
+                  {warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </Panel>
+          ) : null}
           {openAppeal ? (
             reviewable ? (
               <AppealReviewForm

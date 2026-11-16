@@ -64,7 +64,7 @@ describe("ladder", () => {
 
 describe("planAccount", () => {
   const owner = { uid: "owner-1", status: "active" } as never;
-  const base = { actor: { uid: "mod-1", role: "moderator" as const }, owner, superseded: null, suspension: null, priorities: [] };
+  const base = { actor: { uid: "mod-1", role: "moderator" as const }, owner, superseded: null, priorities: [] };
 
   it("plans a separate sanction decision with a content decision, none without a chosen sanction", () => {
     expect(planAccount({ ...base, template: template("listing.remove.scam"), target: { type: "listing", id: "abcdefgh" }, chosen: undefined })).toBeNull();
@@ -95,16 +95,19 @@ describe("planAccount", () => {
     );
   });
 
-  it("plans the reversal of a sanction (strike off; the suspension lifted when it is this decision's)", () => {
+  it("plans the reversal of a sanction with the account's other standing suspension and closure", () => {
     const superseded = { id: "D".repeat(20), action: "suspend_account" } as DecisionRecord;
     const target = { type: "user" as const, id: "owner-1" };
-    expect(planAccount({ ...base, template: template("appeal.reversed"), target, chosen: undefined, superseded, suspension: { decisionId: "D".repeat(20), until: NOW, createdAt: NOW } })).toEqual({
+    expect(planAccount({ ...base, template: template("appeal.reversed"), target, chosen: undefined, superseded })).toEqual({
       kind: "reverse",
       action: "suspend_account",
       decisionId: "D".repeat(20),
-      suspensionLifted: true,
+      standing: null,
+      closed: false,
     });
-    expect(planAccount({ ...base, template: template("appeal.reversed"), target, chosen: undefined, superseded, suspension: null })).toMatchObject({ suspensionLifted: false });
+    const standing = { decisionId: "E".repeat(20), until: NOW };
+    expect(planAccount({ ...base, template: template("appeal.reversed"), target, chosen: undefined, superseded, standing, closed: true })).toMatchObject({ standing, closed: false });
+    expect(planAccount({ ...base, template: template("appeal.reversed"), target, chosen: undefined, superseded: { ...superseded, action: "ban" }, closed: true })).toMatchObject({ action: "ban", closed: true });
     expect(planAccount({ ...base, template: template("appeal.reversed"), target: { type: "listing", id: "abcdefgh" }, chosen: undefined, superseded: { ...superseded, action: "remove" } })).toBeNull();
   });
 });

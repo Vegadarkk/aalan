@@ -5,7 +5,11 @@ import { enqueueAiTask } from "@/lib/ai/queue";
 import { alert } from "@/lib/alert";
 import { audit } from "@/lib/audit";
 import { getListingTx, listOwnerListingsByStatus, updateListingTx, type ListingFieldPatch, type ListingRecord, type OwnerListingFilter } from "@/lib/db/repositories/listings";
+import { listDecisionsForUser } from "@/lib/db/repositories/moderation-decisions";
+import { getProProfile } from "@/lib/db/repositories/pro-profiles";
+import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
+import type { Transaction } from "firebase-admin/firestore";
 import { auth, db } from "@/lib/firebase/admin";
 import { getClaims, setClaims } from "@/lib/firebase/claims";
 import { getLegalConfig } from "@/lib/legal/config";
@@ -270,28 +274,62 @@ export async function removeListingsForBan(uid: string, decisionId: string, acto
 }
 
 /**
- * A removed listing restored (appeal reversed, D16): published again with its own dates when its
- * expiry has not passed, else expired (the owner may renew it); never published before: back to
+ * What a listing restored by a reversal may come back as, given its owner and shop now (the queue
+ * approval's own conditions, src/lib/listings/approval-guard.ts): nothing for a missing, closed or
+ * banned owner (the listing stays removed), paused for a suspended owner (the lift resumes it) or a
+ * shop under revalidation (the new validation resumes it), held for review for a restricted owner.
+ */
+export type RestoreHold = "none" | "offline" | "moderation" | "pro_revalidation" | "review";
+
+export function restoreHold(owner: Pick<UserRecord, "status"> | null, shop: { lifecycle: string } | null): RestoreHold {
+  if (!owner || owner.status === "closed" || owner.status === "banned") return "offline";
+  if (shop?.lifecycle === "revalidation_required") return "pro_revalidation";
+  if (owner.status === "suspended") return "moderation";
+  return owner.status === "restricted" ? "review" : "none";
+}
+
+/** restoreHold of a listing's owner and shop, read now (inside `tx` when given, before its writes). */
+export async function readRestoreHold(listing: { ownerUid: string; proId?: string | null | undefined }, tx?: Transaction): Promise<RestoreHold> {
+  const owner = await getUserRecord(listing.ownerUid, tx);
+  const shop = listing.proId ? await getProProfile(listing.proId, tx) : null;
+  return restoreHold(owner, shop);
+}
+
+/**
+ * A removed listing restored (appeal reversed, D16), or null when it must stay removed (`hold`
+ * offline). Never published before, or an edit still held for review when it was removed: back to
+ * review (and the moderation queue), never online unreviewed. Expiry passed: expired (the owner may
+ * renew it). Otherwise published with its own dates, unless the hold pauses it or sends it to
  * review. The lifecycle table has no `removed ->` exit but the purge: this is the reversal's own.
  */
-export function unremovePatch(listing: ListingRecord, now: Date, life: Lifetime): ListingChange {
+export function unremovePatch(listing: ListingRecord, now: Date, life: Lifetime, hold: RestoreHold = "none"): ListingChange | null {
+  if (hold === "offline") return null;
   const base = { version: listing.version + 1, updatedAt: now, pausedReason: null };
   if (!listing.publishedAt) return { patch: { ...base, status: "pending_review", purgeAt: null }, search: null };
   const live = listing.expiresAt !== undefined && listing.expiresAt.getTime() > now.getTime();
   if (!live) return { patch: { ...base, status: "expired", purgeAt: purgeAtFor(now, life) }, search: null };
-  return withLivePrices(listing, { patch: { ...base, status: "published", purgeAt: purgeAtFor(listing.expiresAt ?? now, life) }, search: "upsert" }, now);
+  const purgeAt = purgeAtFor(listing.expiresAt ?? now, life);
+  if (listing.moderation.state === "needs_review" || hold === "review") return { patch: { ...base, status: "pending_review", purgeAt }, search: null };
+  if (hold === "moderation" || hold === "pro_revalidation") return { patch: { ...base, status: "paused", pausedReason: hold, purgeAt }, search: null };
+  return withLivePrices(listing, { patch: { ...base, status: "published" as const, purgeAt }, search: "upsert" as const }, now);
 }
 
 /** Ban reversed: the listings this ban removed come back. */
 export async function restoreBannedListings(uid: string, banDecisionId: string, actorUid: string, now: Date): Promise<string[]> {
   const life = await lifetime();
+  // Read after the reversal's commit: a closed account keeps them removed, a standing suspension
+  // or a shop under revalidation brings them back paused.
+  const owner = await getUserRecord(uid);
+  const hold = restoreHold(owner, owner?.proId ? await getProProfile(owner.proId) : null);
+  if (hold === "offline") return [];
   const changes = await walkOwnerListings(
     uid,
     ["removed"],
     { lastDecisionId: banDecisionId },
     (listing) => {
       if (listing.status !== "removed" || listing.moderation.lastDecisionId !== banDecisionId) return null;
-      const change = unremovePatch(listing, now, life);
+      const change = unremovePatch(listing, now, life, hold);
+      if (!change) return null;
       const moderation = { ...listing.moderation, reviewedBy: actorUid, reviewedAt: now };
       const status = change.patch.status ?? listing.status;
       return { patch: { ...change.patch, moderation, adsEligible: adsEligibleOf({ status, moderation, subcategoryId: listing.subcategoryId }) }, search: change.search };
@@ -300,6 +338,38 @@ export async function restoreBannedListings(uid: string, banDecisionId: string, 
     "ban reversal",
   );
   return changes.map((change) => change.listing.id);
+}
+
+export interface StandingSuspension {
+  decisionId: string;
+  until: Date;
+}
+
+/**
+ * The account's suspension that still stands once `excludeId` is reversed: a suspend_account
+ * decision about it, not superseded, whose own end (createdAt + durationDays) is still ahead; the
+ * latest-ending one. Null when none: the account may be lifted.
+ */
+export async function standingSuspension(uid: string, excludeId: string, now: Date): Promise<StandingSuspension | null> {
+  let best: StandingSuspension | null = null;
+  for (const decision of await listDecisionsForUser(uid, 50)) {
+    if (decision.id === excludeId || decision.action !== "suspend_account" || decision.supersededBy || !decision.durationDays) continue;
+    const until = new Date(decision.createdAt.getTime() + decision.durationDays * 86_400_000);
+    if (until.getTime() > now.getTime() && (!best || until.getTime() > best.until.getTime())) best = { decisionId: decision.id, until };
+  }
+  return best;
+}
+
+/** The `st` claim made to match the account's status after a reversal (kept, added or dropped). */
+export async function syncSuspendedClaim(uid: string, suspended: boolean): Promise<void> {
+  const before = await getClaims(uid);
+  if (suspended === (before.st === "suspended")) return;
+  if (suspended) {
+    await setClaims(uid, { ...before, st: "suspended" });
+    return;
+  }
+  const { st: _st, ...rest } = before;
+  await setClaims(uid, rest);
 }
 
 export interface LiftOptions {

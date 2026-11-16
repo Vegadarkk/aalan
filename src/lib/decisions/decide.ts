@@ -16,6 +16,7 @@ import { audit } from "@/lib/audit";
 import { getListing, getListingTx, updateListingTx, type ListingFieldPatch, type ListingRecord } from "@/lib/db/repositories/listings";
 import type { ModerationDecisionInput } from "@/lib/db/repositories/moderation-decisions";
 import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
+import { getUserPrivate } from "@/lib/db/repositories/users";
 import { enqueueSearchOutboxTx } from "@/lib/db/repositories/search-outbox";
 import { datesToTimestamps } from "@/lib/db/repositories/timestamps";
 import { userStatusSchema, type ModerationDecisionDoc, type SuspensionDoc, type UserPrivateDoc } from "@/lib/db/schemas";
@@ -45,7 +46,6 @@ import {
   decisionsCol,
   getDecision,
   getDecisionTx,
-  getSuspension,
   messageRef,
   openReportsTx,
   privateFromSnapshot,
@@ -66,9 +66,14 @@ import {
   removeListingsForBan,
   restoreBannedListings,
   resumeModerationPaused,
+  readRestoreHold,
   reverseAuthSanction,
+  standingSuspension,
+  syncSuspendedClaim,
   undoQuietly,
   unremovePatch,
+  type RestoreHold,
+  type StandingSuspension,
   type Undo,
 } from "./sanctions";
 
@@ -141,7 +146,15 @@ export interface DecideResult extends DecideResponse {
 
 type AccountPlan =
   | { kind: "sanction"; sanction: Sanction; separate: boolean; templateId: string; p0: boolean }
-  | { kind: "reverse"; action: SanctionAction; decisionId: string; suspensionLifted: boolean };
+  | {
+      kind: "reverse";
+      action: SanctionAction;
+      decisionId: string;
+      /** Another suspension of the account that still runs (it stays in force: record, status, claim). */
+      standing: StandingSuspension | null;
+      /** Ban reversal of an account closed while banned: it stays closed and disabled. */
+      closed: boolean;
+    };
 
 interface Subject {
   ownerUid: string;
@@ -166,6 +179,7 @@ interface Committed {
   /** The review's status when decided. */
   reviewStatus: string | null;
   until: Date | null;
+  account: AccountWrite;
 }
 
 const conflict = (message: string) => new HttpError(409, "conflict", message);
@@ -217,15 +231,18 @@ interface PlanInput {
   chosen: Sanction | undefined;
   owner: UserRecord | null;
   superseded: DecisionRecord | null;
-  suspension: SuspensionDoc | null;
+  /** Reversal of a sanction: the account's other suspension still running (standingSuspension). */
+  standing?: StandingSuspension | null;
+  /** Reversal of a ban: the account was closed meanwhile (private.closedAt). */
+  closed?: boolean;
   priorities: readonly ReportPriority[];
 }
 
 /** The account side of a decision: a sanction (D14), the reversal of one (D16), or nothing. */
-export function planAccount({ actor, template, target, chosen, owner, superseded, suspension, priorities }: PlanInput): AccountPlan | null {
+export function planAccount({ actor, template, target, chosen, owner, superseded, standing = null, closed = false, priorities }: PlanInput): AccountPlan | null {
   if (superseded && template.id === "appeal.reversed") {
     if (!isSanctionAction(superseded.action)) return null;
-    return { kind: "reverse", action: superseded.action, decisionId: superseded.id, suspensionLifted: superseded.action === "suspend_account" && suspension?.decisionId === superseded.id };
+    return { kind: "reverse", action: superseded.action, decisionId: superseded.id, standing, closed: superseded.action === "ban" && closed };
   }
   if (template.outcome !== "founded") return null;
   const sanction = sanctionOf(template, target.type === "user" ? undefined : chosen);
@@ -245,12 +262,15 @@ export function planAccount({ actor, template, target, chosen, owner, superseded
   return { kind: "sanction", sanction, separate, templateId, p0: template.p0 === true };
 }
 
-/** Auth side before the transaction (suspension claim, disabled account, or their reversal). */
+/**
+ * Auth side before the transaction (suspension claim, disabled account, or a ban's reversal). The
+ * `st` claim of a reversal follows the status the transaction wrote (afterCommit), so a suspension
+ * racing the reversal never leaves a suspended account with a normal session.
+ */
 async function prepareAuth(uid: string, plan: AccountPlan | null): Promise<Undo> {
   if (!plan) return noop;
   if (plan.kind === "sanction") return plan.sanction.action === "warn" ? noop : applyAuthSanction(uid, plan.sanction);
-  if (plan.action === "ban") return reverseAuthSanction(uid, "ban");
-  if (plan.action === "suspend_account" && plan.suspensionLifted) return reverseAuthSanction(uid, "suspend_account");
+  if (plan.action === "ban" && !plan.closed) return reverseAuthSanction(uid, "ban");
   return noop;
 }
 
@@ -268,7 +288,18 @@ interface ListingDecision {
 /** The listing patch of a decision (computed from the record read in the transaction). */
 function listingDecision(
   listing: ListingRecord,
-  input: { template: DecisionTemplate; decisionId: string; actorUid: string; closedIds: readonly string[]; hider: OpenReport | null; superseded: DecisionRecord | null; now: Date; life: Lifetime },
+  input: {
+    template: DecisionTemplate;
+    decisionId: string;
+    actorUid: string;
+    closedIds: readonly string[];
+    hider: OpenReport | null;
+    superseded: DecisionRecord | null;
+    now: Date;
+    life: Lifetime;
+    /** A reversal: what the owner's and shop's state allow the listing to come back as (read in the transaction). */
+    hold: RestoreHold;
+  },
 ): ListingDecision {
   const { template, now } = input;
   let status = listing.status;
@@ -300,8 +331,12 @@ function listingDecision(
     }
   } else if (isRestoring(template.action)) {
     const reversed = input.superseded;
-    if (reversed && (listing.status === "removed" || listing.status === "rejected") && listing.moderation.lastDecisionId === reversed.id) {
-      const change = unremovePatch(listing, now, input.life);
+    // Only a removal the reversed decision made is undone: one by the account closure or by the
+    // owner keeps the reversed decision's id but is theirs (a restriction reversal leaves it).
+    const madeByReversed =
+      reversed !== null && listing.moderation.lastDecisionId === reversed.id && (listing.status === "rejected" || (listing.status === "removed" && reversed.action === "remove"));
+    const change = madeByReversed ? unremovePatch(listing, now, input.life, input.hold) : null;
+    if (change) {
       statusPatch = change.patch;
       status = change.patch.status ?? listing.status;
       search = change.search;
@@ -331,18 +366,28 @@ interface AccountDocs {
   suspension: SuspensionDoc | null;
 }
 
-/** Account writes of the transaction: status, suspension document, strikes, report holds. Returns the end of a new suspension. */
+interface AccountWrite {
+  /** End of a new suspension. */
+  until: Date | null;
+  /** The account's status after the transaction (null: no account document). */
+  status: UserRecord["status"] | null;
+  /** A reversal ended the account's suspension (its listings resume). */
+  lifted: boolean;
+}
+
+/** Account writes of the transaction: status, suspension document, strikes, report holds. */
 function writeAccountTx(
   tx: Transaction,
   uid: string,
   docs: AccountDocs,
   input: { plan: AccountPlan | null; accountDecisionId: string; closedIds: readonly string[]; holdsOnAccount: boolean; now: Date },
-): Date | null {
+): AccountWrite {
   const { plan, now } = input;
   const at = Timestamp.fromDate(now);
   let writes = 0;
   let until: Date | null = null;
   let status: UserRecord["status"] | null = null;
+  let lifted = false;
   const privateUpdate: Record<string, unknown> = {};
 
   if (plan?.kind === "sanction") {
@@ -366,13 +411,31 @@ function writeAccountTx(
       privateUpdate["strikes.lastAt"] = at;
     }
   } else if (plan?.kind === "reverse") {
-    if (plan.action === "suspend_account" && plan.suspensionLifted && docs.suspension?.decisionId === plan.decisionId) {
-      tx.delete(suspensionRef(uid));
+    // Only the reversed sanction ends: another suspension still running keeps the account
+    // suspended until its own end (the single record is rewritten to it).
+    const { standing } = plan;
+    const keep = (holder: StandingSuspension) => {
+      tx.set(suspensionRef(uid), datesToTimestamps({ until: holder.until, decisionId: holder.decisionId, createdAt: now }));
       writes += 1;
-      if (docs.user.status === "suspended") status = "active";
-      privateUpdate["strikes.suspendedUntil"] = FieldValue.delete();
+      privateUpdate["strikes.suspendedUntil"] = Timestamp.fromDate(holder.until);
+    };
+    if (plan.action === "suspend_account") {
+      if (standing && docs.user.status === "suspended") keep(standing);
+      else if (!standing && docs.suspension) {
+        tx.delete(suspensionRef(uid));
+        writes += 1;
+        if (docs.user.status === "suspended") status = "active";
+        privateUpdate["strikes.suspendedUntil"] = FieldValue.delete();
+        lifted = true;
+      }
     }
-    if (plan.action === "ban" && docs.user.status === "banned") status = docs.suspension && docs.suspension.until.getTime() > now.getTime() ? "suspended" : "active";
+    if (plan.action === "ban" && docs.user.status === "banned") {
+      if (plan.closed || docs.account?.closedAt) status = "closed";
+      else if (standing) {
+        keep(standing);
+        status = "suspended";
+      } else status = "active";
+    }
     if (docs.account) privateUpdate["strikes.level"] = levelAfterReversal(docs.account.strikes.level);
   }
 
@@ -389,7 +452,7 @@ function writeAccountTx(
     writes += 1;
   }
   if (writes > 0) void consume("firestore.writes", writes);
-  return until;
+  return { until, status: docs.user.exists ? (status ?? docs.user.status) : null, lifted };
 }
 
 function accountDocsFrom(userSnap: DocumentSnapshot, privateSnap: DocumentSnapshot, suspensionSnap: DocumentSnapshot): AccountDocs {
@@ -442,6 +505,8 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
   const referenced = await readReportsTx(tx, [...new Set(run.options.referenceReportIds ?? [])].filter((id) => !openIds.has(id)));
   const superseded = run.superseded ? await getDecisionTx(tx, run.superseded.id) : null;
   const listing = target.type === "listing" ? await getListingTx(tx, target.id) : null;
+  // A reversal restores a listing only as far as its owner's and shop's state allow, read here.
+  const hold: RestoreHold = listing && superseded && isRestoring(template.action) ? await readRestoreHold(listing, tx) : "none";
   const hiderId = listing?.moderation.hiddenBy?.reportId;
   const hider = hiderId && isRestoring(template.action) ? ((await readReportsTx(tx, [hiderId]))[0] ?? null) : null;
   const messageSnap = subject.message ? await tx.get(messageRef(subject.message.cid, subject.message.mid)) : null;
@@ -457,6 +522,8 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
     throw notAllowed("the P0 report was closed meanwhile");
   }
   if (target.type === "listing" && !listing) throw notFound();
+  // An account closed since the plan was made takes no new sanction (the Auth step is undone).
+  if (plan?.kind === "sanction" && accountDocs?.user.status === "closed") throw notFound();
   if (subject.message && !messageSnap?.exists) throw notFound();
   if (subject.review && !reviewSnap?.exists) throw notFound();
 
@@ -467,7 +534,7 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
   // ---- Listing.
   let listingResult: Committed["listing"] = null;
   if (listing && life) {
-    const change = listingDecision(listing, { template, decisionId: mainId, actorUid: actor.uid, closedIds, hider, superseded, now, life });
+    const change = listingDecision(listing, { template, decisionId: mainId, actorUid: actor.uid, closedIds, hider, superseded, now, life, hold });
     if (closedIds.length === 0 && change.effect === null && !superseded) throw conflict("nothing to decide on this listing");
     updateListingTx(tx, listing.id, change.patch);
     if (change.search) enqueueSearchOutboxTx(tx, listing.id, change.search, change.patch.version, now);
@@ -500,11 +567,12 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
   }
 
   // ---- Account.
-  let until: Date | null = null;
+  let account: AccountWrite = { until: null, status: null, lifted: false };
   if (accountDocs) {
     if (target.type === "user" && closedIds.length === 0 && !superseded && !plan && accountDocs.user.status !== "restricted") throw conflict("nothing to decide on this account");
-    until = writeAccountTx(tx, ownerUid, accountDocs, { plan, accountDecisionId, closedIds, holdsOnAccount: target.type === "user", now });
+    account = writeAccountTx(tx, ownerUid, accountDocs, { plan, accountDecisionId, closedIds, holdsOnAccount: target.type === "user", now });
   }
+  const { until } = account;
 
   // ---- Statements.
   const reports = [...open, ...referenced];
@@ -581,7 +649,7 @@ async function applyTx(tx: Transaction, run: TxInput): Promise<Committed> {
     void consume("firestore.writes", 1);
   }
 
-  return { open, closedIds, main, sanction, listing: listingResult, messageHidden, reviewStatus, until };
+  return { open, closedIds, main, sanction, listing: listingResult, messageHidden, reviewStatus, until, account };
 }
 
 /** Runs one after-commit step; a failure is logged (the decision stands) and reported as false. */
@@ -646,8 +714,14 @@ async function afterCommit(run: AfterInput): Promise<void> {
   if (plan?.kind === "sanction" && (plan.sanction.action === "suspend_account" || plan.sanction.action === "ban")) await step("checkout expiry", context, () => expireShopCheckouts(ownerUid, now));
   if (plan?.kind === "sanction" && plan.sanction.action === "suspend_account") await step("listings pause", context, () => pauseListingsForSuspension(ownerUid, now, clearHiddenFor));
   if (plan?.kind === "sanction" && plan.sanction.action === "ban") await step("listings removal", context, () => removeListingsForBan(ownerUid, accountDecisionId, actor.uid, now, clearHiddenFor));
-  if (plan?.kind === "reverse" && plan.action === "suspend_account" && plan.suspensionLifted) await step("listings resume", context, () => resumeModerationPaused(ownerUid, now));
-  if (plan?.kind === "reverse" && plan.action === "ban") await step("listings restore", context, () => restoreBannedListings(ownerUid, plan.decisionId, actor.uid, now));
+  if (plan?.kind === "reverse") {
+    // The claim follows the status the transaction wrote: kept while another suspension stands,
+    // dropped otherwise (also a ban's leftover one); a closed account keeps its disabled Auth record.
+    const status = committed.account.status;
+    if (status === "active" || status === "suspended") await step("suspension claim", context, () => syncSuspendedClaim(ownerUid, status === "suspended"));
+    if (plan.action === "suspend_account" && committed.account.lifted) await step("listings resume", context, () => resumeModerationPaused(ownerUid, now));
+    if (plan.action === "ban") await step("listings restore", context, () => restoreBannedListings(ownerUid, plan.decisionId, actor.uid, now));
+  }
 
   // Reporters' accuracy (D15): their own reports only, not the ones a reversal re-marks.
   const founded = template.outcome === "founded";
@@ -757,13 +831,25 @@ export async function decide(actor: DecisionActor, input: DecisionInput, options
     if (superseded.target.type !== target.type || superseded.target.id !== target.id) throw new HttpError(400, "invalid_body", "a reversal decides on the appealed target");
   }
   const subject = await readSubject(target);
-  const [owner, openBefore, suspension] = await Promise.all([
+  const reversingSanction = superseded !== null && template.id === "appeal.reversed" && isSanctionAction(superseded.action);
+  const [owner, openBefore, standing, account] = await Promise.all([
     getUserRecord(subject.ownerUid),
     openReportsForTarget(targetKey(target)),
-    superseded?.action === "suspend_account" ? getSuspension(subject.ownerUid) : Promise.resolve(null),
+    reversingSanction && superseded ? standingSuspension(subject.ownerUid, superseded.id, now) : Promise.resolve(null),
+    reversingSanction && superseded?.action === "ban" ? getUserPrivate(subject.ownerUid) : Promise.resolve(null),
   ]);
   if (target.type === "user" && !owner) throw notFound();
-  const plan = planAccount({ actor, template, target, chosen: input.sanction, owner, superseded, suspension, priorities: openBefore.map((report) => report.priority) });
+  const plan = planAccount({
+    actor,
+    template,
+    target,
+    chosen: input.sanction,
+    owner,
+    superseded,
+    standing,
+    closed: account?.closedAt !== undefined,
+    priorities: openBefore.map((report) => report.priority),
+  });
 
   const mainRef = decisionsCol().doc();
   const sanctionRef = plan?.kind === "sanction" && plan.separate ? decisionsCol().doc() : null;

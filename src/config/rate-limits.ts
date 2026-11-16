@@ -80,6 +80,10 @@ export const RATE_LIMITS = {
   // (hourly limiters above and below): 5 000 per day per account, a tenth of the Spark day, like
   // listing.owner.read.uid (src/lib/rate-limit/member-reads.ts).
   "member.docs.uid": { points: 5000, duration: DAY, policy: "open", key: "uid" },
+  // Ceiling of every family's documents together (ACCOUNT_DOCUMENT_BUDGETS below, charged by the
+  // limiter with each of them): 8 000 per day per account, so a few accounts at the top of all
+  // their families cannot spend the 50 000 reads of the Spark day between them.
+  "account.docs.day.uid": { points: 8000, duration: DAY, policy: "open", key: "uid" },
   // Daily siblings of the settings limiters (src/lib/rate-limit/account-writes.ts): a small share of
   // the Spark day's 20 000 writes per account.
   "account.mutation.day.uid": { points: 100, duration: DAY, policy: "closed", key: "uid" },
@@ -383,3 +387,16 @@ export const RATE_LIMITS = {
 } as const satisfies Record<string, RateLimitDefinition>;
 
 export type RateLimitId = keyof typeof RATE_LIMITS;
+
+/**
+ * The per-account daily document budgets of the reads (points = Firestore documents): each charge
+ * to one of them is also charged to account.docs.day.uid (src/lib/rate-limit/limiter.ts).
+ */
+export const ACCOUNT_DOCUMENT_BUDGETS: ReadonlySet<RateLimitId> = new Set<RateLimitId>([
+  "member.docs.uid",
+  "listing.owner.read.uid",
+  "conversation.docs.uid",
+  "favorites.docs.uid",
+  "savedSearch.docs.uid",
+  "wallet.read.uid",
+]);

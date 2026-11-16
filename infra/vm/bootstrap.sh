@@ -159,13 +159,15 @@ progress "docker installed"
 
 # Security updates every day, Docker and cloudflared included; a reboot, when an update needs
 # one, happens at night (containers restart on their own, the probe tolerates 10 minutes).
+# 05:45 UTC: after the worker's nightly jobs (02:15-05:20). At 03:30 it killed the Firestore backup
+# between its manifest and its cursors (14 Nov 2026), and the next run skipped that date.
 cat > /etc/apt/apt.conf.d/52joutiya-unattended-upgrades << 'EOF'
 Unattended-Upgrade::Origins-Pattern {
   "site=download.docker.com";
   "site=pkg.cloudflare.com";
 };
 Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-Time "03:30";
+Unattended-Upgrade::Automatic-Reboot-Time "05:45";
 EOF
 cat > /etc/apt/apt.conf.d/20auto-upgrades << 'EOF'
 APT::Periodic::Update-Package-Lists "1";

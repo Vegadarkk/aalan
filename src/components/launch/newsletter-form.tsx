@@ -180,10 +180,12 @@ export function NewsletterForm({ locale, privacyHref }: { locale: Locale; privac
               {t(`errors.${error}`)}
             </p>
           ) : null}
-          <TurnstileWidget ref={turnstile} action="newsletter" cData="door" defer theme="dark" onToken={setToken} className="launch-news-robot" />
           <p className="launch-news-note">
             {t("consent")} <a href={privacyHref}>{t("privacy")}</a>
           </p>
+          {/* Last (owner, 16 Nov 2026): the consent line stays right under the field; the anti-robot
+              box, shown only when Cloudflare asks for an action, comes after it. */}
+          <TurnstileWidget ref={turnstile} action="newsletter" cData="door" defer theme="dark" onToken={setToken} className="launch-news-robot" />
         </form>
       </>
     );

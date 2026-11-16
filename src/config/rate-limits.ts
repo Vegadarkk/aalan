@@ -39,6 +39,10 @@ export const RATE_LIMITS = {
   // Google sign-in (/api/auth/google): 10 per hour per device, 60 per hour per IP.
   "google.device": { points: 10, duration: HOUR, policy: "closed", key: "device" },
   "google.ip": { points: 60, duration: HOUR, policy: "closed", key: "ip" },
+  // Successful sign-ins of one account (password or Google), once the credential is proven: each
+  // writes a connection log, and so does the sign-out of that session. 30 an hour, 100 a day.
+  "login.success.uid": { points: 30, duration: HOUR, policy: "open", key: "uid" },
+  "login.success.day.uid": { points: 100, duration: DAY, policy: "open", key: "uid" },
   // /api/auth/login: 5 failures in 15 min then a 15 min lock for this account + IP /64;
   // 20 failures per hour on an account: Turnstile mandatory for that account.
   "login.fail.accountIp": { points: 5, duration: 15 * MINUTE, blockDuration: 15 * MINUTE, policy: "closed", key: "account+ip" },
@@ -65,6 +69,22 @@ export const RATE_LIMITS = {
   "staff.login.accountIp": { points: 5, duration: 15 * MINUTE, blockDuration: 15 * MINUTE, policy: "closed", key: "account+ip" },
   // Account settings mutations (display name, password change, account closure).
   "account.mutation.uid": { points: 60, duration: HOUR, policy: "closed", key: "uid" },
+  // Password change: 10 attempts a day per account besides the hourly mutations (each success
+  // mails a security notice and revokes every session).
+  "password.change.day.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
+  // Reads of the member's own account with no budget of their own: the session (GET /api/auth/me,
+  // private page renders), the settings reads (tutorials, notifications, storefront) and the
+  // decisions (GET /api/appeals). 1 200 calls an hour per account.
+  "member.read.uid": { points: 1200, duration: HOUR, policy: "open", key: "uid" },
+  // Documents those reads cost, with upload status, Pro reads, phone status and « Mes avis »
+  // (hourly limiters above and below): 5 000 per day per account, a tenth of the Spark day, like
+  // listing.owner.read.uid (src/lib/rate-limit/member-reads.ts).
+  "member.docs.uid": { points: 5000, duration: DAY, policy: "open", key: "uid" },
+  // Daily siblings of the settings limiters (src/lib/rate-limit/account-writes.ts): a small share of
+  // the Spark day's 20 000 writes per account.
+  "account.mutation.day.uid": { points: 100, duration: DAY, policy: "closed", key: "uid" },
+  "tutorials.day.uid": { points: 50, duration: DAY, policy: "open", key: "uid" },
+  "consents.day.uid": { points: 10, duration: DAY, policy: "open", key: "uid" },
   // Guided tours (a tour finished, skipped or replayed; the settings switch): one small write each.
   // Open: a Valkey outage must not bring a finished tour back.
   "tutorials.uid": { points: 60, duration: HOUR, policy: "open", key: "uid" },

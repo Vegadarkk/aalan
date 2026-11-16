@@ -43,6 +43,8 @@ export interface AdminOptions {
   /** No session cookie. */
   anonymous?: boolean;
   params?: Record<string, string>;
+  /** Sec-Fetch-Site of a browser request (none: no header). */
+  fetchSite?: string;
 }
 
 /** A back-office request: admin host, Access identity header, session and CSRF of `staff`. */
@@ -54,6 +56,7 @@ export async function adminRequest(handler: Handler, method: "GET" | "POST" | "P
     headers.set("cookie", `__Host-session=${staff.session}`);
     headers.set("x-csrf-token", staff.csrf);
   }
+  if (options.fetchSite) headers.set("sec-fetch-site", options.fetchSite);
   if (body !== undefined) headers.set("content-type", "application/json");
   const proId = /^\/api\/admin\/pros\/([^/?]+)/.exec(path)?.[1];
   const request = new NextRequest(`http://${host}${path}`, { method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });

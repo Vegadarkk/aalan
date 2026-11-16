@@ -9,13 +9,15 @@ import { logger } from "@/lib/logging/logger";
 import { sendMail } from "@/lib/mail";
 import { recipientCache, type ListingRecipient } from "@/lib/mail/recipients";
 import { isDegraded } from "@/lib/quota";
+import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { notifySearchIndex } from "@/lib/search/queue";
 
 // Nightly at 02:30 UTC (design D16): published (and paused) listings whose expiresAt passed go
 // `expired` through the lifecycle transition (version + 1, purgeAt = now + listingPurgeMonths,
 // searchOutbox delete, audit), one transaction each that re-checks the listing, then the seller
-// gets the listingExpired mail. The public page follows within its ISR window (300 s):
-// revalidatePath does not work outside a Next request. Bounded per night; the rest waits a day.
+// gets the listingExpired mail. The public page is invalidated in every web process and at the
+// edge (src/lib/listings/revalidate.ts: the ISR channel and the page purge; revalidatePath itself
+// does not work outside a Next request). Bounded per night; the rest waits a day.
 // The write quota is re-checked before each listing (a Valkey read), and the first RESOURCE_EXHAUSTED
 // ends the run: the SDK would otherwise back off for minutes on every remaining listing while the
 // system queue (reminders, purges, backup) waits behind this job.
@@ -103,6 +105,7 @@ export async function expireListings(now = new Date()): Promise<ExpireResult> {
         }
         result.expired += 1;
         await notifySearchIndex([candidate.id]);
+        revalidateListingPaths({ ...(done.listing.slugId ? { slugId: done.listing.slugId } : {}), ...(done.listing.sellerPublicId ? { publicId: done.listing.sellerPublicId } : {}) });
         if (done.audit) await audit({ actorUid: "system", actorRole: "system", action: done.audit, target: { type: "listing", id: candidate.id }, automated: true, at: now });
         // A carrier's departure ends with its day, as planned: no « annonce expirée » mail.
         if (!done.listing.departure && (await notify(done.listing, recipients))) result.mailed += 1;

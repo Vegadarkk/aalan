@@ -14,6 +14,7 @@ import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
 import { assertQuotas, SIGNUP_QUOTAS } from "@/lib/quota/gate";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { enforceSignInBudget } from "@/lib/rate-limit/sign-ins";
 import { gisNonce } from "@/lib/security/device";
 import { safeEqual } from "@/lib/security/hash";
 import { errorCode, localPart, userByEmail } from "./accounts";
@@ -152,6 +153,7 @@ async function signInExisting(flow: AnonymousFlow, uid: string, identity: Google
   if (record.disabled) throw new HttpError(403, "account_disabled");
   const claims = readClaims(record.customClaims ?? {});
   if (isStaff(claims)) throw forbidden("staff accounts sign in on the back office");
+  await enforceSignInBudget(uid);
   const { passwordDropped } = await linkGoogleOnRecord(record, identity);
   const warn = (error: unknown) => logger.warn({ err: (error as Error).message }, "providers update skipped");
   if (passwordDropped) await unlinkProvider(uid, "password").catch(warn);

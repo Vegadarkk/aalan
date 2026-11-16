@@ -78,6 +78,17 @@ describe("GET /kybc/{proId}/{pieceId}", () => {
     expect(response.headers.get("content-disposition")).toBe(`attachment; filename="kybc-${proId}-${pieceId}.pdf"`);
   });
 
+  it("refuses a request another site started, before any journal entry", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const pieceId = await kybPiece(owner, { declaredType: "application/pdf" });
+    const proId = await shop(owner, [{ id: pieceId, bytes: PDF, type: "application/pdf" }]);
+    for (const site of ["cross-site", "same-site"]) expect((await get(proId, pieceId, moderator, { fetchSite: site })).status).toBe(403);
+    expect(await viewsOf(proId)).toEqual([]);
+    // The back office's own link, and the address bar.
+    expect((await get(proId, pieceId, moderator, { fetchSite: "same-origin" })).status).toBe(200);
+    expect((await get(proId, pieceId, moderator, { fetchSite: "none" })).status).toBe(200);
+  });
+
   it("is for staff on the admin host with a matching Access identity", async () => {
     const owner = await member({ phone: freshPhone() });
     const pieceId = await kybPiece(owner);

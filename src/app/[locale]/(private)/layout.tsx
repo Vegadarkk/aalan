@@ -7,10 +7,11 @@ import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { RootShell } from "@/components/layout/root-shell";
 import { currentUser, renderUserPrivate } from "@/lib/auth/current-user";
-import { sessionSummary } from "@/lib/auth/summary";
+import { SESSION_SUMMARY_DOCUMENTS, sessionSummary } from "@/lib/auth/summary";
 import { publicConfig } from "@/lib/config/public";
 import { getFlags, getPricing } from "@/lib/config/runtime";
 import type { SessionSummary } from "@/lib/contracts/auth";
+import { memberReadAllowed } from "@/lib/rate-limit/member-reads";
 import { rootMetadata, SITE_VIEWPORT } from "@/lib/i18n/metadata";
 
 // Private pages (auth, account, Pro): dynamic rendering with the per-request nonce (§1, §6), and
@@ -21,12 +22,14 @@ import { rootMetadata, SITE_VIEWPORT } from "@/lib/i18n/metadata";
 /**
  * What GET /api/auth/me would answer for this request, so the header and the account pages render
  * the signed-in state on first paint instead of after a round trip. null = anonymous; undefined
- * when the summary cannot be built (the browser then asks /api/auth/me itself).
+ * when the summary cannot be built, or the account's member reads are spent or degraded (the browser
+ * then asks /api/auth/me itself, which answers from the cookie in that case).
  */
 async function initialSession(): Promise<SessionSummary | null | undefined> {
   const user = await currentUser();
   if (!user) return null;
   try {
+    if (!(await memberReadAllowed(user.uid, SESSION_SUMMARY_DOCUMENTS))) return undefined;
     return await sessionSummary(user, renderUserPrivate);
   } catch {
     return undefined;

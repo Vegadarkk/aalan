@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { CGU_VERSION, consentsRequestSchema, type ConsentsResponse } from "@/lib/contracts/auth";
 import { getUserPrivate, recordCguNotice, updateCguConsent } from "@/lib/db/repositories/users";
 import { readJson } from "@/lib/http/json";
-import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { meterAccountWrite } from "@/lib/rate-limit/account-writes";
 import { jsonResponse, withDevice } from "./respond";
 
 // CGU acceptance after a change (D11) and the change notice (CGU §22.1). The transfers outside
@@ -36,10 +36,13 @@ export async function handleConsents(request: Request): Promise<Response> {
   const context = await requireUser(request, { mutation: true, allowSuspended: true });
   const choice = await readJson(request, consentsRequestSchema);
   const { uid } = context.user;
-  await enforceLimit("consents.uid", uid);
+  await meterAccountWrite(uid, "consents");
   const now = new Date();
   if ("cguNotice" in choice) return withDevice(jsonResponse(await cguNoticeShown(uid, now)), request);
   const version = CGU_VERSION;
+  const body: ConsentsResponse = { status: "recorded", version };
+  // Already accepted: no second record, no second audit entry.
+  if ((await getUserPrivate(uid))?.consents.cgu.version === version) return withDevice(jsonResponse(body), request);
   await updateCguConsent(uid, version, now);
   // The uid and the version are the proof: no IP, no e-mail in the entry.
   await audit({
@@ -51,6 +54,5 @@ export async function handleConsents(request: Request): Promise<Response> {
     reason: `version ${version}`,
     at: now,
   });
-  const body: ConsentsResponse = { status: "recorded", version };
   return withDevice(jsonResponse(body), request);
 }

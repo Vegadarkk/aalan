@@ -17,6 +17,9 @@ import { firstDegraded, nextReset } from "./index";
  */
 export const DEPOSIT_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
 
+/** Account settings writes (profile, notifications, storefront, tutorials, consents, address change cancel). */
+export const ACCOUNT_WRITE_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
+
 /** New account (password or Google): three documents, then the connection log. */
 export const SIGNUP_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
 
@@ -28,6 +31,12 @@ export const PASSWORD_SIGNUP_QUOTAS = [...SIGNUP_QUOTAS, "mail.anonymous.daily"]
  * serving the last page it generated ("pages annonce depuis le cache ISR").
  */
 export const PUBLIC_READ_QUOTAS = ["firestore.reads"] as const satisfies readonly QuotaId[];
+
+/**
+ * A member's reads of their own account (settings, decisions): refused once reads are degraded;
+ * GET /api/auth/me answers from the cookie instead (src/lib/rate-limit/member-reads.ts).
+ */
+export const MEMBER_READ_QUOTAS = ["firestore.reads"] as const satisfies readonly QuotaId[];
 
 /**
  * API code of a refusal: its own code, so clients neither retry it like a transient "unavailable"

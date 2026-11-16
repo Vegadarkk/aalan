@@ -12,6 +12,7 @@ import { json, noContent } from "@/lib/http/route";
 import { assertQuotas, DEPOSIT_QUOTAS } from "@/lib/quota/gate";
 import { requestIdentity } from "@/lib/rate-limit/keys";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { chargeMemberDocs } from "@/lib/rate-limit/member-reads";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { completeKybcUpload, deleteKybcUpload, signKybcUpload } from "./kybc-uploads";
 import { deleteLogo, updateLogo } from "./logo";
@@ -49,6 +50,7 @@ export async function handleKybcComplete(request: Request, rawId: unknown): Prom
   // Limited before the first read, like a photo's complete: a loop of random ids would otherwise
   // spend one Firestore read each.
   await enforceLimit("upload.status.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   await assertQuotas(DEPOSIT_QUOTAS);
   const id = uploadIdSchema.safeParse(rawId);
   if (!id.success) throw notFound();
@@ -70,6 +72,7 @@ export async function handleKybcDelete(request: Request, rawId: unknown): Promis
 export async function handleMe(request: Request): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("pro.read.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   return json(await proSelf(auth));
 }
 
@@ -77,6 +80,7 @@ export async function handleMe(request: Request): Promise<Response> {
 export async function handleStats(request: Request): Promise<Response> {
   const auth = await requireUser(request);
   await enforceLimit("pro.read.uid", auth.user.uid);
+  await chargeMemberDocs(auth.user.uid);
   return json(await readShopStats(auth));
 }
 
@@ -172,6 +176,8 @@ export async function handleCarrier(request: Request): Promise<Response> {
 export async function handleRentalCheck(request: Request): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
   const input = await readJson(request, rentalCheckSubmitSchema);
+  // The shop is read before the check's own daily limiter.
+  await chargeMemberDocs(auth.user.uid);
   return json(await submitRentalCheck(auth, input));
 }
 

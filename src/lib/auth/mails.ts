@@ -121,12 +121,14 @@ export async function sendResetMail(input: UnprovenRecipient & { verified: boole
   await (input.verified ? sendMail(mail) : sendAnonymousMail(mail));
 }
 
-export async function sendPasswordChangedMail(input: Recipient): Promise<void> {
+/** One notice per account and hour while it waits in the queue: a loop of changes queues one mail. */
+export async function sendPasswordChangedMail(input: Recipient & { uid: string }): Promise<void> {
   await sendMail({
     template: "passwordChanged",
     locale: input.locale,
     to: input.email,
     data: { displayName: input.displayName, at: new Date().toISOString() },
     priority: "security",
+    idempotencyKey: `password-changed-${input.uid}-${hourBucket()}`,
   });
 }

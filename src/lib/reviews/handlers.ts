@@ -17,6 +17,7 @@ import { detectSensitive } from "@/lib/moderation/sensitive";
 import { assertQuotas, PUBLIC_READ_QUOTAS } from "@/lib/quota/gate";
 import { requestIdentity } from "@/lib/rate-limit/keys";
 import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { chargeMemberDocs, topUpMemberDocs } from "@/lib/rate-limit/member-reads";
 import {
   ReviewError,
   createReview,
@@ -170,7 +171,9 @@ export async function handleMyReviews(request: Request): Promise<Response> {
   const { user } = await requireUser(request, { allowSuspended: true });
   const side = new URL(request.url).searchParams.get("sens") === "donnes" ? "given" : "received";
   await enforceLimit("review.mine.uid", user.uid);
+  await chargeMemberDocs(user.uid);
   const records = side === "given" ? await listAuthoredReviews(user.uid, MINE_LIMIT) : await listPublishedReviews(user.uid, MINE_LIMIT);
+  await topUpMemberDocs(user.uid, records.length - 1);
   const body: MyReviews = { reviews: records.map((review) => mineView(review, side)) };
   return json(body);
 }

@@ -5,15 +5,18 @@ import { cn } from "@/lib/utils";
 // slowly, in gold (gold-500 on light grounds, gold-300 on dark), still under reduced motion
 // (globals.css `khatam`). Decorative by default: give it a `label` when it is the only sign that
 // something loads, and it becomes a status with that text for screen readers.
+// Drawn as one SVG: both squares share the centre of the viewBox at every size and position, where
+// two CSS borders snapped to the pixel grid apart (up to 0.7px between the squares).
+// --khatam-stroke is in viewBox units (24 = the mark's side).
 
 const khatamVariants = cva("khatam", {
   variants: {
     size: {
       /** Inline with text or inside a button: follows the font size. */
-      inline: "size-[1.1em] [--khatam-stroke:0.1em]",
-      sm: "size-5 [--khatam-stroke:1.75px]",
-      md: "size-[2.125rem] [--khatam-stroke:2.5px]",
-      lg: "size-12 [--khatam-stroke:3px]",
+      inline: "size-[1.1em] [--khatam-stroke:2.2]",
+      sm: "size-5 [--khatam-stroke:2.1]",
+      md: "size-[2.125rem] [--khatam-stroke:1.75]",
+      lg: "size-12 [--khatam-stroke:1.5]",
     },
     tone: {
       gold: "text-gold-500 dark:text-gold-300",
@@ -31,7 +34,12 @@ export interface KhatamLoaderProps extends VariantProps<typeof khatamVariants> {
 }
 
 export function KhatamLoader({ label, size, tone, className }: KhatamLoaderProps) {
-  const mark = <span aria-hidden="true" data-loader="khatam" className={cn(khatamVariants({ size, tone }), label ? undefined : className)} />;
+  const mark = (
+    <svg aria-hidden="true" focusable="false" data-loader="khatam" viewBox="0 0 24 24" className={cn(khatamVariants({ size, tone }), label ? undefined : className)}>
+      <rect x="5" y="5" width="14" height="14" rx="0.6" />
+      <rect x="5" y="5" width="14" height="14" rx="0.6" transform="rotate(45 12 12)" />
+    </svg>
+  );
   if (!label) return mark;
   return (
     <span role="status" className={cn("inline-flex", className)}>

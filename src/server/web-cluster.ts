@@ -3,13 +3,15 @@
 // core while its container had 1.5 (docs/lancement/charge.md). WEB_PROCESSES (1 to 4, default 1)
 // starts that many standalone servers on the same port through node:cluster; each inherits the
 // preloaded CSP hash hook (execArgv). Each process keeps its own in-memory ISR cache: revalidatePath
-// reaches only the process that ran it, the others refresh the page at its `revalidate` (the edge
-// cache already keeps it as long).
+// reaches only the process that ran it, so each server process also listens on the valkey-queue
+// ISR channel (src/server/isr-invalidation.ts) for the invalidations of the others and the worker.
 
 import cluster from "node:cluster";
 import { realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { Redis } from "ioredis";
+import { listen, manifestOf, TAGS_MANIFEST_MODULE } from "./isr-invalidation";
 
 /** Processes started by the primary; past this a 2-OCPU VM gains nothing. */
 export const MAX_WEB_PROCESSES = 4;
@@ -30,9 +32,33 @@ function log(message: string, fields: Record<string, unknown> = {}): void {
   process.stderr.write(`${JSON.stringify({ level: 40, time: Date.now(), msg: `web-cluster: ${message}`, ...fields })}\n`);
 }
 
+/**
+ * Cross-process ISR invalidation for this server process: the tag manifest of the Next runtime the
+ * standalone server loads (same module instance, through Node's module cache), fed by the
+ * valkey-queue channel. Without QUEUE_REDIS_URL (one process, no worker) there is nothing to hear.
+ */
+function startIsrListener(server: string): void {
+  const url = process.env.QUEUE_REDIS_URL;
+  if (!url) return;
+  let manifest;
+  try {
+    manifest = manifestOf(createRequire(server)(TAGS_MANIFEST_MODULE));
+  } catch (error) {
+    log("ISR invalidation off: Next tag manifest not loadable", { err: (error as Error).message });
+    return;
+  }
+  if (!manifest) {
+    log("ISR invalidation off: Next tag manifest has an unexpected shape");
+    return;
+  }
+  const subscriber = new Redis(url, { connectionName: "aalan-isr", maxRetriesPerRequest: null });
+  listen(subscriber, manifest, log).catch((error: unknown) => log("ISR invalidation channel not subscribed", { err: (error as Error).message }));
+}
+
 /** The standalone server, next to dist/ in the image; a computed path keeps esbuild from bundling it. */
 function startServer(): void {
   const server = fileURLToPath(new URL("../../server.js", import.meta.url));
+  startIsrListener(server);
   createRequire(import.meta.url)(server);
 }
 

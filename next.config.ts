@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
   // of 30 Oct 2026 (docs/lancement/charge.md); an ETag would only spare Cloudflare a body download
   // once its TTL ends, after the render is already paid.
   generateEtags: false,
+  // Bound on Next's stale-while-revalidate (default a year): an ISR copy older than this is never
+  // served again but rendered first, so a page an invalidation missed (a process disconnected from
+  // the ISR channel, src/server/isr-invalidation.ts) cannot be served stale "however late". The
+  // longest page `revalidate` is 3600 s; the edge receives stale-while-revalidate up to this bound.
+  expireTime: 3600,
   reactStrictMode: true,
   typedRoutes: false,
   // Typecheck and lint run as separate CI steps.

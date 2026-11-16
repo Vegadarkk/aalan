@@ -104,10 +104,32 @@ jobs:
           CLOUDFLARED_IMAGE="$(grep -m 1 -oE 'cloudflare/cloudflared:[^[:space:]]+' docker/compose.yml)"
           test -n "$CLOUDFLARED_IMAGE" || { echo "cloudflared image not found in docker/compose.yml"; exit 1; }
           docker pull --quiet "$CLOUDFLARED_IMAGE"
-          zstd -T0 -10 -q -c "$RUNNER_TEMP/release.tar" \
-            | ssh -i ~/.ssh/deploy_staging -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
-                -o ProxyCommand="docker run --rm -i -e TUNNEL_SERVICE_TOKEN_ID -e TUNNEL_SERVICE_TOKEN_SECRET $CLOUDFLARED_IMAGE access ssh --hostname %h" \
-                deploy-staging@ssh.joutiya.ma "load $RELEASE"
+          # The proxy logs at info (never debug, which may print request headers) so a dropped link
+          # says why; ServerAlive notices a stalled one.
+          vm() {
+            ssh -i ~/.ssh/deploy_staging -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+              -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+              -o ProxyCommand="docker run --rm -i -e TUNNEL_SERVICE_TOKEN_ID -e TUNNEL_SERVICE_TOKEN_SECRET $CLOUDFLARED_IMAGE access ssh --hostname %h --loglevel info" \
+              deploy-staging@ssh.joutiya.ma "$@"
+          }
+          send() { zstd -T0 -10 -q -c "$RUNNER_TEMP/release.tar" | vm "load $RELEASE"; }
+          # 255 is ssh's own failure (the link), never the VM's forced command, which exits 1 after an
+          # "error:" line. On 16 Nov 2026 the link dropped three times in an hour, once after the VM had
+          # already started the release: check the VM, then try once more. A load cut mid-stream keeps
+          # the VM's deploy lock until sshd drops the dead session (up to 10 min); the retry waits for it.
+          code=0
+          send || code=$?
+          if ((code == 255)); then
+            echo "::warning::The SSH link to the VM dropped (exit 255): checking the VM, then one more attempt"
+            sleep 30
+            if vm status | grep -qF "\"staging\":{\"release\":\"$RELEASE\""; then
+              echo "Staging already runs $RELEASE"
+              exit 0
+            fi
+            code=0
+            send || code=$?
+          fi
+          exit "$code"
 
   rules:
     name: Firestore rules and indexes (staging)

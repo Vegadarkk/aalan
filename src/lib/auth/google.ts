@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { UpdateRequest, UserRecord } from "firebase-admin/auth";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { CGU_VERSION, displayNameSchema, googleSchema, type GoogleInput, type GoogleResponse } from "@/lib/contracts/auth";
-import { createAccountDocuments, findUidByEmail, isEmailTaken, linkProvider, unlinkProvider } from "@/lib/db/repositories/users";
+import { createAccountDocuments, findUidByEmail, getUserPrivate, isEmailTaken, linkProvider, unlinkProvider } from "@/lib/db/repositories/users";
 import { serverEnv } from "@/lib/env";
 import { auth } from "@/lib/firebase/admin";
 import { isStaff, readClaims, setClaims } from "@/lib/firebase/claims";
@@ -226,6 +226,12 @@ async function signUp(flow: AnonymousFlow, input: GoogleInput & { consents: NonN
  * record with this exact e-mail. The normalized index (+tag stripped, Gmail dots removed) is lossy
  * and never picks the account someone signs into.
  */
+/** True when the site itself linked Google to this account (its private provider list says so). */
+async function siteLinkedGoogle(uid: string): Promise<boolean> {
+  const account = await getUserPrivate(uid);
+  return account?.providers.includes(PROVIDER) ?? false;
+}
+
 async function existingRecord(identity: GoogleIdentity): Promise<{ record: UserRecord; bySub: boolean } | null> {
   try {
     return { record: await auth().getUserByProviderUid(PROVIDER, identity.sub), bySub: true };
@@ -246,10 +252,15 @@ async function googleSignIn(request: Request): Promise<Response> {
   if (!identity.emailVerified) throw new HttpError(403, "email_not_verified");
 
   const found = await existingRecord(identity);
-  // An identity already linked to an account keeps signing in by its sub. Otherwise the address is
+  // An identity the site linked to an account keeps signing in by its sub. Otherwise the address is
   // the key, and only an address Google vouches for may open, link or create an account: the same
-  // answer whether or not an account uses it.
-  if (!found?.bySub && !googleVouchesForEmail(identity)) throw new HttpError(409, "google_email_unconfirmed");
+  // answer whether or not an account uses it. A link the site did not record (added at the
+  // provider) counts only for the account's own address.
+  const vouched = googleVouchesForEmail(identity);
+  if (found?.bySub && !(await siteLinkedGoogle(found.record.uid)) && !(vouched && found.record.email?.toLowerCase() === identity.email)) {
+    throw new HttpError(409, "google_email_unconfirmed");
+  }
+  if (!found?.bySub && !vouched) throw new HttpError(409, "google_email_unconfirmed");
   const record = found?.record;
   if (record) {
     const state = await recordState(record);

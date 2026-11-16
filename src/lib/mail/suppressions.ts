@@ -1,14 +1,21 @@
 import "server-only";
 import { COLLECTIONS, mailSuppressionSchema, type MailSuppressionDoc } from "@/lib/db/schemas";
-import { emailNormHash } from "@/lib/db/repositories/users";
 import { db, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
 import { consume } from "@/lib/quota";
+import { pepperedHash } from "@/lib/security/hash";
 
-// mailSuppressions/{emailNormHash} (§5): addresses that bounced permanently or complained. Only
-// non-security mails honour the list; the key is the peppered hash, the address itself is never stored.
+// mailSuppressions/{hash} (§5): addresses that bounced permanently or complained. Only non-security
+// mails honour the list; the key is a peppered hash, the address itself is never stored. A bounce
+// belongs to the exact mailbox: the key is the address as written (trimmed, lower-cased), never the
+// normalized identity of emailNormHash (+tag dropped), or a variant's bounce would silence the base.
 
-const ref = (email: string) => db().collection(COLLECTIONS.mailSuppressions).doc(emailNormHash(email));
+/** The suppression key of an address: exact mailbox, not the lossy identity key. */
+export function suppressionKey(email: string): string {
+  return pepperedHash("mail-suppression", email.trim().toLowerCase());
+}
+
+const ref = (email: string) => db().collection(COLLECTIONS.mailSuppressions).doc(suppressionKey(email));
 
 /** True when the address must not receive transactional mail. A failing lookup never blocks a send. */
 export async function isSuppressed(email: string): Promise<boolean> {

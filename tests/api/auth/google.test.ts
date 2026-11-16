@@ -181,6 +181,20 @@ describe("POST /api/auth/google", () => {
     expect(again.body.session.uid).toBe(created.body.session.uid);
   });
 
+  it("ignores a Google link added at the provider for another address than the account's", async () => {
+    const email = uniqueEmail("gl");
+    expect((await call(signup, "/api/auth/signup", { jar: new Jar(), body: { email, password: PASSWORD, displayName: "Pending Person", locale: "fr", consents: CONSENTS, turnstileToken: "t" } })).status).toBe(202);
+    const uid = (await findUidByEmail(email))!;
+    const foreign = uniqueEmail("gf");
+    await auth().updateUser(uid, { providerToLink: { providerId: "google.com", uid: "g-provider-side", email: foreign } });
+    const refused = await call<ErrorBody>(google, GOOGLE, { jar: new Jar(), body: body({ email: foreign, sub: "g-provider-side" }) });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe("google_email_unconfirmed");
+    const record = await auth().getUser(uid);
+    expect(record.emailVerified).toBe(false);
+    expect((await getUserPrivate(uid))?.providers).toEqual(["password"]);
+  });
+
   it("replaces an orphan Auth record with this e-mail by a fresh uid instead of adopting it", async () => {
     // A failed sign-up (or a purge whose Auth deletion failed) left a record without documents.
     const email = uniqueEmail("go");

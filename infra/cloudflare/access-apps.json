@@ -12,6 +12,7 @@
       ],
       "type": "self_hosted",
       "session_duration": "8h",
+      "same_site_cookie_attribute": "strict",
       "allowed_idps": [
         "${ACCESS_GOOGLE_IDP_ID}"
       ],

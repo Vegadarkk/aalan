@@ -99,11 +99,11 @@ export interface DecisionAutomation {
 }
 
 export interface TemplateData {
-  verifyEmail: { displayName: string; actionUrl: string };
-  resetPassword: { displayName: string; actionUrl: string };
-  signupExisting: { displayName: string; loginUrl: string; resetUrl: string };
+  verifyEmail: { displayName: string | null; actionUrl: string };
+  resetPassword: { displayName: string | null; actionUrl: string };
+  signupExisting: { displayName: string | null; loginUrl: string; resetUrl: string };
   /** Sign-up on the e-mail of a closed account (Z1-11): ISO dates of the closure and of the address's release. */
-  signupClosed: { displayName: string; closedAt: string; reusableFrom: string };
+  signupClosed: { displayName: string | null; closedAt: string; reusableFrom: string };
   emailChangeConfirm: { displayName: string; actionUrl: string; expiresAt: string };
   /** `newEmail` already masked (maskEmail): the notice goes to an address that may no longer be the owner's. */
   emailChanged: { displayName: string; newEmail: string; at: string };
@@ -314,6 +314,12 @@ export interface TemplateMail<T extends TemplateId = TemplateId> {
   to: string;
   data: TemplateData[T];
   priority?: MailPriority;
+  /**
+   * Caused by a request without a session, to an address nobody proved (sign-up, its warning,
+   * verification resend, reset of a never-verified account): never takes the members' share of the
+   * providers (src/lib/mail/deliver.ts ANONYMOUS_RESEND_SHARE, ANONYMOUS_BREVO_SHARE).
+   */
+  anonymous?: boolean;
   /** Dedupe key for the queue (same key within 24 h = one mail). */
   idempotencyKey?: string;
 }

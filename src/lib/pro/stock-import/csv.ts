@@ -17,7 +17,7 @@ export interface CsvTable {
 
 export class CsvError extends Error {
   constructor(
-    readonly code: "empty" | "unclosed_quote" | "too_many_rows" | "cell_too_long",
+    readonly code: "empty" | "unclosed_quote" | "too_many_rows" | "cell_too_long" | "too_many_columns",
     readonly line: number,
   ) {
     super(`${code} at line ${line}`);
@@ -42,9 +42,13 @@ export function guessSeparator(text: string): "," | ";" | "\t" {
 /** Longest cell read: a description (4,000 characters) with room to spare; longer is an error. */
 export const CSV_CELL_MAX = 5_000;
 
+/** Most cells on one line: the widest template has a few dozen columns; wider is an error. */
+export const CSV_COLUMNS_MAX = 200;
+
 /**
  * Parses the whole text; throws `CsvError` on an unclosed quote, a cell longer than CSV_CELL_MAX,
- * an empty file or more than `maxRows` data lines. Linear in the text.
+ * a line of more than CSV_COLUMNS_MAX cells, an empty file or more than `maxRows` data lines.
+ * Linear in the text.
  */
 export function parseCsv(input: string, maxRows: number): CsvTable {
   const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
@@ -59,8 +63,14 @@ export function parseCsv(input: string, maxRows: number): CsvTable {
   let rowLine = 1;
   let quoteLine = 1;
 
-  const endRow = () => {
+  const pushCell = () => {
     cells.push(cell);
+    cell = "";
+    blank = true;
+    if (cells.length > CSV_COLUMNS_MAX) throw new CsvError("too_many_columns", rowLine);
+  };
+  const endRow = () => {
+    pushCell();
     // A blank line (one empty cell) is no record.
     if (!(cells.length === 1 && cells[0]!.trim() === "")) {
       rows.push({ line: rowLine, cells });
@@ -95,9 +105,7 @@ export function parseCsv(input: string, maxRows: number): CsvTable {
       quoteLine = line;
       cell = "";
     } else if (char === separator) {
-      cells.push(cell);
-      cell = "";
-      blank = true;
+      pushCell();
     } else if (char === "\r" && text[i + 1] === "\n") {
       continue;
     } else if (char === "\n" || char === "\r") {

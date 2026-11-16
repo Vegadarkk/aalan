@@ -142,9 +142,10 @@ export const NOT_YOU: Record<MailLocale, string> = {
   ar: "إذا لم تكن أنت من قام بهذا الطلب، فتجاهل هذا البريد الإلكتروني.",
 };
 
-export const GREETING: Record<MailLocale, (name: string) => string> = {
-  fr: (name) => `Bonjour ${name},`,
-  ar: (name) => `مرحبًا ${name}،`,
+/** Without a name: a mail to an address nobody proved never carries the name its sender typed. */
+export const GREETING: Record<MailLocale, (name: string | null) => string> = {
+  fr: (name) => (name ? `Bonjour ${name},` : "Bonjour,"),
+  ar: (name) => (name ? `مرحبًا ${name}،` : "مرحبًا،"),
 };
 
 /** Escapes every interpolated value for HTML text and double-quoted attribute contexts. */

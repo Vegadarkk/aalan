@@ -64,7 +64,7 @@ describe("sign-up with degraded Firestore writes", () => {
     expect([refused.status, refused.body.error.code]).toEqual([503, QUOTA_ERROR_CODE]);
     expect(Number(refused.header("retry-after"))).toBeGreaterThanOrEqual(60);
     expect(refused.header("cache-control")).toBe("no-store");
-    expect(firstDegraded).toHaveBeenCalledWith(["firestore.writes"]);
+    expect(firstDegraded).toHaveBeenCalledWith(["firestore.writes", "mail.anonymous.daily"]);
     expect(verifyTurnstile).not.toHaveBeenCalled();
     expect(await authRecord(email)).toBeNull();
     expect(await findUidByEmail(email)).toBeNull();
@@ -77,6 +77,19 @@ describe("sign-up with degraded Firestore writes", () => {
     });
     expect(accepted.status).toBe(202);
     expect(await findUidByEmail(email)).not.toBeNull();
+  });
+
+  it("refuses an e-mail sign-up once the anonymous mail budget is spent, a Google sign-up still goes through", async () => {
+    vi.mocked(firstDegraded).mockImplementation(async (ids) => (ids.includes("mail.anonymous.daily") ? "mail.anonymous.daily" : null));
+    const email = uniqueEmail("qm");
+    const refused = await call<ErrorBody>(signup, SIGNUP, {
+      jar: new Jar(),
+      body: { email, password: PASSWORD, displayName: "Yasmine Test", locale: "fr", consents: CONSENTS, turnstileToken: "t" },
+    });
+    expect([refused.status, refused.body.error.code]).toEqual([503, QUOTA_ERROR_CODE]);
+    expect(await authRecord(email)).toBeNull();
+    const created = await call<SignedInBody>(google, GOOGLE, { jar: googleJar(), body: googleBody(uniqueEmail("qmg"), { consents: CONSENTS, turnstileToken: "t", locale: "fr" }) });
+    expect(created.body.status).toBe("signed_in");
   });
 
   it("does not use up the device's sign-up allowance (3 a day) on refusals: the retry after the reset goes through", async () => {

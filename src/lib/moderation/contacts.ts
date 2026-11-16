@@ -9,8 +9,11 @@ import { foldForDetection, inputSpan } from "./fold";
 // and bare domains on a short list of TLDs. The TLD list leaves out .me/.co/.tv/.app (words that
 // end sentences: "appelez.me") and never matches a dot followed by a space, so "38.5 com" or
 // "Peugeot 206. Ma voiture" stay clean.
+//
+// Every pattern starts only where a run of its first characters starts (lookbehind): retried from
+// each offset of a long run, an unanchored first quantifier would cost the square of its length.
 
-const EMAIL = /[a-z0-9._%+-]+\s?(?:@|\(at\)|\[at\]|\{at\}|\s+arobase\s+)\s?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}/gi;
+const EMAIL = /(?<![a-z0-9._%+-])[a-z0-9._%+-]+\s?(?:@|\(at\)|\[at\]|\{at\}|\s+arobase\s+)\s?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}/gi;
 const SCHEME_URL = /\b(?:https?:\/\/|www\.)[^\s<>"']+/gi;
 const KNOWN_HOSTS = /(?<![a-z0-9.-])(?:wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|whatsapp\.com|t\.me|telegram\.me|instagram\.com|facebook\.com|fb\.com|fb\.me|m\.me|tiktok\.com|youtube\.com|youtu\.be|bit\.ly|linktr\.ee|snapchat\.com|avito\.ma|marocannonces\.com)(?:\/[^\s<>"']*)?/gi;
 const BARE_DOMAIN = /(?<![a-z0-9@.-])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|ma|net|org|fr|info|io|shop|store|biz|online|site|xyz|es|be|de|uk|eu)\b(?:\/[^\s<>"']*)?/gi;

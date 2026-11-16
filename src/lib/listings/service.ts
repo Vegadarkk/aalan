@@ -404,6 +404,9 @@ async function screenFor(listing: ListingDoc & { id: string }, seller: SellerCon
   return screen({ listing, uploads, seller: facts, others: others.filter((other) => other.status !== "rejected"), lookalikes }, listing.id);
 }
 
+/** Flags raised by a service, never by the content screen: a re-screen of a held listing keeps them. */
+const SERVICE_FLAGS: ReadonlySet<ModerationFlag> = new Set<ModerationFlag>(["promo_check"]);
+
 /** Screening result on the listing; `held`: a person reviews it whatever the screen said. The hold's decision id is set by `commit`. */
 function moderationPatch(current: ListingModeration, result: ScreeningResult, held = false): ListingModeration {
   return { ...current, state: held ? "needs_review" : result.state, score: result.score, flags: result.flags };
@@ -514,7 +517,11 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
         hold = holdRecord(listing, result, now);
         mail = { template: "listingPendingReview", statement: statementOf("hold", result.flags, await redressAddress()) };
       } else {
-        fields.moderation = moderationPatch(fields.moderation ?? listing.moderation, result);
+        // A hold the screen does not own (a deep promotion, setPromo) outlives a re-screen: the
+        // listing stays for a moderator, never for the agent alone.
+        const kept = listing.status === "pending_review" ? listing.moderation.flags.filter((flag) => SERVICE_FLAGS.has(flag)) : [];
+        const screenedModeration = moderationPatch(fields.moderation ?? listing.moderation, result, kept.length > 0);
+        fields.moderation = kept.length > 0 ? { ...screenedModeration, flags: [...new Set([...screenedModeration.flags, ...kept])] } : screenedModeration;
         fields.adsEligible = result.state === "auto_ok" && listing.status !== "pending_review" && listing.moderation.openReports === 0 && !listing.moderation.hiddenBy && subcategoryAllowsAds(next.subcategoryId);
       }
     }

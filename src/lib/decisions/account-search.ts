@@ -62,7 +62,7 @@ async function run(lookup: AccountLookup): Promise<UserRecord[]> {
       return user ? [user] : [];
     }
     case "phone": {
-      const users = await Promise.all((await uidsByPhone(lookup.e164)).map(getUserRecord));
+      const users = await Promise.all((await uidsByPhone(lookup.e164)).map((uid) => getUserRecord(uid)));
       return users.filter((user): user is UserRecord => user !== null);
     }
     case "profile": {

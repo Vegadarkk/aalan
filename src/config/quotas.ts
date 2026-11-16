@@ -149,6 +149,22 @@ export const QUOTAS = {
     degradeAt: 1,
     degradedMode: 'E-mails de sécurité reportés au lendemain dans la file "mail" ; alerte P1 une fois par jour.',
   },
+  "mail.anonymous.daily": {
+    service: "E-mails sans session (Aalan)",
+    // Mail an anonymous request makes the site send (sign-up verification and warning, verification
+    // resend, reset of a never-verified account): its own budget, so a stream of such requests never
+    // spends the members' share. Counted at enqueue (src/lib/auth/mails.ts); delivery also keeps it
+    // under ANONYMOUS_RESEND_SHARE of Resend (src/lib/mail/deliver.ts).
+    limit: 150,
+    unit: "emails",
+    period: "day",
+    resetTimeZone: "UTC",
+    kind: "counter",
+    alertAt: 0.7,
+    degradeAt: 1,
+    degradedMode:
+      "Inscriptions par e-mail refusées jusqu'à minuit UTC (Google reste ouvert) ; renvois de vérification, avertissements d'inscription et réinitialisations de comptes jamais vérifiés non envoyés. Les e-mails des membres ne sont pas touchés.",
+  },
   "r2.storage": {
     service: "Cloudflare R2",
     limit: 10 * GB,

@@ -217,6 +217,9 @@ export const connectionLogSchema = z
   .strict();
 export type ConnectionLogDoc = z.infer<typeof connectionLogSchema>;
 
+/** Longest audit reason stored; audit() cuts a longer one. */
+export const AUDIT_REASON_MAX = 500;
+
 /** auditLogs/{id}: append-only journal of staff and system actions (§5, 5 years). */
 export const auditLogSchema = z
   .object({
@@ -225,7 +228,7 @@ export const auditLogSchema = z
     action: z.string().min(1).max(64),
     target: z.object({ type: z.string().min(1).max(32), id: z.string().min(1).max(128) }).strict(),
     automated: z.boolean(),
-    reason: z.string().max(500).optional(),
+    reason: z.string().max(AUDIT_REASON_MAX).optional(),
     ipHash: z.string().max(64).optional(),
     at: ts,
     /** at + 5 years (phase 5); older entries have none and are kept. */

@@ -257,6 +257,9 @@ describe("zone --check", () => {
     const values = Object.fromEntries(settings.settings.map((setting) => [setting.id, setting.value]));
     expect(settingsDrift(settings, values)).toEqual([]);
     expect(settingsDrift(settings, { ...values, email_obfuscation: "on" })).toEqual(['setting email_obfuscation is "on", expected "off"']);
+    // HSTS at the edge for the responses Cloudflare answers itself, subdomains included like the app header.
+    expect(values.security_header).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: true, preload: true, nosniff: false } });
+    expect(settingsDrift(settings, { ...values, security_header: { strict_transport_security: { enabled: false } } })).toHaveLength(1);
   });
 });
 

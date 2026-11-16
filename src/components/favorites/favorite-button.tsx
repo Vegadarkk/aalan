@@ -8,7 +8,7 @@ import { useApiErrorMessage } from "@/components/auth/form-message";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, loadSession, useSession } from "@/lib/auth/client";
 import { favoritesSnapshot, forgetFavorites, loadFavoriteIds, setFavorite, useFavorites } from "@/lib/favorites/client";
-import { favoriteFragment, takePendingFavorite } from "@/lib/favorites/pending";
+import { favoriteFragment, rememberPendingFavorite, takePendingFavorite } from "@/lib/favorites/pending";
 import { cn } from "@/lib/utils";
 
 // The heart of a listing (design D17, D22): a client island on cards (over the photo, `relative
@@ -30,8 +30,9 @@ function currentPath(): string {
   return `${window.location.pathname}${window.location.search}`;
 }
 
-/** Back here after sign-in, with this listing to add once the session is known. */
+/** Back here after sign-in, with this listing to add once the session is known (a click only). */
 function signInNext(listingId: string): string {
+  rememberPendingFavorite(listingId);
   return `${currentPath()}${favoriteFragment(window.location.hash, listingId)}`;
 }
 

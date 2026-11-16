@@ -29,6 +29,7 @@ async function resetRequest(request: Request): Promise<Response> {
   const flow = beginAnonymous(request);
   const input = await readJson(request, resetRequestSchema);
   await enforceLimit("reset.ip", flow.identity.ipBucket);
+  await enforceLimit("reset.ip.day", flow.identity.ipBucket);
   // Turnstile before the per-e-mail counter: otherwise anyone could use up a victim's allowance
   // with bogus tokens and keep them out of account recovery.
   await checkTurnstile(flow, input.turnstileToken, "reset");
@@ -41,7 +42,7 @@ async function resetRequest(request: Request): Promise<Response> {
   const staff = record ? isStaff(readClaims(record.customClaims ?? {})) : false;
   if (record?.email && !record.disabled && !staff) {
     const profile = await getUser(record.uid);
-    await sendResetMail({ email: record.email, displayName: displayNameFor(profile, record, record.email), locale: input.locale });
+    await sendResetMail({ email: record.email, displayName: displayNameFor(profile, record, record.email), locale: input.locale, verified: record.emailVerified });
   }
   const body: ResetRequestResponse = { status: "sent" };
   // Same duration whether the account exists (timing enumeration).

@@ -82,9 +82,14 @@ export function appealRefusal(record: DecisionRecord, by: "affected" | "reporter
   return null;
 }
 
-/** A decision as its affected user or notifier sees it (no staff ids, no other reporters). */
-export function appealableView(record: DecisionRecord, by: "affected" | "reporter", now: Date): AppealableDecision {
-  const appeal = record.appeal;
+/**
+ * A decision as its affected user or notifier sees it (no staff ids, no other reporters). The
+ * appeal block is the viewer's own only: the other party's appeal, its dates and the reviewer's note
+ * to them stay theirs. `reportId`: the notifier's report (link token or signed-in report).
+ */
+export function appealableView(record: DecisionRecord, by: "affected" | "reporter", now: Date, reportId?: string): AppealableDecision {
+  const own = record.appeal && (record.appeal.by ?? "affected") === by && (by === "affected" || (reportId !== undefined && record.appeal.reportId === reportId));
+  const appeal = own ? record.appeal : undefined;
   return {
     decisionId: record.id,
     by,

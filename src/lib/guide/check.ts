@@ -55,18 +55,82 @@ function decodeEntities(text: string): string {
   });
 }
 
-/** Title and visible text of an HTML page: scripts, styles and markup out, whitespace collapsed. */
-export function pageText(html: string): PageText {
-  const title = decodeEntities(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? "").replace(/\s+/g, " ").trim();
-  const text = decodeEntities(
-    html
-      .replace(/<!--[\s\S]*?-->/g, " ")
-      .replace(/<(script|style|noscript|svg|template|head)\b[\s\S]*?<\/\1>/gi, " ")
-      .replace(/<[^>]+>/g, " "),
-  )
-    .replace(/\s+/g, " ")
-    .trim();
-  return { title, text };
+/** Longest part of a fetched page read for its title and text (the fingerprint words fit well in it). */
+export const PAGE_TEXT_MAX = 512 * 1024;
+
+/** Blocks dropped with their content. */
+const HIDDEN_BLOCKS = new Set(["script", "style", "noscript", "svg", "template", "head"]);
+
+/** The tag name right after `<` at `at` (lower case), "" when none. */
+function tagName(lower: string, at: number): string {
+  let end = at + 1;
+  while (end < lower.length && ((lower[end]! >= "a" && lower[end]! <= "z") || (lower[end]! >= "0" && lower[end]! <= "9"))) end += 1;
+  return lower.slice(at + 1, end);
+}
+
+/**
+ * Title and visible text of an HTML page: comments, scripts, styles and markup out, whitespace
+ * collapsed. One forward scan over at most PAGE_TEXT_MAX characters: a page is untrusted input, and a
+ * closer searched for in vain is never searched for again, so no opener costs a rescan of the rest.
+ */
+export function pageText(input: string): PageText {
+  const html = input.length > PAGE_TEXT_MAX ? input.slice(0, PAGE_TEXT_MAX) : input;
+  const lower = html.toLowerCase();
+  // Where a search for each needle already failed: none can be found from there on.
+  const missingFrom = new Map<string, number>();
+  const find = (needle: string, from: number): number => {
+    if (from >= (missingFrom.get(needle) ?? Number.POSITIVE_INFINITY)) return -1;
+    const at = lower.indexOf(needle, from);
+    if (at === -1) missingFrom.set(needle, Math.min(from, missingFrom.get(needle) ?? from));
+    return at;
+  };
+
+  let title = "";
+  const titleAt = find("<title", 0);
+  if (titleAt !== -1 && tagName(lower, titleAt) === "title") {
+    const open = find(">", titleAt);
+    const close = open === -1 ? -1 : find("</title>", open + 1);
+    if (close !== -1) title = html.slice(open + 1, close);
+  }
+
+  const parts: string[] = [];
+  let index = 0;
+  while (index < html.length) {
+    const lt = lower.indexOf("<", index);
+    if (lt === -1) {
+      parts.push(html.slice(index));
+      break;
+    }
+    parts.push(html.slice(index, lt));
+    if (lower.startsWith("<!--", lt)) {
+      const end = find("-->", lt + 4);
+      if (end !== -1) {
+        parts.push(" ");
+        index = end + 3;
+        continue;
+      }
+    }
+    const name = tagName(lower, lt);
+    if (HIDDEN_BLOCKS.has(name)) {
+      const end = find(`</${name}>`, lt + name.length + 1);
+      if (end !== -1) {
+        parts.push(" ");
+        index = end + name.length + 3;
+        continue;
+      }
+    }
+    const gt = lt + 1 < html.length && html[lt + 1] !== ">" ? find(">", lt + 1) : -1;
+    if (gt === -1) {
+      // A "<" never closed is text, like everything after it that has no ">" either.
+      parts.push("<");
+      index = lt + 1;
+      continue;
+    }
+    parts.push(" ");
+    index = gt + 1;
+  }
+  const text = decodeEntities(parts.join("")).replace(/\s+/g, " ").trim();
+  return { title: decodeEntities(title).replace(/\s+/g, " ").trim(), text };
 }
 
 /** Classifies one fetch of `sourceUrl`. */
@@ -165,6 +229,15 @@ export interface LinkState {
   acceptedBy?: string;
 }
 
+/** Longest stored detail and final URL (src/lib/guide/state.ts reads them back with these caps). */
+export const LINK_DETAIL_MAX = 300;
+export const LINK_FINAL_URL_MAX = 1000;
+
+/** `value` cut to `max` characters, an ellipsis marking the cut. */
+export function clipText(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
 /** The state after one fetch. `fingerprint` only for an OK page (redirected counts as OK). */
 export function nextLinkState(previous: LinkState | undefined, url: string, result: { outcome: LinkOutcome; detail: string; httpStatus: number | null; finalUrl: string; fingerprint?: Fingerprint }, now: Date): LinkState {
   const prev = previous?.url === url ? previous : undefined;
@@ -173,9 +246,10 @@ export function nextLinkState(previous: LinkState | undefined, url: string, resu
   const state: LinkState = {
     url,
     outcome: result.outcome,
-    detail: result.detail,
+    // The remote answer chooses both (redirect target, page title): cut, never a dropped entry.
+    detail: clipText(result.detail, LINK_DETAIL_MAX),
     httpStatus: result.httpStatus,
-    finalUrl: result.finalUrl,
+    finalUrl: clipText(result.finalUrl, LINK_FINAL_URL_MAX),
     checkedAt: at,
     streak: result.outcome === "ok" ? 0 : prev?.outcome === result.outcome ? prev.streak + 1 : 1,
   };

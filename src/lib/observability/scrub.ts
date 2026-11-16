@@ -66,7 +66,7 @@ export const BREADCRUMB_DATA_LIMIT = 1024;
 /** A bot token in a URL path (Telegram Bot API: https://api.telegram.org/bot<token>/sendMessage). */
 const BOT_TOKEN_PATTERN = /\/bot[^/\s]+/g;
 /** E-mail addresses: a provider error may echo the recipient, and Sentry holds no personal data. */
-const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+const EMAIL_PATTERN = /(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 /** Breadcrumb data fields that carry a URL (http, fetch, xhr and navigation breadcrumbs). */
 const URL_FIELDS = ["url", "to", "from"] as const;
 

@@ -207,6 +207,15 @@ describe("renderMail", () => {
     expect(renderMail(mail("passwordChanged", "fr")).text).toContain("Si vous n'êtes pas à l'origine de ce changement");
   });
 
+  it("greets without a name the mails that may reach an unproven address", () => {
+    for (const template of ["verifyEmail", "resetPassword", "signupExisting", "signupClosed"] as const) {
+      const fr = renderMail(mail(template, "fr", { ...DATA[template], displayName: null }));
+      expect(fr.text, template).toContain("Bonjour,");
+      expect(fr.html, template).not.toContain("Nadia");
+      expect(renderMail(mail(template, "ar", { ...DATA[template], displayName: null })).text, template).toContain("مرحبًا،");
+    }
+  });
+
   it("escapes interpolated values", () => {
     const rendered = renderMail(mail("verifyEmail", "fr", { displayName: '<script>alert("x")</script> & Co', actionUrl: `${ACTION}&x=<y>` }));
     expect(rendered.html).not.toContain("<script>");

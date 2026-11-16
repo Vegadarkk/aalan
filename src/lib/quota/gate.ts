@@ -20,6 +20,9 @@ export const DEPOSIT_QUOTAS = ["firestore.writes"] as const satisfies readonly Q
 /** New account (password or Google): three documents, then the connection log. */
 export const SIGNUP_QUOTAS = ["firestore.writes"] as const satisfies readonly QuotaId[];
 
+/** Password sign-up: the account's documents, and the verification mail on the anonymous budget. */
+export const PASSWORD_SIGNUP_QUOTAS = [...SIGNUP_QUOTAS, "mail.anonymous.daily"] as const satisfies readonly QuotaId[];
+
 /**
  * Public pages rendered from Firestore: the loader throws once reads are degraded, so ISR keeps
  * serving the last page it generated ("pages annonce depuis le cache ISR").

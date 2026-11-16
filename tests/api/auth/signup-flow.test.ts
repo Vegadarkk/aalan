@@ -168,7 +168,8 @@ describe("sign-up, verification, session, profile, logout", () => {
     expect(mails[0]?.to).toBe(email);
     expect(mails[0]?.priority).toBe("security");
     expect(mails[0]?.idempotencyKey).toMatch(/^signup-existing-.+-\d+$/);
-    expect(mails[0]?.data).toMatchObject({ displayName: "Yasmine Test", loginUrl: "http://localhost:3000/fr/connexion", resetUrl: "http://localhost:3000/fr/mot-de-passe-oublie" });
+    // The account is not verified yet: its name was typed by whoever signed up, so no greeting by name.
+    expect(mails[0]?.data).toMatchObject({ displayName: null, loginUrl: "http://localhost:3000/fr/connexion", resetUrl: "http://localhost:3000/fr/mot-de-passe-oublie" });
     // Gmail-style variants are the same account.
     const variant = await call<{ status: string }>(signup, SIGNUP, { jar: new Jar(), body: signupBody(email.replace("@", "+tag@")) });
     expect(variant.status).toBe(202);
@@ -275,6 +276,8 @@ describe("sign-up, verification, session, profile, logout", () => {
     const mails = capturedMails(sendMail).filter((mail): mail is MailJob<"verifyEmail"> => mail.template === "verifyEmail" && mail.to === email);
     expect(mails).toHaveLength(2);
     expect(actionLinkOf(mails[1]!)).toEqual(actionLinkOf(first));
+    // The typed name never reaches an address nobody proved (sign-up and resend greet without it).
+    expect(mails.map((mail) => mail.data.displayName)).toEqual([null, null]);
 
     await verify(jar, first);
     const verifiedResend = await call<{ status: string }>(verifyResend, "/api/auth/verify/resend", { jar: new Jar(), body: { email, turnstileToken: "t" } });

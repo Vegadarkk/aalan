@@ -106,6 +106,8 @@ describe("password reset", () => {
 
     // "Mot de passe oublié": the new password replaces the squatter's and confirms the address.
     expect((await call(resetRequest, "/api/auth/password/reset", { jar: owner, body: { email, turnstileToken: "t" } })).status).toBe(202);
+    // The squatter's typed name is not in the mail to the unverified address.
+    expect(lastMail(sendMail, "resetPassword", email)?.data.displayName).toBeNull();
     const resetCode = oobCodeOf(await actionUrlOf(lastMail(sendMail, "resetPassword", email)!));
     expect((await call(resetConfirm, "/api/auth/password/confirm", { jar: owner, body: { oobCode: resetCode, password: NEW_PASSWORD } })).status).toBe(200);
     expect((await call<ErrorBody>(login, "/api/auth/login", { jar: attacker, body: { email, password: PASSWORD } })).status).toBe(401);

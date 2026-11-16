@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearPendingContact, rememberRentalDates } from "@/components/rental/rental-day";
-import { favoriteFragment, pendingFavorite, takePendingFavorite, withoutPendingFavorite } from "@/lib/favorites/pending";
+import { PENDING_CLICK_MAX_AGE_MS, favoriteFragment, pendingFavorite, rememberPendingFavorite, takePendingFavorite, withoutPendingFavorite } from "@/lib/favorites/pending";
 
 // The heart clicked before sign-in (audit zone 5 n°8, synthesis §5): it rides in the fragment of
 // `next` and is taken once by the heart of that listing after sign-in.
@@ -11,8 +11,10 @@ function stubLocation(pathname: string, hash: string) {
     const at = url.indexOf("#");
     location.hash = at === -1 ? "" : url.slice(at);
   });
-  vi.stubGlobal("window", { location, history: { state: null, replaceState } });
-  return { location, replaceState };
+  const stored = new Map<string, string>();
+  const localStorage = { getItem: (key: string) => stored.get(key) ?? null, setItem: (key: string, value: string) => void stored.set(key, value), removeItem: (key: string) => void stored.delete(key) };
+  vi.stubGlobal("window", { location, history: { state: null, replaceState }, localStorage });
+  return { location, replaceState, stored };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -34,6 +36,7 @@ describe("pending favorite fragment", () => {
 
   it("is taken once, by the heart of that listing only", () => {
     const { location, replaceState } = stubLocation("/fr/recherche", "#favori=abcd2345");
+    rememberPendingFavorite("abcd2345");
     expect(takePendingFavorite("wxyz6789")).toBe(false);
     expect(replaceState).not.toHaveBeenCalled();
     expect(takePendingFavorite("abcd2345")).toBe(true);
@@ -41,6 +44,26 @@ describe("pending favorite fragment", () => {
     expect(location.hash).toBe("");
     // A second heart of the same listing on the page finds nothing left.
     expect(takePendingFavorite("abcd2345")).toBe(false);
+  });
+
+  it("never adds a favorite from a link alone: the click marker of this browser must name it, recently", () => {
+    const { location, stored } = stubLocation("/fr/annonce/riad-abcd2345", "#favori=abcd2345");
+    expect(takePendingFavorite("abcd2345")).toBe(false);
+    // The key still leaves the address bar.
+    expect(location.hash).toBe("");
+    location.hash = "#favori=abcd2345";
+    rememberPendingFavorite("wxyz6789");
+    expect(takePendingFavorite("abcd2345")).toBe(false);
+    location.hash = "#favori=abcd2345";
+    rememberPendingFavorite("abcd2345", 1_000);
+    expect(takePendingFavorite("abcd2345", 1_000 + PENDING_CLICK_MAX_AGE_MS)).toBe(false);
+    expect(stored.size).toBe(0);
+    location.hash = "#favori=abcd2345";
+    rememberPendingFavorite("abcd2345", 1_000);
+    expect(takePendingFavorite("abcd2345", 2_000)).toBe(true);
+    // Used up: the same link opened again adds nothing.
+    location.hash = "#favori=abcd2345";
+    expect(takePendingFavorite("abcd2345", 3_000)).toBe(false);
   });
 
   it("survives the rental fragment helpers of the listing page", () => {

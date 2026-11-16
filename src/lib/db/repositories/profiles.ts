@@ -1,5 +1,5 @@
 import "server-only";
-import { FieldPath } from "firebase-admin/firestore";
+import { FieldPath, type Transaction } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase/admin";
 import { logger } from "@/lib/logging/logger";
 import { consume } from "@/lib/quota";
@@ -46,8 +46,9 @@ export async function findUserByPublicId(publicId: string): Promise<UserRecord |
 }
 
 /** users/{uid} with Dates (the users repository returns raw Timestamps). */
-export async function getUserRecord(uid: string): Promise<UserRecord | null> {
-  const snapshot = await db().collection(COLLECTIONS.users).doc(uid).get();
+export async function getUserRecord(uid: string, tx?: Transaction): Promise<UserRecord | null> {
+  const ref = db().collection(COLLECTIONS.users).doc(uid);
+  const snapshot = tx ? await tx.get(ref) : await ref.get();
   void consume("firestore.reads", 1);
   return parseUserRecord(snapshot.id, snapshot.data());
 }

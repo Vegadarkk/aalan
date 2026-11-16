@@ -8,7 +8,7 @@ import { auth } from "@/lib/firebase/admin";
 import { readJson } from "@/lib/http/json";
 import { logConnection } from "@/lib/logging/connection-logs";
 import { logger } from "@/lib/logging/logger";
-import { assertQuotas, SIGNUP_QUOTAS } from "@/lib/quota/gate";
+import { assertQuotas, PASSWORD_SIGNUP_QUOTAS } from "@/lib/quota/gate";
 import { consumeLimit, enforceLimit } from "@/lib/rate-limit/limiter";
 import { HttpError, unavailable } from "@/lib/http/errors";
 import { pepperedHash } from "@/lib/security/hash";
@@ -36,7 +36,8 @@ async function existingAccountAnswer(flow: AnonymousFlow, uid: string, email: st
   const allowance = await consumeLimit("signup.existing.email", emailNormHash(email));
   if (allowance.ok) {
     const [profile, account, record] = await Promise.all([getUser(uid), getUserPrivate(uid), auth().getUser(uid).catch(() => null)]);
-    const recipient = { uid, email: record?.email ?? email, displayName: displayNameFor(profile, record, email), locale };
+    // The name greets a verified owner only: an unverified one's was typed by whoever signed up.
+    const recipient = { uid, email: record?.email ?? email, displayName: record?.emailVerified ? displayNameFor(profile, record, email) : null, locale };
     // A closed account's sign-in answers "deactivated": "sign in" would send its owner in circles.
     const closed = closedAddress(account, profile?.status ?? null);
     if (closed) await sendSignupClosedMail({ ...recipient, ...closed });
@@ -74,7 +75,7 @@ async function signup(request: Request): Promise<Response> {
   if (flow.identity.ip48) await enforceLimit("signup.ip48", flow.identity.ip48);
   // Firestore writes degraded (§2): the documents would fail after the Auth record; refused first.
   // Before the device limit (3 a day): a refusal must not use up the retry its Retry-After invites.
-  await assertQuotas(SIGNUP_QUOTAS);
+  await assertQuotas(PASSWORD_SIGNUP_QUOTAS);
   await enforceLimit("signup.device", flow.identity.deviceKey);
   await checkTurnstile(flow, input.turnstileToken, "signup");
   if (!mailchecker.isValid(input.email)) throw new HttpError(400, "disposable_email");
@@ -105,7 +106,8 @@ async function signup(request: Request): Promise<Response> {
     if (isEmailTaken(error)) return existingAccountAnswer(flow, error.uid, input.email, input.locale);
     throw error;
   }
-  await sendVerificationMail({ uid, email: input.email, displayName: input.displayName, locale: input.locale, ...(input.next ? { next: input.next } : {}) });
+  // No name: the address is not proven yet, and the name is the caller's text.
+  await sendVerificationMail({ uid, email: input.email, displayName: null, locale: input.locale, ...(input.next ? { next: input.next } : {}) });
   await logConnection({ uid, event: "signup", ip: flow.identity.ip });
   await uniformDuration(flow);
   return respond(flow, VERIFICATION_SENT, { status: 202 });
@@ -116,13 +118,13 @@ async function verifyResend(request: Request): Promise<Response> {
   const flow = beginAnonymous(request);
   const input = await readJson(request, verifyResendSchema);
   await enforceLimit("reset.ip", flow.identity.ipBucket);
+  await enforceLimit("reset.ip.day", flow.identity.ipBucket);
   // Turnstile before the per-e-mail counter (same reason as the password reset).
   await checkTurnstile(flow, input.turnstileToken, "verify-resend");
   await enforceLimit("verify.resend.uid", emailNormHash(input.email));
   const record = await userByEmail(input.email);
   if (record?.email && !record.emailVerified && !record.disabled) {
-    const profile = await getUser(record.uid);
-    await sendVerificationMail({ uid: record.uid, email: record.email, displayName: displayNameFor(profile, record, record.email), locale: input.locale });
+    await sendVerificationMail({ uid: record.uid, email: record.email, displayName: null, locale: input.locale });
   }
   const body: VerifyResendResponse = { status: "verification_sent" };
   // Same duration whether a pending account exists (timing enumeration).

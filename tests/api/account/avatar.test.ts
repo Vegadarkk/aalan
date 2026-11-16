@@ -139,6 +139,18 @@ describe("profile photo", () => {
     expect((await adminCall(staffRemoveRoute, "DELETE", path, { as: moderator, params: { uid: someone.uid }, body: { details: "Une deuxième fois, déjà retirée." } })).status).toBe(409);
   });
 
+  it("keeps the audit entry and the statement of reasons for a note longer than the audit reason", async () => {
+    const someone = await member();
+    expect((await send(someone, await png(300, 400), "image/png")).status).toBe(200);
+    vi.mocked(sendMail).mockClear();
+    const details = `Photo d'une autre personne. ${"Détail du signalement. ".repeat(40)}`.slice(0, 900);
+    const removed = await adminCall(staffRemoveRoute, "DELETE", `/api/admin/users/${someone.uid}/avatar`, { as: moderator, params: { uid: someone.uid }, body: { details } });
+    expect(removed.status).toBe(204);
+    const [entry] = await audits("user.avatar_removed", someone.uid);
+    expect(String((entry as { reason?: string }).reason)).toHaveLength(500);
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ template: "decisionNotice" }));
+  });
+
   it("is deleted with the account (closure step)", async () => {
     const someone = await member();
     expect((await send(someone, await png(300, 400), "image/png")).status).toBe(200);

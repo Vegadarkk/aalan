@@ -124,6 +124,38 @@ describe("notifier appeals", () => {
     expect(again.status).toBe(409);
   });
 
+  it("caps the outcome mails sent to an address a visitor typed, whatever the number of decisions", async () => {
+    const email = "stranger.outcomes@example.com";
+    for (let index = 0; index < 6; index += 1) {
+      const { id } = await publishedListing();
+      expect((await report({ ...listingNotice(id, "misleading"), name: "Visiteur Test", email }, { as: visitor() })).status).toBe(201);
+      expect((await adminCall<DecideResponse>(decideRoute, "POST", "/api/admin/decisions", { as: moderator, body: { target: `listing:${id}`, templateId: "listing.no_action" } })).status).toBe(201);
+    }
+    expect(vi.mocked(sendMail).mock.calls.filter(([mail]) => mail.template === "reportOutcome" && mail.to === email)).toHaveLength(5);
+  });
+
+  it("shows each party its own appeal only: the notifier never reads the seller's appeal or the reviewer's note to him", async () => {
+    const { id, seller } = await publishedListing();
+    const reporter = await member();
+    const notice = await report(listingNotice(id, "counterfeit"), { as: reporter });
+    const removed = await adminCall<DecideResponse>(decideRoute, "POST", "/api/admin/decisions", { as: moderator, body: { target: `listing:${id}`, templateId: "listing.remove.counterfeit" } });
+    expect(removed.status).toBe(201);
+    const decisionId = removed.body.decisionId;
+    const token = mailTo(sendMail, "reportOutcome", reporter.email)?.data.appealToken as string;
+    expect(token).toBeTruthy();
+    expect((await publicCall(appealRoute, "POST", "/api/appeals", { as: seller, body: { decisionId, text: "Le produit est authentique, facture à l'appui." } })).status).toBe(201);
+    const note = "La facture ne correspond pas au modèle annoncé.";
+    expect((await adminCall(reviewRoute, "POST", `/api/admin/appeals/${decisionId}`, { as: reviewer, params: { decisionId }, body: { outcome: "upheld", note } })).status).toBe(200);
+
+    const mine = await publicCall<{ items: AppealableDecision[] }>(myDecisionsRoute, "GET", "/api/appeals", { as: seller });
+    expect(mine.body.items.find((item) => item.decisionId === decisionId)?.appeal).toMatchObject({ status: "upheld", note });
+    const shown = await publicCall<{ decision: AppealableDecision }>(linkViewRoute, "GET", `/api/appeals/link?token=${encodeURIComponent(token)}`);
+    expect(shown.status).toBe(200);
+    expect(shown.body.decision).toMatchObject({ decisionId, by: "reporter", appeal: null });
+    expect(JSON.stringify(shown.body)).not.toContain(note);
+    expect(notice.status).toBe(201);
+  });
+
   it("marks the proposal with the reviewer's own verdict when the review carries one", async () => {
     const { id } = await publishedListing();
     const reporter = await member();

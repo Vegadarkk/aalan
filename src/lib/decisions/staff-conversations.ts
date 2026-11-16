@@ -37,6 +37,18 @@ export interface StaffReader {
   role: "moderator" | "admin";
 }
 
+function authorityHolds(holds: unknown): string[] {
+  return (Array.isArray(holds) ? holds : []).filter((hold): hold is string => typeof hold === "string" && hold.startsWith(AUTHORITY_PREFIX)).map((hold) => hold.slice(AUTHORITY_PREFIX.length));
+}
+
+/** An open authority request holds this conversation (D18: staff may then read any of its messages). */
+export async function heldByOpenAuthority(cid: string): Promise<boolean> {
+  if (!cidSchema.safeParse(cid).success) return false;
+  const snapshot = await conversationRef(cid).get();
+  void consume("firestore.reads", 1);
+  return snapshot.exists && (await openAuthorityIds(authorityHolds(snapshot.get("legalHold")))).length > 0;
+}
+
 export async function staffConversation(reader: StaffReader, cid: string, reason: string, options: { ip?: string; now?: Date } = {}): Promise<StaffConversationView> {
   const now = options.now ?? new Date();
   if (!cidSchema.safeParse(cid).success) throw notFound();
@@ -45,11 +57,7 @@ export async function staffConversation(reader: StaffReader, cid: string, reason
   const snapshot = await conversationRef(cid).get();
   void consume("firestore.reads", 1);
   if (!snapshot.exists) throw notFound();
-  const holds: unknown = snapshot.get("legalHold");
-  const authorityIds = (Array.isArray(holds) ? holds : [])
-    .filter((hold): hold is string => typeof hold === "string" && hold.startsWith(AUTHORITY_PREFIX))
-    .map((hold) => hold.slice(AUTHORITY_PREFIX.length));
-  const openAuthorities = await openAuthorityIds(authorityIds);
+  const openAuthorities = await openAuthorityIds(authorityHolds(snapshot.get("legalHold")));
   if (reports.length === 0 && openAuthorities.length === 0) throw forbidden("no report or authority request on this conversation");
 
   // Under an authority request every original is shown; under reports only the reported messages'.

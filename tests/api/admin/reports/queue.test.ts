@@ -254,6 +254,26 @@ describe("target view", () => {
     expect(audit.docs.map((doc) => doc.data())).toEqual([expect.objectContaining({ action: "message.read", actorUid: moderator.uid, automated: false })]);
   });
 
+  it("never shows a message nobody reported, unless an open authority request holds its conversation", async () => {
+    const { id, seller } = await publishedListing();
+    const buyer = await member();
+    const { cid, mid } = await seedConversation(id, buyer, seller, buyer, "Message privé jamais signalé");
+    await db().collection(COLLECTIONS.conversations).doc(cid).collection(COLLECTIONS.evidence).doc(mid).set({ text: "Original privé", flags: ["external_url"], reason: "masked", createdAt: new Date() });
+    const key = encodeURIComponent(`message:${cid}/${mid}`);
+    const refused = await admin<{ view: ReportTargetView }>(getTarget, `/api/admin/reports/target?key=${key}`, { staff: moderator });
+    expect(refused.status).toBe(404);
+    expect((await db().collection(COLLECTIONS.auditLogs).where("target.id", "==", `${cid}/${mid}`).get()).empty).toBe(true);
+
+    const authorityId = "A".repeat(20);
+    await db().collection(COLLECTIONS.authorityRequests).doc(authorityId).set({ status: "open" });
+    await db().collection(COLLECTIONS.conversations).doc(cid).update({ legalHold: [`authority:${authorityId}`] });
+    const held = await admin<{ view: ReportTargetView }>(getTarget, `/api/admin/reports/target?key=${key}`, { staff: moderator });
+    expect(held.status).toBe(200);
+    expect(held.body.view.snapshot).toMatchObject({ type: "message", original: "Original privé" });
+    await db().collection(COLLECTIONS.authorityRequests).doc(authorityId).update({ status: "closed" });
+    expect((await admin(getTarget, `/api/admin/reports/target?key=${key}`, { staff: moderator })).status).toBe(404);
+  });
+
   it("answers 404 for an unknown target and 400 for a malformed key", async () => {
     expect((await admin(getTarget, "/api/admin/reports/target?key=listing:zzzz2345", { staff: moderator })).status).toBe(404);
     for (const key of ["listing:ABC", "nope:1", "listing", ""]) {

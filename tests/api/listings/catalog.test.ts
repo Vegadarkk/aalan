@@ -277,6 +277,10 @@ describe("Pro catalogue: promotions", () => {
     expect(stored.moderation).toMatchObject({ state: "needs_review", flags: expect.arrayContaining(["promo_check"]) });
     expect(stored.adsEligible).toBe(false);
     expect(lastMail(sendMail, "listingPendingReview", owner.email)?.data).toMatchObject({ listingId: id });
+    // An edit of the held listing is screened again, but the promotion check stays a moderator's.
+    const edited = await api<ListingBody & ErrorBody>(patch, "PATCH", `/api/listings/${id}`, { member: owner, body: { title: "Chemise en lin coupe droite, neuve" } });
+    expect(edited.status, JSON.stringify(edited.body)).toBe(200);
+    expect((await getListing(id))?.moderation).toMatchObject({ state: "needs_review", flags: expect.arrayContaining(["promo_check"]) });
   });
 
   it("keeps promotions for Pros, on a live listing", async () => {

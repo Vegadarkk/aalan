@@ -18,7 +18,7 @@ import { evidenceRef, messageRef, readConversationFacts } from "@/lib/reports/ta
 import { splitMessageId } from "@/lib/reports/target-key";
 import { objectStore, type ObjectStore } from "@/lib/storage";
 import { photosArePrivate } from "@/lib/uploads/policy";
-import { maskPii } from "./mask";
+import { maskPii, maskPiiCounted } from "./mask";
 import { USER_FIELDS, userField } from "./prompts/shared";
 import type { AiImage, AiTarget, AiTask, AiTaskInput, ListingFacts } from "./types";
 
@@ -66,17 +66,23 @@ export function inputHash(task: AiTask, target: AiTarget, text: string, images: 
   return hash.digest("hex");
 }
 
-function listingLines(listing: ListingRecord, names: readonly string[]): string[] {
+function listingLines(listing: ListingRecord, names: readonly string[]): { lines: string[]; nameMasks: number } {
+  const title = maskPiiCounted(listing.title, names);
+  const description = maskPiiCounted(listing.description, names);
+  const nameMasks = title.masked + description.masked;
   const price = listing.isDonation ? "don (gratuit)" : listing.price === null ? "à discuter" : `${listing.price} MAD${listing.priceNegotiable ? " (négociable)" : ""}`;
-  return [
+  const lines = [
     `Vendeur : ${listing.sellerType === "pro" ? "professionnel" : "particulier"}`,
     `Catégorie : ${listing.categoryId ?? "?"} / ${listing.subcategoryId ?? "?"}`,
     `Ville : ${listing.location?.citySlug ?? "?"}`,
     `Prix : ${price}`,
     ...(listing.condition ? [`État : ${listing.condition}`] : []),
-    `Titre : ${userField(USER_FIELDS.title, maskPii(listing.title, names))}`,
-    `Description :\n${userField(USER_FIELDS.description, maskPii(listing.description, names))}`,
+    `Titre : ${userField(USER_FIELDS.title, title.text)}`,
+    `Description :\n${userField(USER_FIELDS.description, description.text)}`,
+    // The seller chooses their name: a word it hides reads as a name, so the agent is told.
+    ...(nameMasks > 0 ? [`Passages masqués par le nom du vendeur : ${nameMasks}`] : []),
   ];
+  return { lines, nameMasks };
 }
 
 /** A removal decision in the listing's history (index target.id asc, createdAt desc), a moderator's or the agent's own. */
@@ -85,7 +91,7 @@ async function removedBefore(listingId: string): Promise<boolean> {
   return history.some((decision) => decision.action === "remove");
 }
 
-function listingFacts(listing: ListingRecord, previouslyRejected: boolean, terms: CompiledProhibited): ListingFacts {
+function listingFacts(listing: ListingRecord, previouslyRejected: boolean, terms: CompiledProhibited, nameMasks: number): ListingFacts {
   return {
     kind: "listing",
     status: listing.status,
@@ -96,6 +102,7 @@ function listingFacts(listing: ListingRecord, previouslyRejected: boolean, terms
     openReports: listing.moderation.openReports,
     prohibitedHard: containsProhibited(`${listing.title}\n${listing.description}`, terms).hard,
     previouslyRejected,
+    nameMasks,
   };
 }
 
@@ -110,9 +117,10 @@ export async function listingScreenInput(listingId: string, deps: InputDeps = {}
   // Published: only what the automated pre-moderation let through (D20); a moderator's approval stands.
   if (listing.status === "published" && listing.moderation.state !== "auto_ok") return null;
   const names = [listing.sellerName];
+  const described = listingLines(listing, names);
   const text = [
     "Annonce à examiner.",
-    ...listingLines(listing, names),
+    ...described.lines,
     `Signaux de la pré-modération : ${listing.moderation.flags.join(", ") || "aucun"}`,
   ].join("\n");
   const images = await (deps.images ?? loadListingImages)(listing);
@@ -122,7 +130,7 @@ export async function listingScreenInput(listingId: string, deps: InputDeps = {}
   const target: AiTarget = { type: "listing", id: listing.id };
   return {
     listing,
-    input: { task: "listing_screen", target, text, images, facts: listingFacts(listing, previouslyRejected, prohibited), inputHash: inputHash("listing_screen", target, text, images) },
+    input: { task: "listing_screen", target, text, images, facts: listingFacts(listing, previouslyRejected, prohibited, described.nameMasks), inputHash: inputHash("listing_screen", target, text, images) },
   };
 }
 
@@ -171,7 +179,7 @@ export async function reportTriageInput(reportId: string, deps: InputDeps = {}):
     const listing = await getListing(report.target.id);
     if (listing) {
       names.push(listing.sellerName);
-      lines.push("Contenu signalé (annonce) :", ...listingLines(listing, names));
+      lines.push("Contenu signalé (annonce) :", ...listingLines(listing, names).lines);
       images = await (deps.images ?? loadListingImages)(listing);
     } else {
       lines.push("Contenu signalé : annonce introuvable.");
@@ -225,7 +233,7 @@ export async function appealReviewInput(decisionId: string): Promise<{ input: Ai
     const listing = await getListing(decision.target.id);
     if (listing) {
       names.push(listing.sellerName);
-      lines.push("Annonce concernée :", ...listingLines(listing, names));
+      lines.push("Annonce concernée :", ...listingLines(listing, names).lines);
     }
   }
   lines.push(`Recours (${decision.appeal.by === "reporter" ? "par le signalant" : "par la personne concernée"}) :\n${userField(USER_FIELDS.appeal, maskPii(decision.appeal.text ?? "", names))}`);

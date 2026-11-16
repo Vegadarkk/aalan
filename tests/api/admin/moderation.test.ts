@@ -31,6 +31,8 @@ import { createSessionForUid } from "@/lib/firebase/session";
 import { HttpError } from "@/lib/http/errors";
 import { verifyAppealToken } from "@/lib/decisions/appeal-token";
 import { getLegalConfig } from "@/lib/legal/config";
+import { applyAutoDecision } from "@/lib/ai/apply";
+import { approvalBlocker } from "@/lib/listings/approval-guard";
 import type { ModerationQueueResponse, ModerationReview } from "@/lib/listings/moderation-actions";
 import { sendMail } from "@/lib/mail";
 import { REJECT_REASONS, type ModerationDecisionResponse } from "@/lib/moderation/decisions";
@@ -308,6 +310,23 @@ describe("decisions", () => {
     expect(capturedMails(sendMail).some((sent) => sent.template === "listingApproved")).toBe(false);
     const rejected = await admin<ModerationDecisionResponse>(postDecision, "POST", `/api/admin/moderation/${id}`, { staff: adminStaff, body: { action: "reject", version, reason: "scam" } });
     expect(rejected.status).toBe(200);
+  });
+
+  it("keeps the held listing of a suspended or closed seller out of the agent's automatic approval", async () => {
+    for (const status of ["suspended", "closed"] as const) {
+      const seller = await member({ displayName: "Yassine Suspendu" });
+      const id = await heldListing(seller);
+      await db().collection(COLLECTIONS.users).doc(seller.uid).update({ status });
+      const held = (await getListing(id))!;
+      sendMailMock.mockClear();
+      expect(await applyAutoDecision("approve", { listingId: id, version: held.version, aiDecisionId: "agent-test", confidence: 0.99 }), status).toEqual({ applied: false, reason: "illegal" });
+      expect((await getListing(id))?.status).toBe("pending_review");
+      expect(capturedMails(sendMail).some((sent) => sent.template === "listingApproved")).toBe(false);
+      // The same check inside a transaction sees the state as of that transaction.
+      expect(await db().runTransaction((tx) => approvalBlocker(held, tx))).toBe("account_suspended");
+      await db().collection(COLLECTIONS.users).doc(seller.uid).update({ status: "active" });
+      expect(await db().runTransaction((tx) => approvalBlocker(held, tx))).toBeNull();
+    }
   });
 
   it("validates the body: other without details, unknown reason, extra field (400)", async () => {

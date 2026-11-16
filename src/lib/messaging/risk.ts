@@ -14,7 +14,7 @@ import { detectSensitiveDetailed } from "@/lib/moderation/sensitive";
 // hosts such as wa.me and t.me, bare domains on a short TLD list), with spans so they can be
 // masked; e-mail addresses are neither masked nor flagged (their domain is not a link).
 
-const EMAIL = /[a-z0-9._%+-]+\s?(?:@|\(at\)|\[at\]|\{at\}|\s+arobase\s+)\s?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}/gi;
+const EMAIL = /(?<![a-z0-9._%+-])[a-z0-9._%+-]+\s?(?:@|\(at\)|\[at\]|\{at\}|\s+arobase\s+)\s?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}/gi;
 const SCHEME_URL = /\b(?:https?:\/\/|www\.)[^\s<>"'⟦⟧]+/gi;
 const KNOWN_HOSTS =
   /(?<![a-z0-9.-])(?:wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|whatsapp\.com|t\.me|telegram\.me|telegram\.org|instagram\.com|facebook\.com|fb\.com|fb\.me|m\.me|tiktok\.com|youtube\.com|youtu\.be|bit\.ly|linktr\.ee|snapchat\.com|avito\.ma|marocannonces\.com)(?:\/[^\s<>"'⟦⟧]*)?/gi;

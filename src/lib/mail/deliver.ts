@@ -5,7 +5,7 @@ import { inviteExpiry } from "@/lib/auth/staff-state";
 import { serverEnv } from "@/lib/env";
 import { getLegalConfig } from "@/lib/legal/config";
 import { logger } from "@/lib/logging/logger";
-import { consume, isDegraded, isExhausted, nextReset, raiseTo } from "@/lib/quota";
+import { consume, headroom, isDegraded, isExhausted, nextReset, raiseTo } from "@/lib/quota";
 import { isValkeyConfigured, valkey } from "@/lib/valkey/clients";
 import { renderMail } from "./render";
 import { isSuppressed } from "./suppressions";
@@ -44,6 +44,14 @@ export class MailDeferredError extends Error {
 }
 
 const RESEND_QUOTAS = ["resend.daily", "resend.monthly"] as const;
+
+/**
+ * Shares of the daily provider counts that anonymous mail (types.ts `anonymous`) may reach: past
+ * half of Resend it moves to Brevo, past 80 % of Brevo it waits for the next reset. Members'
+ * transactional mail keeps the rest of Resend below its 90 % gate, their security mail the rest.
+ */
+export const ANONYMOUS_RESEND_SHARE = 0.5;
+export const ANONYMOUS_BREVO_SHARE = 0.8;
 type ResendQuota = (typeof RESEND_QUOTAS)[number];
 
 /** A provider refusing the key or the domain is tried again hourly, not five times in eight minutes. */
@@ -208,6 +216,11 @@ export async function deliverMail(job: MailJob): Promise<DeliverOutcome> {
       }
       throw deferral(degraded.map((id) => nextReset(id)), "Resend reserved for security mails");
     }
+  }
+  if (mail.anonymous && (await headroom("resend.daily", ANONYMOUS_RESEND_SHARE)) === 0) {
+    const brevoLeft = fallbackKey ? await headroom("brevo.daily", ANONYMOUS_BREVO_SHARE) : 0;
+    if (fallbackKey && brevoLeft !== 0) return sendBrevo(fallbackKey, rendered, mail, "part Resend des e-mails sans session atteinte");
+    throw deferral([nextReset("resend.daily"), ...(fallbackKey ? [nextReset("brevo.daily")] : [])], "anonymous mail share spent");
   }
   const resendBackAt = security ? await resendAvailableAt() : undefined;
   if (resendBackAt) {

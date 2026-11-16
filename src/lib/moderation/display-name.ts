@@ -13,8 +13,13 @@ export const DISPLAY_NAME_MAX_DIGITS = 5;
 
 export type DisplayNameContact = "phone" | "link";
 
+const DOTTED_HOST = /[\p{L}\p{N}-]{2,}\.\p{L}{2,}/u;
+
 export function displayNameContact(name: string): DisplayNameContact | null {
   const digits = name.match(/\p{Nd}/gu)?.length ?? 0;
   if (digits > DISPLAY_NAME_MAX_DIGITS) return "phone";
+  // Any dotted host ("lure-site.top"), whatever its ending: a name never needs one ("M. Alami" and
+  // initials keep their dot).
+  if (DOTTED_HOST.test(name)) return "link";
   return findContacts(name).length > 0 ? "link" : null;
 }

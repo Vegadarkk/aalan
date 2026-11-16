@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { GUIDE_SOURCES } from "@/content/guide";
-import { acceptLinkState, changeDistance, classifyFetch, hammingDistance, linkDisplay, linkFlags, nextLinkState, pageText, simhash, type LinkState, type PageFetch } from "@/lib/guide/check";
+import { acceptLinkState, changeDistance, classifyFetch, hammingDistance, LINK_DETAIL_MAX, LINK_FINAL_URL_MAX, linkDisplay, linkFlags, nextLinkState, pageText, simhash, type LinkState, type PageFetch } from "@/lib/guide/check";
 import { fetchGuidePage, isPrivateAddress, MAX_BODY_BYTES } from "@/lib/guide/fetch-page";
 
 // Link checker of the admin procedures guide (design guide-demarches G4): classification of a fetch,
@@ -36,6 +36,18 @@ describe("fingerprint", () => {
     expect(pageText("<html><head><title>A &amp; B</title><style>p{}</style></head><body><script>x()</script><p>Bonjour&nbsp;<b>tout</b> le monde</p><!-- c --></body></html>")).toEqual({ title: "A & B", text: "Bonjour tout le monde" });
   });
 
+  it("reads a page in time linear in its size, whatever openers it repeats without closing them", () => {
+    expect(pageText("a < b et c <> d <x")).toEqual({ title: "", text: "a d <x" });
+    expect(pageText("<p>un</p><!-- pas fermé <b>deux</b>")).toEqual({ title: "", text: "un deux" });
+    expect(pageText("<script>x()<p>visible</p>")).toEqual({ title: "", text: "x() visible" });
+    for (const opener of ["<", "<!--", "<title", "<script ", "<style>"]) {
+      const body = opener.repeat(Math.ceil(400_000 / opener.length));
+      const started = performance.now();
+      pageText(body);
+      expect(performance.now() - started, opener).toBeLessThan(500);
+    }
+  });
+
   it("keeps near pages within a few bits and moves a rewritten page far", () => {
     const text = "La mutation inscrit l'acheteur comme nouveau propriétaire du véhicule auprès de la NARSA. Le vendeur présente la carte grise, le contrat de vente légalisé et sa carte nationale. ".repeat(6);
     const a = simhash(text);
@@ -53,6 +65,14 @@ const later = (weeks: number) => new Date(NOW.getTime() + weeks * 7 * 86_400_000
 const ok = { outcome: "ok" as const, detail: "HTTP 200", httpStatus: 200, finalUrl: URL_A, fingerprint: { simhash: "0123456789abcdef", sha256: "a".repeat(64) } };
 
 describe("link state", () => {
+  it("cuts a long redirect target or title instead of storing what the reader would drop", () => {
+    const far = `https://elsewhere.example/${"x".repeat(2_000)}`;
+    const state = nextLinkState(undefined, URL_A, { outcome: "offsite", detail: `redirection vers ${far}`, httpStatus: 302, finalUrl: far }, NOW);
+    expect(state.detail).toHaveLength(LINK_DETAIL_MAX);
+    expect(state.finalUrl).toHaveLength(LINK_FINAL_URL_MAX);
+    expect(state.outcome).toBe("offsite");
+  });
+
   it("counts a failure streak, keeps the last good fingerprint and takes the first as baseline", () => {
     const first = nextLinkState(undefined, URL_A, ok, NOW);
     expect(first).toMatchObject({ streak: 0, lastOkAt: NOW.toISOString(), baseline: { simhash: "0123456789abcdef", at: NOW.toISOString() } });

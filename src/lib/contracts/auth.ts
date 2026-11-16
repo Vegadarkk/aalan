@@ -28,7 +28,8 @@ export const displayNameSchema = z
   .string()
   .trim()
   .min(2)
-  .max(DISPLAY_NAME_MAX)
+  // abort: a longer value stops here; the checks below never read an oversized body.
+  .max(DISPLAY_NAME_MAX, { abort: true })
   .regex(/^[\p{L}\p{M}\p{N} .'’-]+$/u)
   // No phone number or link in a name shown on every listing and conversation (Z1-04, B6).
   .refine((name) => displayNameContact(name) === null, { message: "contact" });

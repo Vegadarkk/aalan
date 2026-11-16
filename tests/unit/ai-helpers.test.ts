@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_AI } from "@/config/ai";
 import { planApplication } from "@/lib/ai/apply";
 import { costMicroUsd, latchUntil, priceOf } from "@/lib/ai/budget";
-import { maskPii, MASKS } from "@/lib/ai/mask";
+import { maskPii, maskPiiCounted, MASKS } from "@/lib/ai/mask";
 import { clampOutput, escalation, verdictOf, withVerdict } from "@/lib/ai/output";
 import { PROMPT_GENERATION, PROMPT_VERSIONS, systemPrompt } from "@/lib/ai/prompts";
 import { USER_FIELDS, userField } from "@/lib/ai/prompts/shared";
@@ -20,6 +20,12 @@ import { AI_TASKS, ProviderError, RetryableAiError, type AiOutput, type AiTaskIn
 // fallbacks' parsers, what the agent may apply alone, the user-field tags and the prompt versions.
 
 describe("maskPii", () => {
+  it("counts the places a display name masks: a name of ordinary words shows up", () => {
+    expect(maskPiiCounted("Karim Benali vend son vélo. Contactez Karim.", ["Karim Benali"])).toEqual({ text: `${MASKS.name} vend son vélo. Contactez ${MASKS.name}.`, masked: 2 });
+    expect(maskPiiCounted("iPhone 15 neuf, boîte iPhone, facture", ["Iphone Neuf"]).masked).toBe(3);
+    expect(maskPiiCounted("Vélo de course", ["Karim Benali"]).masked).toBe(0);
+  });
+
   it("masks phones, e-mails, links and the given names", () => {
     const text = "Bonjour, je suis Karim Benali. Appelez le 06 12 34 56 78 ou écrivez à karim.b@gmail.com, voir wa.me/212612345678 et www.exemple.ma";
     const masked = maskPii(text, ["Karim Benali"]);
@@ -116,7 +122,7 @@ describe("fallback parsers", () => {
       target: { type: "listing", id: "abcdefgh" },
       text: "",
       images: [],
-      facts: { kind: "listing", status: "pending_review", version: 1, flags: [], score: 0, hidden: false, openReports: 0, prohibitedHard: [], previouslyRejected: false, ...facts },
+      facts: { kind: "listing", status: "pending_review", version: 1, flags: [], score: 0, hidden: false, openReports: 0, prohibitedHard: [], previouslyRejected: false, nameMasks: 0, ...facts },
       inputHash: "",
     });
     expect(rulesOutput(input({ prohibitedHard: ["weapons"] }))).toMatchObject({ action: "hold", policy: "illegal_item" });
@@ -128,7 +134,7 @@ describe("fallback parsers", () => {
 });
 
 describe("planApplication (D20)", () => {
-  const held: ListingFacts = { kind: "listing", status: "pending_review", version: 4, flags: [], score: 5, hidden: false, openReports: 0, prohibitedHard: [], previouslyRejected: false };
+  const held: ListingFacts = { kind: "listing", status: "pending_review", version: 4, flags: [], score: 5, hidden: false, openReports: 0, prohibitedHard: [], previouslyRejected: false, nameMasks: 0 };
   const out = (output: Partial<AiOutput>): AiOutput => ({ action: "approve", policy: "none", severity: "none", confidence: 0.95, rationale: "r", ...output });
   const plan = (provider: Parameters<typeof planApplication>[1], output: AiOutput, facts = held, config = DEFAULT_AI) => planApplication("listing_screen", provider, output, facts, config).kind;
 
@@ -148,6 +154,14 @@ describe("planApplication (D20)", () => {
     expect(plan("anthropic", out({ confidence: 1 }), { ...rejectedBefore, flags: ["new_account"] }, relaxed)).toBe("record");
     // Obvious spam is still rejected alone: the rule protects the human re-review, not the spammer.
     expect(plan("anthropic", out({ action: "reject", policy: "spam", confidence: 0.98 }), rejectedBefore)).toBe("auto_reject_spam");
+  });
+
+  it("keeps for a moderator a listing its seller's display name masks in more than one place", () => {
+    expect(plan("anthropic", out({ confidence: 1 }), { ...held, nameMasks: 1 })).toBe("auto_approve");
+    expect(plan("anthropic", out({ confidence: 1 }), { ...held, nameMasks: 2 })).toBe("record");
+    const published = { ...held, status: "published", nameMasks: 3 };
+    expect(planApplication("listing_screen", "anthropic", out({ confidence: 1 }), published, DEFAULT_AI)).toEqual({ kind: "system_report", reasonId: "other" });
+    expect(planApplication("listing_screen", "anthropic", out({ confidence: 1 }), { ...published, nameMasks: 1 }, DEFAULT_AI)).toEqual({ kind: "record" });
   });
 
   it("lets the owner relax the flag rule with autoApproveSoftFlags", () => {

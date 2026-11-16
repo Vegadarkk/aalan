@@ -275,6 +275,8 @@ describe("sign-up, verification, session, profile, logout", () => {
     const mails = capturedMails(sendMail).filter((mail): mail is MailJob<"verifyEmail"> => mail.template === "verifyEmail" && mail.to === email);
     expect(mails).toHaveLength(2);
     expect(actionLinkOf(mails[1]!)).toEqual(actionLinkOf(first));
+    // The typed name never reaches an address nobody proved (sign-up and resend greet without it).
+    expect(mails.map((mail) => mail.data.displayName)).toEqual([null, null]);
 
     await verify(jar, first);
     const verifiedResend = await call<{ status: string }>(verifyResend, "/api/auth/verify/resend", { jar: new Jar(), body: { email, turnstileToken: "t" } });

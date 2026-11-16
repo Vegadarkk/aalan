@@ -18,29 +18,48 @@ function replaceAllLiteral(text: string, needle: string, replacement: string): s
   return needle ? text.split(needle).join(replacement) : text;
 }
 
-/** Replaces each known name (whole word, any case) by `[nom]`; longer names first. */
-export function maskNames(text: string, names: readonly (string | null | undefined)[]): string {
+/**
+ * Replaces each known name (whole word, any case) by `[nom]`; longer names first. `masked` counts
+ * the places replaced: a member chooses their display name, so a name made of ordinary words hides
+ * those words from the agent; the listing screen keeps a listing its seller's name masks in more
+ * than one place for a moderator (facts.nameMasks, src/lib/ai/apply.ts).
+ */
+export function maskNamesCounted(text: string, names: readonly (string | null | undefined)[]): { text: string; masked: number } {
   const unique = [...new Set(names.map((name) => (name ?? "").trim()).filter((name) => name.length >= NAME_MIN))].sort((a, b) => b.length - a.length);
   let out = text;
+  let masked = 0;
+  const mask = () => {
+    masked += 1;
+    return MASKS.name;
+  };
   for (const name of unique) {
     // Unicode-aware word boundaries: a name is not masked inside a longer word.
     const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, "giu");
-    out = out.replace(pattern, MASKS.name);
+    out = out.replace(pattern, mask);
     // Each part of a multi-word name too ("Karim Benali" -> "Karim", "Benali").
     for (const part of name.split(/\s+/)) {
       if (part.length < 3 || part === name) continue;
-      out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(part)}(?![\\p{L}\\p{N}])`, "giu"), MASKS.name);
+      out = out.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(part)}(?![\\p{L}\\p{N}])`, "giu"), mask);
     }
   }
-  return out;
+  return { text: out, masked };
 }
 
-/** Text with phones, e-mails, links and the given names masked. */
-export function maskPii(text: string, names: readonly (string | null | undefined)[] = []): string {
-  if (!text) return "";
+export function maskNames(text: string, names: readonly (string | null | undefined)[]): string {
+  return maskNamesCounted(text, names).text;
+}
+
+/** Text with phones, e-mails, links and the given names masked; `masked` as in maskNamesCounted. */
+export function maskPiiCounted(text: string, names: readonly (string | null | undefined)[] = []): { text: string; masked: number } {
+  if (!text) return { text: "", masked: 0 };
   let out = text;
   // E-mails and links first: a phone number inside a URL is masked with the URL.
   for (const contact of findContacts(out)) out = replaceAllLiteral(out, contact.raw, contact.kind === "email" ? MASKS.email : MASKS.url);
   for (const phone of findPhoneNumbers(out)) out = replaceAllLiteral(out, phone.raw, MASKS.phone);
-  return maskNames(out, names);
+  return maskNamesCounted(out, names);
+}
+
+/** Text with phones, e-mails, links and the given names masked. */
+export function maskPii(text: string, names: readonly (string | null | undefined)[] = []): string {
+  return maskPiiCounted(text, names).text;
 }

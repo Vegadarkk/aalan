@@ -7,6 +7,7 @@ import { listDecisionsForUser, type ModerationDecisionRecord } from "@/lib/db/re
 import { getUserRecord } from "@/lib/db/repositories/profiles";
 import { timestampsToDates } from "@/lib/db/repositories/timestamps";
 import { aiDecisionSchema, COLLECTIONS, HIDE_SIGNALS, messageEvidenceSchema, moderationDecisionSchema, type AiDecisionDoc, type HideSignal } from "@/lib/db/schemas";
+import { heldByOpenAuthority } from "@/lib/decisions/staff-conversations";
 import { db } from "@/lib/firebase/admin";
 import { HttpError } from "@/lib/http/errors";
 import { staffMemberText, staffPlaceLabel } from "@/lib/messaging/member-text";
@@ -456,7 +457,9 @@ export async function reportTargetView(key: string, staff: TargetViewReader, ide
   } else if (target.type === "user") {
     ownerUid = target.id;
   } else if (target.type === "message") {
-    snapshot = await messageSnapshot(target.id, staff, identity, now);
+    // D18 need to know: a message nobody reported is read only under an open authority request.
+    const cid = splitMessageId(target.id)?.cid;
+    if (reports.length > 0 || (cid && (await heldByOpenAuthority(cid)))) snapshot = await messageSnapshot(target.id, staff, identity, now);
   } else if (target.type === "review") {
     const review = await getReview(target.id);
     if (review) {

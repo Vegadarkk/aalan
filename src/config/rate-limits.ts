@@ -49,6 +49,9 @@ export const RATE_LIMITS = {
   // Password reset: 3 per hour per normalized e-mail, IP in escalation.
   "reset.email": { points: 3, duration: HOUR, policy: "closed", key: "email" },
   "reset.ip": { points: 30, duration: HOUR, policy: "closed", key: "ip" },
+  // Daily cap of the same bucket (reset and verification resend): 30 an hour all day long would
+  // mail far more than the anonymous mail budget.
+  "reset.ip.day": { points: 60, duration: DAY, policy: "closed", key: "ip" },
   // Verification e-mail resend.
   "verify.resend.uid": { points: 3, duration: HOUR, policy: "closed", key: "uid" },
   // Action codes (verification and reset links): per IP, brute force on oobCode.
@@ -335,6 +338,10 @@ export const RATE_LIMITS = {
   // (an anonymous reporter may type a stranger's address, audit D1a-04); the report id is on screen,
   // the mail is a courtesy (bulk priority). Closed: without the store no acknowledgement leaves.
   "report.ack.email": { points: 2, duration: DAY, policy: "closed", key: "email" },
+  // Outcome mail of a notice filed without an account (art. 16(5)), to the typed address: 5 per day
+  // per normalized e-mail, so separate decisions (a bulk dismissal sends one per target) never mail
+  // a stranger without bound. Closed: without the store the outcome stays on the appeal link only.
+  "report.outcome.email": { points: 5, duration: DAY, policy: "closed", key: "email" },
   // Appeals (art. 20): signed-in and signed-link routes.
   "appeal.uid": { points: 10, duration: DAY, policy: "closed", key: "uid" },
   "appeal.link.ip": { points: 30, duration: HOUR, policy: "closed", key: "ip" },

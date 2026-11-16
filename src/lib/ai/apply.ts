@@ -50,13 +50,24 @@ function listingReason(output: AiOutput): ReportReasonId {
   return reason && (reason.targets as readonly string[]).includes("listing") ? (reason.id as ReportReasonId) : "other";
 }
 
+/**
+ * Places of a listing's text its seller's display name may mask before the agent's verdict stops
+ * counting alone: one ("je m'appelle Karim"); more means the name may be hiding content words.
+ */
+export const NAME_MASKS_MAX = 1;
+
 /** Pure: what the agent does with a proposal (D20). */
 export function planApplication(task: AiTask, provider: AiProviderId, output: AiOutput, facts: TaskFacts, config: Pick<AiConfig, "agent">): Application {
   if (task !== "listing_screen" || facts.kind !== "listing" || facts.hidden) return { kind: "record" };
   const claude = provider === "anthropic";
   if (facts.status === "pending_review") {
     const softFlags = new Set(config.agent.autoApproveSoftFlags);
-    const clean = facts.flags.every((flag) => softFlags.has(flag) && !HUMAN_REVIEW_FLAGS.has(flag)) && facts.openReports === 0 && facts.prohibitedHard.length === 0 && !facts.previouslyRejected;
+    const clean =
+      facts.flags.every((flag) => softFlags.has(flag) && !HUMAN_REVIEW_FLAGS.has(flag)) &&
+      facts.openReports === 0 &&
+      facts.prohibitedHard.length === 0 &&
+      !facts.previouslyRejected &&
+      facts.nameMasks <= NAME_MASKS_MAX;
     if (claude && output.action === "approve" && output.confidence >= config.agent.autoApproveAt && clean) return { kind: "auto_approve" };
     if (claude && output.action === "reject" && output.policy === "spam" && output.confidence >= config.agent.autoRejectSpamAt) return { kind: "auto_reject_spam" };
     return { kind: "record" };
@@ -64,6 +75,8 @@ export function planApplication(task: AiTask, provider: AiProviderId, output: Ai
   if (facts.status === "published" && config.agent.screenPublished) {
     const rated = output.action === "escalate" && (claude || output.severity !== "none");
     if (output.action === "hold" || output.action === "reject" || rated) return { kind: "system_report", reasonId: listingReason(output) };
+    // The seller's name hid several places of the text: a moderator reads it unmasked.
+    if (facts.nameMasks > NAME_MASKS_MAX) return { kind: "system_report", reasonId: "other" };
   }
   return { kind: "record" };
 }
@@ -113,6 +126,9 @@ function decisionRecord(listing: ListingRecord, kind: "approve" | "reject", inpu
   };
 }
 
+/** The seller or the shop changed state between the first check and the transaction. */
+class ApprovalBlockedError extends Error {}
+
 /**
  * Applies an automated approval or spam rejection to a held listing (D20) in one transaction that
  * re-checks status and version: listing patch, searchOutbox entry, moderationDecisions statement
@@ -147,6 +163,7 @@ export async function applyAutoDecision(kind: "approve" | "reject", input: AutoD
     await db().runTransaction(async (tx) => {
       const current = await getListingTx(tx, listing.id);
       if (!current || current.status !== "pending_review" || current.version !== input.version) throw new ListingVersionError();
+      if (kind === "approve" && (await approvalBlocker(current, tx))) throw new ApprovalBlockedError();
       decisionId = recordModerationDecisionTx(tx, record);
       patch.moderation = {
         ...current.moderation,
@@ -163,6 +180,7 @@ export async function applyAutoDecision(kind: "approve" | "reject", input: AutoD
     });
   } catch (error) {
     if (error instanceof ListingVersionError) return { applied: false, reason: "stale" };
+    if (error instanceof ApprovalBlockedError) return { applied: false, reason: "illegal" };
     throw error;
   }
   if (effects.search) await notifySearchIndex([listing.id]);

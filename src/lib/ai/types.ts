@@ -62,6 +62,8 @@ export interface ListingFacts {
    * of a listing rejected before exists for a human re-review, never for the agent (audit D1b-02).
    */
   previouslyRejected: boolean;
+  /** Places of the title and description masked by the seller's own display name (src/lib/ai/mask.ts). */
+  nameMasks: number;
 }
 export interface ReportFacts {
   kind: "report";

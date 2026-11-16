@@ -7,7 +7,7 @@ import { notFound } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
 import { consume } from "@/lib/quota";
 import { z } from "@/lib/zod";
-import { acceptLinkState, LINK_OUTCOMES, type LinkState } from "./check";
+import { acceptLinkState, clipText, LINK_DETAIL_MAX, LINK_FINAL_URL_MAX, LINK_OUTCOMES, type LinkState } from "./check";
 
 // State of the guide's link checker (design guide-demarches G4): one document, system/guide-links,
 // read once and written once per weekly run (src/worker/jobs/guide-links.ts); the guide pages read
@@ -22,9 +22,9 @@ const linkStateSchema = z
   .object({
     url: z.string().max(500),
     outcome: z.enum(LINK_OUTCOMES),
-    detail: z.string().max(300),
+    detail: z.string().max(LINK_DETAIL_MAX),
     httpStatus: z.number().int().nullable(),
-    finalUrl: z.string().max(1000),
+    finalUrl: z.string().max(LINK_FINAL_URL_MAX),
     checkedAt: iso,
     streak: z.number().int().min(0),
     lastOkAt: iso.optional(),
@@ -42,6 +42,15 @@ export interface GuideState {
 
 const EMPTY: GuideState = { runAt: null, links: {} };
 
+/** Free-text fields of an entry written before they were cut are cut on read, not dropped with it. */
+function clipped(value: unknown): unknown {
+  if (!value || typeof value !== "object") return value;
+  const entry = { ...(value as Record<string, unknown>) };
+  if (typeof entry.detail === "string") entry.detail = clipText(entry.detail, LINK_DETAIL_MAX);
+  if (typeof entry.finalUrl === "string") entry.finalUrl = clipText(entry.finalUrl, LINK_FINAL_URL_MAX);
+  return entry;
+}
+
 export function parseGuideState(data: unknown): GuideState {
   if (!data || typeof data !== "object") return { runAt: null, links: {} };
   const record = data as { runAt?: unknown; links?: unknown };
@@ -49,7 +58,7 @@ export function parseGuideState(data: unknown): GuideState {
   if (record.links && typeof record.links === "object") {
     for (const [id, value] of Object.entries(record.links)) {
       if (!isGuideSourceId(id)) continue;
-      const parsed = linkStateSchema.safeParse(value);
+      const parsed = linkStateSchema.safeParse(clipped(value));
       if (parsed.success) links[id] = parsed.data as LinkState;
     }
   }

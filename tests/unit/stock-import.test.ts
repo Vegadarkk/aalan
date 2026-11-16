@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CSV_CELL_MAX, CsvError, csvLine, guessSeparator, neutralizeFormula, parseCsv } from "@/lib/pro/stock-import/csv";
+import { CSV_CELL_MAX, CSV_COLUMNS_MAX, CsvError, csvLine, guessSeparator, neutralizeFormula, parseCsv } from "@/lib/pro/stock-import/csv";
 import { diffFields, planImport, type StockEntry } from "@/lib/pro/stock-import/plan";
 import { dayNumber } from "@/lib/listings/rental-availability";
 import { mapColumns, parseInteger, parsePeriods, parseRows, type ParsedRow } from "@/lib/pro/stock-import/rows";
@@ -84,6 +84,25 @@ describe("parsing cost", () => {
     started = performance.now();
     parseCsv(quotes, 300);
     expect(performance.now() - started).toBeLessThan(2_000);
+  });
+
+  it("stops a long run of quotes inside one unquoted cell at the cell cap, in linear time", () => {
+    const started = performance.now();
+    expect(() => parseCsv(`reference;description\nR1;x${'"'.repeat(160_000)}`, 300)).toThrowError(expect.objectContaining({ code: "cell_too_long", line: 2 }));
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+
+  it("refuses a line wider than CSV_COLUMNS_MAX, header or record, with its line", () => {
+    const wide = (cells: number) => Array.from({ length: cells }, (_, index) => (index === 0 ? "reference" : "")).join(";");
+    expect(parseCsv(`${wide(CSV_COLUMNS_MAX)}\nR1`, 300).header).toHaveLength(CSV_COLUMNS_MAX);
+    const started = performance.now();
+    expect(() => parseCsv(`${";".repeat(999_000)}\nR1`, 300)).toThrowError(expect.objectContaining({ code: "too_many_columns", line: 1 }));
+    expect(() => parseCsv(`reference;variante 1\nR1;M\n${wide(CSV_COLUMNS_MAX + 1)}`, 300)).toThrowError(expect.objectContaining({ code: "too_many_columns", line: 3 }));
+    expect(performance.now() - started).toBeLessThan(200);
+    // 300 variant heads under the widest header accepted stay small.
+    const header = ["reference", "variante 1", ...Array.from({ length: CSV_COLUMNS_MAX - 2 }, (_, index) => `x${index}`)].join(";");
+    const lines = [header, ...Array.from({ length: 300 }, (_, index) => `R${index};M`)].join("\n");
+    expect(rowsOf(lines).rows).toHaveLength(300);
   });
 
   it("reads list, variant and period cells as before", () => {

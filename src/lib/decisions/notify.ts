@@ -3,6 +3,8 @@ import type { DecisionAction, DecisionTargetType } from "@/config/decision-templ
 import type { Locale } from "@/config/site";
 import { logger } from "@/lib/logging/logger";
 import { sendMail } from "@/lib/mail";
+import { consumeLimit } from "@/lib/rate-limit/limiter";
+import { normalizeEmail } from "@/lib/security/email-normalize";
 import type { DecisionAutomation, DecisionSource, TemplateData } from "@/lib/mail/types";
 import type { ReporterOutcomesResult } from "@/lib/reports";
 import { appealToken } from "./appeal-token";
@@ -101,6 +103,12 @@ export interface OutcomeInput {
   appealable: boolean;
 }
 
+async function outcomeAllowed(email: string, reportId: string): Promise<boolean> {
+  const outcome = await consumeLimit("report.outcome.email", normalizeEmail(email));
+  if (!outcome.ok) logger.info({ reportId, reason: outcome.reason }, "reports: outcome mail skipped (per-address cap)");
+  return outcome.ok;
+}
+
 /** Outcome of the notice (art. 16(5)) to each reporter with an address, once per address. */
 export async function sendReportOutcomes(reports: readonly OpenReport[], input: OutcomeInput): Promise<number> {
   const seen = new Set<string>();
@@ -109,6 +117,8 @@ export async function sendReportOutcomes(reports: readonly OpenReport[], input: 
     const address = await reporterAddress(report).catch(() => null);
     if (!address || seen.has(address.email.toLowerCase())) continue;
     seen.add(address.email.toLowerCase());
+    // A visitor's typed address is nobody's proven one: capped per address like the acknowledgement.
+    if (!report.reporter.uid && !(await outcomeAllowed(address.email, report.id))) continue;
     const token = input.appealable ? appealToken({ decisionId: input.decisionId, by: "reporter", reportId: report.id, expiresAt: input.appealDeadline }) : null;
     const ok = await quietly("reportOutcome", { decisionId: input.decisionId, reportId: report.id }, () =>
       sendMail({

@@ -279,6 +279,11 @@ function decisionRecord(staff: StaffContext, listing: ListingRecord, input: Mode
   };
 }
 
+function refuseBlocked(blocker: Awaited<ReturnType<typeof approvalBlocker>>): void {
+  if (blocker === "account_suspended") throw new HttpError(409, "account_suspended", "the seller's account is not active");
+  if (blocker === "pro_revalidation") throw new HttpError(409, "pro_revalidation", "the seller's shop is back under verification");
+}
+
 /**
  * POST /api/admin/moderation/{id}: approval (lifecycle `approveHold`: a publication or a renewal is
  * published, an edit gets back the status the owner had: published with its dates, paused, or
@@ -294,11 +299,7 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
   const legal = await getLegalConfig();
   const approve = input.action === "approve";
   // Inactive seller or shop back under verification: not published (shared with the agent's approval).
-  if (approve) {
-    const blocker = await approvalBlocker(listing);
-    if (blocker === "account_suspended") throw new HttpError(409, "account_suspended", "the seller's account is not active");
-    if (blocker === "pro_revalidation") throw new HttpError(409, "pro_revalidation", "the seller's shop is back under verification");
-  }
+  if (approve) refuseBlocked(await approvalBlocker(listing));
 
   const ctx = { now, lifetime: listingLifetime(legal) };
   let result: TransitionResult;
@@ -320,6 +321,7 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
     await db().runTransaction(async (tx) => {
       const current = await getListingTx(tx, id);
       if (!current || current.status !== "pending_review" || current.version !== input.version) throw new ListingVersionError();
+      if (approve) refuseBlocked(await approvalBlocker(current, tx));
       // An approval vouches for the ONSSA number it checked: the shop's later listings with it are not held for it.
       const sanitary = approve ? sanitaryNumber(current.subcategoryId, current.attributes) : undefined;
       const shop = sanitary && current.proId ? await getProProfile(current.proId, tx) : null;

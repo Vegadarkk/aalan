@@ -10,6 +10,7 @@ vi.mock("@/lib/quota", async (importOriginal) => ({
   raiseTo: vi.fn(async () => ({ level: "ok" })),
   isDegraded: vi.fn(async () => false),
   isExhausted: vi.fn(async () => false),
+  headroom: vi.fn(async () => null),
 }));
 vi.mock("@/lib/alert", () => ({ alert: vi.fn(async () => true) }));
 vi.mock("@/lib/valkey/clients", () => ({ isValkeyConfigured: () => false, valkey: () => ({}), clientOptions: () => ({}) }));
@@ -17,10 +18,10 @@ vi.mock("@/lib/auth/links", () => ({ generateActionUrl: vi.fn(async () => "https
 vi.mock("@/lib/legal/config", () => ({ getLegalConfig: vi.fn(async () => ({ companyName: "Adark Prime", hqAddress: "6 rue d'Armaillé, 75017 Paris" })) }));
 
 const { isSuppressed } = await import("@/lib/mail/suppressions");
-const { consume, isDegraded, isExhausted, raiseTo } = await import("@/lib/quota");
+const { consume, headroom, isDegraded, isExhausted, raiseTo } = await import("@/lib/quota");
 const { alert } = await import("@/lib/alert");
 const { resetServerEnv } = await import("@/lib/env");
-const { deliverMail, MailDeferredError, PROVIDER_UNAVAILABLE_RETRY_MS, resetMailAlertMarkers } = await import("@/lib/mail/deliver");
+const { ANONYMOUS_BREVO_SHARE, ANONYMOUS_RESEND_SHARE, deliverMail, MailDeferredError, PROVIDER_UNAVAILABLE_RETRY_MS, resetMailAlertMarkers } = await import("@/lib/mail/deliver");
 const { memoryMailbox } = await import("@/lib/mail/transports/memory");
 const { generateActionUrl } = await import("@/lib/auth/links");
 
@@ -309,6 +310,40 @@ describe("deliverMail through Resend", () => {
     expect(await deliverMail(SECURITY)).toEqual({ provider: "brevo", id: "brevo-q" });
     expect(calls.map((call) => call.url)).toEqual(["https://api.brevo.com/v3/smtp/email"]);
     expect(alert).toHaveBeenCalledWith(expect.objectContaining({ severity: "P2", title: "Mail: bascule sur Brevo" }));
+  });
+
+  it("keeps anonymous mail under its share of Resend, then of Brevo, and leaves members' mail alone", async () => {
+    vi.useFakeTimers({ now: NOW });
+    const ANONYMOUS: TemplateMail = { ...SECURITY, anonymous: true };
+    const left: Record<string, number> = { "resend.daily": 0, "brevo.daily": 5 };
+    vi.mocked(headroom).mockImplementation(async (id) => left[id] ?? null);
+    // Past half of Resend: Brevo takes it.
+    let calls = stubFetch(json(201, { messageId: "brevo-a" }));
+    expect(await deliverMail(ANONYMOUS)).toEqual({ provider: "brevo", id: "brevo-a" });
+    expect(calls.map((call) => call.url)).toEqual(["https://api.brevo.com/v3/smtp/email"]);
+    expect(headroom).toHaveBeenCalledWith("resend.daily", ANONYMOUS_RESEND_SHARE);
+    expect(headroom).toHaveBeenCalledWith("brevo.daily", ANONYMOUS_BREVO_SHARE);
+    // Past 80 % of Brevo too: it waits for the next reset, without the security P1.
+    left["brevo.daily"] = 0;
+    vi.mocked(alert).mockClear();
+    calls = stubFetch();
+    expectRetryAt(await deliverMail(ANONYMOUS).catch((error: unknown) => error), "2026-10-17T00:00:00Z");
+    expect(calls).toHaveLength(0);
+    expect(alert).not.toHaveBeenCalled();
+    // A member's security and transactional mail still go through Resend.
+    calls = stubFetch(json(200, { id: "resend-s" }), json(200, { id: "resend-t" }));
+    expect(await deliverMail(SECURITY)).toMatchObject({ provider: "resend" });
+    expect(await deliverMail(MAIL)).toMatchObject({ provider: "resend" });
+    expect(calls).toHaveLength(2);
+    // Under its share, anonymous mail uses Resend like any other.
+    left["resend.daily"] = 3;
+    calls = stubFetch(json(200, { id: "resend-a" }));
+    expect(await deliverMail(ANONYMOUS)).toMatchObject({ provider: "resend" });
+    // Without a fallback key it waits at once.
+    setEnv({ APP_ENV: "dev", MAIL_API_KEY: "re_test" });
+    left["resend.daily"] = 0;
+    expectRetryAt(await deliverMail(ANONYMOUS).catch((error: unknown) => error), "2026-10-17T00:00:00Z");
+    vi.mocked(headroom).mockImplementation(async () => null);
   });
 
   // B3-11: a waiting security mail (password reset, e-mail verification) is a P1 the owner hears

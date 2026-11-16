@@ -4,7 +4,7 @@ import { db, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { unavailable } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
 import { consume } from "@/lib/quota";
-import { COLLECTIONS, auditLogSchema, type AuditLogDoc } from "@/lib/db/schemas";
+import { AUDIT_REASON_MAX, COLLECTIONS, auditLogSchema, type AuditLogDoc } from "@/lib/db/schemas";
 import { pepperedHash } from "@/lib/security/hash";
 
 // auditLogs (§5): append-only. Staff actions (roles, sanctions, config) and automated system
@@ -36,9 +36,18 @@ export function auditPurgeAt(at: Date): Date {
 }
 
 export async function audit(input: AuditInput, options: AuditOptions = {}): Promise<void> {
-  const { ip, at = new Date(), ...rest } = input;
+  const { ip, at = new Date(), reason, ...rest } = input;
   const purgeAt = auditPurgeAt(at);
-  const document = auditLogSchema.parse({ ...rest, ...(ip ? { ipHash: pepperedHash("ip", ip) } : {}), at, purgeAt });
+  // A long staff note is cut, never a reason to lose the entry; an entry that still does not fit
+  // is logged like a failed write (fail-open unless required), after the action it records.
+  const clipped = reason !== undefined && reason.length > AUDIT_REASON_MAX ? `${reason.slice(0, AUDIT_REASON_MAX - 1)}…` : reason;
+  const parsed = auditLogSchema.safeParse({ ...rest, ...(clipped !== undefined ? { reason: clipped } : {}), ...(ip ? { ipHash: pepperedHash("ip", ip) } : {}), at, purgeAt });
+  if (!parsed.success) {
+    logger.error({ action: input.action, issues: parsed.error.issues.map((issue) => issue.path.join(".")) }, "audit entry invalid");
+    if (options.required) throw unavailable("audit log unavailable");
+    return;
+  }
+  const document = parsed.data;
   logger.info({ audit: { action: document.action, target: document.target, actorRole: document.actorRole } }, "audit");
   if (!isFirebaseConfigured()) return;
   try {

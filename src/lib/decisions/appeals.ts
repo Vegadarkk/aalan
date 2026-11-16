@@ -117,7 +117,7 @@ async function fromToken(token: string, now: Date): Promise<{ record: DecisionRe
 /** GET /api/appeals/link?token=: the decision summary the link page shows. */
 export async function appealLinkView(token: string, now = new Date()): Promise<AppealableDecision> {
   const { record, appellant } = await fromToken(token, now);
-  return appealableView(record, appellant.by, now);
+  return appealableView(record, appellant.by, now, appellant.by === "reporter" ? appellant.reportId : undefined);
 }
 
 /** POST /api/appeals/link: the appeal through the signed link of a decision or outcome mail. */

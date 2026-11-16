@@ -1,4 +1,5 @@
 import type * as BullMq from "bullmq";
+import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Profile photo and shop logo checks (src/lib/media/image-check.ts): the ONNX models ship in the
@@ -24,7 +25,7 @@ vi.mock("ioredis", () => ({
 
 const { UnrecoverableError } = await import("bullmq");
 const { resetServerEnv } = await import("@/lib/env");
-const { StubImageClassifier } = await import("@/lib/media/classify");
+const { StubImageClassifier, resetImageClassifier } = await import("@/lib/media/classify");
 const check = await import("@/lib/media/image-check");
 const { closeMediaQueue } = await import("@/lib/media/queue");
 const { processMediaJob, onMediaJobFailed } = await import("@/worker/jobs/media");
@@ -71,6 +72,7 @@ afterEach(async () => {
   resetServerEnv();
   resetObjectStore();
   await closeMediaQueue();
+  await resetImageClassifier();
 });
 
 describe("upload image checks", () => {
@@ -147,9 +149,11 @@ describe("image check worker job", () => {
   it("is routed by the media processor; a malformed or vanished one fails without retries", async () => {
     const store = new MemoryObjectStore();
     setObjectStoreForTests(store);
-    await store.put("quarantine", KEY, IMAGE, { contentType: "image/webp" });
-    // Dev env, no model files: the stub answers clean.
-    expect(await processMediaJob({ id: "c1", name: check.IMAGE_CHECK_JOB, data: { key: KEY } })).toEqual({ nsfw: 0, faces: 0 });
+    const photo = await sharp({ create: { width: 64, height: 64, channels: 3, background: "#d9b38c" } }).webp().toBuffer();
+    await store.put("quarantine", KEY, photo, { contentType: "image/webp" });
+    // The local classifier of this process: the ONNX models when fetched (CI), the stub otherwise.
+    const scores = await processMediaJob({ id: "c1", name: check.IMAGE_CHECK_JOB, data: { key: KEY } });
+    expect(scores).toEqual({ nsfw: expect.any(Number), faces: expect.any(Number) });
     await expect(processMediaJob({ id: "c2", name: check.IMAGE_CHECK_JOB, data: { key: "media/x" } })).rejects.toBeInstanceOf(UnrecoverableError);
     await store.delete("quarantine", KEY);
     await expect(processMediaJob({ id: "c3", name: check.IMAGE_CHECK_JOB, data: { key: KEY } })).rejects.toBeInstanceOf(UnrecoverableError);

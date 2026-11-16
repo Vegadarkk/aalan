@@ -10,6 +10,7 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { Breadcrumb, landingHref } from "@/components/listing/breadcrumb";
 import { ContactBar } from "@/components/listing/contact-bar";
 import { ViewBeacon } from "@/components/stats/view-beacon";
+import { viewToken } from "@/lib/stats/counters";
 import { JobNotice } from "@/components/listing/job-notice";
 import { CriteriaSection } from "@/components/listing/criteria-grid";
 import { PROPERTY_TERM_FIELDS, PropertyTerms } from "@/components/listing/property-terms";
@@ -355,7 +356,7 @@ export default async function ListingPage({ params }: { params: Params }) {
           </header>
 
           {/* A view for the counters (src/lib/stats: listingStats, and the shop's): the page is cached, the beacon counts it. */}
-          {contactable ? <ViewBeacon scope="listing" id={listing.id} /> : null}
+          {contactable ? <ViewBeacon scope="listing" id={listing.id} token={viewToken("l", listing.id)} /> : null}
           <aside id="contact" aria-label={t("sellerLabel")} className="min-w-0 scroll-mt-24 lg:[grid-area:aside]">
             <div className="flex flex-col gap-6 lg:sticky lg:top-24">
               <SellerCard seller={seller} fallbackName={listing.seller.name} fallbackType={listing.seller.type} locale={locale} storefront={storefront}>

@@ -204,6 +204,8 @@ export const RATE_LIMITS = {
   "stats.view.ip": { points: 600, duration: HOUR, policy: "open", key: "ip" },
   "stats.view.ip48": { points: 6000, duration: HOUR, policy: "open", key: "ip48" },
   "stats.view.day.ip": { points: 2000, duration: DAY, policy: "open", key: "ip" },
+  // One ceiling for every source: past it, no view is counted for the rest of the minute.
+  "stats.view.global": { points: 1500, duration: MINUTE, policy: "open", key: "global" },
   // Staff moderation decisions (admin host, behind Access): a moderator working the queue.
   "moderation.decision.uid": { points: 300, duration: HOUR, policy: "closed", key: "uid" },
   // Pro applications (phase 7): a moderator's verify or reject; each verification retags the

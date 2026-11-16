@@ -38,7 +38,7 @@ import { setMessagingValkeyForTests } from "@/lib/messaging/unread";
 import type { ProProfileDoc } from "@/lib/pro/profile-schema";
 import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { csrfToken } from "@/lib/security/csrf";
-import { STATS_KEYS, setStatsValkeyForTests, statsDay } from "@/lib/stats/counters";
+import { STATS_KEYS, setStatsValkeyForTests, statsDay, viewToken } from "@/lib/stats/counters";
 import { statsFlush } from "@/lib/stats/flush";
 import { headroom } from "@/lib/quota";
 import { FakeValkey } from "../../unit/messaging-fake-valkey";
@@ -51,11 +51,14 @@ const newProId = () => Array.from({ length: 8 }, () => PRO_ID_ALPHABET[randomInt
 const DAY_MS = 24 * 3_600_000;
 
 let valkey: FakeValkey;
+/** valkey-ratelimit: the once-a-day dedupe keys. */
+let seen: FakeValkey;
 
 beforeEach(() => {
   resetRateLimiters();
   valkey = new FakeValkey();
-  setStatsValkeyForTests(valkey.asClient() as never);
+  seen = new FakeValkey();
+  setStatsValkeyForTests(valkey.asClient() as never, seen.asClient() as never);
   setMessagingValkeyForTests(new FakeValkey().asClient());
 });
 afterAll(() => {
@@ -94,7 +97,12 @@ async function shop(owner: Member): Promise<string> {
   return proId;
 }
 
-const view = (scope: "shop" | "listing", id: string, options: { member?: Member; ip?: string } = {}) => call<ErrorBody | null>(viewRoute, "POST", STATS_API.view, { body: { scope, id }, ...options });
+/** The page's beacon: signed by default; `token` null sends none, a string sends that one. */
+const view = (scope: "shop" | "listing", id: string, options: { member?: Member; ip?: string; token?: string | null } = {}) => {
+  const { token, ...rest } = options;
+  const t = token === undefined ? viewToken(scope === "shop" ? "s" : "l", id) : token;
+  return call<ErrorBody | null>(viewRoute, "POST", STATS_API.view, { body: t === null ? { scope, id } : { scope, id, t }, ...rest });
+};
 const today = () => statsDay(new Date());
 const yesterday = () => statsDay(new Date(Date.now() - DAY_MS));
 
@@ -155,6 +163,22 @@ describe("shop counters", () => {
 
     // A second run finds nothing left to write.
     expect((await statsFlush()).days).toEqual([]);
+  });
+
+  it("counts only ids a page signed, and keeps the once-a-day keys out of the job store", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const proId = await shop(owner);
+    // Made-up or unsigned ids: 204, nothing stored anywhere.
+    expect((await view("listing", "zzzz2345", { ip: "10.81.0.1", token: null })).status).toBe(204);
+    expect((await view("listing", "zzzz2346", { ip: "10.81.0.1", token: viewToken("l", "zzzz2345") })).status).toBe(204);
+    expect((await view("shop", proId, { ip: "10.81.0.1", token: viewToken("l", proId) })).status).toBe(204);
+    expect(valkey.hashes.size).toBe(0);
+    expect(seen.strings.size).toBe(0);
+    // A signed view: the day hash in the job store, the dedupe key in the rate-limit store only.
+    await view("shop", proId, { ip: "10.81.0.2" });
+    expect(Object.fromEntries(valkey.hashes.get(STATS_KEYS.day(today())) ?? [])).toEqual({ [`s:${proId}:v`]: "1" });
+    expect([...valkey.strings.keys()].filter((key) => key.startsWith("stats:"))).toEqual([]);
+    expect([...seen.strings.keys()].filter((key) => key.startsWith("stats:seen:"))).toHaveLength(1);
   });
 
   it("adds a listing's counts once when a run is repeated, skips purged listings and shows the counts in « Mes annonces »", async () => {

@@ -105,6 +105,12 @@ export class FakeValkey {
     return next;
   }
 
+  async hlen(key: string): Promise<number> {
+    this.check("hlen");
+    this.sweep(key);
+    return this.hashes.get(key)?.size ?? 0;
+  }
+
   async hvals(key: string): Promise<string[]> {
     this.check("hvals");
     this.sweep(key);

@@ -542,7 +542,8 @@ export type ProLogoResponse = { logo: string | null };
 // Shop counters (UX audit of the Pro shops, lot 1; src/lib/stats): the view beacon of the cached
 // listing and storefront pages, and the Pro space's dashboard.
 
-export const statsViewSchema = z.object({ scope: z.enum(["shop", "listing"]), id: z.string().max(64) }).strict();
+/** `t`: the signature the page rendered (viewToken); a beacon without a valid one is not counted. */
+export const statsViewSchema = z.object({ scope: z.enum(["shop", "listing"]), id: z.string().max(64), t: z.string().max(64).optional() }).strict();
 export type StatsViewInput = z.infer<typeof statsViewSchema>;
 
 export interface ShopStatsTotals {

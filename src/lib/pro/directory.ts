@@ -55,23 +55,35 @@ function toShop(profile: ProProfileRecord, owner: UserRecord): DirectoryShop {
 
 /** One process-wide copy for 5 minutes, the ISR period: the directory's paths, the home page's row
  *  and the shop names of listing cards share it instead of each reading every shop again. A new
- *  shop is listed within that period; `fresh` forces a read and refreshes the copy. */
+ *  shop is listed within that period; `fresh` forces a read and refreshes the copy. Kept on
+ *  globalThis: route handlers (a shop verified in the back office) and pages load this module as
+ *  separate instances, and a reset must reach the copy the pages read. */
 const SHARED_TTL_MS = 5 * 60_000;
-let shared: { at: number; shops: Promise<DirectoryShop[]> } | null = null;
+const STATE_KEY = Symbol.for("aalan.pro.directoryShops");
+interface SharedState {
+  shared: { at: number; shops: Promise<DirectoryShop[]> } | null;
+  names: { shops: Promise<DirectoryShop[]>; map: Promise<ReadonlyMap<string, string>> } | null;
+}
+type GlobalWithState = typeof globalThis & { [STATE_KEY]?: SharedState };
+
+function state(): SharedState {
+  const store = globalThis as GlobalWithState;
+  return (store[STATE_KEY] ??= { shared: null, names: null });
+}
 
 /** listDirectoryShops through the shared copy; a failed read is not kept. */
 export function directoryShops(now = Date.now(), options: { fresh?: boolean } = {}): Promise<DirectoryShop[]> {
-  if (!options.fresh && shared && now - shared.at < SHARED_TTL_MS) return shared.shops;
+  const current = state();
+  if (!options.fresh && current.shared && now - current.shared.at < SHARED_TTL_MS) return current.shared.shops;
   const entry = { at: now, shops: listDirectoryShops() };
-  shared = entry;
+  current.shared = entry;
   entry.shops.catch(() => {
-    if (shared === entry) shared = null;
+    if (state().shared === entry) state().shared = null;
   });
   return entry.shops;
 }
 
 const NO_NAMES: ReadonlyMap<string, string> = new Map();
-let names: { shops: Promise<DirectoryShop[]>; map: Promise<ReadonlyMap<string, string>> } | null = null;
 
 /**
  * Shop names by their owner's publicId, for the cards of Pro listings (UX audit of the Pro shops,
@@ -81,16 +93,18 @@ let names: { shops: Promise<DirectoryShop[]>; map: Promise<ReadonlyMap<string, s
 export function shopNamesByPublicId(): Promise<ReadonlyMap<string, string>> {
   if (!isFirebaseConfigured()) return Promise.resolve(NO_NAMES);
   const shops = directoryShops();
-  if (names?.shops !== shops) {
-    names = { shops, map: shops.then((list) => new Map(list.map((shop) => [shop.ownerPublicId, shop.name] as const))).catch(() => NO_NAMES) };
+  const current = state();
+  if (current.names?.shops !== shops) {
+    current.names = { shops, map: shops.then((list) => new Map(list.map((shop) => [shop.ownerPublicId, shop.name] as const))).catch(() => NO_NAMES) };
   }
-  return names.map;
+  return current.names.map;
 }
 
-/** Tests: forget the shared copy. */
+/** Forget the shared copy (a shop verified or revalidated, tests). */
 export function resetDirectoryShopsCache(): void {
-  shared = null;
-  names = null;
+  const current = state();
+  current.shared = null;
+  current.names = null;
 }
 
 /** The shops of the directory, unsorted (the view sorts and filters). */

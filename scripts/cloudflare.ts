@@ -25,6 +25,9 @@
 // loadtest --off puts waf-rules.json back. zone --check reports the rule as drift while it is on.
 // An existing A, AAAA or CNAME record on a tunnel hostname is only replaced with --replace-dns, and
 // a hostname guarded by Access gets its DNS record only once its Access application exists.
+// A hostname taken out of a tunnel file loses its proxied CNAME to that tunnel on the tunnel's next
+// apply. The access part updates each application in place (found by any hostname it guards, so its
+// AUD tag stays) and refuses to drop a hostname that still has a DNS record: tunnels go first.
 
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -508,7 +511,22 @@ async function applyTunnel(api: CloudflareApi, targets: Targets, name: TunnelNam
       await api.write({ method: "POST", path: `/zones/${zoneId}/dns_records`, body: { type: "CNAME", name: hostname, content: target, proxied: true, comment: `joutiya-${name}-tunnel` } });
     }
   }
+  // A hostname taken out of the file: its CNAME would only reach the catch-all, and an Access
+  // application may stop guarding it next, so the record goes.
+  const hostnames = tunnelHostnames(config);
+  for (const zone of recordedZones(targets)) {
+    if (!checked.has(zone.name)) checked.set(zone.name, (await checkZone(api, targets, zone)).zoneId);
+    const records = await api.call<DnsRecord[]>({ method: "GET", path: `/zones/${zone.id}/dns_records?type=CNAME&content=${encodeURIComponent(target)}` });
+    for (const record of staleTunnelRecords(records, target, hostnames)) {
+      await api.write({ method: "DELETE", path: `/zones/${zone.id}/dns_records/${record.id}` }, { type: record.type, name: record.name, content: record.content });
+    }
+  }
   if (blocked.length > 0) throw new Error(`DNS records in the way (rerun with --replace-dns to replace them):\n  ${blocked.join("\n  ")}`);
+}
+
+/** CNAMEs to this tunnel (`target`) that no ingress rule of its file serves any more. */
+export function staleTunnelRecords(records: DnsRecord[], target: string, hostnames: string[]): DnsRecord[] {
+  return records.filter((record) => record.type === "CNAME" && record.content === target && !hostnames.includes(record.name));
 }
 
 /** The account's Google login method, set up in Zero Trust with the owner (docs/phase-1.md, step 5). */
@@ -523,26 +541,35 @@ export function googleIdp(providers: { id: string; type: string }[]): string {
 async function guardedLive(api: CloudflareApi, accountId: string, hostname: string): Promise<boolean> {
   const app = readEdgeFile<{ apps: AccessApp[] }>("access-apps.json").apps.find((item) => appUris(item).includes(hostname));
   if (!app) return false;
-  const live = await accessApp(api, accountId, app.domain);
-  return live !== undefined && (live.domain === hostname || (live.destinations ?? []).some((destination) => destination.uri === hostname));
+  const live = liveAppFor(await liveApps(api, accountId), app);
+  return live !== undefined && liveUris(live).includes(hostname);
 }
 
-interface LiveAccessApp {
+export interface LiveAccessApp {
   id: string;
   domain: string;
   aud: string;
   destinations?: { type: string; uri?: string }[];
 }
 
-async function accessApp(api: CloudflareApi, accountId: string, domain: string): Promise<LiveAccessApp | undefined> {
-  // The API documents exact matching of the domain filter, not whether a path takes part in it:
-  // the partial filter on the hostname also returns its path applications, compared exactly here.
-  const hostname = domain.split("/")[0] ?? domain;
-  const found = await api.call<LiveAccessApp[]>({
-    method: "GET",
-    path: `/accounts/${accountId}/access/apps?domain=${encodeURIComponent(hostname)}`,
-  });
-  return found.find((item) => item.domain === domain);
+async function liveApps(api: CloudflareApi, accountId: string): Promise<LiveAccessApp[]> {
+  return api.call<LiveAccessApp[]>({ method: "GET", path: `/accounts/${accountId}/access/apps` });
+}
+
+/** Every hostname or path a live application guards. */
+export function liveUris(app: Pick<LiveAccessApp, "domain" | "destinations">): string[] {
+  return [...new Set([app.domain, ...(app.destinations ?? []).flatMap((destination) => (destination.uri ? [destination.uri] : []))])];
+}
+
+/**
+ * The live application that guards one of `app`'s hostnames or paths, even under another domain
+ * (an application moved to its aalan.ma twin): updated in place, its AUD tag (CF_ACCESS_AUD) stays.
+ */
+export function liveAppFor(live: LiveAccessApp[], app: AccessApp): LiveAccessApp | undefined {
+  const uris = appUris(app);
+  const found = live.filter((item) => liveUris(item).some((uri) => uris.includes(uri)));
+  if (found.length > 1) throw new Error(`${app.domain}: ${found.length} live applications guard its hostnames, expected one: nothing written`);
+  return found[0];
 }
 
 async function applyAccess(api: CloudflareApi, targets: Targets): Promise<void> {
@@ -552,8 +579,18 @@ async function applyAccess(api: CloudflareApi, targets: Targets): Promise<void> 
   const providers = await api.call<{ id: string; type: string }[]>({ method: "GET", path: `/accounts/${accountId}/access/identity_providers` });
   const { value: apps, missing } = substitute(template, { ...process.env, ACCESS_GOOGLE_IDP_ID: googleIdp(providers) });
   if (missing.length > 0) throw new Error(`set ${missing.join(", ")} in the environment first`);
+  const live = await liveApps(api, accountId);
   for (const [index, app] of apps.entries()) {
-    const current = await accessApp(api, accountId, app.domain);
+    const current = liveAppFor(live, app);
+    // A hostname the application stops guarding must be unreachable first (its tunnel applied).
+    for (const uri of current ? liveUris(current).filter((item) => !appUris(app).includes(item)) : []) {
+      const hostname = uri.split("/")[0] ?? uri;
+      const zone = hostZone(targets, hostname);
+      const records = zone === null ? [] : await api.call<DnsRecord[]>({ method: "GET", path: `/zones/${zone.id}/dns_records?name=${encodeURIComponent(hostname)}` });
+      if (records.some((record) => ["A", "AAAA", "CNAME"].includes(record.type))) {
+        throw new Error(`${app.domain}: ${hostname} still has a DNS record; apply its tunnel part first (Access would stop guarding it): nothing more written`);
+      }
+    }
     // PUT overwrites the whole application, policies included.
     const request: ApiRequest = current
       ? { method: "PUT", path: `/accounts/${accountId}/access/apps/${current.id}`, body: app }

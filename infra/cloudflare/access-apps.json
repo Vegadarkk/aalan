@@ -1,14 +1,10 @@
 {
-  "description": "Zero Trust Access applications (Free, up to 50 users). ${VAR} values come from the environment of scripts/cloudflare.ts, never from this file; ACCESS_GOOGLE_IDP_ID is looked up by the script (the account's only Google login method). Staff sign in with Google only, on an account with 2-step verification (§6). Service tokens are created in the dashboard (secret shown once), joutiya-scan by scripts/github-ci.ts seal-scan; staging.joutiya.ma also reads a service token from the single header Authorization (the only name Access accepts; scripts/github-ci.ts SCAN_HEADER), which ZAP and k6 send. Only the CI token reaches sshd, where its key is only accepted for deploy-staging (forced command): nobody else has an SSH user, administration goes through OCI Run Command. Until joutiya.ma only redirects, each application also covers its aalan.ma twin (destinations: one AUD tag per application, so CF_ACCESS_AUD does not change). The AUD tag of admin.joutiya.ma and admin-staging.joutiya.ma goes to CF_ACCESS_AUD of each environment and to infra/targets.json. Resend and Meta webhooks cannot sign in: staging.joutiya.ma/api/webhooks/* bypasses Access (the routes check each sender's signature, the WAF skips the path); the production site is public.",
+  "description": "Zero Trust Access applications (Free, up to 50 users). ${VAR} values come from the environment of scripts/cloudflare.ts, never from this file; ACCESS_GOOGLE_IDP_ID is looked up by the script (the account's only Google login method). Staff sign in with Google only, on an account with 2-step verification (§6). Service tokens are created in the dashboard (secret shown once), the scan token by scripts/github-ci.ts seal-scan; staging.aalan.ma also reads a service token from the single header Authorization (the only name Access accepts; scripts/github-ci.ts SCAN_HEADER), which ZAP and k6 send. Only the CI token reaches sshd, where its key is only accepted for deploy-staging (forced command): nobody else has an SSH user, administration goes through OCI Run Command. Each application keeps its AUD tag when its hostnames change (scripts/cloudflare.ts updates it in place): the AUD tag of admin.aalan.ma and admin-staging.aalan.ma goes to CF_ACCESS_AUD of each environment and to infra/targets.json. Resend and Meta webhooks cannot sign in: staging.aalan.ma/api/webhooks/* bypasses Access (the routes check each sender's signature, the WAF skips the path); the production site is public.",
   "apps": [
     {
-      "name": "Joutiya back-office",
-      "domain": "admin.joutiya.ma",
+      "name": "Aalan back-office",
+      "domain": "admin.aalan.ma",
       "destinations": [
-        {
-          "type": "public",
-          "uri": "admin.joutiya.ma"
-        },
         {
           "type": "public",
           "uri": "admin.aalan.ma"
@@ -16,6 +12,7 @@
       ],
       "type": "self_hosted",
       "session_duration": "8h",
+      "same_site_cookie_attribute": "strict",
       "allowed_idps": [
         "${ACCESS_GOOGLE_IDP_ID}"
       ],
@@ -58,13 +55,9 @@
       ]
     },
     {
-      "name": "Joutiya staging",
-      "domain": "staging.joutiya.ma",
+      "name": "Aalan staging",
+      "domain": "staging.aalan.ma",
       "destinations": [
-        {
-          "type": "public",
-          "uri": "staging.joutiya.ma"
-        },
         {
           "type": "public",
           "uri": "staging.aalan.ma"
@@ -114,13 +107,9 @@
       ]
     },
     {
-      "name": "Joutiya staging webhooks",
-      "domain": "staging.joutiya.ma/api/webhooks/*",
+      "name": "Aalan staging webhooks",
+      "domain": "staging.aalan.ma/api/webhooks/*",
       "destinations": [
-        {
-          "type": "public",
-          "uri": "staging.joutiya.ma/api/webhooks/*"
-        },
         {
           "type": "public",
           "uri": "staging.aalan.ma/api/webhooks/*"
@@ -141,13 +130,9 @@
       ]
     },
     {
-      "name": "Joutiya back-office staging",
-      "domain": "admin-staging.joutiya.ma",
+      "name": "Aalan back-office staging",
+      "domain": "admin-staging.aalan.ma",
       "destinations": [
-        {
-          "type": "public",
-          "uri": "admin-staging.joutiya.ma"
-        },
         {
           "type": "public",
           "uri": "admin-staging.aalan.ma"

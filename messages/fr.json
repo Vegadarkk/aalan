@@ -5913,7 +5913,8 @@
     "csvErrors": {
       "empty": "Le fichier ne contient aucune ligne sous l'en-tête.",
       "unclosed_quote": "Un guillemet ouvert ligne {line} n'est jamais fermé : corrigez la cellule puis renvoyez le fichier.",
-      "too_many_rows": "Le fichier dépasse 300 lignes (ligne {line}) : découpez-le en plusieurs fichiers."
+      "too_many_rows": "Le fichier dépasse 300 lignes (ligne {line}) : découpez-le en plusieurs fichiers.",
+      "cell_too_long": "Une cellule ligne {line} dépasse 5 000 caractères : raccourcissez-la puis renvoyez le fichier."
     },
     "preview": {
       "title": "Vérifier",

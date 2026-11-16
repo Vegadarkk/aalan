@@ -44,7 +44,7 @@ import { getFlags } from "@/lib/config/runtime";
 import { isolate } from "@/lib/i18n/bidi";
 import { alternates, DEFAULT_OG_IMAGES } from "@/lib/i18n/metadata";
 import { getLegalConfig } from "@/lib/legal/config";
-import { getPublicStorefront, parseStorefrontSegment, storefrontPath } from "@/lib/listings/public";
+import { lookupStorefront, storefrontPath } from "@/lib/listings/public";
 import { dealerStock } from "@/lib/search/dealer";
 import { rentalFleet } from "@/lib/search/rental-fleet";
 import type { RentalFleetView } from "@/lib/search/rental-fleet-view";
@@ -92,16 +92,16 @@ function fleetLabels(fleet: RentalFleetView, label: (key: string) => string): Fl
   };
 }
 
-const load = cache(async (segment: string) => {
-  const parsed = parseStorefrontSegment(segment);
-  return parsed ? getPublicStorefront(parsed.proId, STOREFRONT_LISTINGS) : null;
-});
+/** An outdated or made-up slug costs one read (the shop profile) before its redirect. */
+const load = cache((segment: string) => lookupStorefront(segment, STOREFRONT_LISTINGS));
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale: value, shop } = await params;
   const locale = pageLocale(value);
-  const store = await load(shop);
-  if (!store) return {};
+  const found = await load(shop);
+  // A moved segment redirects (the page): its metadata never renders.
+  if (found?.kind !== "store") return {};
+  const store = found.store;
   const t = await getNumbersTranslations({ locale, namespace: "Storefront.meta" });
   const city = cityBySlug(store.citySlug);
   const where = city ? cityName(city, locale) : "";
@@ -122,9 +122,10 @@ export default async function StorefrontPage({ params }: { params: Params }) {
   const { locale: value, shop } = await params;
   const locale: Locale = pageLocale(value);
   setRequestLocale(locale);
-  const store = await load(shop);
-  if (!store) notFound();
-  if (store.segment !== shop) permanentRedirect(storefrontPath(locale, store.segment));
+  const found = await load(shop);
+  if (!found) notFound();
+  if (found.kind === "moved") permanentRedirect(storefrontPath(locale, found.segment));
+  const store = found.store;
 
   const rentalAgency = store.sector === "car_rental";
   const [t, profile, seo, criteria, legal, flags, vehicles, fleet, shelves] = await Promise.all([

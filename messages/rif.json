@@ -5903,7 +5903,8 @@
     "csvErrors": {
       "empty": "Afaylu war ɣar-s ca ligne ddu en-tête.",
       "unclosed_quote": "Guillemet yettwarẓmen deg ligne {line} war yettwaqqen ca: ṣeggem cellule uca ɛawed azen afaylu.",
-      "too_many_rows": "Afaylu yeɛedda 300 n lignes (ligne {line}): bḍu-t x aṭas n ifuyla."
+      "too_many_rows": "Afaylu yeɛedda 300 n lignes (ligne {line}): bḍu-t x aṭas n ifuyla.",
+      "cell_too_long": "Cellule deg ligne {line} teɛedda 5000 n isekkilen: ssenqes-tt uca ɛawed azen afaylu."
     },
     "preview": {
       "title": "Senqed",

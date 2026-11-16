@@ -12,7 +12,7 @@ import type * as Turnstile from "@/lib/security/turnstile";
 
 vi.mock("@/lib/mail", () => ({ sendMail: vi.fn(async () => undefined) }));
 vi.mock("@/lib/search/queue", () => ({ notifySearchIndex: vi.fn(async () => undefined) }));
-vi.mock("@/lib/quota", async (importOriginal) => ({ ...(await importOriginal<typeof Quota>()), firstDegraded: vi.fn(async () => null) }));
+vi.mock("@/lib/quota", async (importOriginal) => ({ ...(await importOriginal<typeof Quota>()), firstDegraded: vi.fn(async () => null), headroom: vi.fn(async () => null) }));
 vi.mock("@/lib/security/turnstile", async (importOriginal) => ({
   ...(await importOriginal<typeof Turnstile>()),
   verifyTurnstile: vi.fn(async () => ({ ok: true, codes: [] })),
@@ -40,6 +40,7 @@ import { resetRateLimiters } from "@/lib/rate-limit/limiter";
 import { csrfToken } from "@/lib/security/csrf";
 import { STATS_KEYS, setStatsValkeyForTests, statsDay } from "@/lib/stats/counters";
 import { statsFlush } from "@/lib/stats/flush";
+import { headroom } from "@/lib/quota";
 import { FakeValkey } from "../../unit/messaging-fake-valkey";
 import { call, type ErrorBody, type Member } from "../favorites/helpers";
 import { freshPhone, member } from "../listings/helpers";
@@ -176,6 +177,37 @@ describe("shop counters", () => {
     // Other tabs read no counters.
     const drafts = await call<OwnerListingsResponse>(mineRoute, "GET", "/api/listings/mine?status=drafts", { member: seller });
     expect(drafts.body.listings.every((row) => row.stats === undefined)).toBe(true);
+  });
+
+  it("writes no shop that does not exist, and resumes a run its budget cut short", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const proId = await shop(owner);
+    const madeUp = newProId();
+    await view("shop", proId, { ip: "10.71.0.1" });
+    await view("shop", madeUp, { ip: "10.71.0.1" });
+    await view("listing", "zzzz2345", { ip: "10.71.0.1" });
+    closeToday();
+
+    // Budget of 0 writes: deferred before any write, the day kept for the next run.
+    vi.mocked(headroom).mockImplementation(async (id) => (id === "firestore.writes" ? 0 : null));
+    const cut = await statsFlush();
+    expect(cut).toMatchObject({ deferred: true, days: [] });
+    expect(valkey.hashes.has(STATS_KEYS.day(yesterday()))).toBe(true);
+    expect((await db().collection(COLLECTIONS.shopStats).doc(proId).get()).exists).toBe(false);
+
+    vi.mocked(headroom).mockImplementation(async () => null);
+    const done = await statsFlush();
+    expect(done).toMatchObject({ deferred: false, days: [yesterday()], shops: 1 });
+    expect((await db().collection(COLLECTIONS.shopStats).doc(proId).get()).exists).toBe(true);
+    expect((await db().collection(COLLECTIONS.shopStats).doc(madeUp).get()).exists).toBe(false);
+  });
+
+  it("does not write a shop again on a repeated run", async () => {
+    const owner = await member({ phone: freshPhone() });
+    const proId = await shop(owner);
+    valkey.hashes.set(STATS_KEYS.day(yesterday()), new Map([[`s:${proId}:v`, "5"], [`y:${proId}`, "1"]]));
+    expect(await statsFlush()).toMatchObject({ days: [yesterday()], shops: 0 });
+    expect((await db().collection(COLLECTIONS.shopStats).doc(proId).get()).exists).toBe(false);
   });
 
   it("answers an account without a shop with pro_not_verified", async () => {

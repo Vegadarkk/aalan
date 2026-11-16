@@ -188,7 +188,7 @@ export function StockImport({ nonce }: { nonce?: string }) {
 const count = (rows: readonly StockRowResult[], action: StockRowAction) => rows.filter((row) => row.action === action).length;
 const csvReason = (details: unknown) => {
   const reason = (details as { reason?: string } | undefined)?.reason;
-  return reason === "unclosed_quote" || reason === "too_many_rows" ? reason : "empty";
+  return reason === "unclosed_quote" || reason === "too_many_rows" || reason === "cell_too_long" ? reason : "empty";
 };
 const csvLine = (details: unknown) => (details as { line?: number } | undefined)?.line ?? 1;
 

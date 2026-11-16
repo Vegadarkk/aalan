@@ -38,11 +38,15 @@ type Params = Promise<{ locale: string; rest?: string[] }>;
 
 const restKeyOf = (rest: string[] | undefined) => (rest ?? []).join("/");
 
-/** One Firestore round trip per render, shared by generateMetadata and the page. */
+/**
+ * The process-wide shop list (one Firestore read of every shop per 5 minutes, the ISR period),
+ * shared by every filter path, generateMetadata and the page: the number of paths never multiplies
+ * the reads.
+ */
 const load = cache(async (restKey: string) => {
   const filter = parseDirectorySegments(restKey ? restKey.split("/") : []);
   if (!filter) return null;
-  return { filter, shops: await directoryShops(Date.now(), { fresh: true }) };
+  return { filter, shops: await directoryShops() };
 });
 
 /** The translator and the H1 of a filter: "Agences immobilières à Casablanca". */

@@ -11,6 +11,10 @@ import { pdfHasActiveContent } from "./kybc";
 export const MAX_OBJECT_STREAM_BYTES = 4 * 1024 * 1024;
 /** Object streams inflated per piece; past it the piece is refused. */
 export const MAX_OBJECT_STREAMS = 256;
+/** `stream` keywords looked at per piece; past it the piece is refused (a real piece has far fewer). */
+export const MAX_STREAM_KEYWORDS = 10_000;
+/** Where a stream's object header must be, before its keyword; farther, the piece is refused. */
+export const DICTIONARY_WINDOW = 8 * 1024;
 
 const STREAM_KEYWORD = /\bstream(?:\r\n|\n|\r)/g;
 
@@ -26,11 +30,18 @@ export function pdfHasActiveContentDeep(bytes: Uint8Array): boolean {
   if (pdfHasActiveContent(bytes)) return true;
   const text = new TextDecoder("latin1").decode(bytes);
   let streams = 0;
+  let keywords = 0;
+  // Linear in the piece: each keyword looks back at most DICTIONARY_WINDOW bytes, and their number
+  // is capped, so a crafted piece costs no more than a real one of the same size.
   for (const match of text.matchAll(STREAM_KEYWORD)) {
+    keywords += 1;
+    if (keywords > MAX_STREAM_KEYWORDS) return true;
     const start = match.index + match[0].length;
-    // The stream's dictionary: from its object header ("n g obj") to the keyword.
+    // The stream's dictionary: from its object header ("n g obj") to the keyword. No header close
+    // enough: the dictionary cannot be read, the piece is not inspectable.
     const header = text.lastIndexOf(" obj", match.index);
-    const dictionary = decodeNames(text.slice(header < 0 ? 0 : header, match.index));
+    if (header < 0 || match.index - header > DICTIONARY_WINDOW) return true;
+    const dictionary = decodeNames(text.slice(header, match.index));
     if (!/\/ObjStm(?![A-Za-z0-9_])/.test(dictionary)) continue;
     streams += 1;
     if (streams > MAX_OBJECT_STREAMS) return true;

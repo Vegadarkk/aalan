@@ -395,6 +395,28 @@ describe("POST /api/conversations/{cid}/read and /state", () => {
     expectError(await setState(seller, cid, { hidden: false }), 400, "invalid_body");
     expectError(await setState(await member(), cid, { archived: true }), 404, "not_found");
   });
+
+  it("writes nothing when the state already holds, and budgets state changes per day", async () => {
+    const { buyer, seller, listingId } = await pair();
+    const { cid } = await startOk(buyer, listingId);
+    await setState(seller, cid, { archived: true });
+    const ref = db().collection(COLLECTIONS.conversations).doc(cid);
+    const before = (await ref.get()).updateTime;
+    expect((await setState(seller, cid, { archived: true })).status).toBe(204);
+    expect((await ref.get()).updateTime?.isEqual(before!)).toBe(true);
+
+    // Archive and delete for me wait while the write quota is degraded; a block does not.
+    vi.mocked(firstDegraded).mockResolvedValue("firestore.writes");
+    expectError(await setState(seller, cid, { archived: false }), 503, "quota_exhausted");
+    expect((await setState(seller, cid, { blocked: true })).status).toBe(204);
+    vi.mocked(firstDegraded).mockResolvedValue(null);
+
+    await spend("conversation.block.day.uid", seller.uid);
+    expectError(await setState(seller, cid, { blocked: false }), 429, "rate_limited");
+    expect((await setState(seller, cid, { archived: false })).status).toBe(204);
+    await spend("conversation.state.day.uid", seller.uid);
+    expectError(await setState(seller, cid, { archived: true }), 429, "rate_limited");
+  });
 });
 
 describe("GET /api/messages/unread", () => {

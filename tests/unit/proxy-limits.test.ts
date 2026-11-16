@@ -44,8 +44,8 @@ beforeEach(() => {
 afterEach(() => resetServerEnv());
 
 describe("metered paths", () => {
-  it("meters the four server-rendered page families of every locale", () => {
-    for (const path of ["/fr/annonce/x-abcd2345", "/ar/c/vehicules", "/rif/c/vehicules/voitures/casablanca", "/fr/profil/abcdefghjk", "/ar/boutique/abc", "/fr/c"]) {
+  it("meters the five server-rendered page families of every locale", () => {
+    for (const path of ["/fr/annonce/x-abcd2345", "/ar/c/vehicules", "/rif/c/vehicules/voitures/casablanca", "/fr/profil/abcdefghjk", "/ar/boutique/abc", "/fr/c", "/fr/boutiques", "/rif/boutiques/ville/fes/activite/location-voitures"]) {
       expect(isMeteredPath(path), path).toBe(true);
     }
     for (const path of ["/", "/fr", "/fr/recherche", "/fr/anti-robot", "/fr/connexion", "/en/annonce/x", "/api/search", "/fr/annonces/x", "/fr/cx/y"]) {

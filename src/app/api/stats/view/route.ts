@@ -4,7 +4,7 @@ import { statsViewSchema } from "@/lib/contracts/pro";
 import { readJson } from "@/lib/http/json";
 import { apiRoute } from "@/lib/http/route";
 import { proIdSchema } from "@/lib/pro/profile-schema";
-import { enforceLimit } from "@/lib/rate-limit/limiter";
+import { consumeLimit, enforceLimit } from "@/lib/rate-limit/limiter";
 import { requestIdentity } from "@/lib/rate-limit/keys";
 import { countView } from "@/lib/stats/counters";
 
@@ -22,9 +22,12 @@ export const POST = apiRoute(async (request) => {
   const input = await readJson(request, statsViewSchema);
   const identity = requestIdentity(request.headers);
   await enforceLimit("stats.view.ip", identity.ipBucket);
+  if (identity.ip48) await enforceLimit("stats.view.ip48", identity.ip48);
   const id = (input.scope === "shop" ? proIdSchema : listingIdSchema).safeParse(input.id);
   const agent = request.headers.get("user-agent") ?? "";
-  if (id.success && !CRAWLER.test(agent)) {
+  // Each id counted costs the nightly flush a Firestore read or write: past its daily allowance an
+  // address is no longer counted, silently.
+  if (id.success && !CRAWLER.test(agent) && (await consumeLimit("stats.view.day.ip", identity.ipBucket)).ok) {
     const viewer = await optionalUser(request, { checkRevoked: false });
     if (!(input.scope === "shop" && viewer?.user.claims.proId === id.data)) await countView(input.scope === "shop" ? "s" : "l", id.data, identity.deviceKey);
   }

@@ -21,7 +21,7 @@ vi.mock("@/lib/db/repositories/profiles", () => ({ findUserByPublicId: repo.find
 vi.mock("@/lib/db/repositories/pro-profiles", () => ({ getProProfile: repo.getProProfile }));
 vi.mock("@/lib/quota", async (importOriginal) => ({ ...(await importOriginal<typeof Quota>()), firstDegraded: repo.firstDegraded }));
 
-const { getPublishedBySlugId, getProfile, getPublicStorefront, memberSince, parseStorefrontSegment, PUBLIC_STATES } = await import("@/lib/listings/public");
+const { getPublishedBySlugId, getProfile, getPublicStorefront, lookupStorefront, memberSince, parseStorefrontSegment, PUBLIC_STATES } = await import("@/lib/listings/public");
 
 const NOW = new Date("2026-10-16T10:00:00.000Z");
 const ID = "abcd2345";
@@ -223,5 +223,23 @@ describe("storefront", () => {
       expect(await getPublicStorefront(PRO), status).toBeNull();
     }
     expect(repo.listPublishedByOwner).not.toHaveBeenCalled();
+  });
+
+  it("answers an outdated or made-up slug from the shop profile alone, the canonical one in full", async () => {
+    repo.getProProfile.mockResolvedValue(shop());
+    repo.getUserRecord.mockResolvedValue(user({ type: "pro" }));
+    repo.listPublishedByOwner.mockResolvedValue([record("published")]);
+    for (const segment of [`a-${PRO}`, `zz-other-${PRO}`, `atelier-salma-${PRO}`]) {
+      expect(await lookupStorefront(segment), segment).toEqual({ kind: "moved", segment: `atelier-salma-casablanca-${PRO}` });
+    }
+    expect(repo.getProProfile).toHaveBeenCalledTimes(3);
+    expect(repo.getUserRecord).not.toHaveBeenCalled();
+    expect(repo.listPublishedByOwner).not.toHaveBeenCalled();
+    const found = await lookupStorefront(`atelier-salma-casablanca-${PRO}`);
+    expect(found?.kind).toBe("store");
+    expect(repo.listPublishedByOwner).toHaveBeenCalledTimes(1);
+    expect(await lookupStorefront("not-a-segment")).toBeNull();
+    repo.getProProfile.mockResolvedValue(shop({ plan: "none" }));
+    expect(await lookupStorefront(`a-${PRO}`)).toBeNull();
   });
 });

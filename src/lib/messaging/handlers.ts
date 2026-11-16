@@ -221,6 +221,11 @@ export async function handleState(request: Request, params: Params): Promise<Res
   const cid = await cidOf(params);
   const change = await readJson(request, conversationStateSchema);
   await enforceLimit("conversation.state.uid", auth.user.uid);
+  await enforceLimit("conversation.state.day.uid", auth.user.uid);
+  // A block stays possible while the write quota is degraded (safety), within its own daily budget;
+  // archive and delete for me wait like sends.
+  if ("blocked" in change) await enforceLimit("conversation.block.day.uid", auth.user.uid);
+  else await assertQuotas(MESSAGING_QUOTAS);
   await changeConversationState(auth.user.uid, cid, change);
   return noContent();
 }

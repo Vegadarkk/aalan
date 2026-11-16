@@ -9,14 +9,14 @@ import { appealDeadlineAt, recordModerationDecision } from "@/lib/db/repositorie
 import { getUserRecord, type UserRecord } from "@/lib/db/repositories/profiles";
 import { setAvatarKey } from "@/lib/db/repositories/users";
 import { sendDecisionNotice } from "@/lib/decisions/notify";
-import { serverEnv } from "@/lib/env";
 import { readCappedBytes } from "@/lib/http/body";
 import { HttpError, notFound, unavailable } from "@/lib/http/errors";
 import { readJson } from "@/lib/http/json";
 import { json, noContent } from "@/lib/http/route";
 import { revalidateListingPaths } from "@/lib/listings/revalidate";
 import { logger } from "@/lib/logging/logger";
-import { imageClassifier, type ImageClassifier } from "@/lib/media/classify";
+import type { ImageClassifier } from "@/lib/media/classify";
+import { uploadImageClassifier } from "@/lib/media/image-check";
 import { checkImageType, SNIFF_BYTES } from "@/lib/media/magic";
 import { toMediaError } from "@/lib/media/process";
 import { INPUT_OPTIONS, MAX_INPUT_PIXELS, openImage, sharp } from "@/lib/media/sharp-setup";
@@ -34,8 +34,8 @@ import { AVATAR_VARIANTS, avatarObjectKey, avatarObjectKeys, avatarUrl, type Ava
 // itself as the body of PUT /api/account/avatar (at most 4 MiB, read capped): its real type is
 // sniffed (JPEG, PNG, WebP), the hardened sharp re-encodes it whole (metadata dropped, orientation
 // applied, pixel cap), cropped to the 4:5 arch of the seller avatar as WebP 320x400 and 128x160,
-// and the local nudity check reads it before anything is stored: a refusal is a recorded automated
-// decision. The variants go to the public media bucket under a new key each time (immutable
+// and the nudity check (run by the worker, src/lib/media/image-check.ts) reads it before anything
+// is stored: a refusal is a recorded automated decision. The variants go to the public media bucket under a new key each time (immutable
 // cache), the account points at it, the previous ones are deleted (their CDN copies purged by the
 // store). A moderator removes a photo from the account page with a statement of reasons
 // (template user.avatar.remove); the account closure deletes it.
@@ -134,7 +134,7 @@ export async function updateAvatar(uid: string, body: Uint8Array, declaredType: 
 
   const variants = await encodeAvatar(Buffer.from(body.buffer, body.byteOffset, body.byteLength));
   const ai = deps.ai ?? DEFAULT_AI;
-  const classifier = deps.classifier ?? imageClassifier(serverEnv(), ai);
+  const classifier = deps.classifier ?? uploadImageClassifier(store, ai);
   const { nsfw } = await classifier.classify(variants.l);
   if (nsfw >= ai.nsfw.rejectAt) {
     try {

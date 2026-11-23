@@ -296,7 +296,7 @@ describe("zone --check", () => {
     const file = readEdgeFile<ZoneSettings>("zone-settings.json");
     const hsts = (zone: ZoneName) => zoneSettings(file, zone).settings.find((setting) => setting.id === "security_header")?.value;
     expect(hsts("aalan.ma")).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: true, preload: true, nosniff: false } });
-    for (const zone of ["joutiya.ma", "a3lan.ma"] as const) {
+    for (const zone of ["joutiya.ma", "a3lan.ma"] as const) { // legacy-name: allow (redirect zone)
       expect(hsts(zone)).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: false, preload: false, nosniff: false } });
       expect(zoneSettings(file, zone).settings.map((setting) => setting.id)).toEqual(file.settings.map((setting) => setting.id));
     }

@@ -123,7 +123,7 @@ services:
     <<: *service
     # The image starts through its own tini.
     init: false
-    image: getmeili/meilisearch:v1.56.1@sha256:b7ba431bf6f9b26cc86132798f3640964147a699cf23f026b74c6c05dbb1d60d
+    image: getmeili/meilisearch:v1.56.2@sha256:9600db22be3fcbf3d506176d3a73dd70a65c5719d9aa1d2837355b75afb8f4fb
     # MEILI_MASTER_KEY only (16 bytes at least: production mode refuses to start without it). The app
     # holds two scoped keys created from it by scripts/search-setup.ts (app.env), never the master key.
     env_file:

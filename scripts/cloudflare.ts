@@ -9,10 +9,10 @@
 //   parts: zone (settings and rules), tunnel:staging, tunnel:prod, tunnel:ssh, access, r2, loadtest
 // zone --check reads the live settings and rules, compares them with the files and exits 1 on any
 // drift (a missing transform rule lets a client forge X-Verified-Bot); zone --apply runs it after
-// its writes. Every recorded zone gets the same settings and rulesets: their rules name hosts, so
-// a rule only fires in its own zone. Hostnames that only redirect (redirect-hosts.json) get a
-// proxied AAAA 100:: record in their zone, so the redirect rules see their requests; a wildcard
-// address record is only deleted with --replace-dns.
+// its writes. Every recorded zone gets the same settings (except the per-zone overrides of
+// zone-settings.json) and rulesets: their rules name hosts, so a rule only fires in its own zone.
+// Hostnames that only redirect (redirect-hosts.json) get a proxied AAAA 100:: record in their zone,
+// so the redirect rules see their requests; a wildcard address record is only deleted with --replace-dns.
 //
 // Environment (never printed): AALAN_CLOUDFLARE_API_TOKEN (former name JOUTIYA_CLOUDFLARE_API_TOKEN), a custom token limited to the Joutiya
 // account and its zones (a prefixed name: a shared shell may hold other projects' tokens);
@@ -65,8 +65,22 @@ export interface Ruleset {
   description: string;
   rules: Rule[];
 }
+export interface ZoneSetting {
+  id: string;
+  value: unknown;
+}
 export interface ZoneSettings {
-  settings: { id: string; value: unknown }[];
+  settings: ZoneSetting[];
+  /** Per-zone values that replace the setting of the same id. */
+  zones?: Partial<Record<ZoneName, ZoneSetting[]>>;
+}
+
+/** The settings of one zone: the shared list, with that zone's overrides in place (same order). */
+export function zoneSettings(file: ZoneSettings, zone: ZoneName): ZoneSettings {
+  const overrides = file.zones?.[zone] ?? [];
+  const unknown = overrides.filter((override) => !file.settings.some((setting) => setting.id === override.id));
+  if (unknown.length > 0) throw new Error(`zone-settings.json: ${zone} overrides unknown settings ${unknown.map((setting) => setting.id).join(", ")}`);
+  return { settings: file.settings.map((setting) => overrides.find((override) => override.id === setting.id) ?? setting) };
 }
 export interface Ingress {
   hostname?: string;
@@ -416,7 +430,7 @@ async function applyZone(api: CloudflareApi, targets: Targets, replaceDns: boole
   for (const zone of recordedZones(targets)) {
     console.log(`-- ${zone.name}`);
     const { zoneId } = await checkZone(api, targets, zone);
-    for (const setting of readEdgeFile<ZoneSettings>("zone-settings.json").settings) {
+    for (const setting of zoneSettings(readEdgeFile<ZoneSettings>("zone-settings.json"), zone.name).settings) {
       await api.write({ method: "PATCH", path: `/zones/${zoneId}/settings/${setting.id}`, body: { value: setting.value } });
     }
     for (const file of RULESET_FILES) {
@@ -431,10 +445,11 @@ async function applyZone(api: CloudflareApi, targets: Targets, replaceDns: boole
 
 /** Reads the live settings and rulesets of every recorded zone back and throws on any difference with the files. */
 async function verifyZone(api: CloudflareApi, targets: Targets): Promise<void> {
-  const expected = readEdgeFile<ZoneSettings>("zone-settings.json");
+  const file = readEdgeFile<ZoneSettings>("zone-settings.json");
   const drift: string[] = [];
   for (const zone of recordedZones(targets)) {
     const { zoneId } = await checkZone(api, targets, zone);
+    const expected = zoneSettings(file, zone.name);
     const live: Record<string, unknown> = {};
     for (const setting of expected.settings) {
       live[setting.id] = (await api.call<{ value: unknown }>({ method: "GET", path: `/zones/${zoneId}/settings/${setting.id}` })).value;

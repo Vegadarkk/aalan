@@ -1,5 +1,5 @@
 {
-  "description": "Zone settings of joutiya.ma (§2, §6), applied in order by scripts/cloudflare.ts. ssl_automatic_mode=custom first, otherwise Automatic SSL/TLS may change the mode on its own. Email obfuscation and Rocket Loader off: both rewrite the HTML and inject a script the CSP would refuse. HSTS at the edge too, so responses Cloudflare answers itself (Access, rate-limit and error pages) carry it: 12 months (the longest the setting documents, enough for the preload list; the app sends 2 years on its own pages), subdomains included like the app header (every hostname of the zones is HTTPS: site, admin, staging, media, tunnels; notif is DNS-only mail records), nosniff left to the app (it already sends it).",
+  "description": "Zone settings of joutiya.ma (§2, §6), applied in order by scripts/cloudflare.ts. ssl_automatic_mode=custom first, otherwise Automatic SSL/TLS may change the mode on its own. Email obfuscation and Rocket Loader off: both rewrite the HTML and inject a script the CSP would refuse. HSTS at the edge too, so responses Cloudflare answers itself (Access, rate-limit and error pages) carry it: 12 months (the longest the setting documents, enough for the preload list; the app sends 2 years on its own pages), subdomains included like the app header (every hostname of the zones is HTTPS: site, admin, staging, media, tunnels; notif is DNS-only mail records), nosniff left to the app (it already sends it). zones overrides a setting by id for one zone: joutiya.ma and a3lan.ma only redirect, so their HSTS is 12 months without subdomains or preload (owner, 2026-11-23: easier to roll back).",
   "settings": [
     { "id": "ssl_automatic_mode", "value": "custom" },
     { "id": "ssl", "value": "strict" },
@@ -10,5 +10,9 @@
     { "id": "email_obfuscation", "value": "off" },
     { "id": "rocket_loader", "value": "off" },
     { "id": "security_header", "value": { "strict_transport_security": { "enabled": true, "max_age": 31536000, "include_subdomains": true, "preload": true, "nosniff": false } } }
-  ]
+  ],
+  "zones": {
+    "joutiya.ma": [{ "id": "security_header", "value": { "strict_transport_security": { "enabled": true, "max_age": 31536000, "include_subdomains": false, "preload": false, "nosniff": false } } }],
+    "a3lan.ma": [{ "id": "security_header", "value": { "strict_transport_security": { "enabled": true, "max_age": 31536000, "include_subdomains": false, "preload": false, "nosniff": false } } }]
+  }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import registry from "../../infra/targets.json";
-import type { Targets } from "../../scripts/assert-target";
+import type { Targets, ZoneName } from "../../scripts/assert-target";
 import {
   containsEdge,
   dnsChange,
@@ -14,6 +14,7 @@ import {
   readEdgeFile,
   rulesetDrift,
   settingsDrift,
+  zoneSettings,
   substitute,
   tunnelHostnames,
   liveAppFor,
@@ -289,6 +290,17 @@ describe("zone --check", () => {
     // HSTS at the edge for the responses Cloudflare answers itself, subdomains included like the app header.
     expect(values.security_header).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: true, preload: true, nosniff: false } });
     expect(settingsDrift(settings, { ...values, security_header: { strict_transport_security: { enabled: false } } })).toHaveLength(1);
+  });
+
+  it("gives the redirect-only zones a 12-month HSTS without subdomains or preload", () => {
+    const file = readEdgeFile<ZoneSettings>("zone-settings.json");
+    const hsts = (zone: ZoneName) => zoneSettings(file, zone).settings.find((setting) => setting.id === "security_header")?.value;
+    expect(hsts("aalan.ma")).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: true, preload: true, nosniff: false } });
+    for (const zone of ["joutiya.ma", "a3lan.ma"] as const) {
+      expect(hsts(zone)).toEqual({ strict_transport_security: { enabled: true, max_age: 31536000, include_subdomains: false, preload: false, nosniff: false } });
+      expect(zoneSettings(file, zone).settings.map((setting) => setting.id)).toEqual(file.settings.map((setting) => setting.id));
+    }
+    expect(() => zoneSettings({ settings: [], zones: { "a3lan.ma": [{ id: "ssl", value: "strict" }] } }, "a3lan.ma")).toThrow(/unknown settings ssl/);
   });
 });
 

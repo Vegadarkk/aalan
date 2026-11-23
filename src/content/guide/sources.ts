@@ -15,6 +15,7 @@ export const OFFICIAL_HOSTS = {
   "www.chikaya.ma": "Chikaya",
   "www.tax.gov.ma": "DGI",
   "www.tgr.gov.ma": "TGR",
+  "eservices.tgr.gov.ma": "TGR",
   "www.cnss.ma": "CNSS",
   "ae.gov.ma": "Auto-entrepreneur",
   "www.onousc.ma": "ONOUSC",
@@ -114,7 +115,9 @@ export const GUIDE_SOURCES = {
   chikaya: source("https://www.chikaya.ma/", ["fr", "ar"]),
   // Tax and social security
   "dgi-teleservices": source("https://www.tax.gov.ma/wps/portal/DGI/Teleservices", ["fr", "ar", "en", "es"]),
-  "tgr-taxes-locales": source("https://www.tgr.gov.ma/wps/portal/EmissionTHTSC", ["fr"]),
+  // The former EmissionTHTSC page now lands on the TGR home page: local taxes are paid on the e-services
+  // portal (browser check, 2026-11-23).
+  "tgr-taxes-locales": source("https://eservices.tgr.gov.ma/", ["fr"], true, "2026-11-23"),
   cnss: source("https://www.cnss.ma/", ["fr", "ar"], false),
   "ae-portail": source("https://ae.gov.ma/", ["fr", "ar"], false),
   // Students

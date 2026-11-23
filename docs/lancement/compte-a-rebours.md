@@ -30,13 +30,19 @@ copie (une minute au plus), la page affiche « La porte s'ouvre… » et réessa
 
 | Variable | Valeur | Effet |
 |---|---|---|
-| `OPENS_AT` | `2026-11-20T10:00:00+01:00` (date ISO avec fuseau) | Ferme le site jusqu'à cet instant. Vide = ouvert. Une valeur mal écrite empêche le démarrage. |
+| `OPENS_AT` | `2026-12-12T10:00:00+00:00` (date ISO avec fuseau ; ouverture le samedi 12 décembre, 10 h au Maroc) | Ferme le site jusqu'à cet instant. Vide = ouvert. Une valeur mal écrite empêche le démarrage. |
 | `PREVIEW_SECRET` | 32 à 128 lettres et chiffres | Active l'aperçu de l'équipe (ci-dessous). Vide = aucun aperçu. |
-| `BRAND_SOCIAL_LINKS` | `instagram=aalan_ma tiktok=@aalan_ma facebook=61596493192279 x=Aalan_maroc` (les comptes de la page d'attente) | Liens vers les comptes d'Aalan sous le compte à rebours. Vide = pas de liens. |
+| `BRAND_SOCIAL_LINKS` | `instagram=aalan_ma tiktok=@aalan_ma facebook=61596493192279 youtube=https://www.youtube.com/@aalan_ma x=Aalan_maroc` (dans l'ordre d'affichage) | Liens vers les comptes d'Aalan sous le compte à rebours. Vide = pas de liens. |
 
 Les valeurs sont lues au démarrage du conteneur : après un changement, relancer le service `web`
-(synchronisation `scripts/oracle-vm.ts`). Le Maroc est à UTC+1 hors ramadan, UTC+0 pendant : écrire
-le fuseau en vigueur le jour de l'ouverture.
+(synchronisation `scripts/oracle-vm.ts`). Le Maroc est à UTC+0 depuis le 21 septembre 2026 (tzdata
+2026e) : 10 h au Maroc = `10:00:00+00:00` = 11 h à Paris en hiver. Vérifier le fuseau en vigueur le
+jour de l'ouverture avant d'écrire la date.
+
+Facebook : la Page n'a pas encore de nom d'utilisateur. Le lien prend l'identifiant de profil de la
+Page (`61596493192279`, celui de `facebook.com/profile.php?id=...`), jamais l'identifiant Graph
+(`1494912697030724`), qui n'est pas l'adresse publique de la Page. Quand la Page aura un nom, écrire
+`facebook=<nom>`.
 
 ## Aperçu de l'équipe avant l'ouverture
 

@@ -3,7 +3,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { launchOfferSeatsLeft, launchPlacesOpen, type LaunchOffer } from "@/config/pricing";
 import { audit } from "@/lib/audit";
 import { getPricing } from "@/lib/config/runtime";
-import { launchOfferSeatsGranted, launchOfferSeatsRef } from "@/lib/db/repositories/pro-profiles";
+import { launchPlacesGranted, launchPlacesRef } from "@/lib/db/repositories/pro-profiles";
 import { getLedgerEntry, getLedgerEntryTx, getWalletTx, recordWalletOperationTx, walletStateAt } from "@/lib/db/repositories/wallets";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { db } from "@/lib/firebase/admin";
@@ -14,9 +14,9 @@ import { consume } from "@/lib/quota";
 import { pepperedHash } from "@/lib/security/hash";
 import { grantLaunchGift } from "./wallet";
 
-// An individual's launch place (owner, 2026-11-11): the launch places are shared with the shops
-// (`system/launchOfferSeats`, taken at a shop's first validation in src/lib/pro/review.ts). An
-// individual takes one once a listing of theirs passed moderation (it got a `publishedAt`) and,
+// An individual's launch place (owner, 2026-11-11): own counter `system/launchPlaces` since
+// 2026-11-24 (the shops count theirs in `system/launchOfferSeats`). An individual takes one once a
+// listing of theirs passed moderation (it got a `publishedAt`) and,
 // when `individual.requirePhone`, their phone number is verified: `individual.credits` gift credits
 // in the wallet's plan pool, valid `individual.days`, the only credits spendable while sales are
 // closed. One place per account (ledger entry `launch_place`, created once) and per phone number,
@@ -107,7 +107,7 @@ export async function claimLaunchPlace(uid: string, now = new Date()): Promise<L
     const userRef = firestore.collection(COLLECTIONS.users).doc(uid);
     const privateRef = userRef.collection(COLLECTIONS.userPrivate).doc(COLLECTIONS.userPrivateDoc);
     const result = await firestore.runTransaction(async (tx) => {
-      const [user, account, entry, granted] = await Promise.all([tx.get(userRef), tx.get(privateRef), getLedgerEntryTx(tx, uid, LAUNCH_PLACE_ENTRY_ID), launchOfferSeatsGranted(tx)]);
+      const [user, account, entry, granted] = await Promise.all([tx.get(userRef), tx.get(privateRef), getLedgerEntryTx(tx, uid, LAUNCH_PLACE_ENTRY_ID), launchPlacesGranted(tx)]);
       const e164 = account.get("phoneVerifiedAt") ? account.get("phoneE164") : undefined;
       const phoneE164 = typeof e164 === "string" && e164.length > 0 ? e164 : null;
       const marker = phoneE164 ? await tx.get(phoneMarkerRef(phoneE164)) : null;
@@ -134,7 +134,7 @@ export async function claimLaunchPlace(uid: string, now = new Date()): Promise<L
         now,
         resetsAt: expiresAt,
       });
-      tx.set(launchOfferSeatsRef(), { granted: granted + 1, updatedAt: Timestamp.fromDate(now) });
+      tx.set(launchPlacesRef(), { granted: granted + 1, updatedAt: Timestamp.fromDate(now) });
       // The marker holds no account id; deleted by retention-purge at `purgeAt`.
       if (phoneE164) tx.create(phoneMarkerRef(phoneE164), { at: Timestamp.fromDate(now), purgeAt: Timestamp.fromDate(launchPlaceMarkerPurgeAt(offer, now)) });
       return { outcome, expiresAt, place: granted + 1 };

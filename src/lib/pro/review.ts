@@ -221,7 +221,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     // A first validation takes a seat while some are left; a revalidation keeps the plan it had.
     const seatCandidate = input.action === "verify" && offerOpen && current.lifecycle === "pending_verification";
     const granted = seatCandidate ? await launchOfferSeatsGranted(tx) : 0;
-    const launchOfferActive = seatCandidate && granted < pricing.launchOffer.seats;
+    const launchOfferActive = seatCandidate && granted < pricing.launchOffer.proSeats;
     const next = decidedProfile(current, input, { staffUid: staff.user.uid, now, launchOfferActive, pricing, opensAt: opening() });
     const before = current.sector ?? "general";
     const after = next.sector ?? "general";

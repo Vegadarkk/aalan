@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PRICING, launchOfferOpen, pricingConfigSchema, resolvePricingConfig } from "@/config/pricing";
+import { DEFAULT_PRICING, launchOfferOpen, launchOfferProSeatsLeft, launchOfferSeatsLeft, pricingConfigSchema, resolvePricingConfig } from "@/config/pricing";
 import {
   IllegalProTransitionError,
   PRO_STATES,
@@ -251,18 +251,22 @@ describe("Pass Boutique", () => {
 });
 
 describe("launch offer config", () => {
-  it("defaults to an open Essentiel offer on 1,000 places shared with individuals until 12 March 2027, 6 months each, 30 days of notice", () => {
+  it("defaults to an open Essentiel offer on 100 shop places (1,000 for individuals) until 12 March 2027, 6 months each, 30 days of notice", () => {
     expect(DEFAULT_PRICING.launchOffer).toEqual({
       active: true,
       plan: "essentiel",
       noticeDays: 30,
       endsAt: null,
       seats: 1_000,
+      proSeats: 100,
       months: 6,
       grantsUntil: "2027-03-13T00:00:00+00:00",
       individual: { credits: 30, days: 90, requirePhone: true },
     });
     expect(pricingConfigSchema.safeParse(DEFAULT_PRICING).success).toBe(true);
+    expect(launchOfferProSeatsLeft(DEFAULT_PRICING.launchOffer, 99)).toBe(1);
+    expect(launchOfferProSeatsLeft(DEFAULT_PRICING.launchOffer, 100)).toBe(0);
+    expect(launchOfferSeatsLeft(DEFAULT_PRICING.launchOffer, 100)).toBe(900);
   });
 
   it("is open until endsAt, closed when inactive", () => {

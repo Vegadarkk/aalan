@@ -24,16 +24,17 @@ export const listingQuotasSchema = z
 export type ListingQuotas = z.infer<typeof listingQuotasSchema>;
 
 /**
- * Launch offer (owner decisions Q13, 2026-10-16, 2026-11-05 and 2026-11-11): `seats` launch places,
- * one counter (`system/launchOfferSeats`) shared by shops and individuals, handed out until
- * `grantsUntil`. A shop takes a place at its first validation and gets the quotas and storefront of
- * `plan` for free, without its monthly credits, for `months` from that validation
- * (`proProfiles.launchOfferEndsAt`). An individual takes a place once a listing of theirs passed
- * moderation (and their phone is verified when `individual.requirePhone`): `individual.credits` gift
- * credits, valid `individual.days`, spendable on options even while sales are closed, one place per
- * account and per phone number (src/lib/payments/launch-place.ts). `endsAt` (ISO date, optional)
- * closes the shops' offer for everyone at once. A shop is never downgraded while sales are closed,
- * and gets at least `noticeDays` of notice once they are open (src/lib/payments/launch-offer.ts).
+ * Launch offer (owner decisions Q13, 2026-10-16, 2026-11-05, 2026-11-11 and 2026-11-24): two
+ * counters of launch places, handed out until `grantsUntil`. Shops: `proSeats` places
+ * (`system/launchOfferSeats`), one taken at a shop's first validation; the shop gets the quotas and
+ * storefront of `plan` for free, without its monthly credits, for `months` from that validation, or
+ * from the opening for a shop validated before it (`proProfiles.launchOfferEndsAt`). Individuals:
+ * `seats` places (`system/launchPlaces`), one taken once a listing of theirs passed moderation (and
+ * their phone is verified when `individual.requirePhone`): `individual.credits` gift credits, valid
+ * `individual.days`, spendable on options even while sales are closed, one place per account and per
+ * phone number (src/lib/payments/launch-place.ts). `endsAt` (ISO date, optional) closes the shops'
+ * offer for everyone at once. A shop is never downgraded while sales are closed, and gets at least
+ * `noticeDays` of notice once they are open (src/lib/payments/launch-offer.ts).
  */
 export const launchOfferSchema = z
   .object({
@@ -41,8 +42,10 @@ export const launchOfferSchema = z
     plan: z.enum(["essentiel", "business"]),
     noticeDays: z.number().int().min(0).max(90),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
-    /** Launch places (shop validations and individuals together), counted in `system/launchOfferSeats`. */
+    /** Individuals' launch places, counted in `system/launchPlaces` (owner, 2026-11-24). */
     seats: z.number().int().min(1).max(100_000).default(1_000),
+    /** Shops' launch places (first validations), counted in `system/launchOfferSeats` (owner, 2026-11-24). */
+    proSeats: z.number().int().min(1).max(100_000).default(100),
     /** Months offered from each shop's validation. */
     months: z.number().int().min(1).max(36).default(6),
     /** No new place from this date (ISO, exclusive); the places already given keep running. */
@@ -199,14 +202,16 @@ export const DEFAULT_PRICING: PricingConfig = {
     premium: { activeListings: null, photosPerListing: 20, listingsPerDay: null },
   },
   graceDays: 7,
-  // Owner 2026-11-11: 1,000 places for shops and individuals together, given until 12 March 2027
-  // included (Morocco, UTC+0); an individual's place is 30 credits valid 90 days.
+  // Owner 2026-11-24: 1,000 places for individuals and 100 for shops, two counters, given until
+  // 12 March 2027 included (Morocco, UTC+0); an individual's place is 30 credits valid 90 days, a
+  // shop's is Essentiel free for 6 months.
   launchOffer: {
     active: true,
     plan: "essentiel",
     noticeDays: 30,
     endsAt: null,
     seats: 1_000,
+    proSeats: 100,
     months: 6,
     grantsUntil: "2027-03-13T00:00:00+00:00",
     individual: { credits: 30, days: 90, requirePhone: true },
@@ -255,9 +260,14 @@ export function launchPlacesOpen(offer: LaunchOffer, now: Date): boolean {
   return launchOfferOpen(offer, now) && (offer.grantsUntil === null || Date.parse(offer.grantsUntil) > now.getTime());
 }
 
-/** Seats left, from the places already counted. */
+/** Individuals' places left, from the places already counted. */
 export function launchOfferSeatsLeft(offer: LaunchOffer, granted: number): number {
   return Math.max(0, offer.seats - granted);
+}
+
+/** Shops' places left, from the validations already counted. */
+export function launchOfferProSeatsLeft(offer: LaunchOffer, granted: number): number {
+  return Math.max(0, offer.proSeats - granted);
 }
 
 /** `months` calendar months after `from` (UTC), the day clamped to the month's last: 31 Aug + 6 = 28/29 Feb. */

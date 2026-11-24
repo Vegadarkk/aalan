@@ -87,7 +87,7 @@ export default async function PricingPage({ params }: { params: Params }) {
     getPricing(),
     getFlags(),
   ]);
-  // The launch places shared by shops and individuals (owner, 2026-11-05 and 2026-11-11), told while some are left.
+  // The launch places, 1,000 for individuals and 100 for shops (owner, 2026-11-24), each told while some are left.
   const offer = await launchOfferState(pricing.launchOffer);
   // `grantsUntil` is exclusive: the last day a place is given is the day before.
   const placesUntil = offer?.grantsUntil ? new Date(Date.parse(offer.grantsUntil) - 1) : null;
@@ -127,7 +127,7 @@ export default async function PricingPage({ params }: { params: Params }) {
 
       <section className="flex flex-col gap-5" aria-labelledby="pricing-individuals">
         <h2 id="pricing-individuals" className="text-2xl font-semibold">{t("individuals.title")}</h2>
-        {offer && placesUntil && offer.individualCredits > 0 ? (
+        {offer && placesUntil && offer.individualCredits > 0 && offer.seatsLeft !== 0 ? (
           <p className="flex items-start gap-2 rounded-lg bg-featured/15 px-4 py-3 text-sm">
             <Gift className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>
@@ -187,12 +187,12 @@ export default async function PricingPage({ params }: { params: Params }) {
 
       <section className="flex flex-col gap-5" aria-labelledby="pricing-pros">
         <h2 id="pricing-pros" className="text-2xl font-semibold">{t("pros.title")}</h2>
-        {offer ? (
+        {offer && offer.proSeatsLeft !== 0 ? (
           <p className="flex items-start gap-2 rounded-lg bg-featured/15 px-4 py-3 text-sm">
             <Gift className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>
-              {n("pros.launchOffer", { seats: offer.seats, months: offer.months, days: offer.noticeDays })}
-              {offer.seatsLeft === null ? null : <strong className="font-semibold"> {n("pros.launchOfferSeats", { left: offer.seatsLeft })}</strong>}
+              {n("pros.launchOffer", { seats: offer.proSeats, months: offer.months, days: offer.noticeDays })}
+              {offer.proSeatsLeft === null ? null : <strong className="font-semibold"> {n("pros.launchOfferSeats", { left: offer.proSeatsLeft })}</strong>}
             </span>
           </p>
         ) : null}

@@ -12,7 +12,7 @@ const ADDRESS = "6 rue d'Armaillé, 75017 Paris";
 
 /** The opening list's e-mails (door layout, its own tests below): no name, the site's static images. */
 const DOOR_TEMPLATES: ReadonlySet<TemplateId> = new Set(["newsletterConfirm", "newsletterCampaign"]);
-const PLACES = { seats: 1000, credits: 30, creditDays: 90, months: 6, until: "2027-03-13T00:00:00+00:00", requirePhone: true };
+const PLACES = { seats: 1000, proSeats: 100, credits: 30, creditDays: 90, months: 6, until: "2027-03-13T00:00:00+00:00", requirePhone: true };
 
 const DATA: { [T in TemplateId]: TemplateData[T] } = {
   verifyEmail: { displayName: "Nadia", actionUrl: ACTION },

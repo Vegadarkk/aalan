@@ -4210,7 +4210,7 @@
     "intro": {
       "title": "Ad terẓmeḍ taḥanut Pro deg Aalan",
       "lead": "I tcirkat, i tɛawniyin (coopératives), i itejjaren d auto-entrepreneurs: taḥanut s yisem nnec, annonces s tecraḍ Pro d quotas i yemsasan d twuri nnec.",
-      "offer": "Offre de lancement : la formule Essentiel est offerte {months} mois aux premières boutiques validées, à compter de leur validation. Vous serez prévenu {days} jours avant tout paiement.",
+      "offer": "Offre de lancement : la formule Essentiel est offerte {months} mois aux premières boutiques validées, à compter de leur validation (au plus tôt à l'ouverture du site). Vous serez prévenu {days} jours avant tout paiement.",
       "how": "Ad nesneqed isefka nnec (ICE, registre) d yiwet n tewṛiqt zzat ma ad nerẓem taḥanut, s umata deg sin n wussan n twuri.",
       "offerSeats": "{left, plural, one {Plus qu'une place.} other {Plus que # places.}}"
     },
@@ -6601,7 +6601,7 @@
       "stock": "Inawen n tiddi d yini, d usekcem n stock nnec s ufaylu s tefrayin Business d Premium",
       "planning": "I wid itekran, planning n ṭumubilat d isutar s wussan"
     },
-    "offer": "Offre de lancement : les {seats} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months} mois. Vous serez prévenu {days} jours avant tout paiement.",
+    "offer": "Offre de lancement : la formule Essentiel est offerte pendant {months} mois aux {seats} premières boutiques validées, à compter de leur validation (au plus tôt à l'ouverture du site). Vous serez prévenu {days} jours avant tout paiement.",
     "pass": "Taḥanut i yiwen n wayyur? Pass Boutique yerezzem vitrine i {days} n wussan, bla abonnement, zi tarzemt n uzenzi.",
     "stepsTitle": "Mamec ad yeddu",
     "steps": {
@@ -6712,11 +6712,11 @@
         "packBonus": "{amount, number} DH: {credits, number} n crédits + {bonus, number} bla idrimen",
         "cta": "Sseɣ crédits"
       },
-      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers inscrits, particuliers et boutiques, jusqu'au {until, date, long}. Un particulier reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
+      "launchPlaces": "Places de lancement : {seats, number} places pour les premiers particuliers, jusqu'au {until, date, long}. Chacun reçoit {credits, number} crédits offerts, valables {days, number} jours, dès que sa première annonce est en ligne{phone, select, yes { et son numéro vérifié} other {}}."
     },
     "pros": {
       "title": "Imhniyen",
-      "launchOffer": "Offre de lancement : les {seats, number} places de lancement sont partagées entre boutiques et particuliers. Une boutique validée qui en obtient une a la formule Essentiel offerte pendant {months, number} mois, avec un préavis de {days, number} jours avant tout paiement.",
+      "launchOffer": "Offre de lancement : la formule Essentiel est offerte pendant {months, number} mois aux {seats, number} premières boutiques validées, avec un préavis de {days, number} jours avant tout paiement.",
       "pass": {
         "title": "Pass Boutique",
         "noCommitment": "Bla abonnement, bla asnulfu s yiman nnes"

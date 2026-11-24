@@ -62,8 +62,9 @@ export default async function ProLandingPage({ params }: { params: Params }) {
     getPricing(),
     getFlags(),
   ]);
-  // The first `seats` validated shops (owner, 2026-11-05), told while some are left.
-  const offer = await launchOfferState(pricing.launchOffer);
+  // The first `proSeats` validated shops (owner, 2026-11-05 and 2026-11-24), told while some are left.
+  const state = await launchOfferState(pricing.launchOffer);
+  const offer = state && state.proSeatsLeft !== 0 ? state : null;
   // Closed-sales wording only while they are closed (zone 6 audit 6-05).
   const salesOpen = flags.salesEnabled;
   const pass = pricing.passes[0] ?? null;
@@ -132,8 +133,8 @@ export default async function ProLandingPage({ params }: { params: Params }) {
             <p className="flex items-start gap-3 text-sm text-pretty">
               <Gift className="mt-0.5 size-5 shrink-0 text-gold-500 dark:text-gold-300" aria-hidden="true" />
               <span>
-                {count("offer", { seats: offer.seats, months: offer.months, days: offer.noticeDays })}
-                {offer.seatsLeft === null ? null : <strong className="font-semibold"> {count("offerSeats", { left: offer.seatsLeft })}</strong>}
+                {count("offer", { seats: offer.proSeats, months: offer.months, days: offer.noticeDays })}
+                {offer.proSeatsLeft === null ? null : <strong className="font-semibold"> {count("offerSeats", { left: offer.proSeatsLeft })}</strong>}
               </span>
             </p>
           ) : null}

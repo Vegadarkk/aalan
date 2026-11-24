@@ -824,7 +824,8 @@
       "rental_agrement_missing": "Ḥima ad tessufɣeḍ akra, ari zzat uṭṭun n rrexṣa (agrément) n agence nnec deg umkan Pro (Agence inu n ukra).",
       "payment_setup_required": "Ccɛel zzat « Adfaɛ ɣer umzenzu » i taḥanut nnec (amkan Pro).",
       "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier.",
-      "carrier_settings_missing": "Ssekles zzat lpri n usiwel nnec: iruḥen nnec ttaɣen zeg-s timnaḍin, timdinin d lpri."
+      "carrier_settings_missing": "Ssekles zzat lpri n usiwel nnec: iruḥen nnec ttaɣen zeg-s timnaḍin, timdinin d lpri.",
+      "posting_closed": "Qbel ad yettwarzem usmel, ɣir tiḥuna Pro yettwaqeblen i yzemren ad srusen annonces. Asuter-nnek Pro ixess ad yettwaqbel zzat."
     },
     "wizard": {
       "title": "Ssuffeɣ annonce",

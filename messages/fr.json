@@ -834,7 +834,8 @@
       "rental_agrement_missing": "Pour publier une location, renseignez d'abord le numéro d'agrément de votre agence dans l'espace Pro (Mon agence de location).",
       "payment_setup_required": "Activez d'abord « Paiement chez le vendeur » pour votre boutique (espace Pro).",
       "no_plan": "Votre boutique n'a pas d'offre active : choisissez une offre dans « Mon abonnement » pour publier.",
-      "carrier_settings_missing": "Enregistrez d'abord votre grille de transport : vos départs en reprennent les zones, les villes et les tarifs."
+      "carrier_settings_missing": "Enregistrez d'abord votre grille de transport : vos départs en reprennent les zones, les villes et les tarifs.",
+      "posting_closed": "Avant l'ouverture, seules les boutiques Pro validées peuvent déposer des annonces. Votre demande Pro doit d'abord être validée."
     },
     "wizard": {
       "title": "Déposer une annonce",

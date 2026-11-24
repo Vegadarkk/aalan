@@ -64,6 +64,8 @@ export type ErrorCode =
   | "listing_unavailable"
   /** A save changing the screened content of a listing under a legal hold or an open report (409). */
   | "listing_under_review"
+  /** Before the opening, only a validated Pro posts (invited shops, owner's card 24 Nov 2026) (403). */
+  | "posting_closed"
   /** Phone reveal refused: account too young, e-mail unverified or quota reached. */
   | "reveal_not_allowed"
   /** Publish in an adults-only subcategory without the seller's attestation (422). */

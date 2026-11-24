@@ -14,6 +14,7 @@ import { getProProfile } from "@/lib/db/repositories/pro-profiles";
 import { getWallet, walletStateAt } from "@/lib/db/repositories/wallets";
 import { optionsOpen } from "@/lib/payments/options";
 import { getFlags } from "@/lib/config/runtime";
+import { assertPostingOpen } from "@/lib/launch/early";
 import { HttpError, notFound } from "@/lib/http/errors";
 import { logger } from "@/lib/logging/logger";
 import { readJson } from "@/lib/http/json";
@@ -67,6 +68,7 @@ async function chargeOwnerRead(uid: string, documents: number): Promise<void> {
 
 export async function handleCreate(request: Request): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
+  assertPostingOpen(request, auth.user.claims);
   const input = await readJson(request, createListingSchema);
   await enforceLimit("listing.new.uid", auth.user.uid);
   await assertQuotas(DEPOSIT_QUOTAS);
@@ -77,6 +79,7 @@ export async function handleCreate(request: Request): Promise<Response> {
 /** POST /api/listings/{id}/duplicate (Pros, audit §7): a new draft copied from one of the seller's listings. */
 export async function handleDuplicate(request: Request, params: Params): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
+  assertPostingOpen(request, auth.user.claims);
   const id = await listingIdOf(params);
   await enforceLimit("listing.new.uid", auth.user.uid);
   await assertQuotas(DEPOSIT_QUOTAS);
@@ -239,6 +242,7 @@ export function transitionHandler(action: Exclude<OwnerAction, "remove">): (requ
 
 export async function handlePublish(request: Request, params: Params): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
+  assertPostingOpen(request, auth.user.claims);
   const id = await listingIdOf(params);
   const input = await readJson(request, publishListingSchema);
   // Every attempt, before the listing is read; the 5 publications a day are counted inside publish().

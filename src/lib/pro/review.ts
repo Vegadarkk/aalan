@@ -1,4 +1,5 @@
 import "server-only";
+import { fromOpening, opening } from "@/lib/launch/early";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { launchOfferEndFor, launchOfferGrantEnd, launchPlacesOpen, listingQuotas } from "@/config/pricing";
 import type { StaffContext } from "@/lib/auth/guards";
@@ -149,7 +150,7 @@ export function underReview(current: Pick<ProProfileRecord, "kybc" | "lifecycle"
 export function decidedProfile(
   current: ProProfileRecord,
   input: ProDecisionInput,
-  ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>> },
+  ctx: { staffUid: string; now: Date; launchOfferActive: boolean; pricing: Awaited<ReturnType<typeof getPricing>>; opensAt?: Date | null },
 ): ProProfileDoc {
   if (!underReview(current)) throw new HttpError(409, "conflict", "application already decided");
   const revalidation = current.lifecycle === "revalidation_required";
@@ -175,9 +176,10 @@ export function decidedProfile(
     lifecycle: patch.lifecycle,
     plan: patch.plan,
     planSource: patch.planSource,
-    // A seat of the launch offer: its own end, `months` after this validation (owner, 2026-11-05).
+    // A seat of the launch offer: its own end, `months` after this validation (owner, 2026-11-05),
+    // or after the opening for an invited shop validated before it (owner, 2026-11-24).
     launchOfferEndsAt:
-      !revalidation && patch.planSource === "launch_offer" ? launchOfferGrantEnd(ctx.pricing.launchOffer, ctx.now) : doc.launchOfferEndsAt,
+      !revalidation && patch.planSource === "launch_offer" ? launchOfferGrantEnd(ctx.pricing.launchOffer, fromOpening(ctx.now, ctx.opensAt ?? null)) : doc.launchOfferEndsAt,
     // `null` (a new validation after a withdrawal) clears it; absent keeps it.
     revalidationFrom: patch.revalidationFrom === null ? undefined : (patch.revalidationFrom ?? doc.revalidationFrom),
     quotas: listingQuotas({ type: "pro", plan: patch.plan }, ctx.pricing),
@@ -220,7 +222,7 @@ export async function decideApplication(staff: StaffContext, proId: string, inpu
     const seatCandidate = input.action === "verify" && offerOpen && current.lifecycle === "pending_verification";
     const granted = seatCandidate ? await launchOfferSeatsGranted(tx) : 0;
     const launchOfferActive = seatCandidate && granted < pricing.launchOffer.seats;
-    const next = decidedProfile(current, input, { staffUid: staff.user.uid, now, launchOfferActive, pricing });
+    const next = decidedProfile(current, input, { staffUid: staff.user.uid, now, launchOfferActive, pricing, opensAt: opening() });
     const before = current.sector ?? "general";
     const after = next.sector ?? "general";
     tx.set(ref, proProfileToFirestore(next));

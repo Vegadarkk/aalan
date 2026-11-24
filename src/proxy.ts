@@ -17,7 +17,7 @@ import { challengeUrlPath } from "@/lib/security/challenge-path";
 import { mediaBaseUrl } from "@/lib/storage/keys";
 import { robotsTag } from "@/lib/security/robots";
 import { closedDecision, launchPhase, OPENING_SEGMENT, parseOpensAt } from "@/lib/launch/gate";
-import { hasPreviewPass, PREVIEW_COOKIE } from "@/lib/launch/preview";
+import { hasPreviewPass, hasProInvitePass, PREVIEW_COOKIE } from "@/lib/launch/preview";
 
 const handleI18nRouting = createMiddleware(routing);
 
@@ -145,8 +145,11 @@ function launchGate(request: NextRequest, routed: NextResponse | null): NextResp
   if (segment === OPENING_SEGMENT && (LOCALES as readonly string[]).includes(first)) return home(first);
   const opensAt = parseOpensAt(process.env.OPENS_AT);
   const phase = launchPhase(opensAt);
-  if (phase === "open" || hasPreviewPass(request.cookies.get(PREVIEW_COOKIE)?.value, process.env.PREVIEW_SECRET)) return null;
-  const decision = closedDecision(pathname, LOCALES, DEFAULT_LOCALE, phase);
+  const pass = request.cookies.get(PREVIEW_COOKIE)?.value;
+  if (phase === "open" || hasPreviewPass(pass, process.env.PREVIEW_SECRET)) return null;
+  // An invited shop (owner's card, 24 Nov 2026): sign-up rooms and posting, never the public site.
+  const invited = hasProInvitePass(pass, process.env.PREVIEW_SECRET, process.env.PRO_INVITE_CODE);
+  const decision = closedDecision(pathname, LOCALES, DEFAULT_LOCALE, invited ? "pro" : phase);
   switch (decision.kind) {
     case "pass":
       return null;

@@ -370,6 +370,22 @@ describe("proxy before the opening (OPENS_AT)", () => {
     for (const path of ["/api/listings", "/api/search", "/api/uploads/sign"]) expect((await proxy(visitor(path))).status, path).toBe(503);
   });
 
+  it("lets an invited shop sign up and post, never browse (owner's card, 24 Nov 2026)", async () => {
+    const code = "Inv1te".repeat(3);
+    vi.stubEnv("PREVIEW_SECRET", SECRET);
+    vi.stubEnv("PRO_INVITE_CODE", code);
+    const { proInvitePass } = await import("@/lib/launch/preview");
+    const invited = (path: string, extra = "") => new NextRequest(`https://${HOST}${path}`, { headers: { host: HOST, cookie: `__Host-preview=${proInvitePass(SECRET, code)}${extra}` } });
+    expect((await proxy(invited("/fr"))).headers.get("x-middleware-rewrite")).toBe(`https://${HOST}/fr/ouverture`);
+    for (const path of ["/fr/inscription", "/api/auth/signup", "/api/listings", "/api/uploads/sign", "/api/pro/stock/import"]) expect((await proxy(invited(path))).status, path).toBe(200);
+    for (const path of ["/fr/deposer", "/fr/mes-annonces", "/fr/pro"]) expect((await proxy(invited(path, "; __Host-session=s"))).status, path).toBe(200);
+    for (const path of ["/fr/recherche", "/fr/annonce/velo-casablanca-abcd2345", "/fr/messages"]) expect((await proxy(invited(path, "; __Host-session=s"))).status, path).toBe(307);
+    for (const path of ["/api/search", "/api/conversations", "/api/listings/abcd2345/phone"]) expect((await proxy(invited(path))).status, path).toBe(503);
+    // Without the code configured, the same cookie is nothing.
+    vi.stubEnv("PRO_INVITE_CODE", "");
+    expect((await proxy(invited("/api/listings"))).status).toBe(503);
+  });
+
   it("opens at the instant, and the countdown page is never reached directly", async () => {
     vi.stubEnv("OPENS_AT", new Date(Date.now() - 1000).toISOString());
     expect((await proxy(visitor("/fr"))).headers.get("x-middleware-rewrite")).toBeNull();

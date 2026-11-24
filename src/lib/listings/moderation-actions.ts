@@ -1,4 +1,5 @@
 import "server-only";
+import { opening } from "@/lib/launch/early";
 import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import { sanitaryNumber, subcategoryAllowsAds } from "@/config/categories";
 import { listingLifetime } from "@/config/pricing";
@@ -301,7 +302,7 @@ export async function decide(staff: StaffContext, id: string, input: ModerationD
   // Inactive seller or shop back under verification: not published (shared with the agent's approval).
   if (approve) refuseBlocked(await approvalBlocker(listing));
 
-  const ctx = { now, lifetime: listingLifetime(legal) };
+  const ctx = { now, lifetime: listingLifetime(legal), opensAt: opening() };
   let result: TransitionResult;
   try {
     result = approve ? approveHold(listing, ctx) : transition(listing, "rejected", ctx);

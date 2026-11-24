@@ -83,6 +83,11 @@ export interface TransitionContext {
   pausedReason?: PausedReason;
   /** Clear IP of the actor, forwarded to the contentOps entry (undefined for system transitions). */
   ip?: string;
+  /**
+   * The site's opening while it is still ahead (src/lib/launch/early.ts): a listing an invited shop
+   * publishes before it gets its whole lifetime from the opening, not from today.
+   */
+  opensAt?: Date | null;
 }
 
 export class IllegalTransitionError extends Error {
@@ -231,8 +236,9 @@ function applyStatus(listing: Listing, to: ListingStatus, ctx: TransitionContext
           };
         }
       }
-      // Publish (from draft) or approve a held publication (from pending_review).
-      const expiresAt = onlineUntil(listing, now, lifetime);
+      // Publish (from draft) or approve a held publication (from pending_review). Before the
+      // opening, the lifetime runs from the opening (invited shops, 24 Nov 2026).
+      const expiresAt = onlineUntil(listing, ctx.opensAt && ctx.opensAt.getTime() > now.getTime() ? ctx.opensAt : now, lifetime);
       return {
         patch: { ...base, status: "published", publishedAt: now, expiresAt, purgeAt: purgeAtFor(expiresAt, lifetime), sortAt: now, sortSource: "publish", pausedReason: null },
         effects: effects({

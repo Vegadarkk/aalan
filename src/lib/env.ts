@@ -63,6 +63,8 @@ const schema = z.object({
   OPENS_AT: optional,
   /** Preview pass through the closed site (src/lib/launch/preview.ts): 32 to 128 letters and digits. */
   PREVIEW_SECRET: optional,
+  /** Pro invitation code of the outreach mail (src/lib/launch/preview.ts): 16 to 64 letters and digits; needs PREVIEW_SECRET. */
+  PRO_INVITE_CODE: optional,
   /** Aalan's own social accounts on the countdown page: "instagram=aalan_ma tiktok=@aalan_ma" (src/lib/launch/social.ts). */
   BRAND_SOCIAL_LINKS: optional,
   QUEUE_REDIS_URL: optional,
@@ -269,6 +271,8 @@ export function parseEnv(source: Record<string, string | undefined>): ParsedEnv 
   // A mistyped opening date would silently open (or keep closed) the site: refused everywhere.
   if (invalidOpensAt(env.OPENS_AT)) errors.push("OPENS_AT must be an ISO 8601 date and time with its offset, e.g. 2026-11-20T10:00:00+01:00");
   if (env.PREVIEW_SECRET && !/^[A-Za-z0-9]{32,128}$/.test(env.PREVIEW_SECRET)) errors.push("PREVIEW_SECRET must be 32 to 128 letters and digits");
+  if (env.PRO_INVITE_CODE && !/^[A-Za-z0-9]{16,64}$/.test(env.PRO_INVITE_CODE)) errors.push("PRO_INVITE_CODE must be 16 to 64 letters and digits");
+  if (env.PRO_INVITE_CODE && !env.PREVIEW_SECRET) errors.push("PRO_INVITE_CODE needs PREVIEW_SECRET");
   for (const problem of brandSocialLinks(env.BRAND_SOCIAL_LINKS).problems) errors.push(`BRAND_SOCIAL_LINKS: ${problem}`);
 
   const legacy = Object.keys(source).filter((name) => name.startsWith("NEXT_PUBLIC_") && source[name]);

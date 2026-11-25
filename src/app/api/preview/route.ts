@@ -19,7 +19,10 @@ function notFound(): Response {
 export function GET(request: NextRequest): Response {
   const secret = serverEnv().PREVIEW_SECRET;
   if (!secret) return notFound();
-  const home = new URL(`/${DEFAULT_LOCALE}`, request.url);
+  // On the public origin (SITE_URL): behind the tunnel, request.url names the container's own
+  // address (http://0.0.0.0:3000), which a browser cannot reach.
+  const origin = serverEnv().SITE_URL;
+  const home = new URL(`/${DEFAULT_LOCALE}`, origin);
   const params = request.nextUrl.searchParams;
   if (params.has("fin")) {
     const response = NextResponse.redirect(home, 303);
@@ -32,7 +35,7 @@ export function GET(request: NextRequest): Response {
     if (!isProInviteCode(params.get("pro"), secret, code)) return notFound();
     const asked = params.get("langue") ?? "";
     const locale = (LOCALES as readonly string[]).includes(asked) ? asked : DEFAULT_LOCALE;
-    const signup = new URL(`/${locale}/inscription`, request.url);
+    const signup = new URL(`/${locale}/inscription`, origin);
     signup.searchParams.set("next", `/${locale}/pro`);
     const response = NextResponse.redirect(signup, 303);
     response.cookies.set(PREVIEW_COOKIE, proInvitePass(secret, code as string), { secure: true, path: "/", httpOnly: true, sameSite: "lax", maxAge: PREVIEW_SECONDS });

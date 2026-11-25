@@ -9,12 +9,14 @@ beforeEach(() => {
   vi.resetModules();
   vi.stubEnv("PREVIEW_SECRET", SECRET);
   vi.stubEnv("PRO_INVITE_CODE", CODE);
+  vi.stubEnv("SITE_URL", "https://aalan.ma");
 });
 afterEach(() => vi.unstubAllEnvs());
 
 async function get(query: string): Promise<Response> {
   const { GET } = await import("@/app/api/preview/route");
-  return GET(new NextRequest(`https://aalan.ma/api/preview?${query}`));
+  // As the app sees it behind the tunnel: its own address, not the public origin (rc.10 smoke test).
+  return GET(new NextRequest(`http://0.0.0.0:3000/api/preview?${query}`));
 }
 
 describe("Pro invitation link", () => {
@@ -27,6 +29,13 @@ describe("Pro invitation link", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect((await get(`pro=${CODE}&langue=ar`)).headers.get("location")).toBe("https://aalan.ma/ar/inscription?next=%2Far%2Fpro");
     expect((await get(`pro=${CODE}&langue=xx`)).headers.get("location")).toBe("https://aalan.ma/fr/inscription?next=%2Ffr%2Fpro");
+  });
+
+  it("sends the team's pass to the public home page", async () => {
+    const response = await get(`cle=${SECRET}`);
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("https://aalan.ma/fr");
+    expect((await get("fin")).headers.get("location")).toBe("https://aalan.ma/fr");
   });
 
   it("answers 404 to a wrong code or when no code is configured", async () => {

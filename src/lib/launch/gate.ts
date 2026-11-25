@@ -8,7 +8,11 @@
 // 16 Nov 2026: "Oui, inscriptions à J-1"): accounts, sign-in, settings, phone check and the Pro
 // application pass; listings, search and messaging stay closed until OPENS_AT. The admin host is
 // never gated. Unset or past OPENS_AT: open.
-// A preview pass (src/lib/launch/preview.ts) lets the team through before the opening.
+// A preview pass (src/lib/launch/preview.ts) lets the team through before the opening, and a Pro
+// invitation pass (owner's card, 24 Nov 2026) lets invited shops in early: the sign-up rooms plus
+// posting and their stock, so their shop is full at the opening. Search, messaging, favorites and
+// every public listing or shop page stay closed until OPENS_AT; publishing while closed is kept to
+// validated Pros by the listings service (src/lib/launch/early.ts).
 // Pure and environment-free: imported by the proxy, the closed page and the tests.
 
 /** Path segment of the closed home page, reached only by the proxy's rewrite of /{locale}. */
@@ -80,6 +84,24 @@ export const SIGNUP_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["connexion", "
  */
 const SIGNUP_API = /^\/api\/(?:auth\/[a-z]+(?:\/[a-z]+)?|account\/[a-z]+|pro\/apply|pro\/me(?:\/[a-z]+){0,2}|pro\/kybc\/uploads(?:\/[A-Za-z0-9_-]{1,64}(?:\/complete)?)?|challenge\/pass)\/?$/;
 
+/**
+ * Pages added for an invited shop (on top of the sign-up ones): posting and the seller's listings.
+ */
+export const PRO_INVITE_PAGE_SEGMENTS: ReadonlySet<string> = new Set(["deposer", "mes-annonces"]);
+
+const ID = "[A-Za-z0-9_-]{1,64}";
+/**
+ * API added for an invited shop: drafts and the seller's own listings with their owner actions
+ * (not the buyer's phone reveal, boost options or payment links), photo uploads, the owner's
+ * private photos, the stock import, the fleet and the departures. Each still checks its session.
+ */
+const PRO_INVITE_API = new RegExp(
+  `^/api/(?:listings(?:/mine)?|listings/${ID}(?:/(?:availability|duplicate|pause|publish|renew|resume|section|sold|stock|preview|promo))?|uploads/sign|uploads/${ID}(?:/complete)?|owner-media/listings/${ID}/[A-Za-z0-9_.-]{1,96}|pro/stock(?:/import)?|pro/fleet|pro/departures(?:/${ID}(?:/space)?)?)/?$`,
+);
+
+/** What a closed-site request may reach: the door only, the sign-up rooms (J-1), or an invited shop's. */
+export type GateAccess = Exclude<LaunchPhase, "open"> | "pro";
+
 export type ClosedDecision =
   /** Served as is. */
   | { kind: "pass" }
@@ -92,18 +114,21 @@ export type ClosedDecision =
 
 /**
  * What a public-host request becomes while the site is closed, for a pathname already carrying
- * its locale (the proxy runs the locale routing first); `phase` "signup" adds the sign-up pages
- * and API of the day before. `locale`: the first segment when it is
+ * its locale (the proxy runs the locale routing first); `access` "signup" adds the sign-up pages
+ * and API of the day before, "pro" (an invited shop) adds posting on top of them. `locale`: the first segment when it is
  * one of `locales`, else the default.
  */
-export function closedDecision(pathname: string, locales: readonly string[], fallbackLocale: string, phase: Exclude<LaunchPhase, "open"> = "closed"): ClosedDecision {
-  const signup = phase === "signup";
-  if (pathname.startsWith("/api/")) return OPEN_API.test(pathname) || (signup && SIGNUP_API.test(pathname)) ? { kind: "pass" } : { kind: "closed-api" };
+export function closedDecision(pathname: string, locales: readonly string[], fallbackLocale: string, access: GateAccess = "closed"): ClosedDecision {
+  const pro = access === "pro";
+  const signup = pro || access === "signup";
+  if (pathname.startsWith("/api/")) {
+    return OPEN_API.test(pathname) || (signup && SIGNUP_API.test(pathname)) || (pro && PRO_INVITE_API.test(pathname)) ? { kind: "pass" } : { kind: "closed-api" };
+  }
   const [, first = "", segment = ""] = pathname.split("/");
   const locale = locales.includes(first) ? first : fallbackLocale;
   if (!locales.includes(first)) return { kind: "redirect-home", locale };
   if (segment === "") return { kind: "closed-home", locale };
-  if (OPEN_PAGE_SEGMENTS.has(segment) || (signup && SIGNUP_PAGE_SEGMENTS.has(segment))) return { kind: "pass" };
+  if (OPEN_PAGE_SEGMENTS.has(segment) || (signup && SIGNUP_PAGE_SEGMENTS.has(segment)) || (pro && PRO_INVITE_PAGE_SEGMENTS.has(segment))) return { kind: "pass" };
   return { kind: "redirect-home", locale };
 }
 

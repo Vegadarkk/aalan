@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { closedDecision, invalidOpensAt, isClosed, launchPhase, parseOpensAt, timeLeft } from "@/lib/launch/gate";
-import { hasPreviewPass, isPreviewKey, previewPass } from "@/lib/launch/preview";
+import { hasPreviewPass, hasProInvitePass, isPreviewKey, isProInviteCode, previewPass, proInvitePass } from "@/lib/launch/preview";
 import { brandSocialLinks } from "@/lib/launch/social";
 import { parseEnv } from "@/lib/env";
 
@@ -98,6 +98,45 @@ describe("preview pass", () => {
     expect(isPreviewKey(secret, secret)).toBe(true);
     expect(isPreviewKey(`${secret}x`, secret)).toBe(false);
     expect(isPreviewKey(null, secret)).toBe(false);
+  });
+});
+
+describe("Pro invitation (owner's card, 24 Nov 2026)", () => {
+  const secret = "Z9".repeat(16);
+  const code = "Inv1te".repeat(3);
+
+  it("is a pass of its own, keyed by the code under the preview secret", () => {
+    const pass = proInvitePass(secret, code);
+    expect(pass).not.toBe(previewPass(secret));
+    expect(hasPreviewPass(pass, secret)).toBe(false);
+    expect(hasProInvitePass(pass, secret, code)).toBe(true);
+    expect(hasProInvitePass(previewPass(secret), secret, code)).toBe(false);
+    expect(hasProInvitePass(pass, secret, "Other1".repeat(3))).toBe(false);
+    expect(hasProInvitePass(pass, "Y8".repeat(16), code)).toBe(false);
+    expect(hasProInvitePass(proInvitePass(secret, "short"), secret, "short")).toBe(false);
+    expect(hasProInvitePass(pass, secret, undefined)).toBe(false);
+    expect(isProInviteCode(code, secret, code)).toBe(true);
+    expect(isProInviteCode(`${code}x`, secret, code)).toBe(false);
+    expect(isProInviteCode(code, undefined, code)).toBe(false);
+    expect(isProInviteCode(null, secret, code)).toBe(false);
+  });
+
+  it("opens the sign-up rooms and posting, never search, messaging or public pages", () => {
+    for (const path of ["/fr/inscription", "/fr/pro", "/fr/pro/stock", "/fr/deposer", "/ar/mes-annonces", "/fr/legal/cgu"]) expect(closedDecision(path, LOCALES, "fr", "pro"), path).toEqual({ kind: "pass" });
+    for (const path of ["/fr/messages", "/fr/favoris", "/fr/recherche", "/fr/annonce/x-abcd2345", "/fr/boutique/x", "/fr/porte-monnaie"]) expect(closedDecision(path, LOCALES, "fr", "pro"), path).toEqual({ kind: "redirect-home", locale: "fr" });
+    const open = ["/api/auth/signup", "/api/pro/apply", "/api/listings", "/api/listings/mine", "/api/listings/abcd2345", "/api/listings/abcd2345/publish", "/api/listings/abcd2345/duplicate", "/api/listings/abcd2345/stock", "/api/uploads/sign", "/api/uploads/Up_1-x", "/api/uploads/Up_1-x/complete", "/api/owner-media/listings/abcd2345/p1-card.webp", "/api/pro/stock", "/api/pro/stock/import", "/api/pro/fleet", "/api/pro/departures", "/api/pro/departures/d1/space"];
+    for (const path of open) {
+      expect(closedDecision(path, LOCALES, "fr", "pro"), path).toEqual({ kind: "pass" });
+      expect(closedDecision(path, LOCALES, "fr", "closed"), path).toEqual({ kind: "closed-api" });
+    }
+    const shut = ["/api/search", "/api/conversations", "/api/messages/stream", "/api/favorites", "/api/listings/abcd2345/phone", "/api/listings/abcd2345/options", "/api/listings/abcd2345/payment-link", "/api/wallet", "/api/billing/checkout", "/api/shops/x", "/api/listings/abcd2345/publish/x", "/api/uploads"];
+    for (const path of shut) expect(closedDecision(path, LOCALES, "fr", "pro"), path).toEqual({ kind: "closed-api" });
+  });
+
+  it("is refused at startup when mistyped or without the preview secret", () => {
+    expect(parseEnv({ PRO_INVITE_CODE: "short", PREVIEW_SECRET: secret }).errors.join("\n")).toContain("PRO_INVITE_CODE must be");
+    expect(parseEnv({ PRO_INVITE_CODE: code }).errors.join("\n")).toContain("PRO_INVITE_CODE needs PREVIEW_SECRET");
+    expect(parseEnv({ PRO_INVITE_CODE: code, PREVIEW_SECRET: secret }).errors).toEqual([]);
   });
 });
 

@@ -61,6 +61,19 @@ describe("decidedProfile", () => {
     expect(next).not.toHaveProperty("proId");
   });
 
+  it("counts the launch offer's months from the opening for a shop validated before it (24 Nov 2026)", () => {
+    const opensAt = new Date(NOW.getTime() + 10 * 24 * 3_600_000);
+    const months = DEFAULT_PRICING.launchOffer.months;
+    const plus = (from: Date) => {
+      const end = new Date(from);
+      end.setUTCMonth(end.getUTCMonth() + months);
+      return end;
+    };
+    expect(decidedProfile(record(), verify, { ...CTX, opensAt }).launchOfferEndsAt).toEqual(plus(opensAt));
+    expect(decidedProfile(record(), verify, { ...CTX, opensAt: new Date(NOW.getTime() - 1) }).launchOfferEndsAt).toEqual(plus(NOW));
+    expect(decidedProfile(record(), verify, CTX).launchOfferEndsAt).toEqual(plus(NOW));
+  });
+
   it("verifies without the launch offer: no plan, no quota", () => {
     const next = decidedProfile(record(), verify, { ...CTX, launchOfferActive: false });
     expect(next).toMatchObject({ lifecycle: "verified", plan: "none", planSource: "none", quotas: DEFAULT_PRICING.pro.none });

@@ -202,7 +202,7 @@ export function revalidationSubmission(existing: ProProfileRecord, submitted: Pr
 async function launchOfferForApplicant(offer: LaunchOffer, lifecycle: string | null): Promise<ProMeResponse["launchOffer"]> {
   if (lifecycle !== null && lifecycle !== "pending_verification" && lifecycle !== "rejected") return null;
   const state = await launchOfferState(offer);
-  return state ? { noticeDays: state.noticeDays, months: state.months, seatsLeft: state.seatsLeft } : null;
+  return state && state.proSeatsLeft !== 0 ? { noticeDays: state.noticeDays, months: state.months, seatsLeft: state.proSeatsLeft } : null;
 }
 
 /** GET /api/pro/me: the account's shop or application, the switches and the eligibility checks. */

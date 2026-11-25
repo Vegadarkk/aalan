@@ -76,6 +76,7 @@ async function placesNow(now: Date): Promise<TemplateData["newsletterCampaign"][
   if (!launchPlacesOpen(offer, now)) return null;
   return {
     seats: offer.seats,
+    proSeats: offer.proSeats,
     credits: offer.individual.credits,
     creditDays: offer.individual.days,
     months: offer.months,

@@ -64,7 +64,7 @@ const SHARED: Record<MailLocale, Shared> = {
         figure: `${p.credits} crédits`,
         text: `offerts, valables ${p.creditDays} jours, pour remonter vos annonces ou les mettre « À la Une ». Dès votre première annonce acceptée${p.requirePhone ? ", numéro de téléphone vérifié" : ""}.`,
       },
-      { who: "Boutique", figure: `${p.months} mois`, text: "d'offre Essentiel offerts, dès la validation de votre boutique." },
+      { who: "Boutique", figure: `${p.months} mois`, text: `d'offre Essentiel offerts aux ${p.proSeats} premières boutiques, dès leur validation.` },
     ],
   },
   ar: {
@@ -76,7 +76,7 @@ const SHARED: Record<MailLocale, Shared> = {
         figure: `${p.credits} نقطة`,
         text: `مجانية، صالحة لمدة ${p.creditDays} يومًا، لرفع إعلاناتك أو وضعها «في الواجهة». ابتداءً من أول إعلان تقبله المراجعة${p.requirePhone ? "، برقم هاتف موثَّق" : ""}.`,
       },
-      { who: "للمتاجر", figure: `${p.months} أشهر`, text: "من عرض «Essentiel» مجانًا، ابتداءً من توثيق متجرك." },
+      { who: "للمتاجر", figure: `${p.months} أشهر`, text: `من عرض «Essentiel» مجانًا لأول ${p.proSeats} متجر، ابتداءً من توثيقه.` },
     ],
   },
 };
@@ -120,7 +120,7 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       preheader: (_w, p) => `${need(p).credits} crédits offerts aux particuliers, ${need(p).months} mois d'Essentiel aux boutiques. Une place par personne.`,
       label: "J-1",
       title: () => "Votre place de lancement vous attend",
-      paragraphs: (w, p) => [`Aalan ouvre demain, ${w.when} (heure du Maroc). Les ${seats(p, "fr")} premiers à se lancer, particuliers et boutiques confondus, reçoivent un cadeau de bienvenue.`],
+      paragraphs: (w, p) => [`Aalan ouvre demain, ${w.when} (heure du Maroc). Les ${seats(p, "fr")} premiers particuliers et les ${need(p).proSeats} premières boutiques à se lancer reçoivent un cadeau de bienvenue.`],
       offers: (_w, p) => SHARED.fr.offers(need(p)),
       steps: (w, p) => [
         { when: "Dès maintenant", text: "Créez votre compte." },
@@ -174,7 +174,7 @@ const COPY: Record<MailLocale, Record<NewsletterCampaign, Copy>> = {
       preheader: (_w, p) => `${need(p).credits} نقطة مجانية للأفراد، و${need(p).months} أشهر من «Essentiel» للمتاجر. مكان واحد لكل شخص.`,
       label: "J-1",
       title: () => "مكانك في الإطلاق ينتظرك",
-      paragraphs: (w, p) => [`يفتح أعلان غدًا، ${w.when} (بتوقيت المغرب). أول ${seats(p, "ar")} من الأفراد والمتاجر معًا يحصلون على هدية ترحيب.`],
+      paragraphs: (w, p) => [`يفتح أعلان غدًا، ${w.when} (بتوقيت المغرب). أول ${seats(p, "ar")} من الأفراد وأول ${need(p).proSeats} من المتاجر يحصلون على هدية ترحيب.`],
       offers: (_w, p) => SHARED.ar.offers(need(p)),
       steps: (w, p) => [
         { when: "من الآن", text: "أنشئ حسابك." },

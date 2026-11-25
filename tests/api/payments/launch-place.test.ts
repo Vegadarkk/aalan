@@ -18,7 +18,7 @@ import { GET as options, POST as buy } from "@/app/api/listings/[id]/options/rou
 import type { CreateListingResponse } from "@/lib/contracts/listings";
 import type { BuyOptionResponse, ListingOptionsResponse } from "@/lib/contracts/payments";
 import { updateListing } from "@/lib/db/repositories/listings";
-import { launchOfferSeatsGranted, launchOfferSeatsRef } from "@/lib/db/repositories/pro-profiles";
+import { launchOfferSeatsGranted, launchPlacesGranted, launchPlacesRef } from "@/lib/db/repositories/pro-profiles";
 import { getWallet, ledgerRef } from "@/lib/db/repositories/wallets";
 import { COLLECTIONS } from "@/lib/db/schemas";
 import { resetServerEnv } from "@/lib/env";
@@ -54,7 +54,8 @@ async function published(owner: Member): Promise<string> {
 describe("an individual's launch place", () => {
   it("is given at the publication of a verified member: 30 credits for 90 days, counted, one per account", async () => {
     const owner = await member({ phone: phone() });
-    const before = await launchOfferSeatsGranted();
+    const before = await launchPlacesGranted();
+    const shopsBefore = await launchOfferSeatsGranted();
     await published(owner);
 
     const wallet = await getWallet(owner.uid);
@@ -63,14 +64,16 @@ describe("an individual's launch place", () => {
     expect(days).toBeGreaterThan(89.9);
     expect(days).toBeLessThanOrEqual(90);
     expect((await ledgerRef(owner.uid, "launch_place").get()).data()).toMatchObject({ reason: "launch_gift", delta: 0, planCreditsDelta: 30, actorUid: "system" });
-    expect(await launchOfferSeatsGranted()).toBe(before + 1);
+    expect(await launchPlacesGranted()).toBe(before + 1);
+    // The shops' 100 seats are counted apart (owner, 2026-11-24).
+    expect(await launchOfferSeatsGranted()).toBe(shopsBefore);
     expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ template: "launchPlaceGranted", data: expect.objectContaining({ credits: 30 }) }));
 
     // A second publication or call gives nothing more.
     await published(owner);
     expect(await claimLaunchPlace(owner.uid)).toBe("already");
     expect((await getWallet(owner.uid))?.planCredits).toBe(30);
-    expect(await launchOfferSeatsGranted()).toBe(before + 1);
+    expect(await launchPlacesGranted()).toBe(before + 1);
   });
 
   it("waits for the verified number, then is given at the verification", async () => {
@@ -107,14 +110,14 @@ describe("an individual's launch place", () => {
 
   it("is not given once every place is taken", async () => {
     const owner = await member({ phone: phone() });
-    const granted = await launchOfferSeatsGranted();
-    await launchOfferSeatsRef().set({ granted: 1_000, updatedAt: new Date() });
+    const granted = await launchPlacesGranted();
+    await launchPlacesRef().set({ granted: 1_000, updatedAt: new Date() });
     try {
       await published(owner);
       expect(await claimLaunchPlace(owner.uid)).toBe("full");
       expect(await getWallet(owner.uid)).toBeNull();
     } finally {
-      await launchOfferSeatsRef().set({ granted, updatedAt: new Date() });
+      await launchPlacesRef().set({ granted, updatedAt: new Date() });
     }
   });
 });

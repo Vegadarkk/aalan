@@ -37,7 +37,7 @@ Les packs se paient par carte sur la page sécurisée de notre prestataire Reven
 - L'abonnement se renouvelle automatiquement à la fin de chaque période. Il se résilie à tout moment depuis l'espace Pro et court jusqu'à la fin de la période payée, qui n'est pas remboursée.
 - Passer à une offre supérieure prend effet aussitôt et la différence est facturée. Passer à une offre inférieure prend effet à la fin de la période.
 - Après un échec de paiement, l'abonnement reste actif pendant un délai de grâce, puis prend fin. Les annonces au-delà du quota du compte sont alors mises en pause ; elles peuvent être remises en ligne depuis « Mes annonces ».
-- Offre de lancement : un Pro validé qui obtient l'une des 1 000 places de lancement (CGU §4.5) bénéficie gratuitement des quotas de l'offre Essentiel pendant 6 mois à compter de sa validation, sans crédits mensuels. Il est prévenu au moins 30 jours avant la fin de cette offre, qui ne prend jamais fin tant que les ventes sont fermées.
+- Offre de lancement : un Pro validé qui obtient l'une des 100 places de lancement réservées aux professionnels (CGU §4.5) bénéficie gratuitement des quotas de l'offre Essentiel pendant 6 mois à compter de sa validation (ou de l'ouverture du site au public si la validation la précède), sans crédits mensuels. Il est prévenu au moins 30 jours avant la fin de cette offre, qui ne prend jamais fin tant que les ventes sont fermées.
 
 ## 5. Pass Boutique {#pass}
 

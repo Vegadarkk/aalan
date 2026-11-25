@@ -36,3 +36,32 @@ export function isPreviewKey(key: string | null | undefined, secret: string | un
   // Compared through their HMACs: equal lengths whatever was typed.
   return same(previewPass(key), previewPass(secret));
 }
+
+// Pro invitation pass (owner's card, 24 Nov 2026): the outreach mail to shops carries
+// /api/preview?pro=<PRO_INVITE_CODE>; the pass it sets (same cookie, so the edge cache bypass
+// holds) opens the sign-up rooms and posting, not the public site (gate.ts, access "pro"). Its
+// value is an HMAC under PREVIEW_SECRET of the code: changing either revokes every invitation.
+const PRO_LABEL = "aalan-pro-invite-v1";
+/** Shortest accepted invitation code (env.ts refuses a shorter one). */
+export const PRO_INVITE_CODE_MIN = 16;
+
+function usable(secret: string | undefined, code: string | undefined): secret is string {
+  return Boolean(secret && secret.length >= PREVIEW_SECRET_MIN && code && code.length >= PRO_INVITE_CODE_MIN);
+}
+
+/** The cookie value of a Pro invitation pass for `code` under `secret`. */
+export function proInvitePass(secret: string, code: string): string {
+  return createHmac("sha256", secret).update(`${PRO_LABEL}:${code}`).digest("base64url");
+}
+
+/** Whether `value` (the cookie) is a Pro invitation pass; false unless both secret and code are set. */
+export function hasProInvitePass(value: string | undefined, secret: string | undefined, code: string | undefined): boolean {
+  if (!value || !usable(secret, code)) return false;
+  return same(value, proInvitePass(secret, code as string));
+}
+
+/** Whether `key` (from the mail's link) is the configured invitation code. */
+export function isProInviteCode(key: string | null | undefined, secret: string | undefined, code: string | undefined): boolean {
+  if (!key || !usable(secret, code)) return false;
+  return same(proInvitePass(secret, key), proInvitePass(secret, code as string));
+}

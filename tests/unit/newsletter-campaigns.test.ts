@@ -97,7 +97,7 @@ describe("newsletter-campaigns job", () => {
     expect(vi.mocked(deliverMail).mock.calls[0]![0]).toMatchObject({
       template: "newsletterCampaign",
       priority: "bulk",
-      data: { campaign: "places", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "tok-a@example.com", places: { seats: 1000, credits: 30, creditDays: 90, months: 6, requirePhone: true } },
+      data: { campaign: "places", opensAt: "2026-12-12T10:00:00.000Z", unsubscribeToken: "tok-a@example.com", places: { seats: 1000, proSeats: 100, credits: 30, creditDays: 90, months: 6, requirePhone: true } },
     });
     // The next run finds nobody new; a late subscriber is served by a later run.
     vi.mocked(deliverMail).mockClear();

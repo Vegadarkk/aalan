@@ -109,6 +109,14 @@ describe("publish and hold", () => {
     expect(effects).toEqual({ search: null, contentOp: { op: "listing.publish", ip: "41.250.1.2" }, audit: "listing.publish", revalidate: false, mail: "listingPendingReview" });
   });
 
+  it("starts the lifetime at the opening for a publication before it (invited shops, 24 Nov 2026)", () => {
+    const opensAt = addDays(NOW, 10);
+    const early = transition(listing("draft"), "published", { ...ctx, opensAt }).patch;
+    expect(early).toMatchObject({ publishedAt: NOW, sortAt: NOW, expiresAt: addDays(opensAt, 60), purgeAt: addMonths(addDays(opensAt, 60), 12) });
+    expect(approveHold(listing("pending_review"), { ...ctx, opensAt }).patch).toMatchObject({ expiresAt: addDays(opensAt, 60) });
+    expect(transition(listing("draft"), "published", { ...ctx, opensAt: addDays(NOW, -1) }).patch).toMatchObject({ expiresAt: addDays(NOW, 60) });
+  });
+
   it("approves a held publication like a publication, without the publication mail (admin lot mails listingApproved)", () => {
     const { patch, effects, outcome } = approveHold(listing("pending_review"), ctx);
     expect(outcome).toEqual({ status: "published", kind: "publication" });

@@ -218,7 +218,7 @@ export interface TemplateData {
     campaign: NewsletterCampaign;
     opensAt: string;
     unsubscribeToken: string;
-    places: { seats: number; credits: number; creditDays: number; months: number; until: string | null; requirePhone: boolean } | null;
+    places: { seats: number; proSeats: number; credits: number; creditDays: number; months: number; until: string | null; requirePhone: boolean } | null;
   };
   /** Pass Boutique (2026-10-28): notices at J-7 and J-1 (`ending`), then the downgrade (`ended`). */
   passNotice: { displayName: string; shopName: string; kind: "ending" | "ended"; endsAt: string; freeListings: number | null; paused: number };

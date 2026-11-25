@@ -1,4 +1,5 @@
 import "server-only";
+import { opening } from "@/lib/launch/early";
 import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import type { AiConfig } from "@/config/ai";
 import { subcategoryAllowsAds } from "@/config/categories";
@@ -143,7 +144,7 @@ export async function applyAutoDecision(kind: "approve" | "reject", input: AutoD
   // held listing in the queue; the agent never publishes it.
   if (kind === "approve" && (await approvalBlocker(listing))) return { applied: false, reason: "illegal" };
   const legal = await getLegalConfig();
-  const ctx = { now, lifetime: listingLifetime(legal) };
+  const ctx = { now, lifetime: listingLifetime(legal), opensAt: opening() };
   let result: TransitionResult;
   try {
     result = kind === "approve" ? approveHold(listing, ctx) : transition(listing, "rejected", ctx);

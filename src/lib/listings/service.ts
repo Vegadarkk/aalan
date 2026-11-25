@@ -1,4 +1,5 @@
 import "server-only";
+import { opening } from "@/lib/launch/early";
 import { claimLaunchPlace } from "@/lib/payments/launch-place";
 import { isDeepStrictEqual } from "node:util";
 import { RENTAL_SUBCATEGORY, subcategoryAllowsAds, subcategoryById } from "@/config/categories";
@@ -503,7 +504,7 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
       if (result.blockers.length > 0) throw invalidListing(result.blockers);
       if (result.state === "needs_review" && listing.status !== "pending_review") {
         // Everything that can refuse comes first; the hold decision is written with the listing.
-        const ctx = { now, lifetime: await lifetime(), ip: actor.ip };
+        const ctx = { now, lifetime: await lifetime(), ip: actor.ip, opensAt: opening() };
         const held = step(() => transition(listing, "pending_review", ctx));
         // Paused and expired listings free their slot; held for review, the listing takes one again.
         if (!ACTIVE_STATUSES.includes(listing.status)) {
@@ -527,7 +528,7 @@ async function patchListingOnce(actor: Actor, id: string, patch: ListingPatch, n
     }
   } else if (listing.status === "rejected") {
     // Editing a rejected listing reopens it as a draft (lifecycle: rejected -> draft), under the draft cap (D2).
-    const ctx = { now, lifetime: await lifetime(), ip: actor.ip };
+    const ctx = { now, lifetime: await lifetime(), ip: actor.ip, opensAt: opening() };
     const reopened = step(() => transition(listing, "draft", ctx));
     Object.assign(fields, reopened.patch);
     effects = reopened.effects;
@@ -700,7 +701,7 @@ export async function setPromo(actor: Actor, id: string, input: PromoInput, now 
   let mail: MailJob | null = null;
   if (plan.review && listing.status === "published") {
     const result: ScreeningResult = { state: "needs_review", score: listing.moderation.score, flags: [...new Set<ModerationFlag>([...listing.moderation.flags, "promo_check"])], blockers: [], evidence: [`promo_cut ${plan.percent}%`] };
-    const ctx = { now, lifetime: await lifetime(), ip: actor.ip };
+    const ctx = { now, lifetime: await lifetime(), ip: actor.ip, opensAt: opening() };
     const held = step(() => transition(listing, "pending_review", ctx));
     Object.assign(fields, held.patch);
     fields.moderation = { ...listing.moderation, state: "needs_review", flags: result.flags };
@@ -781,7 +782,7 @@ export async function publish(actor: Actor, request: Request, id: string, option
   const slugId = buildSlugId({ id, title: listing.title, city: cityName(city, "fr"), categoryId: listing.categoryId });
   const rejectedBefore = rejectedByModerator(listing);
   const to: ListingStatus = screening.state === "needs_review" || rejectedBefore ? "pending_review" : "published";
-  const ctx = { now, lifetime: await lifetime(), ip: actor.ip };
+  const ctx = { now, lifetime: await lifetime(), ip: actor.ip, opensAt: opening() };
   const { patch, effects } = step(() => transition(listing, to, ctx));
   patch.slugId = slugId;
   patch.moderation = moderationPatch(listing.moderation, screening, to === "pending_review");
@@ -869,7 +870,7 @@ function holdRecord(listing: ListingRecord, result: ScreeningResult, now: Date, 
 export async function changeStatus(actor: Actor, id: string, action: OwnerAction, now = new Date()): Promise<ListingRecord> {
   const listing = await ownedListing(actor, id);
   const seller = await sellerOf(actor.auth);
-  const ctx: TransitionContext = { now, lifetime: await lifetime(), ip: actor.ip };
+  const ctx: TransitionContext = { now, lifetime: await lifetime(), ip: actor.ip, opensAt: opening() };
   if (action === "renew" && listing.status === "expired") return renewExpired(actor, listing, seller, ctx);
   const result = step(() => {
     switch (action) {

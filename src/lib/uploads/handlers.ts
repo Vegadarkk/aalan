@@ -1,4 +1,5 @@
 import "server-only";
+import { assertPostingOpen } from "@/lib/launch/early";
 import { requireUser, type AuthContext } from "@/lib/auth/guards";
 import { signUploadSchema, UPLOAD_ID_PATTERN, type SignUploadResponse, type UploadStatusResponse } from "@/lib/contracts/media";
 import { notFound } from "@/lib/http/errors";
@@ -32,6 +33,7 @@ function uploaderOf(request: Request, auth: AuthContext): Uploader {
 
 export async function handleSign(request: Request): Promise<Response> {
   const auth = await requireUser(request, { mutation: true });
+  assertPostingOpen(request, auth.user.claims);
   const input = await readJson(request, signUploadSchema);
   const body: SignUploadResponse = await signUpload(uploaderOf(request, auth), input);
   return json(body, { status: 201 });

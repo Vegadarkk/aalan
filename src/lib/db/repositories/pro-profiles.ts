@@ -114,19 +114,35 @@ export async function markLaunchOfferNotice(proId: string, now: Date, first = fa
   void consume("firestore.writes", 1);
 }
 
-/** `system/launchOfferSeats`: validations that took a seat of the launch offer (owner, 2026-11-05). */
+/** `system/launchOfferSeats`: shop validations that took a seat of the launch offer (owner, 2026-11-05; shops only since 2026-11-24). */
 export const LAUNCH_OFFER_SEATS_DOC = "launchOfferSeats";
 
 export function launchOfferSeatsRef(): DocumentReference {
   return db().collection(COLLECTIONS.system).doc(LAUNCH_OFFER_SEATS_DOC);
 }
 
-/** Seats already granted (0 before the first one), inside `tx` when given. */
-export async function launchOfferSeatsGranted(tx?: Transaction): Promise<number> {
-  const snapshot = tx ? await tx.get(launchOfferSeatsRef()) : await launchOfferSeatsRef().get();
+/** `system/launchPlaces`: individuals' launch places (owner, 2026-11-24; src/lib/payments/launch-place.ts). */
+export const LAUNCH_PLACES_DOC = "launchPlaces";
+
+export function launchPlacesRef(): DocumentReference {
+  return db().collection(COLLECTIONS.system).doc(LAUNCH_PLACES_DOC);
+}
+
+async function grantedIn(ref: DocumentReference, tx?: Transaction): Promise<number> {
+  const snapshot = tx ? await tx.get(ref) : await ref.get();
   void consume("firestore.reads", 1);
   const granted = snapshot.get("granted");
   return typeof granted === "number" && Number.isInteger(granted) && granted >= 0 ? granted : 0;
+}
+
+/** Shops' seats already granted (0 before the first one), inside `tx` when given. */
+export async function launchOfferSeatsGranted(tx?: Transaction): Promise<number> {
+  return grantedIn(launchOfferSeatsRef(), tx);
+}
+
+/** Individuals' places already granted (0 before the first one), inside `tx` when given. */
+export async function launchPlacesGranted(tx?: Transaction): Promise<number> {
+  return grantedIn(launchPlacesRef(), tx);
 }
 
 /**

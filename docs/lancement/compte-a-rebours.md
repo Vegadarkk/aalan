@@ -32,6 +32,7 @@ copie (une minute au plus), la page affiche « La porte s'ouvre… » et réessa
 |---|---|---|
 | `OPENS_AT` | `2026-12-12T10:00:00+00:00` (date ISO avec fuseau ; ouverture le samedi 12 décembre, 10 h au Maroc) | Ferme le site jusqu'à cet instant. Vide = ouvert. Une valeur mal écrite empêche le démarrage. |
 | `PREVIEW_SECRET` | 32 à 128 lettres et chiffres | Active l'aperçu de l'équipe (ci-dessous). Vide = aucun aperçu. |
+| `PRO_INVITE_CODE` | 16 à 64 lettres et chiffres (exige `PREVIEW_SECRET`) | Active le lien d'invitation des boutiques Pro (ci-dessous). Vide = aucune invitation. |
 | `BRAND_SOCIAL_LINKS` | `instagram=aalan_ma tiktok=@aalan_ma facebook=61596493192279 youtube=https://www.youtube.com/@aalan_ma x=Aalan_maroc` (dans l'ordre d'affichage) | Liens vers les comptes d'Aalan sous le compte à rebours. Vide = pas de liens. |
 
 Les valeurs sont lues au démarrage du conteneur : après un changement, relancer le service `web`
@@ -54,6 +55,27 @@ Page (`61596493192279`, celui de `facebook.com/profile.php?id=...`), jamais l'id
    (`infra/cloudflare/cache-rules.json`, `node scripts/cloudflare.ts zone --apply`, appliquée le
    10 nov. 2026 sur les trois zones du projet ; `zone --check` le vérifie). Sans elle, une
    page vue en aperçu pourrait être mise en cache pour le public.
+
+## Boutiques Pro invitées avant l'ouverture
+
+Décision du 24 nov. 2026 : les boutiques qui acceptent l'invitation remplissent leur boutique avant
+le 12 décembre.
+
+1. Le mail de prospection porte `https://aalan.ma/api/preview?pro=<PRO_INVITE_CODE>` (ajouter
+   `&langue=ar` pour l'arabe). Le lien pose le cookie `__Host-preview` (30 jours, même règle de
+   cache que l'aperçu) puis ouvre l'inscription, et ensuite l'espace Pro.
+2. Ce cookie ouvre seulement l'inscription, la connexion, les réglages, la vérification du
+   téléphone (WhatsApp), l'espace Pro (demande, pièces, stock, flotte, départs), le dépôt et
+   « Mes annonces ». La recherche, la messagerie, les favoris, le porte-monnaie et toutes les pages
+   publiques (annonces, boutiques) restent fermés jusqu'à `OPENS_AT`.
+3. Tant que le site est fermé, seul un compte Pro validé (dossier KYBC accepté dans l'admin) crée,
+   duplique ou publie une annonce et envoie des photos. Un lien transféré à un particulier ne lui
+   permet donc pas de publier (erreur `posting_closed`).
+4. Une annonce publiée avant l'ouverture garde sa date de publication, mais sa durée de vie part de
+   l'ouverture. Les 6 mois offerts d'une boutique validée avant l'ouverture partent eux aussi de
+   l'ouverture.
+5. Le cookie vaut pour un navigateur : un pro qui change d'appareil rouvre le lien du mail. Changer
+   `PRO_INVITE_CODE` (ou `PREVIEW_SECRET`) révoque toutes les invitations.
 
 ## Le jour de l'ouverture
 

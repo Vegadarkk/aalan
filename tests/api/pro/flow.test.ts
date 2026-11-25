@@ -199,9 +199,9 @@ describe("GET /api/pro/me", () => {
 });
 
 describe("back-office KYBC decision", () => {
-  it("validates without the launch offer once its seats are taken (owner, 2026-11-05)", async () => {
+  it("validates without the launch offer once its 100 shop seats are taken (owner, 2026-11-05 and 2026-11-24)", async () => {
     const granted = await launchOfferSeatsGranted();
-    await launchOfferSeatsRef().set({ granted: DEFAULT_PRICING.launchOffer.seats });
+    await launchOfferSeatsRef().set({ granted: DEFAULT_PRICING.launchOffer.proSeats });
     try {
       const owner = await member({ phone: freshPhone() });
       const applied = await applyAs(owner, application([await kybPiece(owner)]));
@@ -211,7 +211,7 @@ describe("back-office KYBC decision", () => {
       expect(decided.status).toBe(200);
       expect(await getProProfile(applied.body.proId)).toMatchObject({ lifecycle: "verified", plan: "none", planSource: "none" });
       expect((await getProProfile(applied.body.proId))?.launchOfferEndsAt).toBeUndefined();
-      expect(await launchOfferSeatsGranted()).toBe(DEFAULT_PRICING.launchOffer.seats);
+      expect(await launchOfferSeatsGranted()).toBe(DEFAULT_PRICING.launchOffer.proSeats);
       expect(lastMail(sendMail, "proApproved", owner.email)?.data).toMatchObject({ launchOffer: false });
     } finally {
       await launchOfferSeatsRef().set({ granted });
